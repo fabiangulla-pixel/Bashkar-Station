@@ -15,8 +15,6 @@ Velocidad aproximada: ~30-60 seg/página en CPU i7.
 
 import base64
 from pathlib import Path
-from typing import Optional
-
 
 # Prompt calibrado para prensa histórica colombiana
 PROMPT_OCR_HISTORICO = """Transcribe el texto de esta imagen.
@@ -48,7 +46,7 @@ def ollama_disponible(modelo: str = "qwen2.5vl:7b") -> bool:
 
 def ocr_ollama(ruta_imagen: str,
                modelo: str = "qwen2.5vl:7b",
-               prompt: Optional[str] = None,
+               prompt: str | None = None,
                timeout: int = 120) -> tuple[str, float]:
     """
     OCR visual con Ollama (completamente offline).

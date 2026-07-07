@@ -8,7 +8,6 @@ Cubre: constructor (con/sin repo), _ner_dict_a_lista, _stats_corpus,
 
 import json
 import sys
-import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
@@ -17,7 +16,6 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.pipeline_maestro import PipelineMaestro
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Fixtures

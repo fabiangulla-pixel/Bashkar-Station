@@ -10,15 +10,17 @@ CAPACIDADES:
   · Análisis tipográfico completo desde PDF digital
 """
 
-import gc, re
-import numpy as np
+import gc
+import re
 from pathlib import Path
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.patches import FancyBboxPatch
 
+import matplotlib
+import numpy as np
+
+matplotlib.use("Agg")
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch
 
 # ── Normalización de nombres de fuente ───────────────────────────────────────
 _FUENTE_MAPA = {

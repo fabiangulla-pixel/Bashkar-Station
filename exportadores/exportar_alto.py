@@ -11,7 +11,6 @@ Especificación: https://www.loc.gov/standards/alto/
 """
 
 from pathlib import Path
-from typing import Optional
 from xml.dom import minidom
 from xml.etree.ElementTree import Element, SubElement, tostring
 

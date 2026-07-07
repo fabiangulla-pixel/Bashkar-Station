@@ -10,7 +10,6 @@ Cubre:
 
 import pytest
 
-
 # ── Corpus de prueba ──────────────────────────────────────────────────────────
 
 CORPUS_HISTORICO = [
@@ -409,8 +408,10 @@ class TestSentimentExtensiones:
 
     def test_importar_funciones_nuevas(self):
         from core.sentiment_engine import (
-            analizar_emociones, analizar_subjetividad,
-            analizar_intensidad, analisis_completo_emocion,
+            analisis_completo_emocion,
+            analizar_emociones,
+            analizar_intensidad,
+            analizar_subjetividad,
         )
         assert callable(analizar_emociones)
         assert callable(analizar_subjetividad)

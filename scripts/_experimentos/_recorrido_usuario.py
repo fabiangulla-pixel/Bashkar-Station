@@ -18,7 +18,9 @@ C:/Users/Lenovo/Desktop/Bashkar_Capturas_Postulacion/.
 
 Uso:  python _recorrido_usuario.py
 """
-import sqlite3, time, traceback
+import sqlite3
+import time
+import traceback
 from pathlib import Path
 
 OUT = Path(r"C:/Users/Lenovo/Desktop/Bashkar_Capturas_Postulacion")
@@ -32,8 +34,10 @@ N_TEXTOS = 24
 
 def _capturar_ventana(hwnd, ruta):
     """Captura el contenido de una ventana con PrintWindow (aunque esté tapada)."""
-    import win32gui, win32ui
     from ctypes import windll
+
+    import win32gui
+    import win32ui
     from PIL import Image
     rect = win32gui.GetClientRect(hwnd)
     w, h = rect[2] - rect[0], rect[3] - rect[1]
@@ -86,8 +90,8 @@ def cargar_corpus_desde_db(st):
 
 
 def main():
+
     import app as appmod
-    from PIL import ImageGrab
 
     log = []
     a = appmod.BashkarApp()

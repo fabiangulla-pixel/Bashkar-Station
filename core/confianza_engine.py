@@ -11,8 +11,6 @@ Aplica a: OCR, NER, tono editorial, tópicos.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Optional
-
 
 VERDE  = "green"
 AMARILLO = "yellow"

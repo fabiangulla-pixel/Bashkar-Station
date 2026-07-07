@@ -15,7 +15,6 @@ from pathlib import Path
 
 from datos.repositorio import Repositorio
 
-
 VERSION_NUEVA = "11"
 
 

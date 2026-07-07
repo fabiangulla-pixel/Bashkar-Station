@@ -11,9 +11,9 @@ Instalación:
   pip install sentence-transformers
 """
 
-import numpy as np
 from functools import lru_cache
-from typing import Optional
+
+import numpy as np
 
 MODELO_EMBEDDINGS = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 DIMENSIONES = 384

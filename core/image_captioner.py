@@ -17,11 +17,11 @@ Uso:
 """
 
 from __future__ import annotations
+
 import json
 import re
 from pathlib import Path
-from typing import Optional, Callable
-
+from typing import Callable
 
 # ── Categorías temáticas controladas para Estampa 1930-1940 ──────────────────
 # Vocabulario inspirado en iconografía de humanidades digitales e historia cultural
@@ -76,7 +76,7 @@ def describir_zona(
     api_key: str = "",
     modelo: str = "",
     prompt_custom: str = "",
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
 ) -> dict:
     """
     Describe una zona de imagen etiquetada como "foto".
@@ -127,7 +127,8 @@ def describir_zona(
                                          ", ".join(CATEGORIAS_TEMATICAS)))
 
     # Guardar recorte temporalmente
-    import tempfile, os
+    import os
+    import tempfile
     with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
         tmp_path = Path(tmp.name)
     recorte.save(str(tmp_path), "JPEG", quality=85)
@@ -156,8 +157,8 @@ def describir_numero(
     proveedor: str = "claude",
     api_key: str = "",
     modelo: str = "",
-    db_path: Optional[Path] = None,
-    callback: Optional[Callable] = None,
+    db_path: Path | None = None,
+    callback: Callable | None = None,
     solo_fotos: bool = True,
 ) -> list[dict]:
     """
@@ -177,7 +178,7 @@ def describir_numero(
     Returns:
         list[dict] con todas las descripciones generadas.
     """
-    from core.zone_labeler import listar_paginas_etiquetadas, cargar_pagina
+    from core.zone_labeler import cargar_pagina, listar_paginas_etiquetadas
 
     img_dir = out_dir / "02_imagenes" / numero
     etiquetadas = listar_paginas_etiquetadas(out_dir, numero)
@@ -245,6 +246,7 @@ def buscar_imagenes_similares(
     try:
         import faiss
         import numpy as np
+
         from core.embeddings_local import get_embedding
 
         index = faiss.read_index(str(indice_path))
@@ -310,7 +312,7 @@ def _guardar_en_db(db_path: Path, resultados: list[dict]):
 
 
 def cargar_descripciones_db(db_path: Path, numero: str,
-                             pagina: Optional[str] = None) -> list[dict]:
+                             pagina: str | None = None) -> list[dict]:
     """Carga descripciones guardadas de la base de datos."""
     try:
         import sqlite3
@@ -344,6 +346,7 @@ def _indexar_embeddings(out_dir: Path, numero: str, resultados: list[dict]):
     try:
         import faiss
         import numpy as np
+
         from core.embeddings_local import get_embedding
 
         idx_dir = out_dir / "06_indices" / numero
@@ -370,7 +373,7 @@ def _indexar_embeddings(out_dir: Path, numero: str, resultados: list[dict]):
 
 # ── Helpers internos ──────────────────────────────────────────────────────────
 
-def _buscar_imagen(img_dir: Path, pagina: str) -> Optional[Path]:
+def _buscar_imagen(img_dir: Path, pagina: str) -> Path | None:
     if not img_dir.exists():
         return None
     for ext in ("*.png", "*.jpg", "*.tif", "*.tiff"):

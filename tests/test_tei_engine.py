@@ -7,19 +7,16 @@ Cubre: articulo_a_tei (estructura XML, campos, entidades),
 """
 
 import sys
-import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.tei_engine import (
-    articulo_a_tei,
-    exportar_corpus_tei,
-    exportar_bibtex,
     TEI_NS,
+    articulo_a_tei,
+    exportar_bibtex,
+    exportar_corpus_tei,
 )
 
 

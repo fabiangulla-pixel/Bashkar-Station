@@ -24,9 +24,8 @@ Formato de salida:
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
-from typing import Optional, Callable
-
+from dataclasses import dataclass
+from typing import Callable
 
 # Tag para palabras generadas — Unicode no conflictivo con texto español
 TAG_OPEN  = "⟦"
@@ -89,7 +88,7 @@ def detectar_fragmentos(texto: str, margen_chars: int = 5) -> list[FragmentoCort
             ultima = palabras[-1]
             if (2 <= len(ultima) <= 4
                     and ultima.isalpha()
-                    and not linea_strip[-1] in ".,:;!?»\"'"):
+                    and linea_strip[-1] not in ".,:;!?»\"'"):
                 # Verificar que la siguiente línea empiece con minúscula
                 if i + 1 < len(lineas):
                     sig = lineas[i + 1].lstrip()
@@ -152,7 +151,7 @@ def reconstruir_fragmento(
         palabra = re.sub(r'[.,:;!?»"\']$', '', palabra)
         frag.reconstruida = palabra
         frag.confianza = 0.75  # confianza base para LLM
-    except Exception as e:
+    except Exception:
         frag.reconstruida = frag.fragmento  # mantener original si falla
         frag.confianza = 0.0
     return frag
@@ -162,7 +161,7 @@ def reconstruir_texto(
     texto: str,
     api_key: str,
     modelo: str = "claude-haiku-4-5-20251001",
-    callback: Optional[Callable[[int, int, str], None]] = None,
+    callback: Callable[[int, int, str], None] | None = None,
 ) -> tuple[str, list[FragmentoCortado]]:
     """
     Detecta y reconstruye todas las palabras cortadas en el texto.
@@ -238,8 +237,8 @@ def exportar_docx_con_marcas(
     """
     try:
         from docx import Document
-        from docx.shared import RGBColor, Pt
         from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from docx.shared import Pt, RGBColor
     except ImportError:
         raise ImportError("Instala python-docx: pip install python-docx")
 

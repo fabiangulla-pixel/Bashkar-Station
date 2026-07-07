@@ -12,8 +12,6 @@ from __future__ import annotations
 
 import re
 from collections import Counter, defaultdict
-from typing import Optional, Callable
-
 
 PARAMS_SCHEMA = {
     "ventana": {
@@ -60,13 +58,13 @@ PARAMS_SCHEMA = {
 _RE_TOKEN = re.compile(r'\b[a-záéíóúüñ]{3,}\b', re.IGNORECASE)
 
 STOPWORDS_ES = {
-    "que", "con", "una", "del", "los", "las", "por", "para", "una", "este",
+    "que", "con", "una", "del", "los", "las", "por", "para", "este",
     "esta", "ese", "esa", "son", "fue", "ser", "han", "hay", "pero", "como",
     "más", "sus", "también", "cuando", "sobre", "entre", "desde", "hasta",
     "todo", "todos", "toda", "todas", "muy", "bien", "sin", "algo", "así",
     "mismo", "cada", "otros", "otras", "otro", "otra", "donde", "quien",
-    "cual", "cuyo", "cuya", "cuyo", "siendo", "sido", "estar", "está",
-    "están", "tiene", "tienen", "había", "había", "era", "eran", "aquel",
+    "cual", "cuyo", "cuya", "siendo", "sido", "estar", "está",
+    "están", "tiene", "tienen", "había", "era", "eran", "aquel",
     "aquella", "aquellos", "aquellas", "nuestro", "nuestra", "vuestro",
     "menos", "durante", "después", "antes", "siempre", "nunca", "solo",
     "sólo", "aunque", "porque", "pues", "aun", "mientras", "hacia", "según",
@@ -160,7 +158,7 @@ def collocates(
 
 def red_lexica(
     corpus: list[str] | str,
-    palabras_clave: Optional[list[str]] = None,
+    palabras_clave: list[str] | None = None,
     ventana: int = 5,
     top_n_nodos: int = 40,
     min_coocurrencias: int = 2,

@@ -9,26 +9,29 @@ Cubre: nivel_confianza, color_semaforo, color_fondo_semaforo, etiqueta_semaforo,
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.confianza_engine import (
-    VERDE, AMARILLO, ROJO,
-    COLOR_VERDE, COLOR_AMARILLO, COLOR_ROJO,
-    COLOR_BG_VERDE, COLOR_BG_AMARILLO, COLOR_BG_ROJO,
-    nivel_confianza,
-    color_semaforo,
-    color_fondo_semaforo,
-    etiqueta_semaforo,
-    score_ocr,
-    score_ner_entidad,
-    score_tono,
-    EntidadValidacion,
+    AMARILLO,
+    COLOR_AMARILLO,
+    COLOR_BG_AMARILLO,
+    COLOR_BG_ROJO,
+    COLOR_BG_VERDE,
+    COLOR_ROJO,
+    COLOR_VERDE,
+    ROJO,
+    VERDE,
     ColaPendiente,
+    EntidadValidacion,
+    color_fondo_semaforo,
+    color_semaforo,
     confianza_global_corpus,
+    etiqueta_semaforo,
+    nivel_confianza,
+    score_ner_entidad,
+    score_ocr,
+    score_tono,
 )
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # nivel_confianza

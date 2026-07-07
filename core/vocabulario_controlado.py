@@ -20,12 +20,10 @@ import csv
 import json
 import sqlite3
 from pathlib import Path
-from typing import Optional
-
 
 # ── Carga de las fuentes ──────────────────────────────────────────────────────
 
-def _glosario_global(ruta_db_global: Optional[str] = None) -> list[dict]:
+def _glosario_global(ruta_db_global: str | None = None) -> list[dict]:
     """Lee la tabla glosario_global de la DB global. [] si no existe."""
     if ruta_db_global is None:
         ruta_db_global = str(Path.home() / ".bashkar" / "bashkar.db")
@@ -72,7 +70,7 @@ def _arcaismos_morfologicos() -> list[dict]:
     return out
 
 
-def _terminos_canonicos(ruta_db_proyecto: Optional[str]) -> list[dict]:
+def _terminos_canonicos(ruta_db_proyecto: str | None) -> list[dict]:
     """Entidades canónicas del proyecto como términos con tipo de entidad."""
     if not ruta_db_proyecto or not Path(ruta_db_proyecto).exists():
         return []
@@ -109,8 +107,8 @@ _CAMPOS = ("termino", "definicion", "categoria", "tipo_entidad",
            "periodo", "ejemplo", "fuente")
 
 
-def construir_vocabulario(ruta_db_proyecto: Optional[str] = None,
-                          ruta_db_global: Optional[str] = None,
+def construir_vocabulario(ruta_db_proyecto: str | None = None,
+                          ruta_db_global: str | None = None,
                           incluir_entidades: bool = True) -> list[dict]:
     """
     Construye el vocabulario controlado unificado, deduplicado por

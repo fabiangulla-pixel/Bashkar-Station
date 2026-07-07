@@ -19,10 +19,10 @@ Compatible con imágenes escaneadas y páginas renderizadas desde PDF.
 """
 
 import gc
-import re
-import numpy as np
 from pathlib import Path
 from typing import Optional
+
+import numpy as np
 
 # Intentar importar LayoutParser (opcional — si no está, se usa solo OpenCV)
 try:
@@ -198,7 +198,7 @@ def _nms(elementos: list[dict], umbral: float = 0.40) -> list[dict]:
 def analizar_layout_pagina(
     img_path: Path,
     dpi: float = DPI_DEFAULT,
-    txt_path: Optional[Path] = None,
+    txt_path: Path | None = None,
 ) -> dict:
     """
     Detecta y clasifica regiones visuales en una página escaneada.

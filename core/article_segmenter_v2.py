@@ -19,10 +19,9 @@ Estrategia:
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
-from typing import Optional, Callable
 from collections import defaultdict
-
+from dataclasses import dataclass, field
+from typing import Callable
 
 RE_CONTINUA = re.compile(
     r'[Pp]as[ao]\s+[ao]\s+la\s+[Pp][áa]g[ina\.]*\s*\.?\s*(\d+)',
@@ -49,8 +48,8 @@ class NodoPagina:
     pagina_num: int = 0
     numero: str = ""
     palabras: int = 0
-    continua_en: Optional[int] = None   # índice de página destino explícito
-    viene_de: Optional[int] = None
+    continua_en: int | None = None   # índice de página destino explícito
+    viene_de: int | None = None
     es_especial: bool = False
 
 
@@ -91,8 +90,8 @@ def _contar_palabras(texto: str) -> int:
 
 def _similitud_coseno_simple(a: str, b: str, top_n: int = 50) -> float:
     """Similitud de Jaccard sobre las top-n palabras más frecuentes. Sin dependencias."""
-    from collections import Counter
     import re as _re
+    from collections import Counter
 
     def _tokens(t):
         return _re.findall(r'\b[a-záéíóúüñ]{4,}\b', t.lower())
@@ -112,7 +111,7 @@ def construir_grafo_continuidad(
     paginas: list[NodoPagina],
     umbral_similitud: float = 0.15,
     umbral_palabras_corto: int = 120,
-    callback: Optional[Callable[[int, int], None]] = None,
+    callback: Callable[[int, int], None] | None = None,
 ) -> dict[int, list[int]]:
     """
     Construye un grafo de adyacencia {idx: [idx_siguiente, ...]} basado en
@@ -194,7 +193,7 @@ def segmentar_avanzado(
     numero: str = "",
     umbral_similitud: float = 0.15,
     umbral_palabras_corto: int = 120,
-    callback: Optional[Callable[[int, int, str], None]] = None,
+    callback: Callable[[int, int, str], None] | None = None,
 ) -> list[ArticuloSegmentado]:
     """
     Segmentación avanzada de artículos usando grafo de continuidad.
@@ -205,8 +204,8 @@ def segmentar_avanzado(
     Retorna lista de ArticuloSegmentado ordenados por primera página.
     """
     from core.article_segmenter import (
-        _es_pagina_especial,
         _detectar_seccion,
+        _es_pagina_especial,
     )
 
     # 1. Construir nodos

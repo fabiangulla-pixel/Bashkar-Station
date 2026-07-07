@@ -21,8 +21,6 @@ from __future__ import annotations
 import json
 import unicodedata
 from pathlib import Path
-from typing import Optional
-
 
 _GAZETTEER = Path(__file__).parent.parent / "datos" / "coordenadas_colombia.json"
 
@@ -35,7 +33,7 @@ def _norm(s: str) -> str:
 
 # ── Geocodificación local ─────────────────────────────────────────────────────
 
-def _cargar_gazetteer(ruta: Optional[str] = None) -> dict:
+def _cargar_gazetteer(ruta: str | None = None) -> dict:
     ruta = Path(ruta) if ruta else _GAZETTEER
     if not ruta.exists():
         return {}
@@ -55,7 +53,7 @@ def _cargar_gazetteer(ruta: Optional[str] = None) -> dict:
 
 
 def geocodificar_lugares(entidades_canonicas: list[dict],
-                         ruta_gazetteer: Optional[str] = None) -> list[dict]:
+                         ruta_gazetteer: str | None = None) -> list[dict]:
     """
     Filtra entidades tipo=lugar y les asigna lat/lon desde el gazetteer local.
     Solo devuelve las que se pudieron georreferenciar.
@@ -209,7 +207,7 @@ def exportar_rdf(grafo: dict, ruta_salida: str | Path) -> dict:
     aristas = grafo.get("aristas", [])
 
     try:
-        from rdflib import Graph, Namespace, Literal, URIRef, RDF, RDFS
+        from rdflib import RDF, RDFS, Graph, Literal, Namespace, URIRef
         g = Graph()
         ENT = Namespace(_NS)
         PRED = Namespace(_PRED)

@@ -1,9 +1,8 @@
 """tests/test_exportadores.py — Tests de exportadores ALTO XML."""
 import os
-import pytest
 import xml.etree.ElementTree as ET
-from pathlib import Path
 
+import pytest
 
 ALTO_NS = {"alto": "http://www.loc.gov/standards/alto/ns-v4#"}
 

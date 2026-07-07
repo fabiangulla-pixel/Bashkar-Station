@@ -17,7 +17,10 @@ import io
 import queue
 import threading
 import wave
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    import numpy as np
 
 SAMPLE_RATE   = 16000   # Hz — óptimo para reconocimiento de voz
 CHUNK_SECONDS = 4       # segundos por chunk de reconocimiento
@@ -89,8 +92,8 @@ class DictadoSession:
 
     def _bucle(self):
         try:
-            import sounddevice as sd
             import numpy as np
+            import sounddevice as sd
             import speech_recognition as sr
         except ImportError as e:
             self._q_estado.put(f"error:Falta dependencia: {e}")

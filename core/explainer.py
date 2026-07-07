@@ -10,11 +10,9 @@ ya disponibles en el índice (FAISS, NER, TF-IDF).
 
 from __future__ import annotations
 
-import re
 import math
+import re
 from collections import Counter
-from typing import Optional
-
 
 _RE_TOKEN = re.compile(r'\b[a-záéíóúüñ]{4,}\b', re.IGNORECASE)
 
@@ -24,7 +22,7 @@ def _tokenizar(texto: str) -> list[str]:
 
 
 def _tfidf_local(query_tokens: list[str], doc_tokens: list[str],
-                 corpus_freq: Optional[Counter] = None,
+                 corpus_freq: Counter | None = None,
                  n_docs: int = 100) -> dict[str, float]:
     """TF-IDF del query sobre el documento. corpus_freq para IDF global."""
     doc_freq   = Counter(doc_tokens)
@@ -40,8 +38,8 @@ def _tfidf_local(query_tokens: list[str], doc_tokens: list[str],
 def explicar_resultado(
     query: str,
     resultado: dict,
-    indice_ner: Optional[dict] = None,
-    corpus_freq: Optional[Counter] = None,
+    indice_ner: dict | None = None,
+    corpus_freq: Counter | None = None,
     n_docs: int = 100,
 ) -> dict:
     """
@@ -138,8 +136,8 @@ def explicar_resultado(
 def explicar_lote(
     query: str,
     resultados: list[dict],
-    indice_ner: Optional[dict] = None,
-    corpus_freq: Optional[Counter] = None,
+    indice_ner: dict | None = None,
+    corpus_freq: Counter | None = None,
     n_docs: int = 100,
 ) -> list[dict]:
     """

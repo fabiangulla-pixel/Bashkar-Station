@@ -15,11 +15,9 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from dataclasses import dataclass
 from datetime import datetime
-from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Optional
-
 
 ESTADOS_VALIDOS = ("auto", "confirmada", "corregida", "rechazada", "pendiente")
 
@@ -83,7 +81,7 @@ class Anotacion:
     wikidata_id:  str = ""
     wikidata_lbl: str = ""
     notas:        str = ""
-    id:           Optional[int] = None
+    id:           int | None = None
 
 
 class GestorAnotaciones:
@@ -131,8 +129,8 @@ class GestorAnotaciones:
     # ── Consultar ─────────────────────────────────────────────────────────────
 
     def por_articulo(self, art_id: str,
-                     categoria: Optional[str] = None,
-                     estado: Optional[str] = None) -> list[dict]:
+                     categoria: str | None = None,
+                     estado: str | None = None) -> list[dict]:
         sql = "SELECT * FROM anotaciones WHERE art_id = ?"
         params: list = [art_id]
         if categoria:

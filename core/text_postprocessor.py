@@ -22,10 +22,8 @@ Diseñado para el corpus Estampa (Colombia, 1930-1940):
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
-
 
 # ── Tipos de zona que producen texto de artículo ─────────────────────────────
 _TIPOS_TEXTO = {"articulo", "titulo", "pie_foto", "indice"}
@@ -300,7 +298,7 @@ def postprocesar_pagina(
 
 def postprocesar_numero(
     paginas: dict[str, list[BloqueTexto]],
-    out_txt: Optional[Path] = None,
+    out_txt: Path | None = None,
     callback=None,
     **kwargs,
 ) -> dict[str, str]:

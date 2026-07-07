@@ -4,9 +4,18 @@
 ║  Aplicación de escritorio · 100% offline · Publicaciones históricas ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
-import sys, os, gc, platform, threading, queue
-from pathlib import Path
+import gc
+import os
+import platform
+import queue
+import sys
+import threading
 from datetime import datetime
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.bitacora_engine import BitacoraEngine
 
 # ── Rutas Windows (Tesseract/Poppler) ────────────────────────────────────────
 _APP_DIR = Path(__file__).parent
@@ -126,13 +135,15 @@ def _auto_instalar():
 _auto_instalar()
 
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import filedialog, messagebox, scrolledtext, ttk
+
 import matplotlib
+
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 import pandas as pd
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 APP_VERSION = "11.6"
 APP_NAME    = "Bashkar Station"
@@ -1946,7 +1957,9 @@ class BashkarApp(tk.Tk):
         Llama a la IA con contexto + prompt y devuelve la respuesta como texto.
         Soporta Anthropic, OpenAI y Gemini.
         """
-        import urllib.request, json
+        import json
+        import urllib.request
+
         from core.image_describer import detectar_proveedor
 
         proveedor = detectar_proveedor(api_key)
@@ -2029,7 +2042,7 @@ class BashkarApp(tk.Tk):
 
     def _cargar_ultimo_proyecto(self):
         """Al arrancar: restaura la última sesión o crea un proyecto vacío."""
-        from core.project_manager import cargar_ultimo, cargar_proyecto
+        from core.project_manager import cargar_proyecto, cargar_ultimo
         ruta = cargar_ultimo()
         if ruta:
             res = cargar_proyecto(ruta, ST)
@@ -2057,8 +2070,9 @@ class BashkarApp(tk.Tk):
 
     def _crear_proyecto_automatico(self):
         """Crea un proyecto vacío con los datos por defecto de ST."""
-        from core.project_manager import nuevo_proyecto, guardar_ultimo
         from datetime import datetime
+
+        from core.project_manager import guardar_ultimo, nuevo_proyecto
         nombre = f"Proyecto {datetime.now().strftime('%d %b %Y')}"
         ruta = nuevo_proyecto(nombre, ST.publicacion, ST.periodo)
         guardar_ultimo(ruta)
@@ -2068,7 +2082,9 @@ class BashkarApp(tk.Tk):
     def _guardar_proyecto(self):
         """Guarda el estado actual en el archivo .bashkar activo."""
         from core.project_manager import (
-            guardar_proyecto, guardar_ultimo, nuevo_proyecto)
+            guardar_proyecto,
+            guardar_ultimo,
+        )
         if not self._proyecto_ruta:
             self._nuevo_proyecto_dialogo(); return
         try:
@@ -2960,7 +2976,11 @@ class BashkarApp(tk.Tk):
             if not nombre:
                 messagebox.showwarning("Campo vacío", "Escribe un nombre.", parent=dlg)
                 return
-            from core.project_manager import guardar_ultimo, nuevo_proyecto, guardar_proyecto
+            from core.project_manager import (
+                guardar_proyecto,
+                guardar_ultimo,
+                nuevo_proyecto,
+            )
             # Guardar el proyecto actual antes de cambiar
             if self._proyecto_ruta:
                 try:
@@ -2983,9 +3003,15 @@ class BashkarApp(tk.Tk):
 
     def _abrir_gestor_proyectos(self):
         """Ventana con la lista de proyectos guardados."""
-        from core.project_manager import (listar_proyectos, cargar_proyecto,
-            guardar_ultimo, guardar_proyecto, eliminar_proyecto,
-            fecha_legible, progreso_str)
+        from core.project_manager import (
+            cargar_proyecto,
+            eliminar_proyecto,
+            fecha_legible,
+            guardar_proyecto,
+            guardar_ultimo,
+            listar_proyectos,
+            progreso_str,
+        )
 
         win = tk.Toplevel(self)
         win.title("Proyectos guardados")
@@ -4292,7 +4318,7 @@ class BashkarApp(tk.Tk):
         self._txt_meta_result.config(state="disabled")
 
     def _poblar_lista(self, carpeta):
-        from core.ocr_engine import analizar_pdf, EXTS_IMAGEN
+        from core.ocr_engine import EXTS_IMAGEN, analizar_pdf
         self._lb.delete(0,"end"); self._archivos_disp = []
         tipo = self._var_tipo.get()
 
@@ -4315,7 +4341,7 @@ class BashkarApp(tk.Tk):
                 # Analizar primer PDF para detectar si tiene texto
                 if pdfs:
                     info = analizar_pdf(pdfs[0])
-                    estado = (f"✅ texto" if info["tiene_texto"] else "🔍 OCR")
+                    estado = ("✅ texto" if info["tiene_texto"] else "🔍 OCR")
                     estado += f" · {n_pdfs} PDF(s) · {mb_total:.1f} MB"
                 else:
                     estado = f"Sin PDFs ({n_pdfs})"
@@ -4840,7 +4866,10 @@ class BashkarApp(tk.Tk):
     def _build_conv(self):
         """Panel de conversión masiva PDF→Word/TXT (ruta rápida, sin re-OCR)."""
         try:
-            from core.conversor_pdf_a_word import ConfiguracionConversor, ConversorPDFaWord
+            from core.conversor_pdf_a_word import (
+                ConfiguracionConversor,
+                ConversorPDFaWord,
+            )
             self._conv_disponible = True
         except ImportError as _conv_err:
             self._conv_disponible = False
@@ -5090,7 +5119,10 @@ class BashkarApp(tk.Tk):
 
     def _conv_iniciar(self):
         try:
-            from core.conversor_pdf_a_word import ConfiguracionConversor, ConversorPDFaWord
+            from core.conversor_pdf_a_word import (
+                ConfiguracionConversor,
+                ConversorPDFaWord,
+            )
         except ImportError as e:
             messagebox.showerror("Conversor", f"Faltan librerías:\n{e}\n\npip install pymupdf python-docx")
             return
@@ -6176,8 +6208,8 @@ class BashkarApp(tk.Tk):
             return
 
         try:
+
             from PIL import Image, ImageTk
-            import io
 
             # Buscar el PDF del número — primero en archivos seleccionados,
             # luego en el directorio de entrada como fallback
@@ -6240,6 +6272,7 @@ class BashkarApp(tk.Tk):
             else:
                 # Convertir desde PDF en memoria (solo la página solicitada)
                 from pdf2image import convert_from_path
+
                 from core.ocr_engine import _get_poppler_path
                 poppler = _get_poppler_path()
                 kwargs = dict(dpi=120, first_page=n_pag+1, last_page=n_pag+1)
@@ -6278,7 +6311,7 @@ class BashkarApp(tk.Tk):
     # ── Tipos de zona extensibles ─────────────────────────────────────────────
     def _etz_agregar_tipo_custom(self):
         """Diálogo para crear un nuevo tipo de zona global."""
-        from core.zone_labeler import agregar_tipo_zona, TIPOS_ZONA
+        from core.zone_labeler import TIPOS_ZONA, agregar_tipo_zona
         win = tk.Toplevel(self)
         win.title("Nuevo tipo de zona")
         win.geometry("380x280")
@@ -6370,7 +6403,6 @@ class BashkarApp(tk.Tk):
 
     def _etz_refrescar_botones_tipo(self):
         """Recarga los botones de tipo de zona en el ribbon con los tipos actuales."""
-        from core.zone_labeler import TIPOS_ZONA
         for tid, btn in list(self._etz_tipo_btns.items()):
             try:
                 btn.destroy()
@@ -6381,7 +6413,7 @@ class BashkarApp(tk.Tk):
         # Simplificación: indicar al usuario que reinicie para ver el tipo nuevo en el ribbon
         # El tipo ya está en TIPOS_ZONA y se usa correctamente al dibujar zonas
         self._etz_lbl_train.config(
-            text=f"✅ Tipo nuevo disponible — se mostrará al reiniciar")
+            text="✅ Tipo nuevo disponible — se mostrará al reiniciar")
 
     # ── Estadísticas de etiquetas del número ─────────────────────────────────
     def _etz_mostrar_estadisticas(self):
@@ -6391,9 +6423,13 @@ class BashkarApp(tk.Tk):
             messagebox.showwarning("Sin número", "Selecciona un número primero.")
             return
 
-        from core.zone_labeler import (listar_paginas_etiquetadas, cargar_pagina,
-                                        TIPOS_ZONA)
         from collections import Counter
+
+        from core.zone_labeler import (
+            TIPOS_ZONA,
+            cargar_pagina,
+            listar_paginas_etiquetadas,
+        )
 
         etiquetadas = listar_paginas_etiquetadas(ST.out_dir, numero)
         if not etiquetadas:
@@ -6501,9 +6537,12 @@ class BashkarApp(tk.Tk):
             messagebox.showwarning("Sin número", "Selecciona un número primero.")
             return
 
+        from core.image_captioner import (
+            buscar_imagenes_similares,
+            cargar_descripciones_db,
+            describir_numero,
+        )
         from core.zone_labeler import VISION_PROVEEDORES
-        from core.image_captioner import (describir_numero, cargar_descripciones_db,
-                                           buscar_imagenes_similares, CATEGORIAS_TEMATICAS)
 
         win = tk.Toplevel(self)
         win.title(f"Descripción de imágenes — {numero}")
@@ -6724,9 +6763,10 @@ class BashkarApp(tk.Tk):
         zona = self._etz_zonas[idx]
 
         try:
-            from PIL import Image
-            import tempfile, os
-            from core.deepfont import clasificar_tipografia, ETIQUETAS_ES, COLORES
+            import os
+            import tempfile
+
+            from core.deepfont import clasificar_tipografia
 
             # Recortar la zona de la imagen original
             iw = self._etz_img_orig.width
@@ -6751,7 +6791,7 @@ class BashkarApp(tk.Tk):
                     res = clasificar_tipografia(tmp.name, usar_clip=True)
                 finally:
                     try: os.unlink(tmp.name)
-                    except: pass
+                    except OSError: pass
                 self.after(0, lambda: self._etz_mostrar_deepfont(res, zona))
 
             threading.Thread(target=_worker, daemon=True).start()
@@ -6761,7 +6801,7 @@ class BashkarApp(tk.Tk):
 
     def _etz_mostrar_deepfont(self, resultado: dict, zona):
         """Muestra el resultado de DeepFont en una ventana."""
-        from core.deepfont import ETIQUETAS_ES, COLORES
+        from core.deepfont import COLORES, ETIQUETAS_ES
         cat   = resultado["categoria"]
         eta   = resultado["etiqueta"]
         conf  = resultado["confianza"]
@@ -7527,7 +7567,7 @@ class BashkarApp(tk.Tk):
 
     def _etz_entrenar_detector(self, numero: str):
         """Entrena DetectorZonas con todas las páginas etiquetadas manualmente del número."""
-        from core.zone_labeler import cargar_todas_manual, DetectorZonas
+        from core.zone_labeler import DetectorZonas, cargar_todas_manual
         manuales = cargar_todas_manual(ST.out_dir, numero)  # list[PaginaEtiquetada]
         if not manuales:
             return
@@ -7556,7 +7596,7 @@ class BashkarApp(tk.Tk):
                     "Etiqueta al menos 2 páginas manualmente para activar la predicción.")
                 return
 
-        from core.zone_labeler import cargar_todas_manual, listar_paginas_etiquetadas
+        from core.zone_labeler import cargar_todas_manual
         # Páginas disponibles desde imágenes (fuente más fiable que txt)
         txt_dir = ST.out_dir / "03_ocr" / numero
         img_dir = ST.out_dir / "02_imagenes" / numero
@@ -7619,7 +7659,7 @@ class BashkarApp(tk.Tk):
         numero = self._etz_numero.get()
         if not numero:
             return
-        from core.zone_labeler import listar_paginas_etiquetadas, cargar_todas_manual
+        from core.zone_labeler import cargar_todas_manual, listar_paginas_etiquetadas
         etiq     = listar_paginas_etiquetadas(ST.out_dir, numero)
         manuales = cargar_todas_manual(ST.out_dir, numero)
         txt_dir  = ST.out_dir / "03_ocr" / numero
@@ -7685,7 +7725,10 @@ class BashkarApp(tk.Tk):
                     if a.stem == numero), None)
         if pdf and pdf.exists():
             try:
-                import fitz, tempfile, re as _re
+                import re as _re
+                import tempfile
+
+                import fitz
                 from PIL import Image
                 _nums = _re.findall(r'\d+', pagina)
                 n_pag = max(0, int(_nums[-1]) - 1) if _nums else 0
@@ -7788,7 +7831,7 @@ class BashkarApp(tk.Tk):
             def _log(m): self._etz_lbl_train.config(text=m[:80], fg="#F59E0B")
             zonas_raw = detectar_layout(img_path, motor=modo, callback=_log)
             # Convertir dicts a objetos Zona
-            from core.zone_labeler import Zona, TIPOS_ZONA
+            from core.zone_labeler import TIPOS_ZONA, Zona
             zonas = []
             for z in zonas_raw:
                 tipo = z["tipo"] if z["tipo"] in TIPOS_ZONA else "articulo"
@@ -7869,8 +7912,11 @@ class BashkarApp(tk.Tk):
 
         def _worker():
             from core.zone_labeler import (
-                detectar_zonas_opencv, detectar_zonas_claude,
-                guardar_pagina, PaginaEtiquetada, Zona, TIPOS_ZONA
+                TIPOS_ZONA,
+                PaginaEtiquetada,
+                Zona,
+                detectar_zonas_opencv,
+                guardar_pagina,
             )
             ok = 0
             for i, img_path in enumerate(imagenes):
@@ -7971,7 +8017,8 @@ class BashkarApp(tk.Tk):
             return
 
         from PIL import Image
-        from core.image_preprocessor import detectar_angulo_pagina, deskew
+
+        from core.image_preprocessor import detectar_angulo_pagina
 
         img_orig = Image.open(img_path)
         angulo_detectado = detectar_angulo_pagina(img_orig)
@@ -8651,7 +8698,9 @@ class BashkarApp(tk.Tk):
 
                 for pdf_path in pdfs:
                     try:
-                        import fitz, io
+                        import io
+
+                        import fitz
                         doc = fitz.open(str(pdf_path))
                         if n_pag < doc.page_count:
                             pix = doc[n_pag].get_pixmap(dpi=120)
@@ -8809,8 +8858,8 @@ class BashkarApp(tk.Tk):
                     self._norm_refrescar_lista(),
                 ))
             except Exception as e:
-                self.after(0, lambda: self._lbl_norm_estado.config(
-                    text=f"⚠ Error: {e}", fg=ROJO))
+                self.after(0, lambda err=str(e): self._lbl_norm_estado.config(
+                    text=f"⚠ Error: {err}", fg=ROJO))
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -8865,8 +8914,8 @@ class BashkarApp(tk.Tk):
                     self._norm_mostrar_bloque(self._norm_idx_actual),
                 ))
             except Exception as e:
-                self.after(0, lambda: self._lbl_norm_estado.config(
-                    text=f"⚠ Error: {e}", fg=ROJO))
+                self.after(0, lambda err=str(e): self._lbl_norm_estado.config(
+                    text=f"⚠ Error: {err}", fg=ROJO))
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -9097,8 +9146,8 @@ class BashkarApp(tk.Tk):
                     f"Top 5: {top5_str}\n\n"
                     f"Guardado en:\n{cache_path}"))
             except Exception as ex:
-                self.after(0, lambda: self._lbl_norm_estado.config(
-                    text=f"❌ Error: {ex}", fg="#F85149"))
+                self.after(0, lambda err=str(ex): self._lbl_norm_estado.config(
+                    text=f"❌ Error: {err}", fg="#F85149"))
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -9185,7 +9234,6 @@ class BashkarApp(tk.Tk):
     def _norm_auto(self):
         """Aplica normalización automática a todos los bloques no editados."""
         def _run():
-            from core.ocr_normalizer import normalizar_texto_ocr
             from core.text_postprocessor import normalizar_bloque
             for b in self._norm_bloques:
                 if not b["norm_usuario"]:
@@ -9494,9 +9542,10 @@ class BashkarApp(tk.Tk):
         if not dest:
             return
         try:
-            from core.gutter_completion import exportar_docx_con_marcas, RE_GENERADO
             from docx import Document
             from docx.shared import Pt, RGBColor
+
+            from core.gutter_completion import RE_GENERADO, exportar_docx_con_marcas
         except ImportError:
             messagebox.showerror("Falta python-docx", "pip install python-docx"); return
 
@@ -9655,8 +9704,8 @@ class BashkarApp(tk.Tk):
                           "Describe, categoriza y busca imágenes etiquetadas · "
                           "Claude · GPT-4o · Gemini · Ollama", "🎨")
 
-        from core.zone_labeler import VISION_PROVEEDORES
         from core.image_captioner import CATEGORIAS_TEMATICAS
+        from core.zone_labeler import VISION_PROVEEDORES
 
         # ── Barra de control ─────────────────────────────────────────────────
         ctrl = tk.Frame(f, bg=CONTENT_BG)
@@ -10180,8 +10229,9 @@ class BashkarApp(tk.Tk):
 
     def _pegar_imagen_canvas(self, canvas, png_bytes: bytes):
         """Pega bytes PNG en un canvas Tkinter."""
-        from PIL import Image, ImageTk
         import io
+
+        from PIL import Image, ImageTk
         img = Image.open(io.BytesIO(png_bytes))
         cw  = canvas.winfo_width()  or 500
         ch  = canvas.winfo_height() or 600
@@ -10262,7 +10312,7 @@ class BashkarApp(tk.Tk):
                 self.after(0, lambda: messagebox.showinfo("Exportación completada", msg))
             except Exception as e:
                 self.after(0, prog_win.destroy)
-                self.after(0, lambda: messagebox.showerror("Error", str(e)))
+                self.after(0, lambda err=str(e): messagebox.showerror("Error", err))
 
         threading.Thread(target=worker, daemon=True).start()
 
@@ -10337,7 +10387,10 @@ class BashkarApp(tk.Tk):
         self._lbl_meta_ok.config(text="")
         def worker():
             from core.metadata_extractor import (
-                extraer_metadata_url, formatear_metadatos, enriquecer_con_busqueda_web)
+                enriquecer_con_busqueda_web,
+                extraer_metadata_url,
+                formatear_metadatos,
+            )
             try:
                 meta = extraer_metadata_url(url)
                 # Enriquecer con búsqueda web si faltan campos
@@ -10600,7 +10653,7 @@ class BashkarApp(tk.Tk):
                          daemon=True).start()
 
     def _worker_gutter(self, txt_dirs, api_key):
-        from core.gutter_completion import reconstruir_texto, estadisticas
+        from core.gutter_completion import estadisticas, reconstruir_texto
         modelo = "claude-haiku-4-5-20251001"
         total_fragmentos = 0
         total_reconstruidos = 0
@@ -10677,7 +10730,6 @@ class BashkarApp(tk.Tk):
         bar.pack(pady=8)
 
         def worker():
-            from core.ocr_normalizer import normalizar_directorio
             total_archivos = 0
             total_cambios  = 0
             all_txts = []
@@ -10709,7 +10761,7 @@ class BashkarApp(tk.Tk):
     def _ocr_verificar_kraken(self):
         """Verifica si Kraken + modelo están disponibles y actualiza el label."""
         try:
-            from core.ocr_kraken import kraken_disponible, _buscar_modelo
+            from core.ocr_kraken import _buscar_modelo, kraken_disponible
             if kraken_disponible():
                 modelo = _buscar_modelo()
                 nombre = Path(modelo).name if modelo else "modelo"
@@ -10719,6 +10771,7 @@ class BashkarApp(tk.Tk):
             else:
                 # Verificar via subprocess (Kraken está en venv separado, no en Python principal)
                 import subprocess
+
                 from core.ocr_kraken import _python_kraken
                 chk = subprocess.run([_python_kraken(), "-c", "import kraken"],
                                      capture_output=True, timeout=10)
@@ -10850,6 +10903,7 @@ class BashkarApp(tk.Tk):
 
         def _worker():
             import time
+
             from core.ocr_kraken import ocr_kraken
             modelo = getattr(self, "_var_kraken_modelo", tk.StringVar()).get() or None
             t0 = time.perf_counter()
@@ -10863,8 +10917,8 @@ class BashkarApp(tk.Tk):
                     fg="#22C55E"))
                 self.after(200, self._ocr_actualizar_estimacion)
             except Exception as e:
-                self.after(0, lambda: self._lbl_kraken_est.config(
-                    text=f"✗ Error calibrando: {e}", fg="#EF4444"))
+                self.after(0, lambda err=str(e): self._lbl_kraken_est.config(
+                    text=f"✗ Error calibrando: {err}", fg="#EF4444"))
 
         threading.Thread(target=_worker, daemon=True).start()
 
@@ -10903,7 +10957,7 @@ class BashkarApp(tk.Tk):
         - El texto de cada zona se extrae por posición relativa en las líneas del OCR.
         - Retorna el texto ordenado según el flujo de lectura de las zonas.
         """
-        from core.zone_labeler import cargar_pagina, TIPOS_ZONA
+        from core.zone_labeler import TIPOS_ZONA, cargar_pagina
 
         if not ST.out_dir:
             return texto
@@ -10986,8 +11040,9 @@ class BashkarApp(tk.Tk):
                 "Ejecuta primero la extracción OCR para generar las imágenes.")
             return
 
-        from core.image_preprocessor import preprocesar_para_ocr
         from PIL import Image, ImageTk
+
+        from core.image_preprocessor import preprocesar_para_ocr
 
         win = tk.Toplevel(self)
         win.title(f"Preview preprocesamiento — {img_path.name}")
@@ -11040,8 +11095,13 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_ocr, daemon=True).start()
 
     def _worker_ocr(self):
-        from core.ocr_engine import (analizar_pdf, extraer_texto_pdf,
-                                     pdf_a_imagenes, ocr_pagina, imagenes_a_texto, EXTS_IMAGEN)
+        from core.ocr_engine import (
+            EXTS_IMAGEN,
+            analizar_pdf,
+            imagenes_a_texto,
+            ocr_pagina,
+            pdf_a_imagenes,
+        )
 
         # Modo subcarpetas: cada "archivo" en archivos_sel es una carpeta con PDFs
         # Expandimos la lista: cada PDF de la subcarpeta se procesa como una página
@@ -11125,9 +11185,10 @@ class BashkarApp(tk.Tk):
                     # Ruta 3: texto BNC con reconstrucción por coordenadas (alto_reconstructor)
                     # Usa las coordenadas X/Y de cada span para reconstruir el orden de columnas
                     # en vez de confiar en el orden lineal del PDF (que mezcla columnas).
+                    import fitz
+
                     from core.alto_reconstructor import reconstruir_texto_pagina
                     from core.ocr_normalizer import normalizar_texto_ocr
-                    import fitz
 
                     _MARCA_BNC = "Digitalizado Biblioteca Nacional de Colombia"
 
@@ -11197,8 +11258,9 @@ class BashkarApp(tk.Tk):
                     )
                     if do_pre:
                         try:
-                            from core.image_preprocessor import preprocesar_para_ocr
                             from PIL import Image as _PIL
+
+                            from core.image_preprocessor import preprocesar_para_ocr
                             dir_ocr_imgs = out / "02_imagenes_ocr" / nombre
                             dir_ocr_imgs.mkdir(parents=True, exist_ok=True)
                             imgs_procesadas = []
@@ -11229,7 +11291,6 @@ class BashkarApp(tk.Tk):
                                 texto=f"  ❌ Ruta 2 requiere API key de {prov}. Configúrala en ⚙ Configuración.")
                             errores.append(archivo.name); continue
 
-                        from core.ocr_llm import ocr_con_vision as _ocr_claude
                         for pi, ip in enumerate(imgs):
                             tp = txt_dir/(ip.stem+".txt")
                             if tp.exists():
@@ -11285,7 +11346,7 @@ class BashkarApp(tk.Tk):
                                 try:
                                     texto, conf = ocr_pagina(ip, lang=lang)
                                     tp.write_text(texto, "utf-8")
-                                    self._put(tipo="log", texto=f"      → Tesseract usado como respaldo")
+                                    self._put(tipo="log", texto="      → Tesseract usado como respaldo")
                                 except Exception as ef:
                                     texto, conf = "", 0.0
                                     tp.write_text("", "utf-8")
@@ -11437,10 +11498,11 @@ class BashkarApp(tk.Tk):
         Cada PDF de la subcarpeta es una página del número.
         Usa alto_reconstructor para reconstruir el orden de columnas.
         """
-        from core.alto_reconstructor import reconstruir_texto_pagina
-        from core.ocr_normalizer import normalizar_texto_ocr
         import fitz
         import pandas as pd
+
+        from core.alto_reconstructor import reconstruir_texto_pagina
+        from core.ocr_normalizer import normalizar_texto_ocr
 
         out  = ST.out_dir
         ruta_ocr = getattr(self, "_var_ruta_ocr",
@@ -11482,8 +11544,9 @@ class BashkarApp(tk.Tk):
                         # Guardar imagen original a color
                         img_dest = img_dir / f"{pagina_id}.png"
                         if not img_dest.exists():
-                            from PIL import Image as _PIL
                             import io
+
+                            from PIL import Image as _PIL
                             zoom = 150 / 72.0
                             mat  = fitz.Matrix(zoom, zoom)
                             pix  = page.get_pixmap(matrix=mat, alpha=False)
@@ -11615,7 +11678,10 @@ class BashkarApp(tk.Tk):
 
     def _worker_seg(self):
         from core.article_segmenter import segmentar_numero
-        from core.zone_labeler import filtrar_texto_con_etiquetas, listar_paginas_etiquetadas
+        from core.zone_labeler import (
+            filtrar_texto_con_etiquetas,
+            listar_paginas_etiquetadas,
+        )
         usar_v2 = getattr(self, "_var_seg_v2", None)
         usar_v2 = usar_v2.get() if usar_v2 else False
 
@@ -11661,7 +11727,10 @@ class BashkarApp(tk.Tk):
 
             if usar_v2:
                 # Segmentador avanzado v2 — grafo de continuidad
-                from core.article_segmenter_v2 import segmentar_avanzado, comparar_segmentaciones
+                from core.article_segmenter_v2 import (
+                    comparar_segmentaciones,
+                    segmentar_avanzado,
+                )
                 carpeta_txt = txt_dir / nombre
                 paginas_txt = []
                 if carpeta_txt.exists():
@@ -11730,10 +11799,18 @@ class BashkarApp(tk.Tk):
 
     def _worker_anal(self):
         import spacy
-        from core.analysis_engine import (leer_numero, analizar_numero_con_campos_expandidos,
-                                          analizar_layout_pagina, construir_red, run_lda)
-        from core.word_vectors import (entrenar_word2vec, expandir_campo_semantico,
-                                       calcular_densidad_semantica)
+
+        from core.analysis_engine import (
+            analizar_layout_pagina,
+            analizar_numero_con_campos_expandidos,
+            construir_red,
+            leer_numero,
+            run_lda,
+        )
+        from core.word_vectors import (
+            entrenar_word2vec,
+            expandir_campo_semantico,
+        )
         def log(m): self.after(0, lambda msg=m: self._log_a_write(msg))
         def prg(v,t=""): self.after(0, lambda: self._set_prog_a(v,t))
 
@@ -11867,8 +11944,8 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_vis, daemon=True).start()
 
     def _worker_vis(self):
+        from core.image_analyzer import analizar_numero_imagenes
         from core.visual_analyzer import analizar_tipografia_numero
-        from core.image_analyzer  import analizar_numero_imagenes
         out     = ST.out_dir
         img_dir = out / "02_imagenes"
         ocr_dir = out / "03_ocr"
@@ -12035,7 +12112,10 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_comp, args=(Path(ref),), daemon=True).start()
 
     def _worker_comp(self, ref_dir):
-        from core.comparative_analyzer import cargar_corpora, generar_reporte_comparativo
+        from core.comparative_analyzer import (
+            cargar_corpora,
+            generar_reporte_comparativo,
+        )
         self._put(tipo="log",texto="📚 Cargando corpora de referencia…")
         # Corpus principal: concatenar todos los textos OCR
         out=ST.out_dir; txt_dir=out/"03_ocr"
@@ -12140,7 +12220,9 @@ class BashkarApp(tk.Tk):
 
     def _pintar_graficas(self):
         import io
-        from PIL import Image as PILImage, ImageTk
+
+        from PIL import Image as PILImage
+        from PIL import ImageTk
         for key, tab in self._figs_tabs.items():
             if key not in ST.figuras: continue
             for w in tab.winfo_children(): w.destroy()
@@ -12619,8 +12701,9 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_ner_articulo, args=(texto, art_id), daemon=True).start()
 
     def _worker_ner_articulo(self, texto: str, art_id: str):
-        from core.ner_engine import pipeline_ner, actualizar_indice_global
         import spacy
+
+        from core.ner_engine import actualizar_indice_global, pipeline_ner
         p = self._params_get_values(self._ner_params) if self._ner_params else {}
         usar_ia = p.get("usar_ia", self._var_ner_llm.get())
         proveedor_llm = p.get("proveedor_llm", self._var_ner_prov.get())
@@ -12675,8 +12758,13 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_ner_corpus, daemon=True).start()
 
     def _worker_ner_corpus(self):
-        from core.ner_engine import pipeline_ner, actualizar_indice_global, indice_global_vacio
         import spacy
+
+        from core.ner_engine import (
+            actualizar_indice_global,
+            indice_global_vacio,
+            pipeline_ner,
+        )
         p = self._params_get_values(self._ner_params) if self._ner_params else {}
         usar_ia = p.get("usar_ia", self._var_ner_llm.get())
         proveedor_llm = p.get("proveedor_llm", self._var_ner_prov.get())
@@ -12814,7 +12902,7 @@ class BashkarApp(tk.Tk):
         wikidata = getattr(ST, "wikidata_enlaces", {})
         enlace = wikidata.get(cat, {}).get(ent)
         if enlace:
-            txt += f"\n── Wikidata ──\n"
+            txt += "\n── Wikidata ──\n"
             txt += f"  ID:          {enlace.get('id','')}\n"
             txt += f"  Nombre:      {enlace.get('label','')}\n"
             txt += f"  Descripción: {enlace.get('description','')}\n"
@@ -12828,8 +12916,8 @@ class BashkarApp(tk.Tk):
     def _ner_exportar_csv(self):
         if not getattr(ST, "indice_ner_global", None):
             messagebox.showwarning("Sin datos", "Ejecuta el análisis NER primero."); return
-        from tkinter import filedialog
         from pathlib import Path as _Path
+        from tkinter import filedialog
         pub = getattr(ST, "publicacion", "corpus").replace(" ", "_")
         dest = filedialog.asksaveasfilename(
             defaultextension=".csv",
@@ -12923,7 +13011,7 @@ class BashkarApp(tk.Tk):
                 # Actualizar detalle si hay entidad seleccionada
                 self.after(0, self._ner_refrescar_tv)
             except Exception as exc:
-                self.after(0, lambda: _log(f"⚠️ Error: {exc}"))
+                self.after(0, lambda err=str(exc): _log(f"⚠️ Error: {err}"))
             finally:
                 self.after(0, lambda: btn_cerrar.config(state="normal"))
 
@@ -13108,8 +13196,11 @@ class BashkarApp(tk.Tk):
     def _bsem_construir(self):
         """Genera embeddings de todos los artículos y construye el índice FAISS."""
         try:
-            from core.embeddings_local import generar_embeddings, sentence_transformers_disponible
             from core.busqueda_semantica import IndiceSemantico, faiss_disponible
+            from core.embeddings_local import (
+                generar_embeddings,
+                sentence_transformers_disponible,
+            )
         except ImportError as e:
             messagebox.showerror("Módulo no disponible", str(e)); return
 
@@ -13146,7 +13237,6 @@ class BashkarApp(tk.Tk):
 
         def _worker():
             try:
-                import numpy as np
                 self.after(0, lambda: self._bsem_log("  Generando embeddings…"))
                 embs = generar_embeddings(textos, mostrar_progreso=False)
                 self.after(0, lambda: self._bsem_log(f"  Embeddings: {embs.shape}"))
@@ -13162,7 +13252,7 @@ class BashkarApp(tk.Tk):
                 self.after(0, lambda: self._bsem_log(
                     f"✅ Índice listo · {indice.n_articulos} artículos"))
             except Exception as exc:
-                self.after(0, lambda: self._bsem_log(f"⚠️ Error: {exc}"))
+                self.after(0, lambda err=str(exc): self._bsem_log(f"⚠️ Error: {err}"))
             finally:
                 self.after(0, lambda: self._btn_bsem_construir.config(state="normal"))
 
@@ -13217,7 +13307,7 @@ class BashkarApp(tk.Tk):
 
                 self.after(0, _actualizar)
             except Exception as exc:
-                self.after(0, lambda: self._bsem_log(f"⚠️ Error: {exc}"))
+                self.after(0, lambda err=str(exc): self._bsem_log(f"⚠️ Error: {err}"))
             finally:
                 self.after(0, lambda: self._btn_bsem_buscar.config(state="normal"))
 
@@ -13242,7 +13332,6 @@ class BashkarApp(tk.Tk):
         terminos = [t.lower() for t in consulta.split() if len(t) > 2]
 
         def _worker():
-            import re
             resultados = []
             for i, texto in enumerate(corpus_txt):
                 if not texto:
@@ -13565,10 +13654,8 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=_worker, daemon=True).start()
 
     def _coloc_graficar_red(self):
+
         from core.collocation_engine import red_lexica
-        from core.chart_builder import _fig
-        import matplotlib.pyplot as plt
-        from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
         corpus = getattr(ST, "corpus_txt", None) or []
         if not corpus:
             messagebox.showwarning("Sin corpus", "Extrae el texto del corpus primero."); return
@@ -13583,8 +13670,8 @@ class BashkarApp(tk.Tk):
 
     def _coloc_mostrar_red(self, red):
         try:
-            import networkx as nx
             import matplotlib.pyplot as plt
+            import networkx as nx
             from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
         except ImportError:
             messagebox.showerror("Falta networkx", "pip install networkx"); return
@@ -13645,8 +13732,8 @@ class BashkarApp(tk.Tk):
         if not getattr(self, "_kwic_resultados", None):
             messagebox.showwarning("Sin resultados", "Busca concordancias primero.")
             return
-        from tkinter import filedialog
         import csv
+        from tkinter import filedialog
         kw = self._var_kwic_kw.get().strip() or "kwic"
         dest = filedialog.asksaveasfilename(
             defaultextension=".csv",
@@ -13795,6 +13882,7 @@ class BashkarApp(tk.Tk):
         try:
             import matplotlib.pyplot as plt
             from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
             from core.chart_builder import _FONDO, _TEXTO
         except ImportError:
             messagebox.showerror("Falta matplotlib", "pip install matplotlib"); return
@@ -13855,7 +13943,8 @@ class BashkarApp(tk.Tk):
         try:
             import matplotlib.pyplot as plt
             from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-            from core.chart_builder import _fig, _FONDO, _TEXTO
+
+            from core.chart_builder import _FONDO, _TEXTO, _fig
         except ImportError:
             messagebox.showerror("Falta matplotlib", "pip install matplotlib"); return
 
@@ -14220,6 +14309,7 @@ class BashkarApp(tk.Tk):
         try:
             import matplotlib.pyplot as plt
             from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
             from core.chart_builder import _fig
         except ImportError:
             messagebox.showerror("Falta matplotlib", "pip install matplotlib"); return
@@ -14315,7 +14405,8 @@ class BashkarApp(tk.Tk):
         try:
             import matplotlib.pyplot as plt
             from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-            from core.chart_builder import _fig, PALETA
+
+            from core.chart_builder import PALETA, _fig
         except ImportError:
             messagebox.showerror("Falta matplotlib", "pip install matplotlib"); return
 
@@ -14978,7 +15069,7 @@ class BashkarApp(tk.Tk):
         try:
             from core.network_engine import construir_grafo, metricas_red
         except ImportError as e:
-            self.after(0, lambda: messagebox.showerror("Error", str(e)))
+            self.after(0, lambda err=str(e): messagebox.showerror("Error", err))
             self.after(0, lambda: self._btn_red_construir.config(state="normal"))
             return
 
@@ -15039,8 +15130,9 @@ class BashkarApp(tk.Tk):
         if not self._grafo_actual:
             return
         try:
-            from core.network_engine import exportar_pyvis
             from pathlib import Path as _PPath
+
+            from core.network_engine import exportar_pyvis
             ruta_html = _PPath.home() / "Documents" / "BashkarStation" / "redes" / "red_entidades.html"
             ruta_html.parent.mkdir(parents=True, exist_ok=True)
             exportar_pyvis(self._grafo_actual, ruta_html)
@@ -15071,8 +15163,9 @@ class BashkarApp(tk.Tk):
         if not dest:
             return
         try:
-            from core.network_engine import exportar_gephi
             from pathlib import Path as _PPath
+
+            from core.network_engine import exportar_gephi
             exportar_gephi(self._grafo_actual, _PPath(dest))
             messagebox.showinfo("Exportado", f"✅ Red exportada a:\n{dest}")
         except Exception as e:
@@ -15215,6 +15308,7 @@ class BashkarApp(tk.Tk):
         try:
             import matplotlib.pyplot as plt
             from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
             from core.chart_builder import _FONDO, _TEXTO
         except ImportError:
             messagebox.showerror("Falta matplotlib", "pip install matplotlib"); return
@@ -15256,8 +15350,8 @@ class BashkarApp(tk.Tk):
         """Exporta la tabla de evolución temporal a CSV."""
         if not self._red_evolucion_cache:
             messagebox.showwarning("Sin datos", "Calcula la evolución primero."); return
-        from tkinter import filedialog
         import csv
+        from tkinter import filedialog
         dest = filedialog.asksaveasfilename(
             defaultextension=".csv", filetypes=[("CSV","*.csv")],
             initialfile="evolucion_red.csv")
@@ -15578,7 +15672,6 @@ class BashkarApp(tk.Tk):
             lbl.config(text=f"{tono}: {pct}% ({n})")
 
     def _sem_tono_refrescar(self):
-        from core.sentiment_engine import COLORES_TONO
         for row in self._tv_tono.get_children():
             self._tv_tono.delete(row)
 
@@ -15605,7 +15698,11 @@ class BashkarApp(tk.Tk):
                 ))
 
     def _sem_tono_ver_evolucion(self):
-        from core.sentiment_engine import evolucion_temporal, tendencia_tono, COLORES_TONO
+        from core.sentiment_engine import (
+            COLORES_TONO,
+            evolucion_temporal,
+            tendencia_tono,
+        )
         if not self._tono_resultados:
             messagebox.showwarning("Sin datos", "Analiza el tono del corpus primero.")
             return
@@ -15672,8 +15769,11 @@ class BashkarApp(tk.Tk):
                      font=("Segoe UI", 9, "bold")).pack(side="left", padx=8)
 
     def _sem_tono_narrativa(self):
-        from core.sentiment_engine import (estadisticas_tono, evolucion_temporal,
-                                           resumen_narrativo)
+        from core.sentiment_engine import (
+            estadisticas_tono,
+            evolucion_temporal,
+            resumen_narrativo,
+        )
         if not self._tono_resultados:
             messagebox.showwarning("Sin datos", "Analiza el tono del corpus primero.")
             return
@@ -15708,8 +15808,8 @@ class BashkarApp(tk.Tk):
         if not self._tono_resultados:
             messagebox.showwarning("Sin datos", "Analiza el tono del corpus primero.")
             return
-        from tkinter import filedialog
         import csv
+        from tkinter import filedialog
         dest = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv"), ("Todos", "*.*")],
@@ -15803,8 +15903,9 @@ class BashkarApp(tk.Tk):
             title="Guardar glosario")
         if not dest:
             return
-        from core.lexicon_engine import exportar_glosario_csv
         from pathlib import Path as _PPath
+
+        from core.lexicon_engine import exportar_glosario_csv
         n = exportar_glosario_csv(self._glosario_data, _PPath(dest))
         messagebox.showinfo("Exportado", f"✅ {n} entradas exportadas a:\n{dest}")
 
@@ -15847,8 +15948,8 @@ class BashkarApp(tk.Tk):
         if not self._estilo_resultados:
             messagebox.showwarning("Sin datos", "Calcula los clusters primero.")
             return
-        from tkinter import filedialog
         import csv
+        from tkinter import filedialog
         dest = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv")],
@@ -15935,7 +16036,7 @@ class BashkarApp(tk.Tk):
         self._var_viz_titulo = tk.StringVar()
         tk.Entry(sel_frm, textvariable=self._var_viz_titulo,
                  width=22, font=("Segoe UI", 9),
-                 relief="solid", bd=1, bg="#0D1B2A", fg=_TEXTO_ENTRY if "_TEXTO_ENTRY" in dir() else "#CDD6F4"
+                 relief="solid", bd=1, bg="#0D1B2A", fg="#CDD6F4"
                  ).grid(row=0, column=5, padx=(0, 8))
 
         self._btn_viz_gen = ttk.Button(sel_frm, text="▶  Generar",
@@ -16008,8 +16109,8 @@ class BashkarApp(tk.Tk):
             self.after(0, lambda: self._viz_mostrar(fig))
             self.after(0, lambda: self._lbl_viz_ok.config(text="✅ Gráfico generado"))
         except Exception as e:
-            self.after(0, lambda: self._lbl_viz_ok.config(
-                text=f"⚠ Error: {e}"))
+            self.after(0, lambda err=str(e): self._lbl_viz_ok.config(
+                text=f"⚠ Error: {err}"))
         finally:
             self.after(0, lambda: self._btn_viz_gen.config(state="normal"))
 
@@ -16213,8 +16314,9 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_nube, args=(textos,), daemon=True).start()
 
     def _worker_nube(self, textos):
-        from core.viz_engine import nube_palabras
         from pathlib import Path as _PPath
+
+        from core.viz_engine import nube_palabras
         self.after(0, lambda: self._lbl_nube_ok.config(text="Generando nube…"))
         try:
             ruta = _PPath.home() / "Documents" / "BashkarStation" / "viz" / "nube_palabras.png"
@@ -16263,9 +16365,11 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_heatmap, args=(terminos,), daemon=True).start()
 
     def _worker_heatmap(self, terminos):
-        import pandas as pd
-        from core.viz_engine import heatmap_temporal
         from pathlib import Path as _PPath
+
+        import pandas as pd
+
+        from core.viz_engine import heatmap_temporal
         self.after(0, lambda: self._lbl_heat_ok.config(text="Generando heatmap…"))
         try:
             textos = ST.corpus_txt or []
@@ -16296,8 +16400,9 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_mapa, daemon=True).start()
 
     def _worker_mapa(self):
-        from core.viz_engine import mapa_lugares
         from pathlib import Path as _PPath
+
+        from core.viz_engine import mapa_lugares
         self.after(0, lambda: self._lbl_mapa_ok.config(text="Generando mapa…"))
         try:
             ruta = _PPath.home() / "Documents" / "BashkarStation" / "viz" / "mapa_lugares.html"
@@ -16328,8 +16433,9 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_timeline, daemon=True).start()
 
     def _worker_timeline(self):
-        from core.timeline_engine import generar_timeline_html
         from pathlib import Path as _PPath
+
+        from core.timeline_engine import generar_timeline_html
         self.after(0, lambda: self._lbl_tl_ok.config(text="Generando timeline editorial…"))
         try:
             # Construir lista de artículos desde corpus_meta o df_articulos
@@ -16468,6 +16574,8 @@ class BashkarApp(tk.Tk):
 
     def _worker_narrativas(self):
         from core.storytelling_engine import generar_narrativa
+        # Bug F821: api_key no estaba definida — NameError al generar narrativas.
+        api_key = ST.api_keys.get("anthropic", "") or ST.api_key
         narrativas = {}
 
         # Narrativa corpus
@@ -16501,8 +16609,9 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_rep_html, daemon=True).start()
 
     def _worker_rep_html(self):
-        from core.storytelling_engine import generar_reporte_html
         from pathlib import Path as _PPath
+
+        from core.storytelling_engine import generar_reporte_html
         try:
             nombre = getattr(ST, "proyecto_nombre", "Corpus Estampa")
             ruta = _PPath.home() / "Documents" / "BashkarStation" / "reporte" / "reporte_bashkar.html"
@@ -16542,8 +16651,9 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_rep_word, args=(dest,), daemon=True).start()
 
     def _worker_rep_word(self, dest):
-        from core.storytelling_engine import exportar_word
         from pathlib import Path as _PPath
+
+        from core.storytelling_engine import exportar_word
         try:
             nombre = getattr(ST, "proyecto_nombre", "Corpus Estampa")
             exportar_word(
@@ -16846,7 +16956,7 @@ class BashkarApp(tk.Tk):
 
     def _worker_top(self, textos, n, usar_llm, usar_bertopic,
                     min_df=2, max_df=0.95, n_words=10):
-        from core.topic_engine import modelar_topicos, estadisticas_topicos
+        from core.topic_engine import estadisticas_topicos, modelar_topicos
         def cb(m):
             self.after(0, lambda msg=m: self._lbl_top_ok.config(text=str(msg)[:80]))
         try:
@@ -16894,8 +17004,9 @@ class BashkarApp(tk.Tk):
             title="Exportar tópicos")
         if not dest:
             return
-        from core.topic_engine import exportar_topicos_csv
         from pathlib import Path as _PPath
+
+        from core.topic_engine import exportar_topicos_csv
         n = exportar_topicos_csv(self._top_resultado, _PPath(dest))
         messagebox.showinfo("Exportado", f"✅ {n} entradas exportadas a:\n{dest}")
 
@@ -17001,8 +17112,9 @@ class BashkarApp(tk.Tk):
                 ner_art[cat] = [e for e, arts in ents.items() if art_id in arts]
             articulos.append({"id": art_id, "texto": t or "", "ner": ner_art})
         try:
-            from core.tei_engine import exportar_corpus_tei
             from pathlib import Path as _PPath
+
+            from core.tei_engine import exportar_corpus_tei
             proyecto = getattr(ST, "proyecto_nombre", "Corpus Estampa")
             exportar_corpus_tei(articulos, _PPath(dest),
                                 proyecto_nombre=proyecto)
@@ -17025,8 +17137,9 @@ class BashkarApp(tk.Tk):
 
     def _res_exportar_pptx_worker(self, dest):
         try:
-            from exportadores.exportar_pptx import exportar_presentacion
             from pathlib import Path
+
+            from exportadores.exportar_pptx import exportar_presentacion
             datos = {
                 "articulos": {},
                 "indice_ner_global": ST.indice_ner_global,
@@ -17071,8 +17184,9 @@ class BashkarApp(tk.Tk):
             return
         articulos = [{"id": f"art_{i:04d}", "texto": t} for i, t in enumerate(corpus_txt)]
         try:
-            from core.tei_engine import exportar_bibtex
             from pathlib import Path as _PPath
+
+            from core.tei_engine import exportar_bibtex
             exportar_bibtex(articulos, _PPath(dest))
             messagebox.showinfo("Exportado", f"✅ BibTeX exportado:\n{dest}")
         except Exception as e:
@@ -17196,7 +17310,10 @@ class BashkarApp(tk.Tk):
             args=(dest,), daemon=True).start()
 
     def _worker_paquete_publicacion(self, dest_zip: str):
-        import zipfile, json as _json, tempfile, shutil
+        import json as _json
+        import shutil
+        import tempfile
+        import zipfile
         from pathlib import Path as _PPath
 
         tmp = _PPath(tempfile.mkdtemp(prefix="bashkar_pub_"))
@@ -17430,7 +17547,7 @@ class BashkarApp(tk.Tk):
 
     def _build_comp2(self):
         import tkinter as tk
-        from tkinter import ttk, filedialog
+        from tkinter import ttk
         self._tab_comp2.columnconfigure(0, weight=1)
         self._tab_comp2.rowconfigure(2, weight=1)
         ttk.Label(self._tab_comp2, text="Comparación multi-proyecto", style="H.TLabel").grid(
@@ -17498,8 +17615,12 @@ class BashkarApp(tk.Tk):
         def _log(msg):
             self.after(0, lambda m=msg: self._comp2_log_insert(m))
         try:
-            from core.comparador import generar_reporte_comparativo, exportar_reporte_html
             from pathlib import Path
+
+            from core.comparador import (
+                exportar_reporte_html,
+                generar_reporte_comparativo,
+            )
             nombres = [Path(r).stem for r in ST.comparar_rutas]
             _log("Generando reporte comparativo...")
             rep = generar_reporte_comparativo(ST.comparar_rutas, nombres, callback=_log)
@@ -17518,7 +17639,8 @@ class BashkarApp(tk.Tk):
         self._comp2_log.config(state="disabled")
 
     def _comp2_ver_html(self):
-        import os, webbrowser
+        import os
+        import webbrowser
         ruta = getattr(self, "_comp2_html_path", None)
         if ruta and os.path.exists(ruta):
             webbrowser.open(f"file:///{ruta.replace(chr(92), '/')}")
@@ -17585,8 +17707,12 @@ class BashkarApp(tk.Tk):
         def _log(msg):
             self.after(0, lambda m=msg: self._intxt_log_insert(m))
         try:
-            from core.intertextual_engine import analizar_intertextualidad, exportar_grafo_intertextual
             from pathlib import Path
+
+            from core.intertextual_engine import (
+                analizar_intertextualidad,
+                exportar_grafo_intertextual,
+            )
             articulos = {}
             if ST.df_articulos is not None:
                 for _, row in ST.df_articulos.iterrows():
@@ -17624,7 +17750,8 @@ class BashkarApp(tk.Tk):
         self._intxt_log.config(state="disabled")
 
     def _intxt_ver_grafo(self):
-        import os, webbrowser
+        import os
+        import webbrowser
         ruta = getattr(self, "_intxt_grafo_path", None)
         if ruta and os.path.exists(ruta):
             webbrowser.open(f"file:///{ruta.replace(chr(92), '/')}")
@@ -17687,7 +17814,7 @@ class BashkarApp(tk.Tk):
     def _valid_calcular(self):
         from core.confianza_engine import nivel_confianza, score_ner_entidad
         try:
-            from conocimiento.base_conocimiento import inicializar_db, buscar_entidad
+            from conocimiento.base_conocimiento import buscar_entidad, inicializar_db
             inicializar_db()
             _kb = True
         except Exception:
@@ -17808,8 +17935,8 @@ class BashkarApp(tk.Tk):
         if not items:
             messagebox.showwarning("Sin datos", "Calcula la confianza primero.")
             return
-        from tkinter import filedialog
         import csv
+        from tkinter import filedialog
         dest = filedialog.asksaveasfilename(
             defaultextension=".csv", filetypes=[("CSV", "*.csv")],
             initialfile="entidades_validadas.csv",
@@ -17886,8 +18013,9 @@ class BashkarApp(tk.Tk):
         def _log(msg): self.after(0, lambda m=msg: self._colab_log_insert(m))
         try:
             import json
-            from core.colaboracion import crear_parche, exportar_parche
             from pathlib import Path
+
+            from core.colaboracion import crear_parche, exportar_parche
             actual = json.loads(Path(self._proyecto_ruta).read_text(encoding="utf-8"))
             # Construir estado actual con NER actualizado
             actual_mod = dict(actual)
@@ -17914,21 +18042,22 @@ class BashkarApp(tk.Tk):
     def _colab_importar_worker(self, ruta):
         def _log(msg): self.after(0, lambda m=msg: self._colab_log_insert(m))
         try:
-            from core.colaboracion import cargar_parche, aplicar_parche
-            from pathlib import Path
             import json
+            from pathlib import Path
+
+            from core.colaboracion import aplicar_parche, cargar_parche
             parche = cargar_parche(Path(ruta))
             investigador = parche.get("_investigador", "?")
             fecha        = parche.get("_fecha", "")[:16]
             notas        = parche.get("_notas", "")
             n_cambios    = len([k for k in parche if not k.startswith("_")])
 
-            _log(f"─── Parche recibido ───────────────────────────────────")
+            _log("─── Parche recibido ───────────────────────────────────")
             _log(f"  De:     {investigador}")
             _log(f"  Fecha:  {fecha}")
             _log(f"  Notas:  {notas}")
             _log(f"  Secciones modificadas: {n_cambios}")
-            _log(f"───────────────────────────────────────────────────────")
+            _log("───────────────────────────────────────────────────────")
 
             # Vista previa de claves modificadas
             for k in list(parche.keys())[:10]:
@@ -17971,7 +18100,7 @@ class BashkarApp(tk.Tk):
                     Path(self._proyecto_ruta).write_text(
                         json.dumps(actualizado, indent=2, ensure_ascii=False),
                         encoding="utf-8")
-                    _log(f"✅ Parche aplicado y proyecto guardado.")
+                    _log("✅ Parche aplicado y proyecto guardado.")
                 except Exception as ex:
                     _log(f"❌ Error al aplicar: {ex}")
 
@@ -17987,6 +18116,7 @@ class BashkarApp(tk.Tk):
             return
         import json
         from pathlib import Path
+
         from core.colaboracion import reporte_trazabilidad
         data = json.loads(Path(self._proyecto_ruta).read_text(encoding="utf-8"))
         rep = reporte_trazabilidad(data)
@@ -17998,8 +18128,10 @@ class BashkarApp(tk.Tk):
     def _colab_html_trazabilidad(self):
         if not self._proyecto_ruta:
             return
-        import json, webbrowser
+        import json
+        import webbrowser
         from pathlib import Path
+
         from core.colaboracion import exportar_trazabilidad_html
         data = json.loads(Path(self._proyecto_ruta).read_text(encoding="utf-8"))
         out = Path.home() / "Documents" / "BashkarStation" / "trazabilidad.html"
@@ -18642,7 +18774,7 @@ class BashkarApp(tk.Tk):
         try:
             from core.sintaxis_engine import concordancias_sintaticas
         except ImportError as e:
-            self.after(0, lambda: messagebox.showerror("Import error", str(e)))
+            self.after(0, lambda err=str(e): messagebox.showerror("Import error", err))
             self.after(0, lambda: self._btn_ling_sint.config(state="normal"))
             return
 
@@ -18655,7 +18787,7 @@ class BashkarApp(tk.Tk):
             self._ling_sint_resultados = res
             self.after(0, lambda: self._poblar_tv_sint(res))
         except Exception as ex:
-            self.after(0, lambda: messagebox.showerror("Error sintaxis", str(ex)))
+            self.after(0, lambda err=str(ex): messagebox.showerror("Error sintaxis", err))
         finally:
             self.after(0, lambda: self._btn_ling_sint.config(state="normal"))
 
@@ -18715,7 +18847,7 @@ class BashkarApp(tk.Tk):
         try:
             from core.sintaxis_engine import extraer_relaciones
         except ImportError as e:
-            self.after(0, lambda: messagebox.showerror("Import error", str(e)))
+            self.after(0, lambda err=str(e): messagebox.showerror("Import error", err))
             self.after(0, lambda: self._btn_ling_svo.config(state="normal"))
             self.after(0, lambda: self._btn_ling_sint.config(state="normal"))
             return
@@ -18729,7 +18861,7 @@ class BashkarApp(tk.Tk):
             self._ling_svo_resultados = res
             self.after(0, lambda: self._poblar_tv_svo(res))
         except Exception as ex:
-            self.after(0, lambda: messagebox.showerror("Error relaciones", str(ex)))
+            self.after(0, lambda err=str(ex): messagebox.showerror("Error relaciones", err))
         finally:
             self.after(0, lambda: self._btn_ling_svo.config(state="normal"))
             self.after(0, lambda: self._btn_ling_sint.config(state="normal"))
@@ -18756,8 +18888,9 @@ class BashkarApp(tk.Tk):
         if not self._ling_svo_resultados:
             messagebox.showinfo("Sin datos", "Ejecuta la extracción primero.")
             return
-        from core.sintaxis_engine import exportar_relaciones_csv
         from tkinter import filedialog
+
+        from core.sintaxis_engine import exportar_relaciones_csv
         ruta = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv")],
@@ -18803,9 +18936,9 @@ class BashkarApp(tk.Tk):
 
     def _worker_ling_coref(self, corpus, entidad_filtro):
         try:
-            from core.coref_engine import resolver_correferencias, cadena_referencial
+            from core.coref_engine import cadena_referencial, resolver_correferencias
         except ImportError as e:
-            self.after(0, lambda: messagebox.showerror("Import error", str(e)))
+            self.after(0, lambda err=str(e): messagebox.showerror("Import error", err))
             self.after(0, lambda: self._btn_ling_coref.config(state="normal"))
             return
 
@@ -18833,7 +18966,7 @@ class BashkarApp(tk.Tk):
             self._ling_coref_cadenas = filtradas
             self.after(0, lambda: self._poblar_coref(filtradas))
         except Exception as ex:
-            self.after(0, lambda: messagebox.showerror("Error coref", str(ex)))
+            self.after(0, lambda err=str(ex): messagebox.showerror("Error coref", err))
         finally:
             self.after(0, lambda: self._btn_ling_coref.config(state="normal"))
 
@@ -18889,7 +19022,7 @@ class BashkarApp(tk.Tk):
                 msg += f"  {e['entidad']}: {e['n_menciones']} menciones\n"
             self.after(0, lambda: messagebox.showinfo("Estadísticas de correferencia", msg))
         except Exception as ex:
-            self.after(0, lambda: messagebox.showerror("Error", str(ex)))
+            self.after(0, lambda err=str(ex): messagebox.showerror("Error", err))
         finally:
             self.after(0, lambda: self._btn_ling_coref.config(state="normal"))
 
@@ -18911,9 +19044,11 @@ class BashkarApp(tk.Tk):
     def _worker_ling_morf(self, corpus, normalizar: bool = True):
         try:
             from core.morfologia_historica import (
-                enriquecer_corpus_con_lemas, normalizar_formas_historicas)
+                enriquecer_corpus_con_lemas,
+                normalizar_formas_historicas,
+            )
         except ImportError as e:
-            self.after(0, lambda: messagebox.showerror("Import error", str(e)))
+            self.after(0, lambda err=str(e): messagebox.showerror("Import error", err))
             self.after(0, lambda: self._btn_ling_morf.config(state="normal"))
             return
 
@@ -18927,7 +19062,7 @@ class BashkarApp(tk.Tk):
             self._ling_morf_datos = datos
             self.after(0, lambda: self._poblar_tv_morf(datos))
         except Exception as ex:
-            self.after(0, lambda: messagebox.showerror("Error morfología", str(ex)))
+            self.after(0, lambda err=str(ex): messagebox.showerror("Error morfología", err))
         finally:
             self.after(0, lambda: self._btn_ling_morf.config(state="normal"))
 
@@ -19033,7 +19168,8 @@ class BashkarApp(tk.Tk):
         pie = tk.Frame(content, bg=CONTENT_BG); pie.pack(side="bottom", fill="x", padx=6, pady=(4, 6))
 
         def _exportar_glosario():
-            import csv, pathlib
+            import csv
+            import pathlib
             out = pathlib.Path(ST.datos_dir) / "glosario_arcaismos.csv" if ST.datos_dir else None
             if out is None:
                 from tkinter import filedialog
@@ -19111,7 +19247,7 @@ class BashkarApp(tk.Tk):
         try:
             from core.sintaxis_engine import analizar_dependencias, resumir_arbol_dep
         except ImportError as e:
-            self.after(0, lambda: messagebox.showerror("Import error", str(e)))
+            self.after(0, lambda err=str(e): messagebox.showerror("Import error", err))
             self.after(0, lambda: self._btn_ling_dep.config(state="normal"))
             return
         try:
@@ -19119,7 +19255,7 @@ class BashkarApp(tk.Tk):
             self._ling_dep_datos = datos
             self.after(0, lambda: self._poblar_dep(datos))
         except Exception as ex:
-            self.after(0, lambda: messagebox.showerror("Error árbol dep.", str(ex)))
+            self.after(0, lambda err=str(ex): messagebox.showerror("Error árbol dep.", err))
         finally:
             self.after(0, lambda: self._btn_ling_dep.config(state="normal"))
 
@@ -19194,7 +19330,7 @@ class BashkarApp(tk.Tk):
         try:
             from core.sentiment_engine import analisis_completo_emocion
         except ImportError as e:
-            self.after(0, lambda: messagebox.showerror("Import error", str(e)))
+            self.after(0, lambda err=str(e): messagebox.showerror("Import error", err))
             self.after(0, lambda: self._btn_ling_emo.config(state="normal"))
             return
 
@@ -19211,7 +19347,7 @@ class BashkarApp(tk.Tk):
             self._ling_emo_datos = resultados
             self.after(0, lambda: self._poblar_tv_emo(resultados))
         except Exception as ex:
-            self.after(0, lambda: messagebox.showerror("Error emociones", str(ex)))
+            self.after(0, lambda err=str(ex): messagebox.showerror("Error emociones", err))
         finally:
             self.after(0, lambda: self._btn_ling_emo.config(state="normal"))
 
@@ -19350,7 +19486,7 @@ class BashkarApp(tk.Tk):
         try:
             from core import frame_engine
         except ImportError as e:
-            self.after(0, lambda: messagebox.showerror("Import error", str(e)))
+            self.after(0, lambda err=str(e): messagebox.showerror("Import error", err))
             self.after(0, lambda: self._btn_ling_frame.config(state="normal"))
             return
         try:
@@ -19363,7 +19499,7 @@ class BashkarApp(tk.Tk):
             self._ling_frame_datos = datos
             self.after(0, lambda: self._poblar_tv_frame(resumen, datos))
         except Exception as ex:
-            self.after(0, lambda: messagebox.showerror("Error encuadre", str(ex)))
+            self.after(0, lambda err=str(ex): messagebox.showerror("Error encuadre", err))
         finally:
             self.after(0, lambda: self._btn_ling_frame.config(state="normal"))
 
@@ -19451,7 +19587,7 @@ class BashkarApp(tk.Tk):
         try:
             from core import sentimiento_discriminante as sd
         except ImportError as e:
-            self.after(0, lambda: messagebox.showerror("Import error", str(e)))
+            self.after(0, lambda err=str(e): messagebox.showerror("Import error", err))
             self.after(0, lambda: self._btn_ling_pol.config(state="normal"))
             return
         try:
@@ -19463,7 +19599,7 @@ class BashkarApp(tk.Tk):
             self._ling_pol_datos = datos
             self.after(0, lambda: self._poblar_tv_pol(datos))
         except Exception as ex:
-            self.after(0, lambda: messagebox.showerror("Error polaridad", str(ex)))
+            self.after(0, lambda err=str(ex): messagebox.showerror("Error polaridad", err))
         finally:
             self.after(0, lambda: self._btn_ling_pol.config(state="normal"))
 
@@ -19743,6 +19879,7 @@ class BashkarApp(tk.Tk):
 
 
 import re as re
+
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════════════════════════════

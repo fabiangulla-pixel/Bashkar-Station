@@ -6,21 +6,17 @@ Cubre: normalizar_texto_ocr, _unir_palabras_partidas, reconstruir_lineas_rotas,
 """
 
 import sys
-import tempfile
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.ocr_normalizer import (
+    _limpiar_espaciado,
+    _unir_palabras_partidas,
+    normalizar_archivo,
     normalizar_texto_ocr,
     reconstruir_lineas_rotas,
-    normalizar_archivo,
-    _unir_palabras_partidas,
-    _limpiar_espaciado,
 )
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # normalizar_texto_ocr — casos básicos

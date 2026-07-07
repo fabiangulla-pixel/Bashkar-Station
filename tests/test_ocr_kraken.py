@@ -7,17 +7,17 @@ Los tests que requieren Kraken instalado se saltan automáticamente.
 
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.ocr_kraken import (
-    kraken_disponible,
-    ocr_kraken_lote,
     descargar_modelo_catmus,
+    kraken_disponible,
     ocr_kraken,
+    ocr_kraken_lote,
 )
 
 _KRAKEN_INSTALADO = pytest.mark.skipif(

@@ -17,7 +17,6 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-
 # Colores por sección editorial (inspirado en paleta de prensa histórica)
 _COLOR_SECCION = {
     "portada":        "#E74C3C",

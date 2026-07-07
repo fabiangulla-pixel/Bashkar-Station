@@ -1,6 +1,4 @@
 """tests/test_repositorio.py — Tests del Repositorio SQLite."""
-import pytest
-import json
 
 
 class TestArticulos:

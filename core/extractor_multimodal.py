@@ -33,7 +33,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 from core import ocr_llm
 
@@ -100,8 +100,8 @@ class ResultadoPagina:
     ok: bool
     datos: dict = field(default_factory=dict)
     error: str = ""
-    ruta_json: Optional[str] = None
-    ruta_md: Optional[str] = None
+    ruta_json: str | None = None
+    ruta_md: str | None = None
 
 
 class JSONInvalidoError(ValueError):
@@ -201,7 +201,7 @@ def extraer_pagina(
     img_path,
     api_key: str,
     proveedor: str = "gemini",
-    modelo: Optional[str] = None,
+    modelo: str | None = None,
     prompt: str = PROMPT_MAESTRO,
 ) -> dict:
     """Extrae el JSON estructurado de UNA imagen de página.
@@ -398,7 +398,7 @@ def json_a_publicidad(datos: dict) -> list[dict]:
 # ── Estimación de costo del lote (estándar de costo-IA) ──────────────────────
 
 def estimar_costo_directorio(carpeta, proveedor: str = "gemini",
-                             modelo: Optional[str] = None):
+                             modelo: str | None = None):
     """Cuenta imágenes y estima tokens/USD ANTES de procesar (estándar costo-IA).
 
     Toda página va por VISIÓN (n_vision = n_paginas). El prompt maestro es largo
@@ -434,10 +434,10 @@ def procesar_directorio(
     api_key: str,
     out_dir,
     proveedor: str = "gemini",
-    modelo: Optional[str] = None,
+    modelo: str | None = None,
     guardar_json: bool = True,
     guardar_md: bool = True,
-    callback: Optional[Callable[[int, int, ResultadoPagina], None]] = None,
+    callback: Callable[[int, int, ResultadoPagina], None] | None = None,
 ) -> list[ResultadoPagina]:
     """Procesa todas las imágenes de `carpeta` → JSON + .md en `out_dir`.
 

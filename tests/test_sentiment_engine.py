@@ -1,25 +1,22 @@
 """tests/test_sentiment_engine.py — Tests para core/sentiment_engine.py"""
 
+import json
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-import json
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.sentiment_engine import (
-    TONOS,
     COLORES_TONO,
-    analizar_tono,
+    TONOS,
     analizar_corpus_tono,
+    analizar_tono,
+    comparar_numeros_tono,
+    cruce_seccion_tono,
     estadisticas_tono,
     evolucion_temporal,
-    cruce_seccion_tono,
-    comparar_numeros_tono,
     tendencia_tono,
-    resumen_narrativo,
 )
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────

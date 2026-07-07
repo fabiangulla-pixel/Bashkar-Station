@@ -9,9 +9,10 @@ Estrategias:
 Devuelve un diccionario normalizado con los metadatos encontrados.
 """
 
-import re, json, urllib.request, urllib.parse
-from typing import Optional
-
+import json
+import re
+import urllib.parse
+import urllib.request
 
 # ── User-agent estándar ───────────────────────────────────────────────────────
 _UA = ("Mozilla/5.0 (compatible; BashkarStation/1.0; "
@@ -47,7 +48,7 @@ def _limpiar(texto: str) -> str:
     return re.sub(r'\s+', ' ', texto).strip()
 
 
-def _fetch_html(url: str, timeout: int = 20) -> Optional[str]:
+def _fetch_html(url: str, timeout: int = 20) -> str | None:
     """Descarga el HTML de una URL. Devuelve None si falla."""
     req = urllib.request.Request(url, headers={"User-Agent": _UA,
                                                 "Accept-Language": "es,en;q=0.9"})
@@ -60,7 +61,7 @@ def _fetch_html(url: str, timeout: int = 20) -> Optional[str]:
             raw = resp.read()
             try: return raw.decode(charset, errors="replace")
             except (LookupError, UnicodeDecodeError): return raw.decode("utf-8", errors="replace")
-    except Exception as e:
+    except Exception:
         return None
 
 

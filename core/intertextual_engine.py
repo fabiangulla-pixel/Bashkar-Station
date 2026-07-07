@@ -10,10 +10,9 @@ Detecta:
 from __future__ import annotations
 
 import re
-from pathlib import Path
-from typing import Callable, Optional
 from collections import defaultdict
-
+from pathlib import Path
+from typing import Callable
 
 # ── Extracción de citas ───────────────────────────────────────────────────────
 
@@ -35,7 +34,7 @@ def extraer_citas(texto: str, min_palabras: int = 5) -> list[str]:
 
 
 def detectar_citas_compartidas(
-    articulos: dict[str, dict], min_citas: int = 2, callback: Optional[Callable] = None
+    articulos: dict[str, dict], min_citas: int = 2, callback: Callable | None = None
 ) -> dict:
     """
     Detecta citas que aparecen en múltiples artículos.
@@ -65,16 +64,16 @@ def calcular_similitud_corpus(
     articulos: dict[str, dict],
     umbral: float = 0.25,
     max_pares: int = 50,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
 ) -> list[dict]:
     """
     Calcula similitud coseno TF-IDF entre todos los pares de artículos.
     Retorna lista de pares con similitud > umbral, ordenada desc.
     """
     try:
+        import numpy as np
         from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.metrics.pairwise import cosine_similarity
-        import numpy as np
     except ImportError:
         raise ImportError("Instala scikit-learn: pip install scikit-learn")
 
@@ -180,7 +179,7 @@ Responde SOLO con JSON:
         m = re.search(r"\{.*\}", texto, re.DOTALL)
         if m:
             return json.loads(m.group())
-    except Exception as e:
+    except Exception:
         pass
 
     return {
@@ -200,7 +199,7 @@ def analizar_intertextualidad(
     umbral_similitud: float = 0.3,
     usar_llm: bool = True,
     max_pares_llm: int = 10,
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
 ) -> dict:
     """
     Pipeline completo de detección intertextual.

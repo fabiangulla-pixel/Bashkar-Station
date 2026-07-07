@@ -20,7 +20,12 @@ Herencia v1.1:
   · Verificación final con versiones detectadas
 """
 
-import sys, os, platform, subprocess, shutil, urllib.request
+import os
+import platform
+import shutil
+import subprocess
+import sys
+import urllib.request
 from pathlib import Path
 
 APP_DIR = Path(__file__).parent
@@ -127,7 +132,8 @@ def instalar_python():
     # Verificar que numpy+opencv son compatibles
     print("\n  Verificando compatibilidad final NumPy + OpenCV…")
     try:
-        import numpy as _np; import cv2 as _cv
+        import cv2 as _cv
+        import numpy as _np
         print(f"  ✅ numpy {_np.__version__} + opencv {_cv.__version__} — OK")
     except Exception as e:
         print(f"  ⚠️  Problema de compatibilidad: {e}")
@@ -214,7 +220,7 @@ def instalar_tesseract_windows():
     # Método A: winget
     if _intentar_winget():
         tess = _buscar_tesseract()
-    
+
     # Método B: descarga directa del .exe
     if not tess:
         if _descargar_tess_exe():
@@ -256,7 +262,7 @@ def _descargar_tess_exe():
     tmp = Path(os.environ.get("TEMP", "C:\\Temp"))
     tmp.mkdir(parents=True, exist_ok=True)
     exe = tmp / "tesseract_setup.exe"
-    print(f"  → Descargando instalador Tesseract (~50 MB)…")
+    print("  → Descargando instalador Tesseract (~50 MB)…")
     print(f"    {_TESS_EXE_URL}")
     try:
         def _prog(c, b, t):
@@ -292,10 +298,10 @@ def _asegurar_spa(tess_exe: Path):
     try:
         tessdata.mkdir(parents=True, exist_ok=True)
         urllib.request.urlretrieve(url, dest)
-        print(f"  ✅ spa.traineddata instalado.")
+        print("  ✅ spa.traineddata instalado.")
     except Exception as e:
         print(f"  ⚠️  No se pudo descargar spa.traineddata: {e}")
-        print(f"     Descarga manualmente: https://github.com/tesseract-ocr/tessdata_best")
+        print("     Descarga manualmente: https://github.com/tesseract-ocr/tessdata_best")
         print(f"     Coloca el archivo en: {tessdata}")
 
 def _instrucciones_manuales_tesseract():
@@ -352,7 +358,7 @@ def instalar_poppler_windows():
     dest.mkdir(parents=True, exist_ok=True)
     zpath = dest / "poppler.zip"
 
-    print(f"  → Descargando Poppler (~20 MB)…")
+    print("  → Descargando Poppler (~20 MB)…")
     try:
         def _prog(c, b, t):
             print(f"\r    {min(int(c*b*100/max(t,1)),100):3d}%…", end="", flush=True)
@@ -361,7 +367,7 @@ def instalar_poppler_windows():
     except Exception as e:
         print(f"\n  ⚠️  Descarga fallida: {e}")
         print("     Descarga manualmente: https://github.com/oschwartz10612/poppler-windows/releases")
-        print(f"    Descomprime y escribe la ruta de 'bin\\' en poppler_path.txt")
+        print("    Descomprime y escribe la ruta de 'bin\\' en poppler_path.txt")
         print()
         return
 

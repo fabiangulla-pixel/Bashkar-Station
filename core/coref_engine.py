@@ -16,8 +16,7 @@ from __future__ import annotations
 
 import re
 from collections import defaultdict
-from typing import Callable, Optional
-
+from typing import Callable
 
 # ── Pronombres y expresiones referenciales del español (incluyendo formas históricas) ──
 
@@ -249,7 +248,7 @@ def sustituir_referencias(
 def estadisticas_coref(
     corpus: list[str],
     nlp=None,
-    callback: Optional[Callable[[int, int], None]] = None,
+    callback: Callable[[int, int], None] | None = None,
 ) -> dict:
     """
     Calcula estadísticas de correferencia sobre el corpus.

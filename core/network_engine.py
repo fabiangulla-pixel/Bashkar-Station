@@ -8,10 +8,8 @@ Construye grafos networkx a partir del índice NER global. Exporta:
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
-from typing import Callable, Optional
-
+from typing import Callable
 
 # ── Categorías disponibles ──────────────────────────────────────────────────
 CATEGORIAS_DISPONIBLES = (
@@ -33,10 +31,10 @@ _COLOR_CAT = {
 
 def construir_grafo(
     indice_global: dict,
-    categorias: Optional[list] = None,
+    categorias: list | None = None,
     peso_minimo: int = 2,
     max_nodos: int = 300,
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
 ):
     """
     Construye grafo de co-ocurrencia a partir del índice NER global.
@@ -166,8 +164,8 @@ def metricas_red(G) -> dict:
     # Modularidad si hay comunidades
     try:
         if metricas.get("comunidades_louvain"):
-            from networkx.algorithms.community import modularity
             import community as cl
+            from networkx.algorithms.community import modularity
             partition = cl.best_partition(G)
             comunidades_nx = {}
             for node, com in partition.items():
@@ -287,6 +285,7 @@ def evolucion_temporal(
 def exportar_metricas_csv(G, metricas_av: dict, ruta: Path) -> Path:
     """Exporta métricas de nodo (grado, betweenness, pagerank, closeness, comunidad) a CSV."""
     import csv
+
     import networkx as nx
 
     ruta = Path(ruta)

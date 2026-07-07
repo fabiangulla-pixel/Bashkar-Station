@@ -5,9 +5,6 @@ export RDF opcional con degradación con gracia (Fase 4). Todo offline.
 """
 import os
 
-import pytest
-
-
 # ── Fase 2: vocabulario controlado ────────────────────────────────────────────
 
 class TestVocabulario:
@@ -19,8 +16,8 @@ class TestVocabulario:
         assert any(e["categoria"] == "arcaismo" for e in vocab)
 
     def test_incluye_entidades_canonicas(self, repo, tmp_db, articulo_simple):
-        from datos.migracion import aplicar_grafo
         from core import vocabulario_controlado as vc
+        from datos.migracion import aplicar_grafo
         repo.guardar_articulo(articulo_simple)
         repo.guardar_entidades("art_001", [
             {"texto": "Bogotá", "categoria": "lugares", "confianza": 0.9},

@@ -7,7 +7,8 @@ ventana. Guarda PNGs en C:/Users/Lenovo/Desktop/Bashkar_Capturas_Postulacion/.
 
 Uso:  python _capturas_postulacion.py
 """
-import os, sys, time, traceback
+import time
+import traceback
 from pathlib import Path
 
 OUT = Path(r"C:/Users/Lenovo/Desktop/Bashkar_Capturas_Postulacion")
@@ -29,8 +30,9 @@ PANELES = [
 
 
 def main():
-    import app as appmod
     from PIL import ImageGrab
+
+    import app as appmod
 
     a = appmod.BashkarApp()
     a.update_idletasks()

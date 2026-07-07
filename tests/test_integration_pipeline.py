@@ -9,12 +9,9 @@ las nuevas configuraciones (stopwords, lematizar) se guardan y restauran.
 """
 
 import json
-import tempfile
-import shutil
 from pathlib import Path
 
 import pytest
-
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -123,7 +120,7 @@ class TestCargarProyecto:
 
 class TestGuardarProyecto:
     def test_roundtrip_stopwords(self, proyecto_tmp, tmp_path):
-        from core.project_manager import guardar_proyecto, cargar_proyecto
+        from core.project_manager import cargar_proyecto, guardar_proyecto
 
         class FakeST:
             publicacion = "Estampa"
@@ -179,7 +176,7 @@ class TestGuardarProyecto:
         assert st2.norm_version == "crudo"
 
     def test_roundtrip_indice_ner(self, proyecto_tmp, tmp_path):
-        from core.project_manager import guardar_proyecto, cargar_proyecto
+        from core.project_manager import cargar_proyecto, guardar_proyecto
 
         class FakeST:
             publicacion  = "Estampa"
@@ -258,8 +255,9 @@ class TestPipelineNormalizacion:
 
 class TestPipelineSegmentacion:
     def test_segmentar_numero(self, proyecto_tmp):
-        from core.article_segmenter import segmentar_numero
         import inspect
+
+        from core.article_segmenter import segmentar_numero
         sig = inspect.signature(segmentar_numero)
         params = list(sig.parameters.keys())
         # Llamar con la firma correcta (acepta nombre como segundo arg o no)
@@ -272,8 +270,9 @@ class TestPipelineSegmentacion:
         assert isinstance(arts, list)
 
     def test_articulos_tienen_texto(self, proyecto_tmp):
-        from core.article_segmenter import segmentar_numero
         import inspect
+
+        from core.article_segmenter import segmentar_numero
         sig = inspect.signature(segmentar_numero)
         params = list(sig.parameters.keys())
         if len(params) >= 2:
@@ -331,7 +330,7 @@ class TestBitacoraPersistencia:
 class TestCollocatePipeline:
     def test_pipeline_corpus_a_ngramas(self):
         """Flujo completo: corpus → tokenizar → n-gramas."""
-        from core.collocation_engine import ngramas, frecuencias, concordancias
+        from core.collocation_engine import concordancias, frecuencias, ngramas
         corpus = [t for t in CORPUS_SAMPLE]
 
         # N-gramas

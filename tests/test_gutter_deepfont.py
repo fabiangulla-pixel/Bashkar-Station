@@ -2,7 +2,7 @@
 
 import sys
 from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -91,7 +91,7 @@ class TestGutterReconstruccion:
         assert "política" not in texto_original(texto)
 
     def test_estadisticas_estructura(self):
-        from core.gutter_completion import estadisticas, FragmentoCortado
+        from core.gutter_completion import FragmentoCortado, estadisticas
         frags = [
             FragmentoCortado(0, "derecho", "polí-", "", "", "política", 0.8),
             FragmentoCortado(1, "derecho", "co", "", "", "co", 0.0),  # fallido
@@ -233,8 +233,8 @@ class TestTiposZonaExtensibles:
             assert tid in TIPOS_ZONA
 
     def test_agregar_tipo_custom(self, tmp_path, monkeypatch):
-        from core.zone_labeler import agregar_tipo_zona, eliminar_tipo_zona
         import core.zone_labeler as zl
+        from core.zone_labeler import agregar_tipo_zona
         # Redirigir el path global a tmp
         ruta_tmp = tmp_path / "tipos_zona.json"
         monkeypatch.setattr(zl, "_TIPOS_CUSTOM_PATH", ruta_tmp)
@@ -247,8 +247,9 @@ class TestTiposZonaExtensibles:
 
     def test_persistencia_tipos_custom(self, tmp_path, monkeypatch):
         import json
-        from core.zone_labeler import agregar_tipo_zona, _cargar_tipos_custom
+
         import core.zone_labeler as zl
+        from core.zone_labeler import agregar_tipo_zona
         ruta_tmp = tmp_path / "tipos_zona.json"
         monkeypatch.setattr(zl, "_TIPOS_CUSTOM_PATH", ruta_tmp)
 
@@ -259,8 +260,8 @@ class TestTiposZonaExtensibles:
         assert "tipo_prueba" in datos
 
     def test_eliminar_tipo_custom(self, tmp_path, monkeypatch):
-        from core.zone_labeler import agregar_tipo_zona, eliminar_tipo_zona
         import core.zone_labeler as zl
+        from core.zone_labeler import agregar_tipo_zona, eliminar_tipo_zona
         ruta_tmp = tmp_path / "tipos_zona.json"
         monkeypatch.setattr(zl, "_TIPOS_CUSTOM_PATH", ruta_tmp)
 
@@ -270,15 +271,15 @@ class TestTiposZonaExtensibles:
         assert "tipo_borrar" not in zl.TIPOS_ZONA
 
     def test_no_eliminar_tipo_base(self, tmp_path, monkeypatch):
-        from core.zone_labeler import eliminar_tipo_zona
         import core.zone_labeler as zl
+        from core.zone_labeler import eliminar_tipo_zona
         monkeypatch.setattr(zl, "_TIPOS_CUSTOM_PATH", tmp_path / "t.json")
         with pytest.raises(ValueError):
             eliminar_tipo_zona("articulo")
 
     def test_tipo_custom_tiene_flag(self, tmp_path, monkeypatch):
-        from core.zone_labeler import agregar_tipo_zona
         import core.zone_labeler as zl
+        from core.zone_labeler import agregar_tipo_zona
         monkeypatch.setattr(zl, "_TIPOS_CUSTOM_PATH", tmp_path / "t.json")
         agregar_tipo_zona("mi_tipo", "Mi tipo", "#999999")
         assert zl.TIPOS_ZONA["mi_tipo"].get("custom") is True

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests del backend PyTorch de Word2Vec (necesario en Python 3.14, donde gensim
 no compila). Verifican la interfaz común `.wv` y el flujo entrenar→expandir→guardar.
@@ -7,19 +6,16 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.word_vectors import (
     _KeyedVectors,
-    _ModeloVectores,
-    entrenar_word2vec,
     cargar_word2vec,
+    entrenar_word2vec,
     expandir_campo_semantico,
     similaridad_coseno,
 )
-
 
 # Corpus sintético con dos campos semánticos claros (gato/perro vs lluvia/sol),
 # repetido para que skip-gram aprenda las co-ocurrencias.

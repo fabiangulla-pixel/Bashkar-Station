@@ -10,10 +10,10 @@ Ejemplo:
   Estampa_num12_pag005_ilustracion_02.png
 """
 
-import re, gc
+import gc
+import re
 from pathlib import Path
-from typing import Optional, Callable
-
+from typing import Callable
 
 # Tipos de elementos que se consideran "imágenes" (se excluye texto puro)
 TIPOS_IMAGEN = {
@@ -48,10 +48,10 @@ def exportar_imagenes(
     img_dir_raiz: Path,
     destino: Path,
     publicacion: str = "Publicacion",
-    tipos: Optional[set] = None,
+    tipos: set | None = None,
     min_ancho_px: int = 60,
     min_alto_px:  int = 60,
-    callback: Optional[Callable[[int, int, str], None]] = None,
+    callback: Callable[[int, int, str], None] | None = None,
 ) -> dict:
     """
     Recorre datos_imagenes (estructura de visual_analyzer), recorta cada
@@ -158,7 +158,7 @@ def exportar_imagenes(
             del img, recorte
             gc.collect()
 
-        except Exception as e:
+        except Exception:
             stats["errores"] += 1
 
     return stats

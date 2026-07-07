@@ -10,8 +10,6 @@ Replica las funciones de preprocesamiento de ABBYY FineReader:
 Diseñado para prensa colombiana de los años 30 digitalizada por la BNC.
 """
 
-from pathlib import Path
-from typing import Optional
 import math
 
 
@@ -250,10 +248,11 @@ def detectar_angulo_pagina(img) -> float:
         0.0 si no se pudo detectar.
     """
     try:
-        import cv2
-        import numpy as np
         import math
         import statistics
+
+        import cv2
+        import numpy as np
     except ImportError:
         return 0.0
 

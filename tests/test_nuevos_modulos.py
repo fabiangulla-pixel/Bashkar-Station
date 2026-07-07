@@ -9,7 +9,6 @@ Cubre:
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 
 import pytest
 
@@ -22,9 +21,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 class TestArticleSegmenterV2:
     from core.article_segmenter_v2 import (
-        NodoPagina, _extraer_titulo, _extraer_autor, _contar_palabras,
-        _similitud_coseno_simple, construir_grafo_continuidad,
-        _componentes_conexas, comparar_segmentaciones,
+        NodoPagina,
+        _componentes_conexas,
+        _contar_palabras,
+        _extraer_autor,
+        _extraer_titulo,
+        _similitud_coseno_simple,
+        comparar_segmentaciones,
+        construir_grafo_continuidad,
     )
 
     def test_extraer_titulo_primera_linea_mayuscula(self):
@@ -103,7 +107,10 @@ class TestArticleSegmenterV2:
         assert 1 not in grafo
 
     def test_comparar_segmentaciones(self):
-        from core.article_segmenter_v2 import comparar_segmentaciones, ArticuloSegmentado
+        from core.article_segmenter_v2 import (
+            ArticuloSegmentado,
+            comparar_segmentaciones,
+        )
         v1 = [{"titulo": f"art{i}"} for i in range(5)]
         v2 = [
             ArticuloSegmentado([0, 1], "texto", "t", "", "", "n1", 100, 0.9, "explicito"),
@@ -228,7 +235,7 @@ class TestCollocationEngine:
 
 class TestAnnotationEngine:
     def test_insertar_y_consultar(self, tmp_path):
-        from core.annotation_engine import GestorAnotaciones, Anotacion
+        from core.annotation_engine import Anotacion, GestorAnotaciones
         db = str(tmp_path / "test.db")
         g = GestorAnotaciones(db)
         anot = Anotacion("art1", "García", "García", "PER", 10, 16, confianza=0.9)
@@ -239,7 +246,7 @@ class TestAnnotationEngine:
         assert rows[0]["texto_norm"] == "García"
 
     def test_actualizar_con_historial(self, tmp_path):
-        from core.annotation_engine import GestorAnotaciones, Anotacion
+        from core.annotation_engine import Anotacion, GestorAnotaciones
         db = str(tmp_path / "test.db")
         g = GestorAnotaciones(db)
         id_ = g.insertar(Anotacion("art1", "García", "García", "PER"))
@@ -250,7 +257,7 @@ class TestAnnotationEngine:
         assert any(h["campo"] == "estado" for h in hist)
 
     def test_actualizar_estado_invalido(self, tmp_path):
-        from core.annotation_engine import GestorAnotaciones, Anotacion
+        from core.annotation_engine import Anotacion, GestorAnotaciones
         db = str(tmp_path / "test.db")
         g = GestorAnotaciones(db)
         id_ = g.insertar(Anotacion("art1", "x", "x", "PER"))
@@ -258,7 +265,7 @@ class TestAnnotationEngine:
             g.actualizar(id_, {"estado": "estado_invalido"})
 
     def test_insertar_lote(self, tmp_path):
-        from core.annotation_engine import GestorAnotaciones, Anotacion
+        from core.annotation_engine import Anotacion, GestorAnotaciones
         db = str(tmp_path / "test.db")
         g = GestorAnotaciones(db)
         anots = [Anotacion(f"art{i}", f"ent{i}", f"ent{i}", "PER") for i in range(5)]
@@ -266,7 +273,7 @@ class TestAnnotationEngine:
         assert n == 5
 
     def test_pendientes(self, tmp_path):
-        from core.annotation_engine import GestorAnotaciones, Anotacion
+        from core.annotation_engine import Anotacion, GestorAnotaciones
         db = str(tmp_path / "test.db")
         g = GestorAnotaciones(db)
         g.insertar(Anotacion("a1", "x", "x", "PER", estado="auto"))
@@ -276,7 +283,7 @@ class TestAnnotationEngine:
         assert pend[0]["estado"] == "auto"
 
     def test_estadisticas(self, tmp_path):
-        from core.annotation_engine import GestorAnotaciones, Anotacion
+        from core.annotation_engine import Anotacion, GestorAnotaciones
         db = str(tmp_path / "test.db")
         g = GestorAnotaciones(db)
         g.insertar(Anotacion("a1", "x", "x", "PER", estado="auto"))
@@ -287,7 +294,7 @@ class TestAnnotationEngine:
         assert "PER" in stats["por_categoria"]
 
     def test_exportar_json(self, tmp_path):
-        from core.annotation_engine import GestorAnotaciones, Anotacion
+        from core.annotation_engine import Anotacion, GestorAnotaciones
         db = str(tmp_path / "test.db")
         g = GestorAnotaciones(db)
         g.insertar(Anotacion("a1", "García", "García", "PER", estado="confirmada"))
@@ -297,7 +304,7 @@ class TestAnnotationEngine:
         assert dest.exists()
 
     def test_filtrar_por_categoria(self, tmp_path):
-        from core.annotation_engine import GestorAnotaciones, Anotacion
+        from core.annotation_engine import Anotacion, GestorAnotaciones
         db = str(tmp_path / "test.db")
         g = GestorAnotaciones(db)
         g.insertar(Anotacion("a1", "García", "García", "PER"))
@@ -333,8 +340,9 @@ class TestVisualSearch:
         assert len(idx) == 0
 
     def test_indice_visual_agregar(self):
-        from core.visual_search import IndiceVisual
         import numpy as np
+
+        from core.visual_search import IndiceVisual
         idx = IndiceVisual()
         emb = np.random.randn(512).astype("float32")
         emb /= np.linalg.norm(emb)
@@ -342,11 +350,13 @@ class TestVisualSearch:
         assert len(idx) == 1
 
     def test_guardar_cargar(self, tmp_path):
-        from core.visual_search import IndiceVisual
-        import numpy as np
         # FAISS no soporta rutas con caracteres no-ASCII en Windows
         # Usar ruta ASCII explícita en temp
-        import tempfile, os
+        import os
+
+        import numpy as np
+
+        from core.visual_search import IndiceVisual
         ruta_ascii = os.path.join(tempfile.gettempdir(), "bashkar_test_indice")
         idx = IndiceVisual()
         for i in range(3):
@@ -369,8 +379,9 @@ class TestVisualSearch:
         assert isinstance(resultado, bool)
 
     def test_buscar_sin_faiss_retorna_vacio(self):
-        from core.visual_search import IndiceVisual
         import numpy as np
+
+        from core.visual_search import IndiceVisual
         idx = IndiceVisual()
         emb = np.random.randn(512).astype("float32")
         try:
@@ -579,7 +590,7 @@ class TestExplainer:
         assert "No se encontraron" in res
 
     def test_resumir_busqueda_con_resultados(self):
-        from core.explainer import resumir_busqueda, explicar_resultado
+        from core.explainer import explicar_resultado, resumir_busqueda
         resultados = [self._resultado_mock(0.75)]
         exps = [{"explicacion": explicar_resultado("cultura colombia", r)}
                 for r in resultados]
@@ -588,7 +599,7 @@ class TestExplainer:
         assert len(resumen) > 20
 
     def test_resumen_menciona_query(self):
-        from core.explainer import resumir_busqueda, explicar_resultado
+        from core.explainer import explicar_resultado, resumir_busqueda
         resultados = [self._resultado_mock()]
         exps = [{"explicacion": explicar_resultado("cultura", r)} for r in resultados]
         resumen = resumir_busqueda("cultura", exps)

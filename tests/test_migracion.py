@@ -1,6 +1,5 @@
 """tests/test_migracion.py — Tests del migrador .bashkar v10 → v11."""
 import json
-import pytest
 from pathlib import Path
 
 

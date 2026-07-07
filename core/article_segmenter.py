@@ -19,12 +19,10 @@ NUEVA ESTRATEGIA:
 Para PDFs digitales (PyMuPDF) se usa la información tipográfica real.
 """
 
-import re
 import gc
+import re
 import statistics
 from pathlib import Path
-from typing import Optional
-
 
 # ── Watermarks ────────────────────────────────────────────────────────────────
 WATERMARKS = {
@@ -371,7 +369,7 @@ def _limpiar_lineas(texto: str) -> str:
 # SEGMENTACIÓN DE UNA PÁGINA OCR → una unidad de contenido
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _procesar_pagina_ocr(texto_raw: str, pagina_nombre: str) -> Optional[dict]:
+def _procesar_pagina_ocr(texto_raw: str, pagina_nombre: str) -> dict | None:
     """
     Convierte el texto OCR de una página en un dict de artículo/fragmento.
     Retorna None si la página no tiene contenido útil.
@@ -691,7 +689,7 @@ def segmentar_numero_paper_capture(pdf_path: Path) -> list[dict]:
 def segmentar_numero(
     ocr_dir:  Path,
     nombre:   str,
-    pdf_path: Optional[Path] = None,
+    pdf_path: Path | None = None,
 ) -> list[dict]:
     """
     Segmenta un número de revista. Prioridad:

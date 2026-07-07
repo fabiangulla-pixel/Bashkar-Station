@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Parte 2 (a prueba de cuelgues): tiempos fijos, sin esperas indefinidas."""
-import sqlite3, time, traceback
+import sqlite3
+import time
+import traceback
 from pathlib import Path
 
 OUT = Path(r"C:/Users/Lenovo/Desktop/Bashkar_Capturas_Postulacion")
@@ -9,8 +11,10 @@ N_TEXTOS = 25
 
 
 def _capturar_ventana(hwnd, ruta):
-    import win32gui, win32ui
     from ctypes import windll
+
+    import win32gui
+    import win32ui
     from PIL import Image
     r = win32gui.GetClientRect(hwnd)
     w, h = r[2]-r[0], r[3]-r[1]

@@ -21,9 +21,9 @@ Ejemplo de uso:
 """
 
 import json
-import numpy as np
 from pathlib import Path
-from typing import Optional
+
+import numpy as np
 
 
 def faiss_disponible() -> bool:

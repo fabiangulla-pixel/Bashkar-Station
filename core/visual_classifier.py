@@ -13,10 +13,9 @@ para prensa latinoamericana de los años 30.
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Optional, Callable
-import numpy as np
+from typing import Callable
 
+import numpy as np
 
 CATEGORIAS = [
     "fotografía",
@@ -135,7 +134,7 @@ def clasificar_imagen(ruta: str) -> dict:
     Usa CLIP si está disponible, OpenCV como fallback.
     """
     try:
-        from transformers import CLIPProcessor, CLIPModel
+        from transformers import CLIPModel, CLIPProcessor
         modelo = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
         proc   = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
         modelo.eval()
@@ -146,7 +145,7 @@ def clasificar_imagen(ruta: str) -> dict:
 
 def clasificar_lote(
     rutas: list[str],
-    callback: Optional[Callable[[int, int, str], None]] = None,
+    callback: Callable[[int, int, str], None] | None = None,
     usar_clip: bool = True,
 ) -> list[dict]:
     """
@@ -160,7 +159,7 @@ def clasificar_lote(
     modelo_clip = proc_clip = None
     if usar_clip:
         try:
-            from transformers import CLIPProcessor, CLIPModel
+            from transformers import CLIPModel, CLIPProcessor
             modelo_clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
             proc_clip   = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
             modelo_clip.eval()
@@ -208,8 +207,8 @@ def estadisticas_clasificacion(resultados: list[dict]) -> dict:
 
 def clip_disponible() -> bool:
     try:
-        import transformers
         import torch
+        import transformers
         return True
     except ImportError:
         return False

@@ -18,13 +18,11 @@ Plataformas con soporte específico:
   · WorldCat
 """
 
-import re
 import json
-import urllib.request
+import re
 import urllib.parse
-from pathlib import Path
+import urllib.request
 from xml.etree import ElementTree as ET
-from typing import Optional
 
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
       "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -56,7 +54,7 @@ def _text_elem(elem, tag: str, ns: str = "") -> str:
 # 1. OAI-PMH
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _oai_endpoint_from_url(url: str) -> Optional[str]:
+def _oai_endpoint_from_url(url: str) -> str | None:
     """Infiere el endpoint OAI-PMH a partir de la URL del recurso."""
     p = urllib.parse.urlparse(url)
     base = f"{p.scheme}://{p.netloc}"
@@ -661,7 +659,7 @@ def enriquecer_con_busqueda_web(meta: dict, url: str, timeout: int = 12) -> dict
         if meta.get("fuente_metadata","—") == "—":
             meta["fuente_metadata"] = f"Búsqueda web ({fuente_busq})"
         else:
-            meta["fuente_metadata"] += f" + búsqueda web"
+            meta["fuente_metadata"] += " + búsqueda web"
 
     return meta
 

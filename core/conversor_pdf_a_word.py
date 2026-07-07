@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 ================================================================================
  Conversor masivo de PDF (con OCR ya incrustado) a Word + TXT
@@ -45,18 +44,17 @@ Uso como módulo (integración en Bashkar Station, ver el final del archivo):
 
 from __future__ import annotations
 
-import os
-import re
-import sys
-import json
-import time
-import shutil
-import logging
 import argparse
+import json
+import logging
+import re
+import shutil
+import sys
+import time
 import traceback
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from dataclasses import dataclass, field, asdict
-from typing import Callable, Optional
+from typing import Callable
 
 try:
     import fitz  # PyMuPDF
@@ -113,11 +111,11 @@ class ConfiguracionConversor:
     #   carpeta_out_dir / "03_ocr" / <nombre_pdf> /
     # Esto permite abrir el resultado directamente en el módulo Normalizar.
     exportar_para_normalizar: bool = False
-    carpeta_out_dir: Optional[Path] = None   # = ST.out_dir de la app
+    carpeta_out_dir: Path | None = None   # = ST.out_dir de la app
 
     # --- Filtros opcionales (1-indexados, inclusivos) ---
-    paginas_desde: Optional[int] = None
-    paginas_hasta: Optional[int] = None
+    paginas_desde: int | None = None
+    paginas_hasta: int | None = None
 
     # --- Nombres de subcarpetas ---
     subcarpetas: dict = field(default_factory=lambda: {
@@ -187,8 +185,8 @@ class ConversorPDFaWord:
     def __init__(
         self,
         config: ConfiguracionConversor,
-        callback_progreso: Optional[Callable[[dict], None]] = None,
-        logger: Optional[logging.Logger] = None,
+        callback_progreso: Callable[[dict], None] | None = None,
+        logger: logging.Logger | None = None,
     ):
         self.cfg = config
         self.cb = callback_progreso or callback_consola
@@ -258,7 +256,7 @@ class ConversorPDFaWord:
         n_vacias = n_fallo = 0
 
         # Carpeta 03_ocr para integración con módulo Normalizar
-        ocr_dir: Optional[Path] = None
+        ocr_dir: Path | None = None
         if (self.cfg.exportar_para_normalizar
                 and self.cfg.carpeta_out_dir is not None):
             ocr_dir = self.cfg.carpeta_out_dir / "03_ocr" / nombre_base
@@ -412,7 +410,7 @@ def _construir_parser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: Optional[list] = None) -> int:
+def main(argv: list | None = None) -> int:
     a = _construir_parser().parse_args(argv)
     cfg = ConfiguracionConversor(
         carpeta_entrada=a.entrada,

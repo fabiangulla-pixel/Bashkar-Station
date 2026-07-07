@@ -2,10 +2,11 @@
 
 import gc
 import re
-from pathlib import Path
 from itertools import combinations
-import pandas as pd
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 
 SECCIONES = {
     "Editorial":     ["editorial"],
@@ -157,8 +158,8 @@ def construir_red(df_firmas: pd.DataFrame, min_apariciones: int):
 
 def run_lda(lema_docs: list, lema_names: list, n_temas: int):
     """Ejecuta LDA y retorna (df_temas, df_doc_temas)."""
-    from sklearn.feature_extraction.text import CountVectorizer
     from sklearn.decomposition import LatentDirichletAllocation
+    from sklearn.feature_extraction.text import CountVectorizer
 
     vec = CountVectorizer(max_df=0.9, min_df=2, max_features=2000, ngram_range=(1, 2))
     dtm = vec.fit_transform(lema_docs)

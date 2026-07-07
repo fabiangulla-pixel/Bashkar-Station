@@ -1,20 +1,20 @@
 """core/excel_export.py — Construye el Excel con gráficas incrustadas."""
 
-import io
 import gc
+import io
 import tempfile
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-import pandas as pd
-import numpy as np
 import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import seaborn as sns
-import networkx as nx
+import numpy as np
+import pandas as pd
 
+matplotlib.use("Agg")
+import matplotlib.patches as mpatches
+import matplotlib.pyplot as plt
+import networkx as nx
+import seaborn as sns
 
 # ── Paleta rica con 14 colores claramente distintos ───────────────────────────
 AZUL1, AZUL2, AZUL3, AZUL4 = "#1F3864", "#2E5496", "#4472C4", "#9DC3E6"
@@ -194,10 +194,10 @@ def generar_figuras(datos: dict) -> dict:
 def construir_excel(datos: dict, figs: dict, output_path: Path) -> Path:
     """Construye el Excel con 8 hojas y gráficas incrustadas."""
     from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-    from openpyxl.utils import get_column_letter
-    from openpyxl.drawing.image import Image as XLImage
     from openpyxl.chart import BarChart, LineChart, Reference
+    from openpyxl.drawing.image import Image as XLImage
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+    from openpyxl.utils import get_column_letter
 
     HDR  = PatternFill("solid", fgColor="1F3864")
     HDR2 = PatternFill("solid", fgColor="2E5496")
@@ -407,8 +407,8 @@ def construir_excel(datos: dict, figs: dict, output_path: Path) -> Path:
 # ── Nuevas hojas para Bashkar Station ─────────────────────────────────────────
 
 def _agregar_hoja_articulos(wb, df_articulos, figs, HDR, HF, BF, TF, CTR, LFT, BRD, ALT):
-    from openpyxl.utils import get_column_letter
     from openpyxl.styles import PatternFill
+    from openpyxl.utils import get_column_letter
     ws = wb.create_sheet("8_Artículos")
     ws.sheet_view.showGridLines = False
     ws.cell(1,1,"Artículos segmentados · atribución de autoría").font = TF
@@ -509,7 +509,6 @@ def _agregar_hoja_visual(wb, datos_visual, figs, HDR, HF, BF, TF, CTR, LFT, BRD,
 
 
 def _agregar_hoja_comparativo(wb, datos_comp, figs, HDR, HF, BF, TF, CTR, LFT, BRD, ALT):
-    from openpyxl.utils import get_column_letter
     ws = wb.create_sheet("10_Análisis_Comparativo")
     ws.sheet_view.showGridLines = False
     ws.cell(1,1,"Análisis comparativo con otras publicaciones").font = TF
@@ -533,7 +532,7 @@ def _agregar_hoja_comparativo(wb, datos_comp, figs, HDR, HF, BF, TF, CTR, LFT, B
                 cell=ws.cell(row,j,round(float(val),3)); cell.font=BF; cell.alignment=CTR
                 # Color: más azul = más similar
                 intensity = int(val*100)
-                fill_color=f"C6D9F1" if val>0.5 else ("EBF3FB" if val>0.2 else "FFFFFF")
+                fill_color="C6D9F1" if val>0.5 else ("EBF3FB" if val>0.2 else "FFFFFF")
                 cell.fill=PatternFill("solid",fgColor=fill_color)
             row+=1
         row+=2
@@ -576,11 +575,11 @@ def construir_excel_completo(datos: dict, figs: dict, output_path: Path) -> Path
     """
     # Construir las hojas base (0–7)
     construir_excel(datos, figs, output_path)
-    
+
     from openpyxl import load_workbook
-    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
     wb = load_workbook(str(output_path))
-    
+
     HDR = PatternFill("solid", fgColor="1F3864")
     ALT = PatternFill("solid", fgColor="DEEAF1")
     HF  = Font(name="Arial", bold=True, color="FFFFFF", size=10)
@@ -590,18 +589,18 @@ def construir_excel_completo(datos: dict, figs: dict, output_path: Path) -> Path
     LFT = Alignment(horizontal="left",   vertical="center", wrap_text=True)
     TH  = Side(style="thin", color="B8CCE4")
     BRD = Border(left=TH, right=TH, top=TH, bottom=TH)
-    
+
     kwargs = dict(HDR=HDR, HF=HF, BF=BF, TF=TF, CTR=CTR, LFT=LFT, BRD=BRD, ALT=ALT)
-    
+
     if "df_articulos" in datos and datos["df_articulos"] is not None:
         _agregar_hoja_articulos(wb, datos["df_articulos"], figs, **kwargs)
-    
+
     if "datos_visual" in datos and datos["datos_visual"]:
         _agregar_hoja_visual(wb, datos["datos_visual"], figs, **kwargs)
-    
+
     if "datos_comparativo" in datos and datos["datos_comparativo"]:
         _agregar_hoja_comparativo(wb, datos["datos_comparativo"], figs, **kwargs)
-    
+
     wb.save(str(output_path))
     gc.collect()
     return output_path

@@ -23,11 +23,8 @@ Metodología basada en:
 - Newspaper Navigator (Library of Congress): análisis de layout por coordenadas
 """
 
-import re
 import gc
 from pathlib import Path
-from typing import Optional
-
 
 # Fuentes de OCR embebido que se deben ignorar
 _FUENTES_OCR_BASURA = {"hiddenhorzocr", "hiddenvertocr", "hiddenocr"}

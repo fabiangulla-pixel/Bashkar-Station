@@ -4,7 +4,7 @@ import pytest
 
 class TestNEREngine:
     def test_pipeline_retorna_categorias_correctas(self):
-        from core.ner_engine import pipeline_ner, CATEGORIAS
+        from core.ner_engine import CATEGORIAS, pipeline_ner
         resultado = pipeline_ner("texto de prueba", nlp=None, usar_roberta=False)
         assert isinstance(resultado, dict)
         assert set(resultado.keys()) == set(CATEGORIAS)
@@ -23,8 +23,8 @@ class TestNEREngine:
 
     def test_pipeline_con_roberta(self):
         """Si RoBERTa está disponible, detecta entidades reales."""
-        from core.ner_roberta_local import roberta_disponible
         from core.ner_engine import pipeline_ner
+        from core.ner_roberta_local import roberta_disponible
         if not roberta_disponible():
             pytest.skip("RoBERTa no disponible")
         texto = "German Arciniegas visito Bogota y Medellin en Colombia."
@@ -34,7 +34,7 @@ class TestNEREngine:
         assert total > 0, "RoBERTa no encontró entidades en texto con nombres propios"
 
     def test_indice_global_vacio(self):
-        from core.ner_engine import indice_global_vacio, CATEGORIAS
+        from core.ner_engine import CATEGORIAS, indice_global_vacio
         indice = indice_global_vacio()
         assert set(indice.keys()) == set(CATEGORIAS)
         for cat in CATEGORIAS:
@@ -73,8 +73,13 @@ class TestNEREngine:
         assert "art_002" in indice["personas"]["Arciniegas"]
 
     def test_exportar_csv(self, tmp_path):
-        from core.ner_engine import actualizar_indice_global, indice_global_vacio, exportar_csv
         import csv
+
+        from core.ner_engine import (
+            actualizar_indice_global,
+            exportar_csv,
+            indice_global_vacio,
+        )
         indice = indice_global_vacio()
         ner = {"personas": ["Arciniegas", "Lopez"], "lugares": ["Bogota"],
                "organizaciones": [], "fechas": [], "obras_publicaciones": [], "eventos_historicos": []}
@@ -101,7 +106,7 @@ class TestNERRoberta:
         assert MAPA_CATEGORIAS["MISC"] == "otros"
 
     def test_ner_roberta_con_texto_real(self):
-        from core.ner_roberta_local import roberta_disponible, ner_roberta
+        from core.ner_roberta_local import ner_roberta, roberta_disponible
         if not roberta_disponible():
             pytest.skip("RoBERTa no disponible")
         texto = "German Arciniegas nacio en Bogota y trabajo para El Tiempo."
@@ -117,7 +122,7 @@ class TestNERRoberta:
 
     def test_ner_roberta_texto_largo(self):
         """Ventana deslizante no lanza excepción en texto largo."""
-        from core.ner_roberta_local import roberta_disponible, ner_roberta
+        from core.ner_roberta_local import ner_roberta, roberta_disponible
         if not roberta_disponible():
             pytest.skip("RoBERTa no disponible")
         texto = "German Arciniegas escribio sobre Colombia. " * 100  # ~5000 palabras
@@ -128,8 +133,8 @@ class TestNERRoberta:
         assert len(textos_unicos) == len(entidades), "hay entidades duplicadas"
 
     def test_ner_roberta_a_indice_formato(self):
-        from core.ner_roberta_local import roberta_disponible, ner_roberta_a_indice
         from core.ner_engine import CATEGORIAS
+        from core.ner_roberta_local import ner_roberta_a_indice, roberta_disponible
         if not roberta_disponible():
             pytest.skip("RoBERTa no disponible")
         resultado = ner_roberta_a_indice("texto corto sin entidades")

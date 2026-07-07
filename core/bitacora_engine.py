@@ -14,8 +14,6 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
-
 
 # Tipos válidos y estados válidos
 TIPOS_NOTA   = ("libre", "hipotesis", "cita")
@@ -213,8 +211,8 @@ class BitacoraEngine:
         fecha = datetime.now().strftime("%d de %B de %Y")
 
         lineas = [
-            f"# Bitácora de investigación",
-            f"",
+            "# Bitácora de investigación",
+            "",
             f"**Corpus:** {publicacion or 'Sin título'}  ",
             f"**Exportado:** {fecha}  ",
             f"**Total de notas:** {len(notas)}",

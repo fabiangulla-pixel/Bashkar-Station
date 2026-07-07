@@ -17,7 +17,6 @@ Los resultados se imprimen en consola y se guardan en:
 """
 
 import sys
-import os
 from pathlib import Path
 
 # Agregar directorio raíz al path para poder importar core/

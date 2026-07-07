@@ -17,7 +17,6 @@ Ventajas sobre spaCy para este corpus:
 """
 
 from functools import lru_cache
-from typing import Optional
 
 # Modelo BERT fine-tuned para NER en español (acceso público)
 _MODELO_NER = "mrm8488/bert-spanish-cased-finetuned-ner"

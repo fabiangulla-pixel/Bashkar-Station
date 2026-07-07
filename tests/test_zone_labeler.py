@@ -7,29 +7,22 @@ Cubre: Zona (área, solapamiento, conversión a/desde píxeles),
        predecir, aplicar) y aplicar_zonas_a_texto.
 """
 
-import json
 import sys
-import tempfile
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.zone_labeler import (
-    TIPOS_ZONA,
-    Zona,
-    PaginaEtiquetada,
     DetectorZonas,
+    PaginaEtiquetada,
+    Zona,
     aplicar_zonas_a_texto,
+    cargar_pagina,
+    cargar_todas_manual,
     filtrar_texto_con_etiquetas,
     guardar_pagina,
-    cargar_pagina,
     listar_paginas_etiquetadas,
-    cargar_todas_manual,
-    ruta_etiquetas,
 )
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Zona — propiedades geométricas

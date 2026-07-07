@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Tests de regresión de los bugs encontrados durante la sesión del investigador
 (corrida completa del pipeline sobre el corpus real de Estampa).
@@ -13,8 +12,6 @@ Cada test fija un bug concreto para que no reaparezca:
 """
 import sys
 from pathlib import Path
-
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -141,6 +138,7 @@ class TestTeiXmlId:
 class TestExcelOpcionales:
     def test_generar_figuras_con_visual_none(self):
         import pandas as pd
+
         from core.excel_export import generar_figuras_completas
         datos = {
             "publicacion": "Estampa",
@@ -161,8 +159,11 @@ class TestExcelOpcionales:
 
     def test_excel_sin_confianza_autor(self, tmp_path):
         import pandas as pd
-        from core.excel_export import (generar_figuras_completas,
-                                       construir_excel_completo)
+
+        from core.excel_export import (
+            construir_excel_completo,
+            generar_figuras_completas,
+        )
         df_art = pd.DataFrame(
             {"numero": ["n1", "n1"], "titulo": ["A", "B"],
              "autor": ["X", "Y"], "seccion": ["Ed", "Cr"],

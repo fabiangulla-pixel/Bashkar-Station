@@ -11,8 +11,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional
-
+from typing import Callable
 
 # ── Narrativa académica con Claude ───────────────────────────────────────────
 
@@ -69,11 +68,11 @@ def generar_reporte_html(
     proyecto_nombre: str,
     stats_corpus: dict,
     indice_ner: dict,
-    stats_tono: Optional[dict],
-    metricas_red: Optional[dict],
-    narrativas: Optional[dict],
+    stats_tono: dict | None,
+    metricas_red: dict | None,
+    narrativas: dict | None,
     ruta: Path,
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
 ) -> Path:
     """
     Genera reporte HTML completo con todas las estadísticas del corpus.
@@ -249,7 +248,7 @@ def exportar_word(
     proyecto_nombre: str,
     stats_corpus: dict,
     indice_ner: dict,
-    narrativas: Optional[dict],
+    narrativas: dict | None,
     ruta: Path,
 ) -> Path:
     """

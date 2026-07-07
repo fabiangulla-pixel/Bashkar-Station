@@ -26,10 +26,9 @@ Referencia:
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Optional, Callable
-import numpy as np
+from typing import Callable
 
+import numpy as np
 
 CATEGORIAS_TIPOGRAFIA = [
     "serif_romana",
@@ -80,9 +79,9 @@ _PROMPTS_CLIP = [
 def _clasificar_clip(ruta: str) -> dict:
     """Clasificación CLIP zero-shot con prompts tipográficos."""
     try:
-        from transformers import CLIPProcessor, CLIPModel
         import torch
         from PIL import Image
+        from transformers import CLIPModel, CLIPProcessor
     except ImportError:
         raise ImportError("pip install transformers torch pillow")
 
@@ -250,7 +249,7 @@ def clasificar_tipografia(ruta: str, usar_clip: bool = True) -> dict:
 def clasificar_lote_tipografia(
     rutas: list[str],
     usar_clip: bool = True,
-    callback: Optional[Callable[[int, int, str], None]] = None,
+    callback: Callable[[int, int, str], None] | None = None,
 ) -> list[dict]:
     """
     Clasifica un lote de imágenes. Con CLIP, carga el modelo una sola vez.
@@ -263,7 +262,7 @@ def clasificar_lote_tipografia(
     modelo_clip = proc_clip = None
     if usar_clip:
         try:
-            from transformers import CLIPProcessor, CLIPModel
+            from transformers import CLIPModel, CLIPProcessor
             modelo_clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
             proc_clip   = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
             modelo_clip.eval()
@@ -332,8 +331,8 @@ def estadisticas_tipografia(resultados: list[dict]) -> dict:
 
 def clip_disponible() -> bool:
     try:
-        import transformers
         import torch
+        import transformers
         return True
     except ImportError:
         return False

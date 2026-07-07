@@ -22,7 +22,7 @@ espera.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from core import confianza_engine
 
@@ -138,7 +138,7 @@ def decidir(con, nombre: str, categoria: str, decision: str,
         "UPDATE revision_entidades SET decision=?, nombre_nuevo=?, editado_por=?, "
         "fecha=? WHERE nombre=? AND categoria=?",
         (decision, nombre_nuevo, editado_por,
-         datetime.now(timezone.utc).isoformat(), nombre, categoria))
+         datetime.now(UTC).isoformat(), nombre, categoria))
     con.commit()
     return con.total_changes > 0
 

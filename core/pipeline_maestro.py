@@ -18,7 +18,7 @@ import threading
 import zipfile
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 
 class PipelineMaestro:
@@ -31,8 +31,8 @@ class PipelineMaestro:
         self,
         bashkar_path: str,
         api_key: str,
-        callback_progreso: Optional[Callable[[int, str], None]] = None,
-        callback_log: Optional[Callable[[str], None]] = None,
+        callback_progreso: Callable[[int, str], None] | None = None,
+        callback_log: Callable[[str], None] | None = None,
         repositorio=None,
     ):
         self.bashkar_path = Path(bashkar_path)
@@ -67,7 +67,7 @@ class PipelineMaestro:
 
     # ── Interfaz pública ──────────────────────────────────────────────────────
 
-    def ejecutar_en_hilo(self, articulos_existentes: Optional[list] = None):
+    def ejecutar_en_hilo(self, articulos_existentes: list | None = None):
         """Lanza el pipeline en hilo daemon. No bloquea la UI."""
         thread = threading.Thread(
             target=self._pipeline_completo,
@@ -77,13 +77,13 @@ class PipelineMaestro:
         thread.start()
         return thread
 
-    def ejecutar_sincrono(self, articulos_existentes: Optional[list] = None):
+    def ejecutar_sincrono(self, articulos_existentes: list | None = None):
         """Ejecuta el pipeline en el hilo actual (para scripts batch)."""
         self._pipeline_completo(articulos_existentes)
 
     # ── Pipeline interno ──────────────────────────────────────────────────────
 
-    def _pipeline_completo(self, articulos_existentes: Optional[list]):
+    def _pipeline_completo(self, articulos_existentes: list | None):
         try:
             self._log("=== BASHKAR STATION — Pipeline Maestro ===")
             self._log(f"Proyecto: {self.data.get('proyecto', '?')}")
@@ -147,7 +147,7 @@ class PipelineMaestro:
     def _fase1_analisis_articulos(self, articulos: list):
         """Aplica NER y tono a cada artículo. Persiste en Repositorio si disponible."""
         try:
-            from core.ner_engine import pipeline_ner, indice_global_vacio
+            from core.ner_engine import indice_global_vacio, pipeline_ner
         except ImportError:
             self._log("⚠ ner_engine no disponible")
             return
@@ -318,7 +318,7 @@ class PipelineMaestro:
 
     def _fase2_red(self):
         try:
-            from core.network_engine import construir_grafo, metricas_red, grafo_a_dict
+            from core.network_engine import construir_grafo, grafo_a_dict, metricas_red
         except ImportError:
             self._log("⚠ network_engine no disponible")
             return
@@ -383,7 +383,7 @@ class PipelineMaestro:
 
         # Timeline
         try:
-            from core.viz_engine import timeline_html, eventos_desde_ner
+            from core.viz_engine import eventos_desde_ner, timeline_html
             if self.data.get("indice_global"):
                 eventos = eventos_desde_ner(self.data["indice_global"])
                 ruta = self._viz_dir / "timeline.html"
@@ -438,8 +438,8 @@ class PipelineMaestro:
     def _fase4_reporte_html(self, narrativas: dict, rutas_viz: dict) -> Path:
         ruta = self._docs_dir / "reporte_completo.html"
         try:
-            from core.storytelling_engine import generar_reporte_html
             from core.sentiment_engine import estadisticas_tono
+            from core.storytelling_engine import generar_reporte_html
 
             tono_resultados = {
                 a.get("id", str(i)): a.get("tono", {})

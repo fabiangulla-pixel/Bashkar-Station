@@ -11,11 +11,9 @@ Persiste entre proyectos:
 
 from __future__ import annotations
 
-import sqlite3
 import json
-from datetime import datetime
+import sqlite3
 from pathlib import Path
-from typing import Optional
 
 DB_PATH = Path.home() / ".bashkar" / "bashkar.db"
 

@@ -7,7 +7,6 @@ y verifica que los treeviews/labels se pueblan. Si tkinter no puede abrir displa
 (CI sin entorno gráfico), el módulo se omite entero.
 """
 
-import os
 import sqlite3
 
 import pytest
@@ -127,6 +126,7 @@ def test_validacion_exporta_muestra_completa(app_ling, tmp_path):
     assert len(arts) == 6
 
     import csv
+
     from core import validacion_engine
     ruta = tmp_path / "muestra.csv"
     et = a._ling_val_etiquetador("polaridad")
@@ -144,6 +144,7 @@ def test_validacion_dimension_emocion(app_ling, tmp_path):
     a, ST = app_ling
     ST.corpus_txt = CORPUS
     import csv
+
     from core import validacion_engine
     et = a._ling_val_etiquetador("emocion")
     assert et is not None

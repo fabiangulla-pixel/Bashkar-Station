@@ -10,10 +10,6 @@ Cubre:
   - core/tei_engine.py (validar_tei)
 """
 
-import json
-import tempfile
-from pathlib import Path
-import pytest
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -186,8 +182,9 @@ class TestKrakenTrainer:
 
     def test_exportar_con_imagen(self, tmp_path):
         """Con imagen PNG disponible, genera par correctamente."""
-        from core.kraken_trainer import exportar_ground_truth
         from PIL import Image
+
+        from core.kraken_trainer import exportar_ground_truth
 
         txt_dir = tmp_path / "03_ocr" / "test"
         img_dir = tmp_path / "02_imagenes" / "test"
@@ -208,8 +205,9 @@ class TestKrakenTrainer:
         assert (out_dir / "manifest.txt").exists()
 
     def test_estadisticas_corpus(self, tmp_path):
-        from core.kraken_trainer import estadisticas_corpus_editado
         from PIL import Image
+
+        from core.kraken_trainer import estadisticas_corpus_editado
 
         txt_dir = tmp_path / "txt"
         img_dir = tmp_path / "img"
@@ -308,7 +306,7 @@ class TestNGramas:
 
 class TestStopwordsPersonalizadas:
     def test_combina_con_base(self):
-        from core.collocation_engine import stopwords_personalizadas, STOPWORDS_ES
+        from core.collocation_engine import STOPWORDS_ES, stopwords_personalizadas
         extra = ["estampa", "revista", "publicación"]
         sw = stopwords_personalizadas(extra)
         assert "estampa" in sw

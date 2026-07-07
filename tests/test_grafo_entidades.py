@@ -4,7 +4,6 @@ Cubre la Fase 1 del módulo de entidades/grafo: id estable e idempotente,
 fusión de menciones NER en entidades canónicas, tripletas (relaciones) y
 la migración reversible (aplicar_grafo / revertir_grafo).
 """
-import pytest
 
 
 # ── id canónico estable / normalización ──────────────────────────────────────
@@ -138,7 +137,7 @@ class TestRelaciones:
 
 class TestMigracionGrafo:
     def test_aplicar_y_revertir(self, repo, tmp_db, articulo_simple):
-        from datos.migracion import aplicar_grafo, revertir_grafo, grafo_aplicado
+        from datos.migracion import aplicar_grafo, grafo_aplicado, revertir_grafo
         # sembrar menciones
         repo.guardar_articulo(articulo_simple)
         repo.guardar_entidades("art_001", [
@@ -156,6 +155,7 @@ class TestMigracionGrafo:
 
     def test_revertir_preserva_menciones_originales(self, repo, tmp_db, articulo_simple):
         import sqlite3
+
         from datos.migracion import aplicar_grafo, revertir_grafo
         repo.guardar_articulo(articulo_simple)
         repo.guardar_entidades("art_001", [

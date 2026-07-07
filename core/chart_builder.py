@@ -19,15 +19,13 @@ Tipos de gráfico soportados por fuente:
 
 from __future__ import annotations
 
-from typing import Any
-
 import matplotlib
+
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-import numpy as np
 from collections import Counter
 
+import matplotlib.pyplot as plt
+import numpy as np
 
 # Paleta consistente con el resto de la app
 PALETA = [
@@ -410,8 +408,8 @@ def corpus_secciones(articulos: list, titulo: str = "") -> plt.Figure:
 
 def corpus_zipf(corpus_txt: list, titulo: str = "") -> plt.Figure:
     """Curva de Zipf del corpus (ley de potencia en frecuencia de palabras)."""
-    from collections import Counter as C
     import re
+    from collections import Counter as C
     conteo: C = C()
     for texto in corpus_txt:
         if texto:
@@ -460,8 +458,8 @@ def corpus_longitud_articulos(articulos: list, titulo: str = "") -> plt.Figure:
 def estilo_pca(articulos: list, titulo: str = "") -> plt.Figure:
     """PCA de artículos en espacio TF-IDF — cada punto es un artículo."""
     try:
-        from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.decomposition import PCA
+        from sklearn.feature_extraction.text import TfidfVectorizer
     except ImportError:
         fig, ax = _fig(6, 4)
         ax.text(0.5, 0.5, "Instala scikit-learn para PCA\npip install scikit-learn",
@@ -500,9 +498,9 @@ def estilo_pca(articulos: list, titulo: str = "") -> plt.Figure:
 def estilo_dendrograma(articulos: list, max_arts: int = 40, titulo: str = "") -> plt.Figure:
     """Dendrograma de clustering jerárquico por estilo."""
     try:
-        from sklearn.feature_extraction.text import TfidfVectorizer
         from scipy.cluster.hierarchy import dendrogram, linkage
         from scipy.spatial.distance import pdist
+        from sklearn.feature_extraction.text import TfidfVectorizer
     except ImportError:
         fig, ax = _fig(6, 4)
         ax.text(0.5, 0.5, "Instala scikit-learn y scipy\npip install scikit-learn scipy",

@@ -12,7 +12,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 _PROMPT = """\
 Eres un lexicógrafo especializado en español colombiano de los años 1930-1940.
@@ -78,7 +78,7 @@ def construir_glosario(
     articulos: dict,
     api_key: str,
     modelo: str = "claude-haiku-4-5-20251001",
-    callback: Optional[Callable[[int, int, str], None]] = None,
+    callback: Callable[[int, int, str], None] | None = None,
 ) -> dict:
     """
     Construye glosario acumulado del corpus completo.

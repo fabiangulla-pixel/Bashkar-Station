@@ -1,8 +1,5 @@
 """tests/test_entity_linker.py — Tests del entity linker a Wikidata."""
-import json
 import pytest
-from pathlib import Path
-
 
 # ---------------------------------------------------------------------------
 # Tests de caché local
@@ -120,7 +117,7 @@ class TestEnlazarEntidadOffline:
         assert enlazar_entidad("   ", "personas", str(tmp_path / "c.db"), sin_red=True) is None
 
     def test_sin_red_usa_solo_cache(self, tmp_path):
-        from core.entity_linker import enlazar_entidad, _CacheEntidades
+        from core.entity_linker import _CacheEntidades, enlazar_entidad
         ruta_cache = str(tmp_path / "c.db")
         # Guardar un resultado en caché manualmente
         cache = _CacheEntidades(ruta_cache)
@@ -136,7 +133,7 @@ class TestEnlazarEntidadOffline:
         assert resultado is None
 
     def test_no_encontrado_en_cache_retorna_none(self, tmp_path):
-        from core.entity_linker import enlazar_entidad, _CacheEntidades
+        from core.entity_linker import _CacheEntidades, enlazar_entidad
         ruta_cache = str(tmp_path / "c.db")
         cache = _CacheEntidades(ruta_cache)
         cache.guardar("XyzNoExiste", "personas", None)
@@ -253,7 +250,8 @@ class TestMejorasDesambiguacion:
         """#4 — un resultado guardado con algo_version < actual se ignora
         (se trata como ausente para forzar re-enlace con la lógica nueva)."""
         import sqlite3
-        from core.entity_linker import _CacheEntidades, _ALGO_VERSION
+
+        from core.entity_linker import _ALGO_VERSION, _CacheEntidades
         ruta = str(tmp_path / "c.db")
         cache = _CacheEntidades(ruta)
         # Insertar a mano una entrada con versión vieja (0)

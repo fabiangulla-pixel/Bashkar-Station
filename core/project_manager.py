@@ -29,7 +29,6 @@ import platform
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
 
 VERSION = "11"
 
@@ -123,7 +122,7 @@ def guardar_ultimo(ruta: Path):
         pass
 
 
-def cargar_ultimo() -> Optional[Path]:
+def cargar_ultimo() -> Path | None:
     """Devuelve la ruta del último proyecto abierto, o None si no existe."""
     f = _archivo_reciente()
     if not f.exists():
@@ -346,7 +345,7 @@ def cargar_proyecto(ruta: Path, st):
     # ── Migración automática v10 → v11 ────────────────────────────────────────
     migrado = False
     try:
-        from datos.migracion import necesita_migracion, migrar
+        from datos.migracion import migrar, necesita_migracion
         if necesita_migracion(str(ruta)):
             resultado = migrar(str(ruta))
             migrado = resultado.get("ok", False)

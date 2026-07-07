@@ -19,8 +19,6 @@ Funciones:
 from __future__ import annotations
 
 import re
-from typing import Optional
-
 
 # ── Mapa de normalización gráfica ─────────────────────────────────────────────
 # Formas gráficas históricas → forma ortográfica moderna (solo grafía, no significado)
@@ -362,7 +360,7 @@ def glosario_arcaismos() -> list[dict]:
 def enriquecer_corpus_con_lemas(
     corpus: list[str],
     nlp=None,
-    callback: Optional[callable] = None,
+    callback: callable | None = None,
 ) -> list[dict]:
     """
     Procesa cada texto del corpus y retorna stats de arcaísmos.

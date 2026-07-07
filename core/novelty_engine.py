@@ -12,11 +12,9 @@ Si sentence-transformers está disponible, mejora la detección semántica.
 
 from __future__ import annotations
 
-import re
 import math
+import re
 from collections import Counter, defaultdict
-from typing import Optional, Callable
-
 
 _RE_TOKEN = re.compile(r'\b[a-záéíóúüñ]{4,}\b', re.IGNORECASE)
 

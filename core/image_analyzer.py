@@ -10,12 +10,12 @@ Funcionalidades:
   6. Exportación de datos por número y por página.
 """
 
-import gc
-import re
-import json
 import base64
+import gc
+import json
+import re
 from pathlib import Path
-from typing import Optional
+
 import numpy as np
 
 # ── Tipos de elemento ────────────────────────────────────────────────────────
@@ -182,7 +182,7 @@ def _detectar_pie_y_autor(texto_zona: str) -> dict:
 
 def analizar_pagina_visual(
     img_path: Path,
-    txt_path: Optional[Path] = None,
+    txt_path: Path | None = None,
     dpi: int = DPI_DEFAULT,
 ) -> dict:
     """
@@ -415,9 +415,10 @@ def generar_diagrama_layout(
     rectángulos coloreados por tipo sobre el contorno de la página.
     Retorna bytes PNG.
     """
-    import matplotlib.pyplot as plt
-    import matplotlib.patches as mpatches
     import io
+
+    import matplotlib.patches as mpatches
+    import matplotlib.pyplot as plt
 
     w_cm = datos_pagina.get("w_cm", 21)
     h_cm = datos_pagina.get("h_cm", 29)

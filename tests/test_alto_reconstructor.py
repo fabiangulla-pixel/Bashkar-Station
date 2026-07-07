@@ -10,21 +10,18 @@ Cubre: _es_fuente_ocr_basura, _agrupar_en_lineas, _detectar_columnas,
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
-
-import pytest
+from unittest.mock import MagicMock
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.alto_reconstructor import (
-    _es_fuente_ocr_basura,
     _agrupar_en_lineas,
     _detectar_columnas,
+    _es_fuente_ocr_basura,
     _linea_a_texto,
-    reconstruir_texto_pagina,
     extraer_titulos_pagina,
+    reconstruir_texto_pagina,
 )
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Helpers

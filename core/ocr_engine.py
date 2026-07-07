@@ -2,8 +2,8 @@
 
 import gc
 import os
-import sys
 import platform
+import sys
 from pathlib import Path
 
 # Asegurar que el directorio raíz del proyecto esté en sys.path
@@ -144,9 +144,10 @@ def pdf_a_imagenes(pdf_path: Path, out_dir: Path, dpi: int) -> list[Path]:
 
     # Intentar con PyMuPDF primero — respeta rotación y produce imágenes correctas
     try:
+        import io
+
         import fitz  # pymupdf
         from PIL import Image as _PIL
-        import io
 
         doc = fitz.open(str(pdf_path))
         rutas = []
@@ -189,9 +190,9 @@ def ocr_pagina(
     lang: str = "spa",
     preprocesar: bool = False,  # desactivado por defecto — hacerlo antes si se desea
 ) -> tuple[str, float]:
-    import pytesseract
     import numpy as np
-    from PIL import Image, ImageFilter, ImageEnhance
+    import pytesseract
+    from PIL import Image, ImageEnhance
 
     pytesseract.pytesseract.tesseract_cmd = _get_tesseract_cmd()
 

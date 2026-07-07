@@ -13,7 +13,6 @@ Genera una presentación .pptx lista para uso académico con:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 
 def exportar_presentacion(
@@ -36,9 +35,9 @@ def exportar_presentacion(
     """
     try:
         from pptx import Presentation
-        from pptx.util import Inches, Pt, Emu
         from pptx.dml.color import RGBColor
         from pptx.enum.text import PP_ALIGN
+        from pptx.util import Emu, Inches, Pt
     except ImportError:
         raise ImportError("Instala python-pptx: pip install python-pptx")
 

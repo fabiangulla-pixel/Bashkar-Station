@@ -46,7 +46,7 @@ _NEG = {
     "muerte", "muert", "sangre", "sangrient", "violencia", "violent", "guerra",
     "conflicto", "destrucción", "destruccion", "ataque", "ataques", "amenaza",
     "amenazas", "peligro", "miedo", "temor", "terror", "horror", "espanto",
-    "fracaso", "derrota", "caída", "caida", "decadencia", "ruina", "vergüenza",
+    "fracaso", "derrota", "caída", "caida", "decadencia", "vergüenza",
     "verguenza", "deshonra", "infamia", "traición", "traicion", "crimen",
     "criminal", "delito", "asesinato", "robo", "corrupción", "corrupcion",
     "corrupto", "mentira", "engaño", "engano", "falso", "fraude", "injusticia",
@@ -70,7 +70,7 @@ def transformer_disponible() -> bool:
     if sys.version_info[:2] >= (3, 14):
         return False
     try:
-        import transformers, torch  # noqa: F401
+        import transformers  # noqa: F401
         return True
     except Exception:
         return False

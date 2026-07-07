@@ -27,8 +27,8 @@ Uso:
 """
 
 from __future__ import annotations
+
 from pathlib import Path
-from typing import Optional
 
 # ── Mapa de etiquetas de modelos → tipos de zona de Bashkar ──────────────────
 
@@ -97,7 +97,7 @@ def motor_disponible(motor: str) -> tuple[bool, str]:
 def detectar_layout(
     img_path: Path,
     motor: str = "yolo",
-    modelo_path: Optional[Path] = None,
+    modelo_path: Path | None = None,
     umbral: float = 0.3,
     callback=None,
 ) -> list[dict]:
@@ -144,7 +144,7 @@ _YOLO_MODEL_URL = (
 _YOLO_MODEL_NAME = "yolov8n-doclaynet.pt"
 
 
-def _yolo_model_path(modelo_path: Optional[Path]) -> Path:
+def _yolo_model_path(modelo_path: Path | None) -> Path:
     if modelo_path and Path(modelo_path).exists():
         return Path(modelo_path)
     # Buscar en carpeta modelos/ del proyecto
@@ -167,7 +167,7 @@ def _descargar_si_falta(url: str, destino: Path, log):
         return False
 
 
-def _detectar_yolo(img_path: Path, modelo_path: Optional[Path],
+def _detectar_yolo(img_path: Path, modelo_path: Path | None,
                    umbral: float, log) -> list[dict]:
     try:
         from ultralytics import YOLO
@@ -229,11 +229,11 @@ _ONNX_LABELS = [
 ]
 
 
-def _detectar_onnx(img_path: Path, modelo_path: Optional[Path],
+def _detectar_onnx(img_path: Path, modelo_path: Path | None,
                    umbral: float, log) -> list[dict]:
     try:
-        import onnxruntime as ort
         import numpy as np
+        import onnxruntime as ort
         from PIL import Image
     except ImportError:
         log("⚠ ONNX Runtime no disponible. Instala: pip install onnxruntime")
@@ -315,12 +315,12 @@ _DIT_MODEL_NAME = "dit-base-doclaynet"
 _DIT_OD_MODEL_ID = "Xenova/dit-base-finetuned-publaynet"
 
 
-def _detectar_dit(img_path: Path, modelo_path: Optional[Path],
+def _detectar_dit(img_path: Path, modelo_path: Path | None,
                   umbral: float, log) -> list[dict]:
     try:
-        from transformers import AutoFeatureExtractor, AutoModelForObjectDetection
         import torch
         from PIL import Image
+        from transformers import AutoFeatureExtractor, AutoModelForObjectDetection
     except ImportError:
         log("⚠ DiT no disponible. Instala: pip install transformers torch")
         return []
@@ -377,7 +377,8 @@ def instalar_motor(motor: str, callback=None) -> bool:
     Intenta instalar las dependencias del motor indicado vía pip.
     Retorna True si la instalación fue exitosa.
     """
-    import subprocess, sys
+    import subprocess
+    import sys
     def log(m):
         if callback:
             callback(m)

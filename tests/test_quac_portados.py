@@ -8,9 +8,12 @@ import sqlite3
 
 import pytest
 
-from core import (frame_engine, validacion_engine, sentimiento_discriminante,
-                  revision_engine)
-
+from core import (
+    frame_engine,
+    revision_engine,
+    sentimiento_discriminante,
+    validacion_engine,
+)
 
 # ──────────────────────────────────────────────────────────────────────────
 # frame_engine

@@ -8,16 +8,16 @@ Tipos de gráficas:
   radial (spider/radar), combinada (barras + línea), heatmap.
 """
 
-import io
 import gc
+import io
+
+import matplotlib
 import numpy as np
 import pandas as pd
-import matplotlib
+
 matplotlib.use("Agg")
+
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.colors import to_rgba
-from pathlib import Path
 
 # ── Paleta editorial amplia y contrastada ─────────────────────────────────────
 PAL = [

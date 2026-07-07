@@ -22,14 +22,14 @@ import csv
 import math  # noqa: F401  (reservado para futuras métricas; mantiene paridad con Quac)
 import random
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 
 def exportar_muestra(articulos: list[dict], ruta_csv: str | Path, *,
                      n: int = 30, semilla: int = 42,
                      campo_texto: str = "texto",
                      campo_id: str = "art_id",
-                     etiqueta_auto: Optional[Callable[[dict], str]] = None,
+                     etiqueta_auto: Callable[[dict], str] | None = None,
                      nombre_etiqueta: str = "polaridad") -> Path:
     """Exporta una muestra aleatoria de artículos para codificación manual.
 
@@ -107,8 +107,8 @@ def _interpreta_kappa(k: float) -> str:
 
 def calcular_concordancia(ruta_csv: str | Path,
                           nombre_etiqueta: str = "polaridad",
-                          col_manual: Optional[str] = None,
-                          col_auto: Optional[str] = None) -> dict:
+                          col_manual: str | None = None,
+                          col_auto: str | None = None) -> dict:
     """Lee el CSV ya codificado y calcula acuerdo % + Kappa de Cohen.
 
     Por defecto usa las columnas ``<nombre_etiqueta>_manual`` y

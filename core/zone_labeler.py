@@ -14,12 +14,12 @@ Persistencia: JSON en <out_dir>/05_etiquetas/<numero>/p0001.json
 """
 
 from __future__ import annotations
-import json
-import statistics
-from dataclasses import dataclass, asdict, field
-from pathlib import Path
-from typing import Optional
 
+import json
+import re
+import statistics
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 # ── Detección automática por visión ──────────────────────────────────────────
 
@@ -532,7 +532,8 @@ def _vision_gemini(img_path: Path, api_key: str, modelo: str, prompt: str) -> li
 
 def _vision_ollama(img_path: Path, modelo: str, prompt: str) -> list["Zona"]:
     try:
-        import requests, base64
+
+        import requests
         b64, _ = _encode_imagen(img_path)
         resp = requests.post(
             "http://localhost:11434/api/generate",
@@ -826,7 +827,7 @@ def guardar_pagina(out_dir: Path, numero: str, pag: PaginaEtiquetada):
                     encoding="utf-8")
 
 
-def cargar_pagina(out_dir: Path, numero: str, pagina: str) -> Optional[PaginaEtiquetada]:
+def cargar_pagina(out_dir: Path, numero: str, pagina: str) -> PaginaEtiquetada | None:
     ruta = ruta_etiquetas(out_dir, numero, pagina)
     if not ruta.exists():
         return None

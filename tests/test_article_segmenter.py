@@ -10,24 +10,20 @@ Cubre: helpers (_es_nombre_personal, _es_pagina_especial, _extraer_autor,
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.article_segmenter import (
+    _consolidar_paginas,
     _es_nombre_personal,
     _es_pagina_especial,
     _extraer_autor,
     _extraer_titulo_pagina,
+    _procesar_pagina_ocr,
     _ratio_alfabetico,
     _tiene_palabras_sin_vocales,
     limpiar_texto_ocr,
     segmentar_texto_ocr,
-    _procesar_pagina_ocr,
-    _consolidar_paginas,
-    _limpiar_dict,
 )
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # _es_nombre_personal

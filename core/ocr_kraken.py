@@ -16,8 +16,6 @@ Instalación:
 import os
 import sys
 from pathlib import Path
-from typing import Optional
-from functools import lru_cache
 
 # Ruta por defecto de modelos (relativa al directorio de la app)
 _MODELOS_DIR = Path(__file__).parent.parent / "modelos"
@@ -37,7 +35,7 @@ def _python_kraken() -> str:
     return sys.executable
 
 
-def _buscar_modelo(modelo_path: Optional[str] = None) -> Optional[Path]:
+def _buscar_modelo(modelo_path: str | None = None) -> Path | None:
     """Busca el modelo Kraken en la ruta dada o en el directorio por defecto."""
     if modelo_path:
         p = Path(modelo_path)
@@ -72,7 +70,7 @@ def kraken_disponible() -> bool:
 
 
 def ocr_kraken(ruta_imagen: str,
-               modelo_path: Optional[str] = None,
+               modelo_path: str | None = None,
                binarizar: bool = True,
                timeout: int = 600) -> tuple[str, float]:
     """
@@ -82,7 +80,8 @@ def ocr_kraken(ruta_imagen: str,
 
     Returns: (texto, confianza) donde confianza es 0.0–1.0.
     """
-    import subprocess, json
+    import json
+    import subprocess
 
     python = _python_kraken()
 
@@ -154,7 +153,7 @@ except Exception as e:
 
 
 def ocr_kraken_lote(rutas_imagenes: list[str],
-                     modelo_path: Optional[str] = None,
+                     modelo_path: str | None = None,
                      callback=None,
                      workers: int = 3,
                      timeout: int = 600) -> list[dict]:
@@ -173,8 +172,8 @@ def ocr_kraken_lote(rutas_imagenes: list[str],
         Lista de dicts en el mismo orden que rutas_imagenes:
         {ruta, texto, confianza, ok, error}
     """
-    from concurrent.futures import ThreadPoolExecutor, as_completed
     import threading
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
     total = len(rutas_imagenes)
     if total == 0:
@@ -242,7 +241,7 @@ def descargar_modelo_catmus(callback=None) -> str:
         )
 
     # kraken get descarga a AppData/Local/htrmopo — copiar a modelos/
-    import glob, shutil
+    import shutil
     htrmopo_base = Path(os.environ.get("LOCALAPPDATA", "")) / "htrmopo" / "htrmopo"
     encontrados = list(htrmopo_base.glob("**/*.mlmodel")) if htrmopo_base.exists() else []
     if encontrados:

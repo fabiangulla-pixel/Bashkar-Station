@@ -14,8 +14,6 @@ import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
-
 
 # ── Namespaces ────────────────────────────────────────────────────────────────
 TEI_NS = "http://www.tei-c.org/ns/1.0"
@@ -25,7 +23,7 @@ ET.register_namespace("", TEI_NS)
 ET.register_namespace("xml", XML_NS)
 
 
-def _tei(tag: str, attrib: Optional[dict] = None, text: Optional[str] = None):
+def _tei(tag: str, attrib: dict | None = None, text: str | None = None):
     """Crea un elemento TEI con namespace."""
     el = ET.Element(f"{{{TEI_NS}}}{tag}", attrib=attrib or {})
     if text:
@@ -33,7 +31,7 @@ def _tei(tag: str, attrib: Optional[dict] = None, text: Optional[str] = None):
     return el
 
 
-def _sub(parent, tag: str, attrib: Optional[dict] = None, text: Optional[str] = None):
+def _sub(parent, tag: str, attrib: dict | None = None, text: str | None = None):
     el = ET.SubElement(parent, f"{{{TEI_NS}}}{tag}", attrib=attrib or {})
     if text:
         el.text = text
@@ -44,9 +42,9 @@ def _sub(parent, tag: str, attrib: Optional[dict] = None, text: Optional[str] = 
 
 def _build_tei_header(
     titulo: str,
-    autor: Optional[str],
+    autor: str | None,
     fuente: str,
-    fecha: Optional[str],
+    fecha: str | None,
     proyecto_nombre: str,
     investigador: str,
     institucion: str,
@@ -175,11 +173,11 @@ def _ncname(valor: str) -> str:
 def articulo_a_tei(
     art_id: str,
     texto: str,
-    titulo: Optional[str],
-    autor: Optional[str],
+    titulo: str | None,
+    autor: str | None,
     fuente: str,
-    fecha: Optional[str],
-    ner: Optional[dict],
+    fecha: str | None,
+    ner: dict | None,
     proyecto_nombre: str = "Corpus Estampa",
     investigador: str = "Investigador",
     institucion: str = "Instituto Caro y Cuervo",
@@ -304,7 +302,7 @@ def exportar_bibtex(
     ruta.parent.mkdir(parents=True, exist_ok=True)
 
     lineas = [
-        f"% BibTeX generado por Bashkar Station",
+        "% BibTeX generado por Bashkar Station",
         f"% Corpus: {fuente} — {datetime.now().strftime('%Y-%m-%d')}",
         "",
     ]
@@ -324,8 +322,8 @@ def exportar_bibtex(
             f"  journal = {{{fuente}}},",
             f"  year = {{{year_str}}},",
             f"  publisher = {{{editor}}},",
-            f"  language = {{spanish}},",
-            f"  note = {{Corpus digital. Procesado con Bashkar Station.}}",
+            "  language = {spanish},",
+            "  note = {Corpus digital. Procesado con Bashkar Station.}",
             "}",
             "",
         ]

@@ -19,7 +19,7 @@ import json
 import re
 import threading
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 # ── Acumulador de `usage` real ────────────────────────────────────────────────
 # Estándar de costo IA: tras un lote se mide el costo REAL leyendo el `usage` que
@@ -159,8 +159,9 @@ def ocr_con_vision(
 
     if ext in (".tif", ".tiff", ".bmp"):
         try:
-            from PIL import Image
             import io
+
+            from PIL import Image
             img = Image.open(img_path).convert("RGB")
             buf = io.BytesIO()
             img.save(buf, format="JPEG", quality=92)
@@ -385,14 +386,14 @@ def evaluar_calidad(
 
 def mejorar_pagina(
     txt_path: Path,
-    img_path: Optional[Path],
+    img_path: Path | None,
     api_key: str,
     umbral_confianza: float = UMBRAL_CONFIANZA_DEFAULT,
-    confianza_tesseract: Optional[float] = None,
+    confianza_tesseract: float | None = None,
     modo: str = "auto",
     proveedor: str = "claude",
     modelo_ollama: str = "latamgpt",
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
 ) -> dict:
     """
     Mejora el OCR de una página usando un LLM.
@@ -490,11 +491,11 @@ def mejorar_lote(
     corpus_meta,    # DataFrame de ST.corpus_meta
     api_key: str,
     umbral_confianza: float = UMBRAL_CONFIANZA_DEFAULT,
-    img_dir_raiz: Optional[Path] = None,
+    img_dir_raiz: Path | None = None,
     modo: str = "auto",
     proveedor: str = "claude",
     modelo_ollama: str = "latamgpt",
-    callback: Optional[Callable[[int, int, str], None]] = None,
+    callback: Callable[[int, int, str], None] | None = None,
 ) -> dict:
     """
     Mejora todas las páginas con baja confianza en el corpus.

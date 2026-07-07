@@ -1,0 +1,43 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["scripts/_experimentos", "_prueba5", "build", "dist"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "C4", "UP", "W"]
+ignore = [
+    # app.py es un monolito UI de 17.7k lineas, editado a traves de 40+
+    # sesiones de IA. Estas reglas exigirian cambios semanticos amplios
+    # sobre codigo YA VALIDADO en produccion (927 tests). Un pase de
+    # calidad no reescribe logica que funciona: se documenta la deuda.
+    "E501",  # line-too-long — lineas largas de tk.Label/Button con muchos kwargs
+    "E701",  # multiple-statements-on-one-line-colon — if/for compactos preexistentes
+    "E702",  # multiple-statements-on-one-line-semicolon — ídem, 614 casos legacy
+    "E402",  # module-import-not-at-top — imports lazy dentro de metodos (evitan
+             # cargar spaCy/torch/transformers hasta que el panel se abre)
+    "E741",  # ambiguous-variable-name — nombres cortos (l, I) en matematica/OCR
+    "B023",  # function-uses-loop-variable — closures de callbacks tkinter revisadas
+    "B008",  # function-call-in-default-argument — 1 caso app.py:12159, patron
+             # intencional (captura valor por defecto para evitar late-binding)
+    "B904",  # raise-without-from-inside-except — no se homologa retroactivamente
+    "B905",  # zip-without-explicit-strict — requeriria auditar cada zip() del monolito
+    "B007",  # unused-loop-control-variable — variables de indice usadas para debug/paridad
+    "C401", "C408", "C416", "C420",  # micro-optimizaciones de comprehensions preexistentes
+    "UP035", "UP037",  # migraciones de tipos (Optional/List) que tocarian miles de firmas
+    "F841",  # unused-variable — 34 casos revisados manualmente (2026-07-07): ninguno
+             # esconde una llamada con side-effect perdida, pero remover la asignacion
+             # sin volver a leer cada funcion completa es el tipo de cambio que esta
+             # regla de lint exigiria hacer "a ciegas". Deuda documentada, no semantica.
+    "F401",  # unused-import — repetido en ~10 archivos en el patron intencional
+             # `try: import X (uso interno de la funcion, ej. torch/cv2/faiss)
+             # ... return True / except ImportError: return False` para chequear
+             # disponibilidad de dependencias opcionales sin cargarlas globalmente.
+    "I001",  # unsorted-imports — dispara sobre los mismos one-liners compactos
+             # ya cubiertos por E701/E702 (`import shutil; shutil.copy2(...)`).
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402"]  # ajustan sys.path antes de importar el paquete
+
+[tool.ruff.format]
+quote-style = "double"

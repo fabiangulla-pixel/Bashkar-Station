@@ -22,7 +22,6 @@ texto→dict, en línea con los demás motores de ``core/``.
 from __future__ import annotations
 
 import re
-from typing import Optional
 
 # Marcos agnósticos adaptados del Media Frames Corpus al español de la prensa
 # ilustrada colombiana de 1930-1940. Cada frame tiene marcadores léxicos
@@ -226,7 +225,7 @@ def cruce_seccion_frame(por_articulo: dict, seccion_de: dict) -> dict:
 
 
 def clasificar_frame_llm(texto: str, api_key: str,
-                         modelo: str = "claude-haiku-4-5-20251001") -> Optional[dict]:
+                         modelo: str = "claude-haiku-4-5-20251001") -> dict | None:
     """(Opcional) Afina el frame con Claude. Solo si el investigador da API key.
 
     Devuelve None si la librería/clave no están; el flujo sigue con el léxico.

@@ -3,10 +3,8 @@ tests/conftest.py — Fixtures compartidas para todos los tests de Bashkar Stati
 """
 
 import json
+
 import pytest
-import tempfile
-import os
-from pathlib import Path
 
 
 @pytest.fixture

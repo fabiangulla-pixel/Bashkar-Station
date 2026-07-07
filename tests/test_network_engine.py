@@ -13,8 +13,12 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.network_engine import construir_grafo, metricas_red, grafo_a_dict, dict_a_grafo
-
+from core.network_engine import (
+    construir_grafo,
+    dict_a_grafo,
+    grafo_a_dict,
+    metricas_red,
+)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Fixtures — índice NER de prueba

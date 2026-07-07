@@ -1,9 +1,12 @@
 """Script de prueba para el nuevo segmentador."""
-import sys, os
+import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from pathlib import Path
-from core.article_segmenter import segmentar_numero, _procesar_pagina_ocr, _limpiar_dict
+
+from core.article_segmenter import _limpiar_dict, _procesar_pagina_ocr, segmentar_numero
 
 # Ruta al corpus Estampa
 ESTAMPA_ROOT = Path(r"C:\Users\Lenovo\OneDrive - ucatolica.edu.co\Apps\OneDrive - ucatolica.edu.co\Documents\Gulla\Investigaciones ñoñas\Revista Estampa")

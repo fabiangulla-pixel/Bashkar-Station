@@ -9,12 +9,11 @@ Permite a múltiples investigadores trabajar sobre el mismo corpus:
 
 from __future__ import annotations
 
-import json
 import hashlib
+import json
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Callable
-
+from typing import Callable
 
 PATCH_VERSION = "1.0"
 
@@ -102,7 +101,7 @@ def aplicar_parche(
     bashkar: dict,
     parche: dict,
     estrategia_conflicto: str = "mas_reciente",
-    callback: Optional[Callable] = None,
+    callback: Callable | None = None,
 ) -> dict:
     """
     Aplica un parche a un proyecto .bashkar.

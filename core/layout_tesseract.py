@@ -31,10 +31,8 @@ from __future__ import annotations
 
 import statistics
 from pathlib import Path
-from typing import Optional
 
-from core.zone_labeler import Zona, TIPOS_ZONA, calcular_orden_lectura
-
+from core.zone_labeler import TIPOS_ZONA, Zona, calcular_orden_lectura
 
 # ── Configuración Tesseract ───────────────────────────────────────────────────
 

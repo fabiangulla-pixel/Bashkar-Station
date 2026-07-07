@@ -68,14 +68,14 @@ def _info_proyecto(ruta: str):
     res  = datos.get("resultados", {})
 
     print(f"\n{'='*60}")
-    print(f"  Bashkar Station — Información del proyecto")
+    print("  Bashkar Station — Información del proyecto")
     print(f"{'='*60}")
     print(f"  Nombre:       {datos.get('nombre', '—')}")
     print(f"  Publicación:  {cfg.get('publicacion', '—')}")
     print(f"  Período:      {cfg.get('periodo', '—')}")
     print(f"  Carpeta OCR:  {cfg.get('out_dir', '—')}")
     print(f"  Archivos:     {len(cfg.get('archivos_sel', []))} seleccionados")
-    print(f"\n  Etapas completadas:")
+    print("\n  Etapas completadas:")
     for etapa, hecho in prog.items():
         estado = "✅" if hecho else "⬜"
         print(f"    {estado}  {etapa}")
@@ -98,8 +98,7 @@ def _etapa_ocr(cfg: dict, verbose: bool):
         return {}
 
     _log(f"OCR sobre {len(archivos)} archivo(s) en modo '{input_tipo}'", verbose)
-    from core.ocr_engine import procesar_pdf, procesar_imagen
-    from core.ocr_normalizer import normalizar_archivo
+    from core.ocr_engine import procesar_imagen, procesar_pdf
 
     resultados = {}
     for i, archivo in enumerate(archivos, 1):
@@ -191,7 +190,11 @@ def _etapa_ner(articulos: list[dict], verbose: bool) -> dict:
         _log("  ⚠ spaCy no disponible — omitiendo NER", verbose)
         return {}
 
-    from core.ner_engine import pipeline_ner, actualizar_indice_global, indice_global_vacio
+    from core.ner_engine import (
+        actualizar_indice_global,
+        indice_global_vacio,
+        pipeline_ner,
+    )
     indice = indice_global_vacio()
     for i, art in enumerate(articulos, 1):
         if i % 20 == 0:

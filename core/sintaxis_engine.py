@@ -9,10 +9,8 @@ Funciones:
 
 from __future__ import annotations
 
-import re
 from collections import defaultdict
-from typing import Callable, Optional
-
+from typing import Callable
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -162,7 +160,7 @@ def concordancias_sintaticas(
     patron: str = "verbo_sujeto",
     nlp=None,
     max_resultados: int = 100,
-    callback: Optional[Callable[[int, int], None]] = None,
+    callback: Callable[[int, int], None] | None = None,
 ) -> list[dict]:
     """
     Extrae concordancias sintácticas según un patrón predefinido.
@@ -275,7 +273,7 @@ def extraer_relaciones(
     nlp=None,
     solo_entidades: bool = True,
     min_confianza: float = 0.5,
-    callback: Optional[Callable[[int, int], None]] = None,
+    callback: Callable[[int, int], None] | None = None,
 ) -> list[dict]:
     """
     Extrae tripletas sujeto-relación-objeto del corpus.

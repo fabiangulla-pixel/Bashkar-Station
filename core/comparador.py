@@ -10,10 +10,9 @@ Compara dos o más proyectos .bashkar entre sí:
 from __future__ import annotations
 
 import json
-from pathlib import Path
-from typing import Callable, Optional
 from collections import Counter
-
+from pathlib import Path
+from typing import Callable
 
 # ── Carga de proyectos ────────────────────────────────────────────────────────
 
@@ -154,7 +153,7 @@ def comparar_topicos(proyectos: list[dict], nombres: list[str]) -> dict:
 def generar_reporte_comparativo(
     rutas: list[str | Path],
     nombres: list[str],
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
 ) -> dict:
     """
     Genera un reporte comparativo completo entre N proyectos.

@@ -2,23 +2,31 @@
 
 import sys
 from pathlib import Path
-import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 from core.chart_builder import (
     CATALOGO,
-    tono_barras, tono_pie, tono_heatmap, tono_area_apilada, tono_radar,
-    ocr_boxplot, ocr_scatter, ocr_histograma,
-    ner_frecuencia, ner_categorias,
-    corpus_palabras_por_numero, corpus_zipf, corpus_longitud_articulos,
     comparativo_divergente,
+    corpus_longitud_articulos,
+    corpus_palabras_por_numero,
+    corpus_zipf,
+    ner_categorias,
+    ner_frecuencia,
+    ocr_boxplot,
+    ocr_histograma,
+    ocr_scatter,
+    tono_area_apilada,
+    tono_barras,
+    tono_heatmap,
+    tono_pie,
+    tono_radar,
 )
-
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -67,7 +75,7 @@ def _articulos(n=15):
 
 def _corpus_txt(n=10):
     return [
-        f"colombia bogotá cultura prensa editorial artículo texto información " * 20
+        "colombia bogotá cultura prensa editorial artículo texto información " * 20
         for _ in range(n)
     ]
 

@@ -20,7 +20,6 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from typing import Optional
 
 # Palabras (con tildes/ñ) para el solapamiento descripción↔contexto del artículo
 _RE_PALABRA = re.compile(r"[a-zá-úñü]+", re.IGNORECASE)
@@ -108,7 +107,7 @@ class _CacheEntidades:
             )
         self._con.commit()
 
-    def obtener(self, texto: str, categoria: str) -> Optional[dict]:
+    def obtener(self, texto: str, categoria: str) -> dict | None:
         """None = no está en caché (o cacheado por un algoritmo viejo, hay que
         re-enlazar); dict vacío {} = consultado con el algoritmo actual y no
         encontrado."""
@@ -126,7 +125,7 @@ class _CacheEntidades:
             return None
         return json.loads(fila[0]) if fila[0] else {}
 
-    def guardar(self, texto: str, categoria: str, resultado: Optional[dict]):
+    def guardar(self, texto: str, categoria: str, resultado: dict | None):
         val = json.dumps(resultado, ensure_ascii=False) if resultado else None
         self._con.execute(
             "INSERT OR REPLACE INTO cache_wikidata"
@@ -154,10 +153,10 @@ class _CacheEntidades:
 
 
 # Instancia global de caché (se inicializa con la ruta por defecto)
-_cache: Optional[_CacheEntidades] = None
+_cache: _CacheEntidades | None = None
 
 
-def _obtener_cache(ruta: Optional[str] = None) -> _CacheEntidades:
+def _obtener_cache(ruta: str | None = None) -> _CacheEntidades:
     global _cache
     if _cache is None or (ruta and ruta != str(_CACHE_DEFAULT)):
         _cache = _CacheEntidades(ruta or str(_CACHE_DEFAULT))
@@ -236,7 +235,7 @@ def _obtener_p31(qid: str) -> list[str]:
     return tipos
 
 
-def _anio_de_claim(claims: dict, prop: str) -> Optional[int]:
+def _anio_de_claim(claims: dict, prop: str) -> int | None:
     """Extrae el AÑO de una propiedad de fecha de Wikidata (P569 nacimiento,
     P571 fundación, P580 inicio). Devuelve None si no está o no se parsea."""
     for claim in claims.get(prop, []):
@@ -250,7 +249,7 @@ def _anio_de_claim(claims: dict, prop: str) -> Optional[int]:
     return None
 
 
-def _obtener_fecha_relevante(qid: str) -> Optional[int]:
+def _obtener_fecha_relevante(qid: str) -> int | None:
     """Año relevante de la entidad para ubicarla en el tiempo: nacimiento (P569)
     para personas, fundación/inicio (P571/P580) para lugares/organizaciones.
     Permite descartar homónimos MODERNOS que no existían en la época del corpus.
@@ -373,10 +372,10 @@ def _puntuar_candidato(candidato: dict, texto: str, categoria: str,
 def enlazar_entidad(
     texto: str,
     categoria: str,
-    ruta_cache: Optional[str] = None,
+    ruta_cache: str | None = None,
     sin_red: bool = False,
     contexto: str = "",
-) -> Optional[dict]:
+) -> dict | None:
     """
     Enlaza una entidad nombrada con su entrada en Wikidata.
 
@@ -489,10 +488,10 @@ def enlazar_entidad(
 
 def enlazar_indice_ner(
     indice_ner: dict,
-    ruta_cache: Optional[str] = None,
+    ruta_cache: str | None = None,
     sin_red: bool = False,
     callback=None,
-    textos_articulos: Optional[dict] = None,
+    textos_articulos: dict | None = None,
 ) -> dict:
     """
     Enlaza todas las entidades de un índice NER completo.
@@ -536,7 +535,7 @@ def enlazar_indice_ner(
 
 def enlazar_lista_entidades(
     entidades: list[dict],
-    ruta_cache: Optional[str] = None,
+    ruta_cache: str | None = None,
     sin_red: bool = False,
 ) -> list[dict]:
     """
@@ -565,11 +564,11 @@ def enlazar_lista_entidades(
     return enriquecidas
 
 
-def estadisticas_cache(ruta_cache: Optional[str] = None) -> dict:
+def estadisticas_cache(ruta_cache: str | None = None) -> dict:
     """Retorna estadísticas de la caché local."""
     return _obtener_cache(ruta_cache).estadisticas()
 
 
-def limpiar_cache(dias: int = 90, ruta_cache: Optional[str] = None):
+def limpiar_cache(dias: int = 90, ruta_cache: str | None = None):
     """Elimina entradas con más de `dias` días de antigüedad de la caché."""
     _obtener_cache(ruta_cache).limpiar(dias)

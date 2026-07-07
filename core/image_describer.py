@@ -9,10 +9,12 @@ Proveedores soportados:
 Sin clave API el análisis OpenCV funciona igualmente.
 """
 
-import base64, json, gc, urllib.request, urllib.error
+import base64
+import gc
+import json
+import urllib.error
+import urllib.request
 from pathlib import Path
-from typing import Optional
-
 
 # ── Prompts ───────────────────────────────────────────────────────────────────
 _SYSTEM = (
@@ -67,7 +69,7 @@ def nombre_proveedor(api_key: str) -> str:
 # ── Recorte ───────────────────────────────────────────────────────────────────
 
 def _recortar_elemento(img_path: Path, x: int, y: int, w: int, h: int,
-                        margen: int = 5) -> Optional[bytes]:
+                        margen: int = 5) -> bytes | None:
     try:
         import cv2
         img = cv2.imread(str(img_path))

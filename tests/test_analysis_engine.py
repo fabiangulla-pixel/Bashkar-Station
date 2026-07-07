@@ -11,19 +11,17 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock
 
-import pytest
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.analysis_engine import (
-    leer_numero,
-    construir_red,
-    run_lda,
-    SECCIONES,
     CAMPOS_SEM,
+    SECCIONES,
+    construir_red,
+    leer_numero,
+    run_lda,
 )
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Constantes
@@ -215,7 +213,6 @@ class TestRunLda:
         assert "tema_dominante" in df_doc.columns
 
     def test_distribuciones_suman_uno(self):
-        import numpy as np
         docs = self._docs()
         _, df_doc = run_lda(docs, [f"d{i}" for i in range(len(docs))], n_temas=2)
         cols_tema = [c for c in df_doc.columns if c.startswith("tema_") and c != "tema_dominante"]

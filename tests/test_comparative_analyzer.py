@@ -6,24 +6,22 @@ Cubre: _tokenizar, perfil_tfidf, palabras_distintivas, similaridad_coseno_tfidf,
 """
 
 import sys
-import tempfile
 from pathlib import Path
 
-import pytest
 import pandas as pd
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.comparative_analyzer import (
     _tokenizar,
-    perfil_tfidf,
-    palabras_distintivas,
-    similaridad_coseno_tfidf,
+    cargar_corpora,
     comparar_campos_semanticos,
     generar_reporte_comparativo,
-    cargar_corpora,
+    palabras_distintivas,
+    perfil_tfidf,
+    similaridad_coseno_tfidf,
 )
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Fixtures
@@ -175,7 +173,6 @@ class TestSimilaridadCosenoTfidf:
         if df_tfidf.empty:
             pytest.skip("perfil_tfidf vacío")
         sim = similaridad_coseno_tfidf(df_tfidf)
-        import numpy as np
         diag = [sim.iloc[i, i] for i in range(len(sim))]
         for v in diag:
             assert abs(v - 1.0) < 0.01

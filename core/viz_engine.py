@@ -10,7 +10,6 @@ Genera:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Callable, Optional
 
 
 def _cargar_stopwords_historicas() -> set:
@@ -198,7 +197,8 @@ def _depurar_vocabulario_ia(lemas: list[str], api_key: str) -> list[str]:
             model="claude-haiku-4-5-20251001", max_tokens=2000,
             messages=[{"role": "user", "content": prompt}],
         )
-        import json as _json, re as _re2
+        import json as _json
+        import re as _re2
         raw = msg.content[0].text
         m = _re2.search(r"\{.*\}", raw, _re2.DOTALL)
         if m:
@@ -215,7 +215,7 @@ def nube_palabras(
     textos: list[str],
     ruta: Path,
     titulo: str = "Corpus",
-    stopwords_extra: Optional[set] = None,
+    stopwords_extra: set | None = None,
     max_palabras: int = 150,
     ancho: int = 900,
     alto: int = 500,
@@ -235,7 +235,7 @@ def nube_palabras(
     Requiere: wordcloud, matplotlib.
     """
     try:
-        from wordcloud import WordCloud, STOPWORDS
+        from wordcloud import STOPWORDS, WordCloud
     except ImportError:
         raise ImportError("Instala wordcloud: pip install wordcloud>=1.9.3")
     import matplotlib
@@ -292,7 +292,7 @@ def nubes_comparativas(
     grupos: {etiqueta: [textos]}
     """
     try:
-        from wordcloud import WordCloud, STOPWORDS
+        from wordcloud import STOPWORDS, WordCloud
     except ImportError:
         raise ImportError("Instala wordcloud: pip install wordcloud>=1.9.3")
     import matplotlib

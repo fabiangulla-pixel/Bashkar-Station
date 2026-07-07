@@ -8,9 +8,10 @@ Funcionalidad:
   · Similaridad coseno entre publicaciones.
 """
 
-import re, gc
-from pathlib import Path
+import gc
+import re
 from collections import Counter
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -19,8 +20,8 @@ _RE_TOKEN = re.compile(r"[a-záéíóúüñ]{3,}")
 
 STOPWORDS_ES = {
     "que","con","para","una","por","los","las","del","este","esta","estos","estas",
-    "como","más","pero","sus","los","sin","sobre","también","entre","cuando","muy",
-    "fue","ser","han","hay","donde","puede","tiene","siendo","siendo","todo","toda",
+    "como","más","pero","sus","sin","sobre","también","entre","cuando","muy",
+    "fue","ser","han","hay","donde","puede","tiene","siendo","todo","toda",
     "todos","todas","cada","otro","otra","otros","otras","mismo","misma","así","aún",
     "año","años","vez","día","días","hacer","gran","bien","solo","sino","cuyo","cuya",
 }
@@ -49,7 +50,7 @@ def cargar_corpora(
     """
     Carga los corpora de referencia desde subcarpetas de dir_referencia.
     Opcionalmente incluye el corpus principal analizado.
-    
+
     Estructura esperada de dir_referencia:
       referencia/
         El_Tiempo/     ← subcarpeta por publicación
@@ -57,7 +58,7 @@ def cargar_corpora(
           p002.txt
         Cromos/
           ...
-    
+
     Retorna {nombre_publicacion: texto_concatenado}.
     """
     corpora = {}
@@ -95,17 +96,17 @@ def perfil_tfidf(corpora: dict[str, str], top_n: int = 200) -> pd.DataFrame:
     """
     tok = {n: _tokenizar(t) for n, t in corpora.items()}
     idf = _idf(list(tok.values()))
-    
+
     # Unión de vocabulario relevante
     vocab = sorted({t for tokens in tok.values()
                     for t in Counter(tokens).most_common(top_n * 5)}, key=lambda x: x)
     vocab = [t for t in vocab if idf.get(t, 0) > 0.1][:top_n * len(corpora)]
-    
+
     rows = {}
     for nombre, tokens in tok.items():
         tf = _tf(tokens)
         rows[nombre] = {t: round(tf.get(t, 0) * idf.get(t, 0), 5) for t in vocab}
-    
+
     df = pd.DataFrame(rows).fillna(0)
     # Filtrar filas con algún valor > 0
     df = df[df.max(axis=1) > 0]
@@ -120,22 +121,22 @@ def palabras_distintivas(
     """
     Encuentra palabras estadísticamente distintivas de 'nombre_foco'
     respecto a cada otra publicación usando log-likelihood (Dunning G²).
-    
+
     Retorna {nombre_referencia: [(palabra, g2_score), ...]}.
     """
     tok_foco = Counter(_tokenizar(corpora.get(nombre_foco, "")))
     n_foco   = max(sum(tok_foco.values()), 1)
-    
+
     resultados = {}
     for nombre, texto in corpora.items():
         if nombre == nombre_foco:
             continue
         tok_ref = Counter(_tokenizar(texto))
         n_ref   = max(sum(tok_ref.values()), 1)
-        
+
         vocab_union = set(tok_foco) | set(tok_ref)
         scores = []
-        
+
         for palabra in vocab_union:
             a = tok_foco.get(palabra, 0)   # foco: sí
             b = tok_ref.get(palabra, 0)    # ref:  sí
@@ -148,7 +149,7 @@ def palabras_distintivas(
             def _ll(obs, exp):
                 if obs == 0 or exp <= 0: return 0
                 import math; return 2 * obs * math.log(obs / exp)
-            
+
             e1 = (a+b) * (a+c) / N
             e2 = (a+b) * (b+d) / N
             e3 = (c+d) * (a+c) / N
@@ -159,11 +160,11 @@ def palabras_distintivas(
             if ratio < 1:
                 g2 = -g2
             scores.append((palabra, round(g2, 1)))
-        
+
         # Top N más distintivas para foco (positivas)
         scores.sort(key=lambda x: -x[1])
         resultados[nombre] = scores[:top_n]
-    
+
     return resultados
 
 
@@ -213,14 +214,14 @@ def generar_reporte_comparativo(
     """
     if not corpora:
         return {}
-    
+
     df_tfidf  = perfil_tfidf(corpora, top_n=300)
     sim       = similaridad_coseno_tfidf(df_tfidf)
     dist      = palabras_distintivas(nombre_foco, corpora, top_n=30)
     campos_df = comparar_campos_semanticos(corpora, campos)
-    
+
     gc.collect()
-    
+
     return {
         "similaridad":     sim,
         "palabras_distintivas": dist,

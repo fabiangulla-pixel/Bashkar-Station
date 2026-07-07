@@ -1,7 +1,8 @@
 """tests/test_busqueda_semantica.py — Tests de embeddings y búsqueda FAISS."""
 import os
-import pytest
+
 import numpy as np
+import pytest
 
 
 def faiss_y_st_disponibles():
@@ -19,6 +20,7 @@ def indice_con_datos():
     if not pytest.importorskip("faiss", reason="faiss no disponible"):
         pytest.skip("faiss no disponible")
     import faiss as _faiss
+
     from core.busqueda_semantica import IndiceSemantico
     np.random.seed(42)
     N, D = 15, 384
@@ -152,7 +154,7 @@ class TestSimilitudCoseno:
                     reason="faiss o sentence-transformers no disponibles")
 class TestEmbeddingsReales:
     def test_shape_correcto(self):
-        from core.embeddings_local import generar_embeddings, DIMENSIONES
+        from core.embeddings_local import DIMENSIONES, generar_embeddings
         textos = ["hola mundo", "adios mundo", "Colombia 1939"]
         embs = generar_embeddings(textos)
         assert embs.shape == (3, DIMENSIONES)

@@ -27,10 +27,7 @@ Uso:
 from __future__ import annotations
 
 import re
-import unicodedata
 from pathlib import Path
-from typing import Optional
-
 
 # ─────────────────────────────────────────────────────────────────────────────
 # VOCABULARIO DE ÉPOCA — Lista blanca
@@ -181,10 +178,10 @@ class SpellCorrector:
         print(sc.estadisticas())
     """
 
-    _instancia: Optional["SpellCorrector"] = None
+    _instancia: "SpellCorrector" | None = None
     _dic = None
 
-    def __init__(self, dic_path: Optional[str] = None):
+    def __init__(self, dic_path: str | None = None):
         self._conteo_corregidas  = 0
         self._conteo_ignoradas   = 0
         self._conteo_total       = 0
@@ -234,7 +231,7 @@ class SpellCorrector:
                 or self._dic.lookup(palabra.lower())
                 or self._dic.lookup(palabra.capitalize()))
 
-    def _sugerir_correccion(self, palabra: str) -> Optional[str]:
+    def _sugerir_correccion(self, palabra: str) -> str | None:
         """
         Devuelve la mejor sugerencia Hunspell si tiene alta confianza.
         Criterio: la sugerencia top tiene distancia Levenshtein ≤ 2 respecto al original.
@@ -345,7 +342,7 @@ class SpellCorrector:
 # INSTANCIA COMPARTIDA (singleton lazy)
 # ─────────────────────────────────────────────────────────────────────────────
 
-_corrector_global: Optional[SpellCorrector] = None
+_corrector_global: SpellCorrector | None = None
 
 
 def obtener_corrector() -> SpellCorrector:

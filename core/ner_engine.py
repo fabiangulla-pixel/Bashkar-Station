@@ -15,9 +15,8 @@ automáticamente el mejor motor disponible.
 import gc
 import json
 import re
-from datetime import datetime
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 # ── Parámetros configurables (leídos por app.py para construir el panel lateral) ─
 PARAMS_SCHEMA = {
@@ -213,11 +212,11 @@ def extraer_roberta(texto: str) -> dict:
     return indice
 
 
-def pipeline_ner(texto: str, nlp=None, api_key: Optional[str] = None,
-                 callback: Optional[Callable[[str], None]] = None,
+def pipeline_ner(texto: str, nlp=None, api_key: str | None = None,
+                 callback: Callable[[str], None] | None = None,
                  usar_roberta: bool = True,
                  umbral_confianza: float = 0.0,
-                 categorias: Optional[list] = None,
+                 categorias: list | None = None,
                  proveedor_llm: str = "claude",
                  modelo_ollama: str = "latamgpt") -> dict:
     """

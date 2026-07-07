@@ -27,7 +27,7 @@ Mejoras v10.1:
 
 import re
 import unicodedata
-from typing import Optional
+from pathlib import Path
 
 # ── Tabla de sustituciones carácter a carácter ────────────────────────────────
 # Estos son errores OCR sistemáticos del escaneado de prensa en papel amarillento
@@ -620,8 +620,8 @@ def construir_diccionario_corpus(
         dict {palabra_normalizada: frecuencia}
     """
     import json
-    from pathlib import Path
     from collections import Counter
+    from pathlib import Path
 
     txt_dir = Path(txt_dir)
 

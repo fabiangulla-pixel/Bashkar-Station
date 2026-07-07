@@ -19,7 +19,7 @@ import json
 import re
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Callable, Optional
+from typing import Callable
 
 PARAMS_SCHEMA = {
     "motor": {
@@ -101,7 +101,7 @@ def analizar_tono(
     texto: str,
     api_key: str,
     modelo: str = "claude-haiku-4-5-20251001",
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
 ) -> dict:
     """Analiza el tono editorial de un texto. Retorna dict con todos los campos."""
     if not texto or not texto.strip():
@@ -147,7 +147,7 @@ def analizar_corpus_tono(
     articulos: dict,
     api_key: str,
     modelo: str = "claude-haiku-4-5-20251001",
-    callback: Optional[Callable[[int, int, str], None]] = None,
+    callback: Callable[[int, int, str], None] | None = None,
     workers: int = 4,
 ) -> dict:
     """

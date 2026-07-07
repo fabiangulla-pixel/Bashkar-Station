@@ -14,17 +14,16 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from core.layout_tesseract import _descartar_contenidas, clasificar_bloque
 from core.zone_labeler import (
-    Zona,
     PaginaEtiquetada,
+    Zona,
     calcular_orden_lectura,
+    cargar_pagina,
     dividir_zona,
     fusionar_zonas,
     guardar_pagina,
-    cargar_pagina,
 )
-from core.layout_tesseract import clasificar_bloque, _descartar_contenidas
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # clasificar_bloque

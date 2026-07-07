@@ -6,9 +6,8 @@ Permite detectar artículos de autoría anónima con estilo similar a artículos
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Callable
 
 
 def _vectorizar(textos: list[str], ngram_range=(2, 4), max_features=3000):
@@ -55,7 +54,7 @@ def atribuir_autoria(
     textos_firmados: dict[str, list[str]],
     textos_anonimos: dict[str, str],
     top_n: int = 3,
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
 ) -> dict:
     """
     Atribuye textos anónimos a posibles autores por similitud estilométrica.
@@ -67,7 +66,6 @@ def atribuir_autoria(
     Retorna: {art_id: [{"autor": ..., "similitud": ...}]}
     """
     import numpy as np
-    from sklearn.feature_extraction.text import TfidfVectorizer
 
     if not textos_firmados or not textos_anonimos:
         return {}
@@ -138,7 +136,7 @@ def exportar_estilometria_csv(resultados: dict, ruta: Path) -> int:
 def cluster_tematico(
     textos: dict[str, str],
     n_clusters: int = 5,
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
 ) -> dict:
     """
     Agrupa artículos por similitud estilométrica usando K-Means.
@@ -148,7 +146,6 @@ def cluster_tematico(
     Retorna: {art_id: cluster_id}
     """
     from sklearn.cluster import KMeans
-    import numpy as np
 
     def log(m):
         if callback:

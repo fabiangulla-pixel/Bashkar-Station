@@ -18,9 +18,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional, Callable
-import numpy as np
+from typing import Callable
 
+import numpy as np
 
 _MODELO_CLIP = "openai/clip-vit-base-patch32"
 _DIM_CLIP = 512
@@ -29,8 +29,8 @@ _DIM_CLIP = 512
 def _cargar_clip():
     """Carga el modelo CLIP. Descarga ~600 MB la primera vez."""
     try:
-        from transformers import CLIPProcessor, CLIPModel
         import torch
+        from transformers import CLIPModel, CLIPProcessor
     except ImportError:
         raise ImportError(
             "Instala: pip install transformers torch\n"
@@ -42,11 +42,11 @@ def _cargar_clip():
     return modelo, proc
 
 
-def _embedding_imagen(ruta: str, modelo, proc) -> Optional[np.ndarray]:
+def _embedding_imagen(ruta: str, modelo, proc) -> np.ndarray | None:
     """Genera embedding CLIP de una imagen. Retorna None si falla."""
     try:
-        from PIL import Image
         import torch
+        from PIL import Image
         img    = Image.open(ruta).convert("RGB")
         inputs = proc(images=img, return_tensors="pt")
         with torch.no_grad():
@@ -148,8 +148,8 @@ class IndiceVisual:
 
 def indexar_imagenes(
     rutas: list[str],
-    metadatos_extra: Optional[list[dict]] = None,
-    callback: Optional[Callable[[int, int, str], None]] = None,
+    metadatos_extra: list[dict] | None = None,
+    callback: Callable[[int, int, str], None] | None = None,
 ) -> IndiceVisual:
     """
     Genera embeddings CLIP para una lista de imágenes y construye un IndiceVisual.
@@ -208,8 +208,8 @@ def buscar_por_texto(
 def clip_disponible() -> bool:
     """True si transformers y torch están instalados."""
     try:
-        import transformers
         import torch
+        import transformers
         return True
     except ImportError:
         return False

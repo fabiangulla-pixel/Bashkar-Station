@@ -13,8 +13,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Callable, Optional
-
+from typing import Callable
 
 PARAMS_SCHEMA = {
     "backend": {
@@ -107,7 +106,7 @@ def _limpiar_texto(texto: str) -> str:
 def _modelar_bertopic(
     textos: list[str],
     n_topicos: int = 10,
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
 ) -> dict:
     def log(m):
         if callback:
@@ -163,7 +162,7 @@ def _modelar_bertopic(
 def _modelar_nmf(
     textos: list[str],
     n_topicos: int = 10,
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
     min_df: int = 2,
     max_df: float = 0.95,
     n_palabras: int = 10,
@@ -172,9 +171,8 @@ def _modelar_nmf(
         if callback:
             callback(m)
 
-    from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.decomposition import NMF
-    import numpy as np
+    from sklearn.feature_extraction.text import TfidfVectorizer
 
     log(f"Vectorizando {len(textos)} documentos…")
     textos_limpios = [_limpiar_texto(t) for t in textos]
@@ -259,9 +257,9 @@ def etiquetar_topicos_llm(resultado: dict, api_key: str) -> dict:
 def modelar_topicos(
     textos: list[str],
     n_topicos: int = 10,
-    api_key: Optional[str] = None,
+    api_key: str | None = None,
     usar_bertopic: bool = True,
-    callback: Optional[Callable[[str], None]] = None,
+    callback: Callable[[str], None] | None = None,
     min_df: int = 2,
     max_df: float = 0.95,
     n_palabras: int = 10,

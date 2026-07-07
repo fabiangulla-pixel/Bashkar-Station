@@ -11,15 +11,12 @@ Uso:
     arts = repo.listar_articulos()
 """
 
-import sqlite3
 import json
-import platform
+import sqlite3
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Optional
 
-from datos.schema import SCHEMA_PROYECTO, SCHEMA_GLOBAL
-
+from datos.schema import SCHEMA_GLOBAL, SCHEMA_PROYECTO
 
 # ── DB global (conocimiento compartido entre proyectos) ────────────────────────
 
@@ -106,7 +103,7 @@ class Repositorio:
                 "estado":           articulo.get("estado", "pendiente"),
             })
 
-    def obtener_articulo(self, articulo_id: str) -> Optional[dict]:
+    def obtener_articulo(self, articulo_id: str) -> dict | None:
         with self._conn() as conn:
             row = conn.execute(
                 "SELECT * FROM articulos WHERE id = ?", (articulo_id,)
@@ -174,7 +171,7 @@ class Repositorio:
                   confianza, motor, version_motor))
         self.actualizar_estado(articulo_id, "completo")
 
-    def obtener_texto(self, articulo_id: str, limpio: bool = True) -> Optional[str]:
+    def obtener_texto(self, articulo_id: str, limpio: bool = True) -> str | None:
         campo = "texto_limpio" if limpio else "texto_crudo"
         with self._conn() as conn:
             row = conn.execute(
@@ -315,7 +312,7 @@ class Repositorio:
                 resultado.get("fuente", "claude_api"),
             ))
 
-    def obtener_tono(self, articulo_id: str) -> Optional[dict]:
+    def obtener_tono(self, articulo_id: str) -> dict | None:
         with self._conn() as conn:
             row = conn.execute(
                 "SELECT * FROM tono WHERE articulo_id = ? ORDER BY id DESC LIMIT 1",
@@ -428,7 +425,7 @@ class Repositorio:
                   wikidata_id, wikidata_uri, confianza, fuente))
         return eid
 
-    def obtener_entidad_canonica(self, entidad_id: str) -> Optional[dict]:
+    def obtener_entidad_canonica(self, entidad_id: str) -> dict | None:
         with self._conn() as conn:
             row = conn.execute(
                 "SELECT * FROM entidades_canonicas WHERE id = ?", (entidad_id,)
@@ -683,7 +680,7 @@ class Repositorio:
         if modulo:
             sql += " AND modulo_origen = ?"; params.append(modulo)
         if q:
-            sql += " AND (texto LIKE ? OR etiquetas LIKE ?)";
+            sql += " AND (texto LIKE ? OR etiquetas LIKE ?)"
             params += [f"%{q}%", f"%{q}%"]
         sql += " ORDER BY creado DESC"
         with self._conn() as conn:

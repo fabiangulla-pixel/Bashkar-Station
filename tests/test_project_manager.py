@@ -1,7 +1,8 @@
 """tests/test_project_manager.py — Tests del gestor de proyectos v11."""
 import json
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture
@@ -89,7 +90,11 @@ class TestGuardarCargar:
         wikidata_enlaces = {}
 
     def test_guardar_y_cargar_basico(self, dir_proyectos):
-        from core.project_manager import nuevo_proyecto, guardar_proyecto, cargar_proyecto
+        from core.project_manager import (
+            cargar_proyecto,
+            guardar_proyecto,
+            nuevo_proyecto,
+        )
         ruta = nuevo_proyecto("Test GC", "Estampa")
         st = self._ST()
         guardar_proyecto(ruta, st)
@@ -100,7 +105,11 @@ class TestGuardarCargar:
         assert st2.periodo == "1939"
 
     def test_cargar_preserva_nombre(self, dir_proyectos):
-        from core.project_manager import nuevo_proyecto, guardar_proyecto, cargar_proyecto
+        from core.project_manager import (
+            cargar_proyecto,
+            guardar_proyecto,
+            nuevo_proyecto,
+        )
         ruta = nuevo_proyecto("Mi proyecto", "Estampa")
         st = self._ST()
         guardar_proyecto(ruta, st)
@@ -108,7 +117,11 @@ class TestGuardarCargar:
         assert res["nombre"] == "Mi proyecto"
 
     def test_cargar_conecta_repo(self, dir_proyectos):
-        from core.project_manager import nuevo_proyecto, guardar_proyecto, cargar_proyecto
+        from core.project_manager import (
+            cargar_proyecto,
+            guardar_proyecto,
+            nuevo_proyecto,
+        )
         ruta = nuevo_proyecto("Test Repo", "Estampa")
         st = self._ST()
         guardar_proyecto(ruta, st)
@@ -123,7 +136,11 @@ class TestGuardarCargar:
         assert res["ok"] is False
 
     def test_guardar_persiste_api_keys(self, dir_proyectos):
-        from core.project_manager import nuevo_proyecto, guardar_proyecto, cargar_proyecto
+        from core.project_manager import (
+            cargar_proyecto,
+            guardar_proyecto,
+            nuevo_proyecto,
+        )
         ruta = nuevo_proyecto("Test Keys", "Estampa")
         st = self._ST()
         st.api_keys = {"anthropic": "sk-ant-xxx", "openai": ""}
@@ -133,7 +150,11 @@ class TestGuardarCargar:
         assert st2.api_keys.get("anthropic") == "sk-ant-xxx"
 
     def test_guardar_persiste_ner(self, dir_proyectos):
-        from core.project_manager import nuevo_proyecto, guardar_proyecto, cargar_proyecto
+        from core.project_manager import (
+            cargar_proyecto,
+            guardar_proyecto,
+            nuevo_proyecto,
+        )
         ruta = nuevo_proyecto("Test NER", "Estampa")
         st = self._ST()
         st.indice_ner_global = {
@@ -152,8 +173,9 @@ class TestGuardarCargar:
 
 class TestMigracionAutomatica:
     def test_v10_migra_al_cargar(self, dir_proyectos):
-        from core.project_manager import cargar_proyecto
         import json
+
+        from core.project_manager import cargar_proyecto
 
         # Crear un .bashkar v10 manualmente
         ruta = dir_proyectos / "viejo.bashkar"

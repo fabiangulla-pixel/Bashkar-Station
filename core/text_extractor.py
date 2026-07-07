@@ -11,6 +11,7 @@ Uso:
 """
 
 from __future__ import annotations
+
 import gc
 import os
 import platform
@@ -227,7 +228,7 @@ def extraer_pdf_ocr(
     Convierte PDF a imágenes y aplica Tesseract OCR.
     Devuelve lista de dicts igual que extraer_pdf_digital.
     """
-    from core.ocr_engine import pdf_a_imagenes, ocr_pagina
+    from core.ocr_engine import ocr_pagina, pdf_a_imagenes
 
     img_dir.mkdir(parents=True, exist_ok=True)
     txt_dir.mkdir(parents=True, exist_ok=True)
