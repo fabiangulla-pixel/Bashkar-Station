@@ -1,0 +1,222 @@
+# ⬡ Bashkar Station v11.2
+### Plataforma de Análisis Editorial Computacional para Publicaciones Periódicas Históricas
+
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Zenodo DOI](https://img.shields.io/badge/DOI-10.XXXX%2Fzenodo.XXXXXXX-blue)](https://zenodo.org)
+
+Bashkar Station es una aplicación de escritorio **100% offline** para el análisis
+computacional de publicaciones periódicas históricas en español. Desarrollada para
+investigadores en historia de la prensa, estudios editoriales y humanidades digitales.
+
+**Corpus de referencia:** Revista *Estampa* (Colombia, 1930–1940), digitalizada por
+la Biblioteca Nacional de Colombia (BNC).
+
+**Institución:** Instituto Caro y Cuervo, Bogotá, Colombia.
+
+---
+
+## Características principales
+
+| Módulo | Función |
+|--------|---------|
+| **OCR multi-ruta** | Tesseract, Kraken CATMuS, Claude Vision, Ollama local |
+| **Normalización** | Post-OCR conservadora: preserva arcaísmos del español histórico |
+| **Segmentación** | Artículo como unidad atómica; señales de continuación explícitas |
+| **NER híbrido** | spaCy + BERT (mrm8488) + Claude API; 6 categorías históricas |
+| **Análisis léxico** | Collocates (PMI), KWIC, n-gramas, dispersión, frecuencia relativa |
+| **Stopwords proyecto** | Lista personalizable por investigador/corpus |
+| **Topic modeling** | LDA con scikit-learn; BERTopic opcional |
+| **Redes** | Co-ocurrencia de entidades (networkx + pyvis) |
+| **Wikidata** | Linking de entidades a base de conocimiento global (LOD) |
+| **Bitácora** | Notas situadas, hipótesis con estado, citas del corpus |
+| **Timeline** | HTML interactivo con vis.js, por sección/tono/autor |
+| **Export TEI P5** | XML-TEI válido con entidades en `<standOff>` |
+| **Export BibTeX** | Referencias bibliográficas para gestores de citas |
+| **METHODS.md** | Sección de metodología automática para papers |
+| **Paquete publicación** | ZIP con TEI + BibTeX + CSV + Bitácora + Métodos |
+| **CLI** | Pipeline completo sin interfaz gráfica |
+| **HTR dataset** | Export de ground truth para reentrenamiento Kraken |
+
+---
+
+## Instalación rápida
+
+### Requisitos previos
+- Python 3.9 o superior
+- pip actualizado (`python -m pip install --upgrade pip`)
+
+### Paso 1 — Instalar dependencias
+```bash
+python instalar.py
+```
+El instalador gestiona automáticamente:
+- Paquetes Python (PyMuPDF, spaCy, transformers, FAISS, etc.)
+- Modelo spaCy español (`es_core_news_sm`)
+- Tesseract OCR en Windows
+- Poppler en Windows
+
+### Paso 2 — Ejecutar la app
+```bash
+python app.py
+```
+O en Windows: doble clic en `Ejecutar.bat`.
+
+### Línea de comandos (sin GUI)
+```bash
+python cli.py --proyecto ruta/a/proyecto.bashkar --etapas ocr,norm,seg,anal,ner
+python cli.py --proyecto ruta/a/proyecto.bashkar --info
+```
+
+---
+
+## Guía de inicio rápido
+
+### Flujo típico de análisis
+
+```
+1. Configuración ──→ Define la publicación, carpetas, parámetros OCR
+2. Extracción    ──→ OCR del corpus (Tesseract recomendado, PSM 3)
+3. Normalizar    ──→ Revisar y corregir texto página por página
+4. Segmentar     ──→ Detectar artículos, títulos y autores
+5. Analizar      ──→ NER, LDA, campos semánticos, Word2Vec
+6. Resultados    ──→ Exportar TEI, BibTeX, paquete de publicación
+```
+
+### Flujo alternativo (PDFs con texto embebido BNC)
+```
+1. Configuración ──→ Definir parámetros
+2. Conversor PDF ──→ Extrae texto sin re-OCR (7 seg por número)
+3. Normalizar    ──→ Revisar texto extraído
+4. Segmentar     ──→ Artículos
+5. Analizar / Resultados
+```
+
+### Análisis rápido sin proyecto
+Haz clic en **⚡** en la barra superior para cargar una carpeta de TXT
+directamente sin crear proyecto. Útil para demostraciones o análisis exploratorio.
+
+---
+
+## Arquitectura técnica
+
+```
+bashkar_station/
+├── app.py              # UI tkinter (~15.000 líneas), estado global ST = Estado()
+├── cli.py              # Interfaz de línea de comandos
+├── instalar.py         # Instalador de dependencias
+├── core/               # 60+ módulos de procesamiento (sin dependencia de tkinter)
+│   ├── ocr_engine.py           # Motor OCR multi-ruta
+│   ├── ocr_normalizer.py       # Normalización post-OCR histórica
+│   ├── article_segmenter.py    # Segmentación de artículos
+│   ├── ner_engine.py           # NER híbrido spaCy+BERT+Claude
+│   ├── collocation_engine.py   # Collocates, KWIC, n-gramas, dispersión
+│   ├── bitacora_engine.py      # Notas de investigación situadas
+│   ├── timeline_engine.py      # Timeline HTML interactiva
+│   ├── tei_engine.py           # Export XML-TEI P5 + validación
+│   ├── methods_reporter.py     # METHODS.md automático
+│   ├── kraken_trainer.py       # Dataset HTR para reentrenamiento
+│   └── voice_dictation.py      # Dictado por voz en Normalizar
+├── datos/              # Capa de datos SQLite
+│   ├── schema.py       # DDL: articulos, ocr, entidades, notas_investigacion…
+│   └── repositorio.py  # DAO único punto de acceso
+└── tests/              # 560+ tests (pytest)
+```
+
+**Decisiones de diseño:**
+- **Tkinter** — incluido con Python, cero dependencias de UI, funciona 100% offline
+- **JSON + SQLite** — proyectos inspeccionables con cualquier editor o Excel
+- **Offline-first** — todas las funciones analíticas funcionan sin internet; Claude/GPT son opcionales
+- **Página como unidad atómica** — la sub-segmentación intra-página es imposible con el OCR de la BNC (columnas mezcladas); se documenta como decisión metodológica
+- **Arcaísmos preservados** — el normalizador NO moderniza el español de los años 30
+
+---
+
+## Decisiones metodológicas documentadas
+
+| Decisión | Razón |
+|----------|-------|
+| Página = unidad atómica | OCR BNC mezcla columnas en stream lineal sin información espacial recuperable |
+| Sin lematización por defecto | Preserva variación ortográfica histórica como dato lingüístico |
+| Stopwords personalizables | Corpus histórico requiere listas propias (topónimos, arcaísmos válidos) |
+| Tres rutas OCR | Cada ruta tiene trade-offs documentados (tiempo, costo, calidad); el investigador elige |
+| Multi-proveedor IA | Sin dependencia de un proveedor; degrada gracefully a spaCy/BERT offline |
+
+---
+
+## Exportación para publicación
+
+El botón **📦 Paquete publicación** genera un ZIP con:
+
+```
+paquete_publicacion_YYYYMMDD.zip
+├── corpus.xml      ← XML-TEI P5 (validado con validar_tei())
+├── corpus.bib      ← BibTeX de todas las unidades
+├── entidades.csv   ← Índice NER completo
+├── bitacora.md     ← Notas del investigador en Markdown
+├── METHODS.md      ← Sección de metodología lista para el paper
+└── metadatos.json  ← Versiones de software, parámetros, estadísticas
+```
+
+---
+
+## Reproducibilidad
+
+Bashkar Station genera automáticamente un archivo **METHODS.md** con:
+- Versiones exactas de todos los paquetes usados
+- Parámetros del pipeline (DPI, idioma OCR, modelo NER, etc.)
+- Estadísticas del corpus (páginas, palabras, artículos, entidades)
+- Decisiones metodológicas aplicadas
+
+Este documento está diseñado para incluirse directamente en la sección
+de Metodología de papers en revistas de humanidades digitales.
+
+---
+
+## Citación
+
+Si usas Bashkar Station en tu investigación, por favor cita:
+
+```bibtex
+@software{bashkar_station_2026,
+  author    = {[Nombre del investigador]},
+  title     = {Bashkar Station: Plataforma de Análisis Editorial Computacional
+               para Publicaciones Periódicas Históricas},
+  year      = {2026},
+  version   = {11.2},
+  publisher = {Zenodo},
+  doi       = {10.XXXX/zenodo.XXXXXXX},
+  url       = {https://github.com/[usuario]/bashkar-station}
+}
+```
+
+---
+
+## Tests
+
+```bash
+# Todos los tests
+python -m pytest tests/ -v
+
+# Solo tests de integración
+python -m pytest tests/test_integration_pipeline.py -v
+
+# Tests de features v11
+python -m pytest tests/test_v11_features.py -v
+```
+
+**Estado actual:** 560+ tests, 0 fallos.
+
+---
+
+## Licencia
+
+MIT License. Ver [LICENSE](LICENSE).
+
+---
+
+## Agradecimientos
+
+- **Biblioteca Nacional de Colombia (BNC)** — acceso al corpus digital de la revista Estampa
+- **Instituto Caro y Cuervo** — apoyo institucional y financiamiento de la investigación
+- Metodología inspirada en: Impresso Project (EPFL), Newspaper Navigator (Library of Congress)

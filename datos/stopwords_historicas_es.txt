@@ -1,0 +1,61 @@
+# Stopwords para español histórico colombiano (1930-1940)
+# Uso: procesamiento de texto en Bashkar Station
+# Incluye stopwords estándar + formas arcaicas + jerga de época
+
+# Artículos y determinantes
+el la los las un una unos unas
+aquel aquella aquellos aquellas
+este esta estos estas
+ese esa esos esas
+dicho dicha dichos dichas
+
+# Preposiciones
+a ante bajo cabe con contra de desde durante en entre hacia
+hasta mediante para por según sin so sobre tras versus via
+del al
+
+# Conjunciones
+y e ni o u pero sino mas aunque sino que pues si como
+cuando donde mientras mientras aunque ya
+
+# Pronombres
+yo tu el ella nosotros vosotros ellos ellas me te se nos os
+mi tu su mis tus sus nuestro vuestra
+lo la le los las les se
+que quien quienes cuyo cuya cuyos cuyas cual cuales
+
+# Verbos auxiliares y copulativos (formas comunes)
+es son era eran fue fueron sido siendo
+ha han hay habia habian hubo hubieron haya
+es esta estuvo estuvieron estaba estaban
+tiene tienen tenia tenian tuvo tuvieron
+ser estar tener haber hacer ir
+fue ha sido esta siendo
+
+# Formas arcaicas frecuentes en el corpus
+hase habia fué fuese dicho dijo dijera
+habrá será estará tendrá habrán serán
+afirmó expresó manifestó aseguró declaró señaló indicó
+también tambien asi así aunque cuanto cuánto
+mucho muchos mucha muchas poco pocos poca pocas
+otro otros otra otras mismo mismos misma mismas
+
+# Adverbios comunes
+muy más mas menos bien mal no sí si ya
+aquí alli allá también tampoco siempre nunca
+antes después ahora entonces hoy mañana ayer
+así como solo solamente sobre todo casi apenas
+
+# Palabras funcionales de época
+pues ora sea cual quiera cualquier
+dicho cosa vez veces parte partes
+modo forma manera cuenta cuanto
+junto juntos junto junto durante
+través través mediante mediante
+
+# Términos de revista/prensa (no son palabras de contenido)
+página páginas sección número edición
+revista estampa fotografía foto grabado
+ilustración ilustraciones portada
+redacción director editor editores
+corresponsal enviado especial

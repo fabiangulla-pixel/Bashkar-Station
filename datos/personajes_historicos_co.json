@@ -1,0 +1,69 @@
+{
+  "_descripcion": "Base de conocimiento de personajes históricos colombianos relevantes para el corpus Estampa 1930-1940",
+  "_version": "1.0",
+  "_nota": "Datos para enriquecer el NER y la desambiguación de entidades",
+
+  "presidentes": [
+    {"nombre": "Alfonso López Pumarejo", "periodo": "1934-1938", "partido": "Liberal", "notas": "La Revolución en Marcha"},
+    {"nombre": "Enrique Olaya Herrera", "periodo": "1930-1934", "partido": "Liberal", "notas": "Primer presidente liberal tras la Hegemonía Conservadora"},
+    {"nombre": "Eduardo Santos", "periodo": "1938-1942", "partido": "Liberal", "notas": "Fundador de El Tiempo"}
+  ],
+
+  "intelectuales_escritores": [
+    {"nombre": "Jorge Zalamea Borda", "campo": "Literatura/Diplomacia", "notas": "Poeta y diplomático"},
+    {"nombre": "León de Greiff", "campo": "Poesía", "notas": "Poeta vanguardista colombiano"},
+    {"nombre": "Tomás Carrasquilla", "campo": "Narrativa", "notas": "Novelista antioqueño"},
+    {"nombre": "Eduardo Caballero Calderón", "campo": "Periodismo/Literatura", "notas": "Escritor y periodista"},
+    {"nombre": "Baldomero Sanín Cano", "campo": "Crítica/Ensayo", "notas": "Crítico literario e intelectual"},
+    {"nombre": "Rafael Maya", "campo": "Poesía/Crítica", "notas": "Poeta y crítico literario"},
+    {"nombre": "Germán Arciniegas", "campo": "Historia/Ensayo", "notas": "Historiador e intelectual liberal"},
+    {"nombre": "Luis López de Mesa", "campo": "Educación/Ensayo", "notas": "Médico, filósofo, Ministro de Educación"},
+    {"nombre": "Jorge Eliécer Gaitán", "campo": "Política", "notas": "Líder popular liberal"},
+    {"nombre": "María Cano", "campo": "Política/Feminismo", "notas": "Primera líder obrera Colombia"},
+    {"nombre": "Agustín Nieto Caballero", "campo": "Educación", "notas": "Fundador del Gimnasio Moderno"},
+    {"nombre": "Darío Echandía", "campo": "Política/Derecho", "notas": "Político liberal, jurista"}
+  ],
+
+  "periodistas_directores": [
+    {"nombre": "Eduardo Santos", "medio": "El Tiempo", "notas": "Director y futuro presidente"},
+    {"nombre": "Luis Cano", "medio": "El Espectador", "notas": "Director El Espectador"},
+    {"nombre": "Enrique Santos Castillo", "medio": "El Tiempo", "notas": "Calíbán, columnista"},
+    {"nombre": "Jorge Pombo", "medio": "Estampa", "notas": "Fundador/director Estampa"},
+    {"nombre": "Alejandro Vallejo", "medio": "Cromos", "notas": "Director revista Cromos"}
+  ],
+
+  "artistas_culturales": [
+    {"nombre": "Débora Arango", "campo": "Pintura", "notas": "Pintora antioqueña vanguardista"},
+    {"nombre": "Pedro Nel Gómez", "campo": "Pintura/Muralismo", "notas": "Muralista colombiano"},
+    {"nombre": "Gonzalo Vidal", "campo": "Música", "notas": "Compositor colombiano"},
+    {"nombre": "Emilio Murillo", "campo": "Música", "notas": "Compositor y pianista"},
+    {"nombre": "Guillermo Uribe Holguín", "campo": "Música", "notas": "Compositor y violinista"}
+  ],
+
+  "instituciones_clave": [
+    {"nombre": "Instituto Caro y Cuervo", "tipo": "Academia", "fundacion": "1942"},
+    {"nombre": "Academia Colombiana de la Lengua", "tipo": "Academia", "fundacion": "1871"},
+    {"nombre": "Universidad Nacional de Colombia", "tipo": "Universidad", "fundacion": "1867"},
+    {"nombre": "Universidad de Antioquia", "tipo": "Universidad", "fundacion": "1803"},
+    {"nombre": "Ministerio de Educación Nacional", "tipo": "Institución estatal"},
+    {"nombre": "Biblioteca Nacional de Colombia", "tipo": "Biblioteca", "fundacion": "1777"},
+    {"nombre": "El Tiempo", "tipo": "Periódico", "fundacion": "1911"},
+    {"nombre": "El Espectador", "tipo": "Periódico", "fundacion": "1887"},
+    {"nombre": "Cromos", "tipo": "Revista", "fundacion": "1916"},
+    {"nombre": "Estampa", "tipo": "Revista", "fundacion": "1929"},
+    {"nombre": "Partido Liberal Colombiano", "tipo": "Partido político"},
+    {"nombre": "Partido Conservador Colombiano", "tipo": "Partido político"}
+  ],
+
+  "eventos_historicos_periodo": [
+    {"nombre": "Revolución en Marcha", "año": "1934-1938", "descripcion": "Reformas de López Pumarejo"},
+    {"nombre": "Matanza de las Bananeras", "año": "1928", "descripcion": "Masacre trabajadores United Fruit"},
+    {"nombre": "Guerra Colombia-Perú", "año": "1932-1933", "descripcion": "Conflicto por Leticia"},
+    {"nombre": "Primera República Liberal", "año": "1930", "descripcion": "Fin Hegemonía Conservadora"},
+    {"nombre": "Reforma Constitucional", "año": "1936", "descripcion": "Reforma Constitucional de López"},
+    {"nombre": "Bogotazo", "año": "1948", "descripcion": "Post-período del corpus"},
+    {"nombre": "Gran Depresión", "año": "1929-1939", "descripcion": "Crisis económica mundial"},
+    {"nombre": "Segunda República Española", "año": "1931-1936", "descripcion": "Referencia frecuente en prensa liberal"},
+    {"nombre": "Segunda Guerra Mundial", "año": "1939-1945", "descripcion": "Inicio al final del período"}
+  ]
+}

@@ -1,0 +1,21 @@
+* text=auto
+
+*.py  text
+*.md  text
+*.txt text
+*.ini text
+*.toml text
+*.json text
+*.sh  text eol=lf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.pdf  binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.db   binary
+*.mlmodel binary

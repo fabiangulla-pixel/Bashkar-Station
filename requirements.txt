@@ -1,0 +1,70 @@
+# Bashkar Station v11.2 — Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core document processing
+pymupdf>=1.23.0
+pdf2image>=1.17.0
+pytesseract>=0.3.10
+Pillow>=10.0.0
+
+# NLP
+spacy>=3.7.0
+# gensim>=4.3.0  # OPCIONAL. Word2Vec usa backend PyTorch (ya incluido vía torch)
+#                # si gensim no está. gensim 4.4 NO compila en Python 3.14
+#                # (API interna de CPython eliminada); instalable en Python <=3.12.
+scikit-learn>=1.4.0
+scipy>=1.12.0
+
+# Data & visualization
+numpy>=2.0.0
+pandas>=2.1.0
+matplotlib>=3.8.0
+seaborn>=0.13.0
+openpyxl>=3.1.0
+networkx>=3.2.0
+
+# Computer vision
+opencv-python-headless>=4.9.0
+
+# AI API
+anthropic>=0.25.0
+# Opcional: IA de visión Gemini (OCR multiproveedor + extracción multimodal).
+# Nota: google-generativeai está deprecado por Google a favor de google-genai;
+# se mantiene por consistencia con core/ocr_llm.py (mismo SDK). Degrada con
+# gracia si no está instalado.
+google-generativeai>=0.8.0
+
+# Network analysis (v12)
+pyvis>=0.3.2
+python-louvain>=0.16
+
+# Visualization (v14)
+wordcloud>=1.9.3
+folium>=0.17.0
+
+# Export (v15, v20)
+python-docx>=1.1.0
+python-pptx>=0.6.23
+
+# Web / metadata
+requests>=2.31.0
+
+# GUI (included with Python)
+# tkinter — no pip install needed
+
+# Voice dictation (v11)
+SpeechRecognition>=3.10.0
+sounddevice>=0.4.6
+
+# XML validation (v11)
+lxml>=5.0.0
+
+# Semantic search + NLP local
+transformers>=4.40.0
+sentence-transformers>=3.0.0
+torch>=2.0.0
+faiss-cpu>=1.7.0
+
+# External binaries (not pip):
+# - Tesseract OCR >= 5.0 (Windows: UB-Mannheim installer)
+# - Poppler (Windows: oschwartz10612/poppler-windows)

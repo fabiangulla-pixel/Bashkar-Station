@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Builds (PyInstaller) — build/ pesa 252 MB
+dist/
+build/
+*.spec.bak
+
+# Datos y bases de datos (proyectos del investigador, nunca al repo)
+*.db
+*.sqlite
+*.sqlite3
+_prueba5/
+
+# Modelos pesados (Kraken/CATMuS)
+modelos/
+*.mlmodel
+*.traineddata
+
+# Secretos y entorno
+.env
+*.key
+
+# SO / editor
+Thumbs.db
+.DS_Store
+desktop.ini
