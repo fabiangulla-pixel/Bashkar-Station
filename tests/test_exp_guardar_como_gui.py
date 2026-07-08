@@ -1,5 +1,12 @@
 """Tests del diálogo «Guardar como…» (_exp_*) — PDF buscable, resolución
-de imagen de página, y export a texto plano."""
+de imagen de página, y export a texto plano.
+
+Todos los atributos de ST (estado global compartido en todo el proceso de
+tests) se setean vía monkeypatch.setattr, nunca por asignación directa —
+ST sobrevive entre tests y una asignación directa deja el valor filtrado
+hacia pruebas posteriores (así se descubrió un bug real: _dash_actualizar
+crasheaba con ST.corpus_meta como DataFrame no vacío, expuesto porque un
+test anterior lo dejaba puesto sin limpiar)."""
 
 import pytest
 
@@ -29,9 +36,9 @@ def _png(path, size=(200, 100)):
     Image.new("RGB", size, "white").save(path)
 
 
-def test_exp_resolver_imagen_encuentra_por_glob(app_res, tmp_path):
+def test_exp_resolver_imagen_encuentra_por_glob(app_res, tmp_path, monkeypatch):
     a, appmod = app_res
-    appmod.ST.out_dir = tmp_path
+    monkeypatch.setattr(appmod.ST, "out_dir", tmp_path)
     img_dir = tmp_path / "02_imagenes" / "num1"
     img_dir.mkdir(parents=True)
     _png(img_dir / "p0001.png")
@@ -41,16 +48,20 @@ def test_exp_resolver_imagen_encuentra_por_glob(app_res, tmp_path):
     assert encontrada.name == "p0001.png"
 
 
-def test_exp_resolver_imagen_sin_carpeta_devuelve_none(app_res, tmp_path):
+def test_exp_resolver_imagen_sin_carpeta_devuelve_none(app_res, tmp_path, monkeypatch):
     a, appmod = app_res
-    appmod.ST.out_dir = tmp_path
+    monkeypatch.setattr(appmod.ST, "out_dir", tmp_path)
     assert a._exp_resolver_imagen("no_existe", "p0001") is None
 
 
-def test_exp_pdf_buscable_sin_corpus_meta_avisa_no_crashea(app_res):
+def test_exp_pdf_buscable_sin_corpus_meta_avisa_no_crashea(app_res, monkeypatch):
     a, appmod = app_res
-    appmod.ST.corpus_meta = None
-    a._exp_pdf_buscable()  # debe mostrar warning y retornar, no lanzar
+    monkeypatch.setattr(appmod.ST, "corpus_meta", None)
+    llamado = {"si": False}
+    monkeypatch.setattr(appmod.messagebox, "showwarning",
+                         lambda *a, **k: llamado.__setitem__("si", True))
+    a._exp_pdf_buscable()  # debe mostrar warning (mockeado) y retornar, no lanzar
+    assert llamado["si"] is True
 
 
 def test_exp_pdf_worker_genera_pdf_real(app_res, tmp_path, monkeypatch):
@@ -61,11 +72,11 @@ def test_exp_pdf_worker_genera_pdf_real(app_res, tmp_path, monkeypatch):
     txt = tmp_path / "p0001.txt"
     txt.write_text("texto de prueba de la pagina uno", encoding="utf-8")
 
-    appmod.ST.out_dir = tmp_path
+    monkeypatch.setattr(appmod.ST, "out_dir", tmp_path)
     import pandas as pd
-    appmod.ST.corpus_meta = pd.DataFrame([
+    monkeypatch.setattr(appmod.ST, "corpus_meta", pd.DataFrame([
         {"numero": "num1", "pagina": "p0001", "txt_path": str(txt), "confianza": 90},
-    ])
+    ]))
 
     dest = tmp_path / "salida.pdf"
     monkeypatch.setattr("os.startfile", lambda *_a, **_k: None, raising=False)
@@ -79,10 +90,14 @@ def test_exp_pdf_worker_genera_pdf_real(app_res, tmp_path, monkeypatch):
     doc.close()
 
 
-def test_exp_texto_plano_sin_corpus_avisa(app_res):
+def test_exp_texto_plano_sin_corpus_avisa(app_res, monkeypatch):
     a, appmod = app_res
-    appmod.ST.corpus_txt = []
-    a._exp_texto_plano()  # solo debe mostrar warning, no lanzar
+    monkeypatch.setattr(appmod.ST, "corpus_txt", [])
+    llamado = {"si": False}
+    monkeypatch.setattr(appmod.messagebox, "showwarning",
+                         lambda *a, **k: llamado.__setitem__("si", True))
+    a._exp_texto_plano()  # solo debe mostrar warning (mockeado), no lanzar
+    assert llamado["si"] is True
 
 
 def test_exp_abrir_dialogo_construye_ventana(app_res):

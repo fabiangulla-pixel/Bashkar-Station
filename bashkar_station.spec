@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec — Bashkar Station v10.3
+# PyInstaller spec — Bashkar Station v11.7
 # Run: pyinstaller bashkar_station.spec --clean
 
 import sys
@@ -114,6 +114,13 @@ a = Analysis(
         'core.viz_engine',
         'core.timeline_engine',
         'core.bitacora_engine',
+        # Infraestructura compartida + FineReader-style (sesión de Modo Ingeniero)
+        'core.user_prefs',
+        'core.local_cache',
+        'core.word_verifier',
+        'core.page_quality',
+        'core.layout_patterns',
+        'core.pdf_export',
         'datos',
         'datos.repositorio',
         'datos.schema',

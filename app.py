@@ -1,6 +1,6 @@
 ﻿"""
 ╔══════════════════════════════════════════════════════════════════════╗
-║  BASHKAR STATION v11.6 — Análisis editorial computacional           ║
+║  BASHKAR STATION v11.7 — Análisis editorial computacional           ║
 ║  Aplicación de escritorio · 100% offline · Publicaciones históricas ║
 ╚══════════════════════════════════════════════════════════════════════╝
 """
@@ -145,7 +145,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-APP_VERSION = "11.6"
+APP_VERSION = "11.7"
 APP_NAME    = "Bashkar Station"
 
 # ── Paleta visual v2 — Dark mode académico ────────────────────────────────────
@@ -13806,7 +13806,9 @@ class BashkarApp(tk.Tk):
         Muestra resultados en la tabla de búsqueda semántica.
         """
         corpus_txt = getattr(ST, "corpus_txt", None) or []
-        corpus_meta = getattr(ST, "corpus_meta", None) or {}
+        corpus_meta = getattr(ST, "corpus_meta", None)
+        if corpus_meta is None:
+            corpus_meta = {}
 
         if not corpus_txt:
             self._bsem_log("⚠ Sin corpus cargado. Ejecuta primero la extracción OCR.")
@@ -15729,7 +15731,13 @@ class BashkarApp(tk.Tk):
 
     def _red_calcular_evolucion(self):
         """Calcula la evolución temporal de la red número por número."""
-        corpus_meta = getattr(ST, "corpus_meta", None) or {}
+        # Esta función espera corpus_meta como dict {art_id: {...}} (flujo del
+        # conversor); si es el DataFrame que arma _worker_ocr, se trata como
+        # "no disponible" en vez de intentar iterarlo mal (.items() de un
+        # DataFrame recorre columnas, no artículos).
+        corpus_meta = getattr(ST, "corpus_meta", None)
+        if not isinstance(corpus_meta, dict):
+            corpus_meta = {}
         indice = getattr(ST, "indice_ner_global", {}) or {}
 
         if not corpus_meta and not indice:
@@ -17161,7 +17169,7 @@ class BashkarApp(tk.Tk):
     def _rep_stats_corpus(self) -> dict:
         return {
             "n_pdfs": len(getattr(ST, "pdf_files", []) or []),
-            "n_paginas": len(getattr(ST, "corpus_meta", {}) or {}),
+            "n_paginas": len(_cm) if (_cm := getattr(ST, "corpus_meta", None)) is not None else 0,
             "n_articulos": len(getattr(ST, "articulos", []) or []),
             "n_palabras_total": sum(
                 len((t or "").split())
@@ -17271,7 +17279,8 @@ class BashkarApp(tk.Tk):
                 self._dash_cards[key].config(text=str(val))
 
         set_card("pdfs",      len(getattr(ST, "pdf_files", []) or []))
-        set_card("paginas",   len(getattr(ST, "corpus_meta", {}) or {}))
+        _cm = getattr(ST, "corpus_meta", None)
+        set_card("paginas",   len(_cm) if _cm is not None else 0)
         set_card("articulos", len(getattr(ST, "articulos", []) or []))
         n_words = sum(len((t or "").split()) for t in (getattr(ST, "corpus_txt", []) or []))
         set_card("palabras",  f"{n_words:,}")
@@ -17537,7 +17546,9 @@ class BashkarApp(tk.Tk):
         """Construye lista de artículos desde el estado actual del proyecto."""
         articulos = []
         corpus_txt = getattr(ST, "corpus_txt", []) or []
-        corpus_meta = getattr(ST, "corpus_meta", {}) or {}
+        corpus_meta = getattr(ST, "corpus_meta", None)
+        if corpus_meta is None:
+            corpus_meta = {}
         ner_global = getattr(ST, "indice_ner_global", {}) or {}
 
         if hasattr(corpus_meta, "iterrows"):

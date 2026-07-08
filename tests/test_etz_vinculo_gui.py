@@ -73,9 +73,9 @@ def test_detectar_cabeceras_sin_numero_no_crashea(app_etz):
     a._etz_detectar_cabeceras()  # solo debe mostrar un toast
 
 
-def test_detectar_cabeceras_sin_etiquetas_previas(app_etz, tmp_path):
+def test_detectar_cabeceras_sin_etiquetas_previas(app_etz, tmp_path, monkeypatch):
     a = app_etz
     import app as appmod
-    appmod.ST.out_dir = tmp_path
+    monkeypatch.setattr(appmod.ST, "out_dir", tmp_path)
     a._etz_numero.set("num_inexistente")
     a._etz_detectar_cabeceras()  # 0 páginas etiquetadas -> toast, no crash
