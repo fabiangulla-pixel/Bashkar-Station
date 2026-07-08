@@ -26,7 +26,9 @@ Uso:
 
 from __future__ import annotations
 
+import json
 import re
+import threading
 from pathlib import Path
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -165,6 +167,37 @@ _RE_PARECE_OCR = re.compile(
 _RE_SOLO_PUNTACION = re.compile(r'^[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ]+$')
 
 # ─────────────────────────────────────────────────────────────────────────────
+# VOCABULARIO DE USUARIO — ampliable en runtime desde el verificador OCR
+# (_VOCAB_EPOCA de arriba es fijo/congelado; esto es lo que el investigador
+# agrega a mano al validar una palabra durante la verificación de una página).
+# Mismo patrón que tipos_zona.json en core/zone_labeler.py.
+# ─────────────────────────────────────────────────────────────────────────────
+
+_VOCAB_USUARIO_PATH = Path.home() / ".bashkar" / "vocab_usuario.json"
+_VOCAB_USUARIO_LOCK = threading.Lock()
+
+
+def _cargar_vocab_usuario() -> set[str]:
+    """Carga el vocabulario de usuario. Nunca lanza: archivo ausente o
+    corrupto devuelve conjunto vacío."""
+    if not _VOCAB_USUARIO_PATH.exists():
+        return set()
+    try:
+        datos = json.loads(_VOCAB_USUARIO_PATH.read_text(encoding="utf-8"))
+        return {str(p).lower() for p in datos}
+    except Exception:
+        return set()
+
+
+def _guardar_vocab_usuario(vocab: set[str]) -> None:
+    _VOCAB_USUARIO_PATH.parent.mkdir(parents=True, exist_ok=True)
+    _VOCAB_USUARIO_PATH.write_text(
+        json.dumps(sorted(vocab), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # CLASE PRINCIPAL
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -187,6 +220,19 @@ class SpellCorrector:
         self._conteo_total       = 0
         self._dic_path = dic_path
         self._dic = None
+        self._vocab_usuario: set[str] = _cargar_vocab_usuario()
+
+    def agregar_palabra_usuario(self, palabra: str) -> None:
+        """Agrega una palabra al vocabulario de usuario y la persiste en
+        ~/.bashkar/vocab_usuario.json. Pensado para el botón «Agregar a
+        diccionario» del verificador OCR: a partir de ahora esa palabra
+        se trata como válida (no se marca ni se sugiere corregirla)."""
+        palabra = palabra.strip().lower()
+        if not palabra:
+            return
+        with _VOCAB_USUARIO_LOCK:
+            self._vocab_usuario.add(palabra)
+            _guardar_vocab_usuario(self._vocab_usuario)
 
     def _cargar_diccionario(self):
         """Carga el diccionario Hunspell (lazy, una sola vez)."""
@@ -210,8 +256,10 @@ class SpellCorrector:
             return False
 
     def _en_lista_blanca(self, palabra: str) -> bool:
-        """True si la palabra está en el vocabulario de época."""
-        return palabra.lower() in _VOCAB_EPOCA_LOWER
+        """True si la palabra está en el vocabulario de época o en el
+        vocabulario que el usuario agregó a mano."""
+        clave = palabra.lower()
+        return clave in _VOCAB_EPOCA_LOWER or clave in self._vocab_usuario
 
     def _parece_error_ocr(self, palabra: str) -> bool:
         """True si la palabra tiene características de error OCR."""

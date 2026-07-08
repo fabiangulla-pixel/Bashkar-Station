@@ -2295,6 +2295,8 @@ class BashkarApp(tk.Tk):
              lambda: self._ir_a_ling_pestania(9)),
             ("🕸  Grafo canónico (entidades + relaciones)", "grafo",
              lambda: self._mostrar_pagina("red")),
+            ("✔  Verificación OCR palabra por palabra", "verificar",
+             self._verif_abrir),
         ]
         self._COMANDOS_PALETTE = [
             {"label": lab, "tags": tag, "accion": fn}
@@ -8446,6 +8448,15 @@ class BashkarApp(tk.Tk):
             font=("Segoe UI", 8, "italic"))
         self._norm_lbl_version_info.pack(side="right", padx=8)
 
+        ttk.Button(vbar, text="✔ Verificar", style="S.TButton",
+                   command=self._verif_abrir).pack(side="right", padx=(0, 8))
+        self._mk_ayuda_bg(vbar,
+            "Verificación palabra por palabra (estilo ABBYY FineReader):\n"
+            "recorre las palabras de baja confianza del OCR de esta página,\n"
+            "muestra el recorte ampliado y sugerencias, y aplica la\n"
+            "corrección elegida al texto manual del bloque actual.",
+            bg="#0D1117")
+
         # ── Selector de bloque (listbox de bloques de la página) ─────────────
         mid = tk.Frame(f, bg=CONTENT_BG)
         mid.pack(fill="both", expand=True, padx=24, pady=(0, 12))
@@ -8796,6 +8807,238 @@ class BashkarApp(tk.Tk):
                     or b["ocr_crudo"])
         # "manual" (default)
         return b["norm_usuario"].strip() or b["ocr_crudo"]
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # VERIFICACIÓN OCR PALABRA POR PALABRA (estilo ABBYY FineReader)
+    # ══════════════════════════════════════════════════════════════════════════
+    def _verif_abrir(self):
+        """Abre el diálogo de verificación sobre la página actualmente
+        mostrada en Normalizar. Recalcula las palabras dudosas bajo demanda
+        (nada se persiste aparte del texto corregido al cerrar)."""
+        idx = self._norm_idx_actual
+        if idx < 0 or idx >= len(self._norm_bloques):
+            self.toast("Selecciona primero una página en la lista.", "warn")
+            return
+        img = getattr(self, "_norm_img_orig_full", None)
+        if img is None:
+            self.toast("No hay imagen cargada para esta página.", "warn")
+            return
+
+        b = self._norm_bloques[idx]
+        texto_base = self._norm_txt_usuario.get("1.0", "end-1c") or b["ocr_crudo"]
+
+        win, content = self._mk_glass_toplevel("Verificación OCR", 900, 620)
+        self._verif_win = win
+        self._verif_bloque_idx = idx
+        self._verif_texto = texto_base
+        self._verif_palabras = []
+        self._verif_pos = 0
+        self._verif_img_tk = None  # referencia viva contra el GC de Tk
+        self._verif_q = queue.Queue()
+
+        info = tk.Label(content, text="Analizando palabras de baja confianza…",
+                         bg=CONTENT_BG, fg=TXT_SEC, font=("Segoe UI", 10))
+        info.pack(pady=40)
+        self._verif_lbl_info = info
+
+        # Layout principal (se puebla cuando el worker entrega resultados)
+        cuerpo = tk.Frame(content, bg=CONTENT_BG)
+        cuerpo.pack(fill="both", expand=True, padx=16, pady=(0, 12))
+        self._verif_cuerpo = cuerpo
+
+        img_frame = tk.Frame(cuerpo, bg="#0D1117", relief="solid", bd=1, height=180)
+        img_frame.pack(fill="x", pady=(0, 10))
+        img_frame.pack_propagate(False)
+        self._verif_lbl_img = tk.Label(img_frame, bg="#0D1117")
+        self._verif_lbl_img.pack(expand=True)
+
+        fila_txt = tk.Frame(cuerpo, bg=CONTENT_BG)
+        fila_txt.pack(fill="x", pady=(0, 8))
+        tk.Label(fila_txt, text="Corrección:", bg=CONTENT_BG, fg=TXT_PRI,
+                 font=("Segoe UI", 9, "bold")).pack(side="left")
+        self._verif_var_texto = tk.StringVar()
+        entry = tk.Entry(fila_txt, textvariable=self._verif_var_texto,
+                          font=("Consolas", 11), bg="#0D1117", fg="#CDD6F4",
+                          insertbackground="#CDD6F4", relief="solid", bd=1)
+        entry.pack(side="left", fill="x", expand=True, padx=(8, 0))
+        self._verif_entry = entry
+
+        tk.Label(cuerpo, text="Sugerencias (doble clic para usar):",
+                 bg=CONTENT_BG, fg=TXT_DIM, font=("Segoe UI", 8)).pack(anchor="w")
+        self._verif_lb_sug = tk.Listbox(cuerpo, height=4, bg="#0D1117", fg="#CDD6F4",
+                                         relief="solid", bd=1, font=("Segoe UI", 9))
+        self._verif_lb_sug.pack(fill="x", pady=(2, 10))
+        self._verif_lb_sug.bind("<Double-Button-1>", lambda e: self._verif_usar_sugerencia())
+
+        botones = tk.Frame(cuerpo, bg=CONTENT_BG)
+        botones.pack(fill="x", pady=(0, 8))
+        ttk.Button(botones, text="Omitir", style="S.TButton",
+                   command=self._verif_omitir).pack(side="left", padx=(0, 6))
+        ttk.Button(botones, text="Omitir todas", style="S.TButton",
+                   command=self._verif_omitir_todas).pack(side="left", padx=(0, 6))
+        ttk.Button(botones, text="Reemplazar", style="P.TButton",
+                   command=self._verif_reemplazar).pack(side="left", padx=(0, 6))
+        ttk.Button(botones, text="Reemplazar todas", style="P.TButton",
+                   command=self._verif_reemplazar_todas).pack(side="left", padx=(0, 6))
+        ttk.Button(botones, text="📖 Agregar a diccionario", style="S.TButton",
+                   command=self._verif_agregar_diccionario).pack(side="left", padx=(0, 6))
+
+        pie = tk.Frame(cuerpo, bg=CONTENT_BG)
+        pie.pack(fill="x")
+        self._verif_lbl_contador = tk.Label(pie, text="", bg=CONTENT_BG, fg=TXT_DIM,
+                                             font=("Segoe UI", 9))
+        self._verif_lbl_contador.pack(side="left")
+        ttk.Button(pie, text="✅ Terminar y guardar", style="P.TButton",
+                   command=self._verif_cerrar).pack(side="right")
+
+        cuerpo.pack_forget()  # se muestra al terminar el worker
+
+        threading.Thread(target=self._verif_worker_analizar, args=(img,), daemon=True).start()
+        win.after(100, self._verif_poll)
+        win.protocol("WM_DELETE_WINDOW", self._verif_cerrar)
+
+    def _verif_worker_analizar(self, img):
+        """Corre en thread: extrae palabras dudosas + prepara diccionario de
+        corpus para sugerencias. La imagen ya está en memoria (self._norm_img_orig_full,
+        cargada una sola vez por _norm_mostrar_imagen) — no se vuelve a leer disco."""
+        from core.word_verifier import extraer_palabras_dudosas
+        try:
+            palabras = extraer_palabras_dudosas(img)
+        except Exception as e:
+            self._verif_q.put(("error", str(e)))
+            return
+
+        dicc_corpus = None
+        try:
+            if ST.out_dir:
+                from core.ocr_normalizer import construir_diccionario_corpus
+                cache_path = Path(ST.out_dir) / "diccionario_corpus.json"
+                txt_dir = Path(ST.out_dir) / "03_ocr"
+                if txt_dir.exists():
+                    dicc_corpus = construir_diccionario_corpus(
+                        txt_dir, freq_min=3, cache_path=cache_path)
+        except Exception:
+            dicc_corpus = None
+        self._verif_dicc_corpus = dicc_corpus
+        self._verif_q.put(("ok", palabras))
+
+    def _verif_poll(self):
+        win = getattr(self, "_verif_win", None)
+        if win is None or not win.winfo_exists():
+            return
+        try:
+            tipo, payload = self._verif_q.get_nowait()
+        except queue.Empty:
+            win.after(100, self._verif_poll)
+            return
+
+        self._verif_lbl_info.pack_forget()
+        if tipo == "error":
+            tk.Label(win, text=f"Error: {payload}", bg=CONTENT_BG, fg="#F85149",
+                     font=("Segoe UI", 9)).pack(pady=20)
+            return
+
+        self._verif_palabras = payload
+        self._verif_pos = 0
+        self._verif_cuerpo.pack(fill="both", expand=True, padx=16, pady=(0, 12))
+        if not self._verif_palabras:
+            self._verif_lbl_contador.config(
+                text="Sin palabras de baja confianza en esta página. 🎉")
+            for w in (self._verif_entry, self._verif_lb_sug):
+                w.config(state="disabled")
+            return
+        self._verif_mostrar_actual()
+
+    def _verif_mostrar_actual(self):
+        from core.word_verifier import recortar_palabra, sugerencias_para
+        img = self._norm_img_orig_full
+        p = self._verif_palabras[self._verif_pos]
+
+        recorte = recortar_palabra(img, p, margen=8, zoom=2.5)
+        recorte.thumbnail((820, 160))
+        from PIL import ImageTk
+        self._verif_img_tk = ImageTk.PhotoImage(recorte)
+        self._verif_lbl_img.config(image=self._verif_img_tk)
+
+        self._verif_var_texto.set(p.texto)
+
+        from core.spell_corrector import obtener_corrector
+        corrector = obtener_corrector()
+        corrector._cargar_diccionario()
+        sugerencias = sugerencias_para(p.texto, corrector, getattr(self, "_verif_dicc_corpus", None))
+        self._verif_lb_sug.delete(0, "end")
+        for s in sugerencias:
+            self._verif_lb_sug.insert("end", s)
+
+        n = len(self._verif_palabras)
+        self._verif_lbl_contador.config(
+            text=f"Palabra {self._verif_pos + 1} de {n} — confianza {p.conf:.0f}%\n"
+                 f"Contexto: …{p.contexto}…")
+
+    def _verif_usar_sugerencia(self):
+        sel = self._verif_lb_sug.curselection()
+        if sel:
+            self._verif_var_texto.set(self._verif_lb_sug.get(sel[0]))
+
+    def _verif_avanzar(self):
+        if self._verif_pos + 1 < len(self._verif_palabras):
+            self._verif_pos += 1
+            self._verif_mostrar_actual()
+        else:
+            self._verif_lbl_contador.config(text="✅ Última palabra revisada.")
+            for w in (self._verif_entry, self._verif_lb_sug):
+                w.config(state="disabled")
+
+    def _verif_omitir(self):
+        self._verif_avanzar()
+
+    def _verif_omitir_todas(self):
+        self._verif_lbl_contador.config(text="✅ Verificación cerrada sin más cambios.")
+        for w in (self._verif_entry, self._verif_lb_sug):
+            w.config(state="disabled")
+
+    def _verif_reemplazar(self):
+        from core.word_verifier import aplicar_reemplazo
+        p = self._verif_palabras[self._verif_pos]
+        nuevo_valor = self._verif_var_texto.get()
+        texto, encontrada = aplicar_reemplazo(
+            self._verif_texto, p.texto, nuevo_valor, p.idx_ocurrencia)
+        self._verif_texto = texto
+        if not encontrada:
+            self.toast(f"«{p.texto}» (ocurrencia {p.idx_ocurrencia + 1}) no se "
+                       "localizó en el texto — probablemente ya fue editado.", "warn")
+        self._verif_avanzar()
+
+    def _verif_reemplazar_todas(self):
+        from core.word_verifier import reemplazar_todas
+        p = self._verif_palabras[self._verif_pos]
+        nuevo_valor = self._verif_var_texto.get()
+        texto, n = reemplazar_todas(self._verif_texto, p.texto, nuevo_valor)
+        self._verif_texto = texto
+        self.toast(f"{n} ocurrencia(s) de «{p.texto}» reemplazadas.", "ok")
+        self._verif_avanzar()
+
+    def _verif_agregar_diccionario(self):
+        from core.spell_corrector import obtener_corrector
+        p = self._verif_palabras[self._verif_pos]
+        obtener_corrector().agregar_palabra_usuario(p.texto)
+        self.toast(f"«{p.texto}» agregada al vocabulario de usuario.", "ok")
+        self._verif_avanzar()
+
+    def _verif_cerrar(self):
+        """Vuelca el texto corregido al bloque actual del panel Normalizar
+        (mismo flujo de guardado que ya existe: _norm_guardar_bloque_actual
+        → _norm_guardar → UPSERT en SQLite). El verificador nunca escribe
+        directamente a disco/BD — un solo escritor."""
+        win = getattr(self, "_verif_win", None)
+        if getattr(self, "_verif_texto", None) is not None and \
+           self._verif_bloque_idx == self._norm_idx_actual:
+            self._norm_txt_usuario.delete("1.0", "end")
+            self._norm_txt_usuario.insert("1.0", self._verif_texto)
+            self._norm_guardar_bloque_actual()
+        if win is not None and win.winfo_exists():
+            win.destroy()
+        self._verif_win = None
 
     def _norm_guardar(self):
         """Persiste todas las ediciones en SQLite y en los archivos .txt."""
