@@ -2299,6 +2299,8 @@ class BashkarApp(tk.Tk):
              self._verif_abrir),
             ("🔁  Detectar cabeceras repetidas (Etiquetador)", "cabeceras",
              self._etz_detectar_cabeceras),
+            ("💾  Guardar como… (PDF/TEI/Excel/texto)", "guardarcomo",
+             self._exp_abrir_dialogo),
         ]
         self._COMANDOS_PALETTE = [
             {"label": lab, "tags": tag, "accion": fn}
@@ -10922,6 +10924,8 @@ class BashkarApp(tk.Tk):
                    style="S.TButton", command=self._res_exportar_json_observable).pack(side="left",padx=4)
         ttk.Button(bb, text="📊  PowerPoint",
                    style="S.TButton", command=self._res_exportar_pptx).pack(side="left",padx=4)
+        ttk.Button(bb, text="💾  Guardar como…",
+                   style="P.TButton", command=self._exp_abrir_dialogo).pack(side="left",padx=4)
         self._lbl_excel = tk.Label(bb, text="", bg=CONTENT_BG, fg=VERDE, font=("Segoe UI",10,"bold"))
         self._lbl_excel.pack(side="left",padx=12)
 
@@ -17473,6 +17477,152 @@ class BashkarApp(tk.Tk):
                     "ner": {},
                 })
         return articulos
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # «GUARDAR COMO…» — presets de exportación estilo ABBYY FineReader
+    # ══════════════════════════════════════════════════════════════════════════
+
+    def _exp_abrir_dialogo(self):
+        """Diálogo con 4 presets: Copia exacta (PDF buscable) / Edición
+        académica (TEI+BibTeX) / Datos de análisis (Excel) / Texto plano.
+        Reusa los exportadores YA existentes para los 3 últimos; el único
+        camino nuevo es el PDF buscable."""
+        from core.user_prefs import guardar_pref, obtener_pref
+
+        win, content = self._mk_glass_toplevel("Guardar como…", 480, 380)
+        pad = tk.Frame(content, bg=CONTENT_BG)
+        pad.pack(fill="both", expand=True, padx=20, pady=16)
+
+        var_abrir = tk.BooleanVar(value=obtener_pref("exp_abrir_al_terminar", True))
+        ttk.Checkbutton(pad, text="Abrir el archivo al terminar",
+                         variable=var_abrir,
+                         command=lambda: guardar_pref("exp_abrir_al_terminar", var_abrir.get())
+                         ).pack(anchor="w", pady=(0, 12))
+
+        def _tarjeta(titulo, descripcion, comando):
+            c = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1, cursor="hand2")
+            c.pack(fill="x", pady=4)
+            tk.Label(c, text=titulo, bg=CARD_BG, fg=TXT_PRI,
+                     font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=12, pady=(8, 0))
+            tk.Label(c, text=descripcion, bg=CARD_BG, fg=TXT_DIM,
+                     font=("Segoe UI", 8), wraplength=400, justify="left").pack(
+                         anchor="w", padx=12, pady=(0, 8))
+
+            def _click(_e=None, fn=comando):
+                win.destroy()
+                fn(abrir_al_terminar=var_abrir.get())
+            c.bind("<Button-1>", _click)
+            for w in c.winfo_children():
+                w.bind("<Button-1>", _click)
+
+        _tarjeta("📄 Copia exacta", "PDF buscable: imagen de cada página + capa de "
+                 "texto invisible (búsqueda y copiar/pegar). Estilo FineReader.",
+                 self._exp_pdf_buscable)
+        _tarjeta("🎓 Edición académica", "XML-TEI P5 + BibTeX del corpus (pide destino "
+                 "para cada uno).", self._exp_edicion_academica)
+        _tarjeta("📊 Datos de análisis", "Excel completo (10 hojas) con todo lo "
+                 "generado en Análisis/Visualizar.", self._exp_datos_analisis)
+        _tarjeta("📝 Texto plano", "Todo el corpus concatenado en un único .md/.txt.",
+                 self._exp_texto_plano)
+
+    def _exp_resolver_imagen(self, numero: str, pagina: str) -> "Path | None":
+        """Busca la imagen original de una página en 02_imagenes/<numero>/."""
+        if not ST.out_dir:
+            return None
+        img_dir = Path(ST.out_dir) / "02_imagenes" / str(numero)
+        if not img_dir.exists():
+            return None
+        for ext in ("png", "jpg", "jpeg", "tif", "tiff"):
+            hits = sorted(img_dir.glob(f"*{pagina}*.{ext}"))
+            if hits:
+                return hits[0]
+        return None
+
+    def _exp_pdf_buscable(self, abrir_al_terminar: bool = True):
+        if ST.corpus_meta is None or ST.corpus_meta.empty:
+            messagebox.showwarning("Sin datos",
+                "No hay páginas con OCR. Ejecuta Extracción OCR primero.")
+            return
+        dest = filedialog.asksaveasfilename(
+            defaultextension=".pdf", filetypes=[("PDF", "*.pdf")],
+            initialfile="corpus_buscable.pdf", title="Guardar PDF buscable")
+        if not dest:
+            return
+        threading.Thread(target=self._exp_pdf_worker,
+                         args=(dest, abrir_al_terminar), daemon=True).start()
+
+    def _exp_pdf_worker(self, dest: str, abrir_al_terminar: bool):
+        from core.pdf_export import exportar_pdf_buscable
+
+        paginas = []
+        for _, row in ST.corpus_meta.iterrows():
+            numero, pagina = str(row.get("numero", "")), str(row.get("pagina", ""))
+            img_path = self._exp_resolver_imagen(numero, pagina)
+            if not img_path:
+                continue
+            texto = ""
+            tp = row.get("txt_path")
+            if tp and Path(tp).exists():
+                try:
+                    texto = Path(tp).read_text("utf-8", errors="replace")
+                except Exception:
+                    texto = ""
+            paginas.append({"img_path": img_path, "texto": texto})
+
+        if not paginas:
+            self.after(0, lambda: messagebox.showwarning("Sin imágenes",
+                "No se encontraron imágenes de página en 02_imagenes/ para exportar."))
+            return
+
+        prog_win = tk.Toplevel(self)
+        prog_win.title("Generando PDF buscable…")
+        prog_win.geometry("360x90")
+        tk.Label(prog_win, text="Generando PDF buscable…").pack(pady=(14, 4))
+        bar = ttk.Progressbar(prog_win, mode="determinate", maximum=len(paginas))
+        bar.pack(fill="x", padx=16)
+        lbl = tk.Label(prog_win, text=f"0/{len(paginas)}")
+        lbl.pack(pady=6)
+
+        def cb(n, total):
+            self.after(0, lambda: (bar.config(value=n), lbl.config(text=f"{n}/{total}")))
+
+        try:
+            exportar_pdf_buscable(paginas, dest, callback=cb)
+            self.after(0, prog_win.destroy)
+            self.after(0, lambda: self.toast(
+                f"✅ PDF buscable exportado: {len(paginas)} páginas", "ok"))
+            if abrir_al_terminar:
+                self.after(0, lambda: os.startfile(dest))
+        except Exception as e:
+            self.after(0, prog_win.destroy)
+            self.after(0, lambda err=str(e): messagebox.showerror("Error", err))
+
+    def _exp_edicion_academica(self, abrir_al_terminar: bool = True):
+        self._res_exportar_tei()
+        self._res_exportar_bibtex()
+
+    def _exp_datos_analisis(self, abrir_al_terminar: bool = True):
+        self._gen_excel()
+
+    def _exp_texto_plano(self, abrir_al_terminar: bool = True):
+        corpus_txt = getattr(ST, "corpus_txt", []) or []
+        if not corpus_txt:
+            messagebox.showwarning("Sin corpus", "Extrae el texto del corpus primero.")
+            return
+        dest = filedialog.asksaveasfilename(
+            defaultextension=".md", filetypes=[("Markdown", "*.md"), ("Texto", "*.txt")],
+            initialfile="corpus_completo.md", title="Guardar texto plano")
+        if not dest:
+            return
+        try:
+            contenido = "\n\n---\n\n".join(
+                f"## Artículo {i:04d}\n\n{t}" for i, t in enumerate(corpus_txt))
+            Path(dest).write_text(contenido, encoding="utf-8")
+            self.toast(f"✅ Texto plano exportado: {len(corpus_txt)} artículos", "ok")
+            if abrir_al_terminar:
+                os.startfile(dest)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
     # ══════════════════════════════════════════════════════════════════════════
     # EXPORTACIONES ESPECIALIZADAS — agrega botones a panel Resultados
