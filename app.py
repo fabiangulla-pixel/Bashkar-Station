@@ -8643,9 +8643,11 @@ class BashkarApp(tk.Tk):
 
         self._norm_bloques = bloques
         self._norm_lb.delete(0, "end")
+        avisos_ocr = getattr(self, "_avisos_ocr", {})
         for b in bloques:
             estado = "✓" if b["norm_usuario"] else "·"
-            self._norm_lb.insert("end", f"{estado} {b['pagina']}")
+            alerta = " ⚠" if (b["numero"], b["pagina"]) in avisos_ocr else ""
+            self._norm_lb.insert("end", f"{estado} {b['pagina']}{alerta}")
 
         self._lbl_norm_estado.config(
             text=f"{len(bloques)} páginas cargadas — {num}")
@@ -9589,11 +9591,13 @@ class BashkarApp(tk.Tk):
         self._norm_canvas_img.config(cursor="")
 
     def _norm_refrescar_lista(self):
-        """Refresca los indicadores ✓ en la lista de bloques."""
+        """Refresca los indicadores ✓/⚠ en la lista de bloques."""
+        avisos_ocr = getattr(self, "_avisos_ocr", {})
         for i, b in enumerate(self._norm_bloques):
             estado = "✓" if b["norm_usuario"] else "·"
+            alerta = " ⚠" if (b["numero"], b["pagina"]) in avisos_ocr else ""
             self._norm_lb.delete(i)
-            self._norm_lb.insert(i, f"{estado} {b['pagina']}")
+            self._norm_lb.insert(i, f"{estado} {b['pagina']}{alerta}")
         if self._norm_idx_actual >= 0:
             self._norm_lb.selection_set(self._norm_idx_actual)
             self._norm_mostrar_bloque(self._norm_idx_actual)
@@ -11727,6 +11731,36 @@ class BashkarApp(tk.Tk):
             if n_filtradas:
                 self._put(tipo="log",
                           texto=f"✂️ {n_filtradas} páginas filtradas por zonas etiquetadas")
+
+        # ── Avisos de calidad por página (estilo FineReader) ─────────────────────
+        # Se calculan desde los datos YA disponibles en meta_rows (texto, conteo
+        # de palabras, confianza) sin reabrir ninguna imagen — el DPI real solo se
+        # chequea bajo demanda cuando el investigador abre una página puntual en
+        # Normalizar, para no sumar una relectura de disco/Drive por cada página
+        # del lote (que puede ser de cientos de páginas).
+        if meta_rows:
+            from core.page_quality import es_pagina_vacia
+            self._avisos_ocr = {}
+            for row in meta_rows:
+                claves = []
+                texto = ""
+                tp = Path(row["txt_path"]) if row.get("txt_path") else None
+                if tp and tp.exists():
+                    try:
+                        texto = tp.read_text("utf-8", errors="replace")
+                    except Exception:
+                        texto = ""
+                if es_pagina_vacia(texto, n_tokens=row.get("palabras")):
+                    claves.append("Página posiblemente en blanco o sin texto útil")
+                conf = row.get("confianza")
+                if conf is not None and conf < 30:
+                    claves.append(f"Confianza OCR muy baja: {conf:.0f}%")
+                if claves:
+                    self._avisos_ocr[(row["numero"], row["pagina"])] = claves
+            if self._avisos_ocr:
+                self._put(tipo="log",
+                    texto=f"⚠ {len(self._avisos_ocr)} página(s) con avisos de calidad "
+                          "(ver detalle en Normalizar)")
 
         if not meta_rows:
             self._put(tipo="err",txt="No se pudo procesar ningún archivo.")
