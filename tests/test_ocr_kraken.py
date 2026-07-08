@@ -226,3 +226,39 @@ class TestKrakenReal:
 
         assert isinstance(texto, str)
         assert 0.0 <= confianza <= 1.0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# _python_kraken en .exe congelado — sys.executable ahí es el propio .exe, no
+# un Python con pip/kraken; usarlo como último recurso relanza una copia
+# duplicada de la app en vez de ejecutar el código pedido (mismo patrón que
+# causó una bomba de fork real en app.py::_auto_instalar durante esta sesión).
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestPythonKrakenFrozen:
+    def test_devuelve_none_si_frozen_y_sin_venv_dedicado(self, monkeypatch):
+        from core.ocr_kraken import _KRAKEN_PYTHON, _python_kraken
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        if _KRAKEN_PYTHON.exists():
+            pytest.skip("El venv dedicado de Kraken sí existe en esta máquina")
+        assert _python_kraken() is None
+
+    def test_kraken_disponible_false_sin_lanzar_si_frozen_sin_venv(self, monkeypatch):
+        from core.ocr_kraken import _KRAKEN_PYTHON
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        if _KRAKEN_PYTHON.exists():
+            pytest.skip("El venv dedicado de Kraken sí existe en esta máquina")
+        with patch("subprocess.run") as mock_run:
+            resultado = kraken_disponible()
+        mock_run.assert_not_called()
+        assert resultado is False
+
+    def test_ocr_kraken_lanza_importerror_claro_si_frozen_sin_venv(self, monkeypatch, tmp_path):
+        from core.ocr_kraken import _KRAKEN_PYTHON
+        monkeypatch.setattr(sys, "frozen", True, raising=False)
+        if _KRAKEN_PYTHON.exists():
+            pytest.skip("El venv dedicado de Kraken sí existe en esta máquina")
+        img = tmp_path / "pag.png"
+        img.write_bytes(b"\x89PNG\r\n\x1a\n")
+        with pytest.raises(ImportError, match="exe compilado"):
+            ocr_kraken(str(img))

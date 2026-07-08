@@ -383,6 +383,17 @@ def instalar_motor(motor: str, callback=None) -> bool:
         if callback:
             callback(m)
 
+    # En un .exe congelado (PyInstaller), sys.executable es el propio .exe,
+    # no un Python con pip real: el subprocess de más abajo relanzaría una
+    # copia completa de la app en vez de instalar nada (mismo patrón que
+    # causó una bomba de fork real en _auto_instalar() de app.py — ver esa
+    # función para el detalle del incidente).
+    if getattr(sys, "frozen", False):
+        log("⚠ No se puede instalar dependencias adicionales desde el .exe "
+            "compilado. Corre Bashkar Station desde el código fuente (Python) "
+            "para instalar este motor, o pide que se incluya en la próxima build.")
+        return False
+
     paquetes = {
         "yolo": ["ultralytics"],
         "onnx": ["onnxruntime"],

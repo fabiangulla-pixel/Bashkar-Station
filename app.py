@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 # ── Rutas Windows (Tesseract/Poppler) ────────────────────────────────────────
 _APP_DIR = Path(__file__).parent
-_APP_VERSION_SPLASH = "11.6"   # sincronizar con APP_VERSION abajo
+_APP_VERSION_SPLASH = "11.7"   # sincronizar con APP_VERSION abajo
 
 def _configurar_rutas_windows():
     for cfg_file in ["tesseract_path.txt", "poppler_path.txt"]:
@@ -59,6 +59,10 @@ if platform.system() == "Windows":
 
 # ── Fijar NumPy < 2 ───────────────────────────────────────────────────────────
 def _fijar_numpy():
+    # Ver el guard idéntico y su porqué en _auto_instalar(): sys.executable
+    # en un .exe congelado es el propio .exe, no un Python con pip.
+    if getattr(sys, "frozen", False):
+        return
     import subprocess as _sp
     try:
         import numpy as _np
@@ -92,6 +96,17 @@ _PAQUETES = [
 ]
 
 def _auto_instalar():
+    # CRÍTICO: nunca ejecutar dentro de un .exe congelado (PyInstaller).
+    # sys.executable ahí apunta al propio .exe, no a un Python con pip real;
+    # el subprocess.check_call de más abajo relanzaría copias completas de
+    # Bashkar Station en vez de instalar nada. Cada copia nueva detecta los
+    # mismos "faltantes" y vuelve a relanzarse por cada uno — una bomba de
+    # fork exponencial (~90 procesos en 12s, tumbó una máquina real).
+    # Si un .exe compilado tiene una dependencia realmente faltante, la
+    # solución es corregir el .spec y recompilar, nunca auto-instalar en
+    # caliente.
+    if getattr(sys, "frozen", False):
+        return
     import subprocess
     faltantes = []
     for mod, pkg in _PAQUETES:

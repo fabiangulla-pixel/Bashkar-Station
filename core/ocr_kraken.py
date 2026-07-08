@@ -28,10 +28,16 @@ _KRAKEN_PYTHON = _KRAKEN_VENV / "Scripts" / "python.exe"
 _KRAKEN_EXE   = _KRAKEN_VENV / "Scripts" / "kraken.exe"
 
 
-def _python_kraken() -> str:
-    """Retorna el ejecutable Python que tiene kraken disponible."""
+def _python_kraken() -> str | None:
+    """Retorna el ejecutable Python que tiene kraken disponible, o None si
+    no hay ninguno usable. En un .exe congelado, sys.executable es el propio
+    .exe: lanzarlo como subproceso solo abre una copia duplicada de la app
+    en vez de ejecutar el código pedido (ver el incidente documentado en
+    app.py::_auto_instalar), así que ahí NO se usa como último recurso."""
     if _KRAKEN_PYTHON.exists():
         return str(_KRAKEN_PYTHON)
+    if getattr(sys, "frozen", False):
+        return None
     return sys.executable
 
 
@@ -59,6 +65,8 @@ def kraken_disponible() -> bool:
     """True si kraken está accesible (venv dedicado o instalación directa) Y hay modelo."""
     import subprocess
     python = _python_kraken()
+    if python is None:
+        return False
     try:
         r = subprocess.run(
             [python, "-c", "import kraken"],
@@ -84,6 +92,10 @@ def ocr_kraken(ruta_imagen: str,
     import subprocess
 
     python = _python_kraken()
+    if python is None:
+        raise ImportError(
+            "Kraken no está disponible en el .exe compilado (requiere el "
+            "venv dedicado en D:/kraken_env, que no existe en este equipo).")
 
     # Verificar que kraken esté accesible
     chk = subprocess.run([python, "-c", "import kraken"],
