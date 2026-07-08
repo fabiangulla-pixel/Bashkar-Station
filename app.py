@@ -2041,7 +2041,99 @@ class BashkarApp(tk.Tk):
     # ══════════════════════════════════════════════════════════════════════════
 
     def _cargar_ultimo_proyecto(self):
-        """Al arrancar: restaura la última sesión o crea un proyecto vacío."""
+        """Al arrancar: muestra la pantalla de inicio (si está habilitada)
+        o restaura la última sesión directamente. Único call-site: el
+        self.after(200, ...) del __init__ — los tests headless parchean
+        este método entero, así que lo de adentro no les afecta."""
+        import os
+        from core.user_prefs import obtener_pref
+        if not os.environ.get("BASHKAR_NO_WELCOME") and obtener_pref("mostrar_inicio", True):
+            self._welcome_mostrar()
+            return
+        self._cargar_ultimo_proyecto_directo()
+
+    def _welcome_mostrar(self):
+        """Pantalla de inicio estilo FineReader: continuar/nuevo/abrir/
+        recientes. Cerrarla sin elegir SIEMPRE deja un proyecto cargado
+        (el resto de la app asume que ST tiene uno)."""
+        from core.project_manager import cargar_proyecto, listar_proyectos
+        from core.user_prefs import guardar_pref
+
+        win, content = self._mk_glass_toplevel("Bienvenido a Bashkar Station", 560, 480)
+        self._welcome_win = win
+        win.protocol("WM_DELETE_WINDOW", lambda: self._welcome_elegir(win, self._crear_proyecto_automatico))
+
+        pad = tk.Frame(content, bg=CONTENT_BG)
+        pad.pack(fill="both", expand=True, padx=20, pady=16)
+
+        proyectos = listar_proyectos()
+        ultimo = proyectos[0] if proyectos else None
+
+        if ultimo:
+            c = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1, cursor="hand2")
+            c.pack(fill="x", pady=(0, 10))
+            tk.Label(c, text=f"▶ Continuar «{ultimo['nombre']}»", bg=CARD_BG, fg=TXT_PRI,
+                     font=("Segoe UI", 11, "bold")).pack(anchor="w", padx=14, pady=(10, 2))
+            tk.Label(c, text=f"{ultimo.get('publicacion','')}  ·  modificado {ultimo.get('modificado','')}",
+                     bg=CARD_BG, fg=TXT_DIM, font=("Segoe UI", 8)).pack(anchor="w", padx=14, pady=(0, 10))
+            def _continuar(_e=None):
+                self._welcome_elegir(win, self._cargar_ultimo_proyecto_directo)
+            c.bind("<Button-1>", _continuar)
+            for w in c.winfo_children():
+                w.bind("<Button-1>", _continuar)
+
+        fila = tk.Frame(pad, bg=CONTENT_BG)
+        fila.pack(fill="x", pady=(0, 10))
+        ttk.Button(fila, text="🆕 Nuevo proyecto", style="S.TButton",
+                   command=lambda: self._welcome_elegir(win, self._nuevo_proyecto_dialogo)
+                   ).pack(side="left", padx=(0, 8))
+        ttk.Button(fila, text="📂 Abrir…", style="S.TButton",
+                   command=lambda: self._welcome_elegir(win, self._abrir_gestor_proyectos)
+                   ).pack(side="left")
+
+        recientes = proyectos[1:8] if ultimo else proyectos[:8]
+        if recientes:
+            tk.Label(pad, text="Recientes:", bg=CONTENT_BG, fg=TXT_PRI,
+                     font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(6, 2))
+            lb = tk.Listbox(pad, height=6, bg="#0D1117", fg="#CDD6F4", relief="solid", bd=1)
+            lb.pack(fill="both", expand=True)
+            for p in recientes:
+                lb.insert("end", f"{p['nombre']}  ·  {p.get('modificado','')}")
+
+            def _abrir_recientes_sel(_e=None):
+                sel = lb.curselection()
+                if not sel:
+                    return
+                ruta = Path(recientes[sel[0]]["ruta"])
+
+                def _cargar():
+                    res = cargar_proyecto(ruta, ST)
+                    if res["ok"]:
+                        self._proyecto_ruta = ruta
+                        self._historial_ia = res.get("historial_ia", [])
+                        self._sincronizar_ui_con_st()
+                    else:
+                        self._crear_proyecto_automatico()
+                self._welcome_elegir(win, _cargar)
+            lb.bind("<Double-Button-1>", _abrir_recientes_sel)
+
+        var_no_mostrar = tk.BooleanVar(value=False)
+        ttk.Checkbutton(pad, text="No mostrar esta pantalla al inicio",
+                        variable=var_no_mostrar,
+                        command=lambda: guardar_pref("mostrar_inicio", not var_no_mostrar.get())
+                        ).pack(anchor="w", pady=(10, 0))
+
+    def _welcome_elegir(self, win, fn):
+        """Cierra la pantalla de inicio y ejecuta la acción elegida."""
+        if win.winfo_exists():
+            win.destroy()
+        self._welcome_win = None
+        fn()
+
+    def _cargar_ultimo_proyecto_directo(self):
+        """Restaura la última sesión guardada, o crea un proyecto vacío si
+        no hay ninguna. Cuerpo original de _cargar_ultimo_proyecto (previo
+        a la pantalla de inicio) — también es el camino de «Continuar»."""
         from core.project_manager import cargar_proyecto, cargar_ultimo
         ruta = cargar_ultimo()
         if ruta:
