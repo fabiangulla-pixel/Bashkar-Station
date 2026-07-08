@@ -206,7 +206,8 @@ def extraer_pagina(
 ) -> dict:
     """Extrae el JSON estructurado de UNA imagen de página.
 
-    Proveedores: gemini (default, ideal en lote) | claude | openai | ollama.
+    Proveedores: gemini (default, ideal en lote) | claude | openai | ollama
+    | lmstudio (local, servidor OpenAI-compatible en localhost:1234).
     Registra el usage en el acumulador de `core.ocr_llm` (costo real del lote).
     Lanza FileNotFoundError, JSONInvalidoError o el error del proveedor.
     """
@@ -278,6 +279,21 @@ def extraer_pagina(
             )
             resp.raise_for_status()
             raw = resp.json().get("response", "")
+
+        elif prov == "lmstudio":
+            host = api_key if api_key and api_key.startswith("http") else "http://localhost:1234"
+            client = ocr_llm._cliente_lmstudio(host)
+            resp = client.chat.completions.create(
+                model=modelo or "local-model",
+                max_tokens=4096,
+                messages=[{"role": "user", "content": [
+                    {"type": "image_url", "image_url": {
+                        "url": f"data:{media_type};base64,{img_b64}"}},
+                    {"type": "text", "text": prompt},
+                ]}],
+            )
+            ocr_llm._registrar_usage(resp)
+            raw = resp.choices[0].message.content
         else:
             raise ValueError(f"Proveedor desconocido: {proveedor}")
     finally:

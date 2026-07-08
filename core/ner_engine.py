@@ -35,16 +35,16 @@ PARAMS_SCHEMA = {
     },
     "proveedor_llm": {
         "type": "choice",
-        "options": ["claude", "ollama"],
+        "options": ["claude", "ollama", "lmstudio"],
         "default": "claude",
         "label": "Proveedor IA",
-        "help": "claude = API Anthropic (nube, de pago)\nollama = modelo local sin costo\n  → latamgpt: recomendado para corpus Estampa",
+        "help": "claude = API Anthropic (nube, de pago)\nollama = modelo local sin costo\n  → latamgpt: recomendado para corpus Estampa\nlmstudio = modelo local vía LM Studio (servidor en localhost:1234)",
     },
     "modelo_ollama_ner": {
         "type": "str",
         "default": "latamgpt",
-        "label": "Modelo Ollama",
-        "help": "Nombre del modelo Ollama para NER (ej: latamgpt, llama3.1, mistral)",
+        "label": "Modelo local",
+        "help": "Nombre del modelo para NER cuando el proveedor es local\n(ollama: ej. latamgpt, llama3.1, mistral; lmstudio: el nombre que muestre el servidor)",
     },
     "umbral_confianza": {
         "type": "float",
@@ -144,7 +144,8 @@ def extraer_spacy(texto: str, nlp) -> dict:
 def validar_con_llm(texto: str, api_key: str, modelo: str = None,
                     proveedor: str = "claude") -> dict:
     """Pase 2 opcional: LLM valida y enriquece entidades ambiguas.
-    Proveedores: claude (API Anthropic) | ollama (local, recomendado: latamgpt).
+    Proveedores: claude (API Anthropic) | ollama (local, recomendado: latamgpt)
+    | lmstudio (local, servidor OpenAI-compatible en localhost:1234).
     Trabaja sobre los primeros 8000 caracteres para controlar costo y velocidad."""
     fragmento = texto[:8000]
     prompt_final = _PROMPT.replace("{texto}", fragmento)
@@ -182,6 +183,17 @@ def validar_con_llm(texto: str, api_key: str, modelo: str = None,
                     "Asegúrate de que Ollama esté corriendo: ollama serve"
                 )
             raw = resp.json().get("response", "")
+
+        elif proveedor == "lmstudio":
+            from core.ocr_llm import _cliente_lmstudio
+            host = api_key if api_key and api_key.startswith("http") else "http://localhost:1234"
+            client = _cliente_lmstudio(host)
+            resp = client.chat.completions.create(
+                model=modelo or "local-model",
+                max_tokens=1500,
+                messages=[{"role": "user", "content": prompt_final}],
+            )
+            raw = resp.choices[0].message.content or ""
 
         else:
             return {}
@@ -267,9 +279,11 @@ def pipeline_ner(texto: str, nlp=None, api_key: str | None = None,
 
     # Enriquecimiento opcional con LLM
     if api_key:
-        _prov_label = "LatamGPT/Ollama" if proveedor_llm == "ollama" else "Claude"
+        _PROV_LABELS = {"ollama": "LatamGPT/Ollama", "lmstudio": "LM Studio"}
+        _prov_label = _PROV_LABELS.get(proveedor_llm, "Claude")
         log(f"  {_prov_label}: validando y enriqueciendo con contexto histórico…")
-        llm = validar_con_llm(texto, api_key, modelo=modelo_ollama if proveedor_llm == "ollama" else None,
+        _es_local = proveedor_llm in ("ollama", "lmstudio")
+        llm = validar_con_llm(texto, api_key, modelo=modelo_ollama if _es_local else None,
                                proveedor=proveedor_llm)
         for cat in CATEGORIAS:
             if cat in llm and isinstance(llm[cat], list):

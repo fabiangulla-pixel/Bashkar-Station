@@ -66,7 +66,7 @@ PRECIOS: dict[str, PrecioModelo] = {
     "gemini-1.5-pro": PrecioModelo(1.25, 5.00),
 }
 
-PROVEEDORES_LOCALES = {"ollama"}
+PROVEEDORES_LOCALES = {"ollama", "lmstudio"}
 
 
 def _precio_de(modelo: str) -> tuple[PrecioModelo, bool]:

@@ -7,7 +7,7 @@ Diseño:
       1. Vision:    imagen → LLM Vision → texto transcrito
       2. Corrección: texto_tesseract → LLM texto → texto corregido
   - Preserva ortografía arcaica legítima de la época.
-  - Proveedores: claude (default) | openai | gemini | ollama
+  - Proveedores: claude (default) | openai | gemini | ollama | lmstudio
   - Se integra en app.py como botón "Mejorar con IA" en la pestaña OCR.
 """
 
@@ -128,6 +128,32 @@ def _cliente_openai(api_key: str):
         raise ImportError("Instala openai: pip install openai>=1.0.0") from e
 
 
+def _cliente_lmstudio(host: str = "http://localhost:1234"):
+    """Cliente para LM Studio (servidor local, API compatible con OpenAI).
+    Requiere Developer → Start Server en LM Studio con un modelo cargado.
+    No necesita API key real (el servidor local no la valida)."""
+    try:
+        import openai
+        return openai.OpenAI(base_url=f"{host}/v1", api_key="lm-studio")
+    except ImportError as e:
+        raise ImportError("Instala openai: pip install openai>=1.0.0") from e
+
+
+def modelos_cargados_lmstudio(host: str = "http://localhost:1234") -> list[str]:
+    """Consulta /v1/models: qué modelos tiene LM Studio cargados AHORA MISMO
+    (no hay catálogo fijo que listar, depende de lo que el usuario descargó
+    y cargó en su máquina). Lista vacía si el servidor no está corriendo
+    (no es un error: el usuario puede no haberlo iniciado todavía)."""
+    import json as _json
+    import urllib.request as _urlreq
+    try:
+        with _urlreq.urlopen(f"{host}/v1/models", timeout=2) as resp:
+            datos = _json.loads(resp.read())
+        return [m["id"] for m in datos.get("data", [])]
+    except Exception:
+        return []
+
+
 # Alias para compatibilidad interna
 def _cliente(api_key: str):
     return _cliente_claude(api_key)
@@ -143,7 +169,7 @@ def ocr_con_vision(
 ) -> str:
     """
     Transcribe una imagen de página usando Vision LLM.
-    Proveedores: claude (default) | openai | gemini | ollama
+    Proveedores: claude (default) | openai | gemini | ollama | lmstudio
     """
     img_path = Path(img_path)
     if not img_path.exists():
@@ -229,6 +255,21 @@ def ocr_con_vision(
             resp.raise_for_status()
             return _filtrar_vision(resp.json().get("response", "").strip())
 
+        elif proveedor == "lmstudio":
+            host = api_key if api_key and api_key.startswith("http") else "http://localhost:1234"
+            client = _cliente_lmstudio(host)
+            resp = client.chat.completions.create(
+                model=modelo or "local-model",
+                max_tokens=4096,
+                messages=[{"role": "user", "content": [
+                    {"type": "image_url", "image_url": {
+                        "url": f"data:{media_type};base64,{img_b64}"}},
+                    {"type": "text", "text": _PROMPT_VISION},
+                ]}],
+            )
+            _registrar_usage(resp)
+            return _filtrar_vision(resp.choices[0].message.content.strip())
+
         else:
             raise ValueError(f"Proveedor desconocido: {proveedor}")
 
@@ -288,7 +329,7 @@ def corregir_texto(
     """
     Corrige artefactos OCR en texto ya extraído por Tesseract.
     Preserva ortografía arcaica legítima de época.
-    Proveedores: claude (default) | openai | gemini | ollama
+    Proveedores: claude (default) | openai | gemini | ollama | lmstudio
     """
     if not texto_ocr or not texto_ocr.strip():
         return texto_ocr
@@ -335,6 +376,17 @@ def corregir_texto(
         )
         resp.raise_for_status()
         corregido = resp.json().get("response", "").strip()
+
+    elif proveedor == "lmstudio":
+        host = api_key if api_key and api_key.startswith("http") else "http://localhost:1234"
+        client = _cliente_lmstudio(host)
+        resp = client.chat.completions.create(
+            model=modelo or "local-model",
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        _registrar_usage(resp)
+        corregido = resp.choices[0].message.content.strip()
 
     else:
         raise ValueError(f"Proveedor desconocido: {proveedor}")
@@ -442,8 +494,9 @@ def mejorar_pagina(
 
     # Ejecutar
     try:
+        _es_local = proveedor in ("ollama", "lmstudio")
         if usar_vision and img_path and img_path.exists():
-            _modelo_v = modelo_ollama if proveedor == "ollama" else None
+            _modelo_v = modelo_ollama if _es_local else None
             log(f"    🔭 Vision ({proveedor}): {img_path.name}")
             texto_mejorado = ocr_con_vision(img_path, api_key, modelo=_modelo_v, proveedor=proveedor)
             metodo = f"vision_{proveedor}"
@@ -455,7 +508,7 @@ def mejorar_pagina(
                     "confianza_tesseract": confianza_tesseract,
                     "mejorado": False,
                 }
-            _modelo_c = modelo_ollama if proveedor == "ollama" else None
+            _modelo_c = modelo_ollama if _es_local else None
             log(f"    ✏️ Corrección ({proveedor}): {txt_path.name if txt_path else '?'}")
             texto_mejorado = corregir_texto(texto_original, api_key, modelo=_modelo_c, proveedor=proveedor)
             metodo = f"correccion_{proveedor}"

@@ -4813,19 +4813,29 @@ class BashkarApp(tk.Tk):
         # Selector de proveedor LLM para corrección post-OCR
         self._var_ocr_llm_prov = tk.StringVar(value="claude")
         cmb_prov_ocr = ttk.Combobox(bf, textvariable=self._var_ocr_llm_prov,
-                     values=["claude", "openai", "gemini", "ollama"],
+                     values=["claude", "openai", "gemini", "ollama", "lmstudio"],
                      state="readonly", width=8,
                      font=("Segoe UI", 9))
         cmb_prov_ocr.pack(side="left", padx=(0, 2))
-        # Modelo Ollama (visible solo cuando proveedor=ollama)
+        # Modelo local (visible solo cuando proveedor=ollama/lmstudio)
         self._var_ocr_ollama_modelo = tk.StringVar(value="latamgpt")
         self._cmb_ocr_ollama_modelo = ttk.Combobox(
             bf, textvariable=self._var_ocr_ollama_modelo,
             values=["latamgpt", "llama3.1", "mistral", "qwen2.5"],
             state="normal", width=10, font=("Segoe UI", 9))
-        # mostrar/ocultar según proveedor
+        # mostrar/ocultar según proveedor; para lmstudio consulta qué hay cargado
         def _ocr_prov_changed(*_):
-            if self._var_ocr_llm_prov.get() == "ollama":
+            prov = self._var_ocr_llm_prov.get()
+            if prov == "lmstudio":
+                from core.ocr_llm import modelos_cargados_lmstudio
+                modelos = modelos_cargados_lmstudio()
+                self._cmb_ocr_ollama_modelo.config(values=modelos)
+                if modelos and self._var_ocr_ollama_modelo.get() not in modelos:
+                    self._var_ocr_ollama_modelo.set(modelos[0])
+                self._cmb_ocr_ollama_modelo.pack(side="left", padx=(0, 8))
+            elif prov == "ollama":
+                self._cmb_ocr_ollama_modelo.config(
+                    values=["latamgpt", "llama3.1", "mistral", "qwen2.5"])
                 self._cmb_ocr_ollama_modelo.pack(side="left", padx=(0, 8))
             else:
                 self._cmb_ocr_ollama_modelo.pack_forget()
@@ -4833,8 +4843,10 @@ class BashkarApp(tk.Tk):
         self._mk_ayuda(bf,
             "Mejorar con IA: aplica Vision o corrección post-OCR\n"
             "a páginas con confianza Tesseract por debajo del umbral.\n"
-            "Proveedores: claude / openai / gemini / ollama\n"
+            "Proveedores: claude / openai / gemini / ollama / lmstudio\n"
             "  → ollama: escribe el modelo (ej: latamgpt, llama3.1)\n"
+            "  → lmstudio: servidor local (Developer → Start Server),\n"
+            "    lista los modelos cargados automáticamente\n"
             "Umbral 60: solo páginas malas. Umbral 40: más agresivo.")
         tk.Label(bf, text="Umbral IA:", bg=CONTENT_BG, fg="#CDD6F4",
                  font=("Segoe UI", 9)).pack(side="left", padx=(8, 2))
@@ -5293,6 +5305,7 @@ class BashkarApp(tk.Tk):
                    "claude-opus-4-7", "claude-fable-5"],
         "openai": ["gpt-5.5", "gpt-5.4-mini", "gpt-4o", "gpt-4o-mini"],
         "ollama": ["llava", "llama3.2-vision", "qwen2.5-vl", "minicpm-v"],
+        "lmstudio": [],  # sin catálogo fijo: se consulta al servidor local
     }
 
     def _build_mmx(self):
@@ -5381,7 +5394,7 @@ class BashkarApp(tk.Tk):
                  font=("Segoe UI", 9)).pack(side="left")
         cb_prov = ttk.Combobox(rowp, textvariable=self._mmx_prov, width=12,
                                state="readonly",
-                               values=["gemini", "claude", "openai", "ollama"])
+                               values=["gemini", "claude", "openai", "ollama", "lmstudio"])
         cb_prov.pack(side="left", padx=(6, 16))
         tk.Label(rowp, text="Modelo:", bg=CARD_BG, fg=TXT_PRI,
                  font=("Segoe UI", 9)).pack(side="left")
@@ -5393,7 +5406,12 @@ class BashkarApp(tk.Tk):
         self._mmx_cb_modelo.pack(side="left", padx=(6, 0))
 
         def _prov_cambio(*_a):
-            modelos = self._MMX_MODELOS.get(self._mmx_prov.get(), [])
+            prov = self._mmx_prov.get()
+            if prov == "lmstudio":
+                from core.ocr_llm import modelos_cargados_lmstudio
+                modelos = modelos_cargados_lmstudio()
+            else:
+                modelos = self._MMX_MODELOS.get(prov, [])
             self._mmx_cb_modelo.config(values=modelos)
             # Al cambiar de proveedor, selecciona su modelo recomendado (1.º).
             self._mmx_modelo.set(modelos[0] if modelos else "")
@@ -5404,7 +5422,9 @@ class BashkarApp(tk.Tk):
             "elegido (el 1.º es el recomendado); podés escribir otro si querés.\n"
             "Gemini 2.5 Flash es ideal para lotes (rápido y económico).\n"
             "La clave se toma de ⚙ Configuración → Claves API por proveedor.\n"
-            "Ollama corre localmente (modelo de visión, p.ej. llava) sin costo.")
+            "Ollama corre localmente (modelo de visión, p.ej. llava) sin costo.\n"
+            "LM Studio corre localmente (Developer → Start Server en LM Studio);\n"
+            "  el selector consulta qué modelo tenés cargado ahora mismo.")
 
         # ══ PASO 3 — Qué hacer con el resultado ═════════════════════════════
         c3 = self._card(pad, "  3  Salida")
@@ -5446,6 +5466,8 @@ class BashkarApp(tk.Tk):
         modelo = self._mmx_modelo.get().strip() or None
         if prov == "ollama":
             return ST.api_keys.get("ollama", "http://localhost:11434"), prov, modelo
+        if prov == "lmstudio":
+            return ST.api_keys.get("lmstudio", "http://localhost:1234"), prov, modelo
         clave_map = {"gemini": "gemini", "claude": "anthropic", "openai": "openai"}
         api_key = ST.api_keys.get(clave_map.get(prov, prov), "") or ST.api_key
         return api_key, prov, modelo
@@ -12333,11 +12355,14 @@ class BashkarApp(tk.Tk):
                              ollama_modelo: str = "latamgpt"):
         from core.ocr_llm import mejorar_lote
         img_dir_raiz = ST.out_dir / "02_imagenes" if ST.out_dir else None
-        modelo_txt = f" [{ollama_modelo}]" if proveedor == "ollama" else ""
+        modelo_txt = f" [{ollama_modelo}]" if proveedor in ("ollama", "lmstudio") else ""
         self._put(tipo="log", texto=f"Iniciando mejora OCR con {proveedor}{modelo_txt}...")
-        # Para Ollama la api_key es la URL; para otros es la clave real
+        # Para proveedores locales la api_key es la URL del servidor; para otros
+        # es la clave real.
         if proveedor == "ollama":
             api_key = ST.api_keys.get("ollama", "http://localhost:11434")
+        elif proveedor == "lmstudio":
+            api_key = ST.api_keys.get("lmstudio", "http://localhost:1234")
         else:
             api_key = ST.api_key
 
@@ -12566,14 +12591,21 @@ class BashkarApp(tk.Tk):
         ttk.Checkbutton(bf, text="🤖 Usar IA:", variable=self._var_ner_llm).pack(side="left", padx=(8, 2))
         self._var_ner_prov = tk.StringVar(value="claude")
         self._cmb_ner_prov = ttk.Combobox(bf, textvariable=self._var_ner_prov,
-                                           values=["claude", "ollama"], state="readonly",
-                                           width=7, font=("Segoe UI", 9))
+                                           values=["claude", "ollama", "lmstudio"], state="readonly",
+                                           width=8, font=("Segoe UI", 9))
         self._cmb_ner_prov.pack(side="left", padx=(0, 4))
         self._var_ner_ollama_modelo = tk.StringVar(value="latamgpt")
         self._ent_ner_ollama_modelo = ttk.Entry(bf, textvariable=self._var_ner_ollama_modelo,
                                                 width=10, font=("Segoe UI", 9))
         def _ner_prov_changed(*_):
-            if self._var_ner_prov.get() == "ollama":
+            prov = self._var_ner_prov.get()
+            if prov == "lmstudio":
+                from core.ocr_llm import modelos_cargados_lmstudio
+                modelos = modelos_cargados_lmstudio()
+                if modelos:
+                    self._var_ner_ollama_modelo.set(modelos[0])
+                self._ent_ner_ollama_modelo.pack(side="left", padx=(0, 8))
+            elif prov == "ollama":
                 self._ent_ner_ollama_modelo.pack(side="left", padx=(0, 8))
             else:
                 self._ent_ner_ollama_modelo.pack_forget()
@@ -12711,6 +12743,8 @@ class BashkarApp(tk.Tk):
         if usar_ia:
             if proveedor_llm == "ollama":
                 api_key = ST.api_keys.get("ollama", "http://localhost:11434")
+            elif proveedor_llm == "lmstudio":
+                api_key = ST.api_keys.get("lmstudio", "http://localhost:1234")
             else:
                 api_key, _modelo_ner = _resolver_api_key_modelo("ner")
         else:
@@ -12772,6 +12806,8 @@ class BashkarApp(tk.Tk):
         if usar_ia:
             if proveedor_llm == "ollama":
                 api_key = ST.api_keys.get("ollama", "http://localhost:11434")
+            elif proveedor_llm == "lmstudio":
+                api_key = ST.api_keys.get("lmstudio", "http://localhost:1234")
             else:
                 api_key = _resolver_api_key_modelo("ner")[0]
         else:
