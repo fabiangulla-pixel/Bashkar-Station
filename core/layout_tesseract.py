@@ -326,7 +326,10 @@ def analizar_pagina_local(
         except Exception as e:
             log(f"⚠ Refinamiento Tesseract omitido: {e}")
 
-    # Pies de foto: bloques de texto bajos pegados debajo de una foto
+    # Pies de foto: bloques de texto bajos pegados debajo de una foto.
+    # El vínculo (zid de la foto) se guarda en la propia zona en vez de
+    # descartarse — la GUI lo usa para dibujar la línea pie↔foto y para
+    # el editor de "vincular a foto".
     fotos = [z for z in zonas if z.tipo == "foto"]
     for z in zonas:
         if z.tipo != "articulo" or (z.y1 - z.y0) > 0.05:
@@ -337,6 +340,7 @@ def analizar_pagina_local(
             if ancho_min > 0 and solape_x / ancho_min >= 0.5 \
                     and 0 <= z.y0 - f.y1 <= 0.03:
                 z.tipo = "pie_foto"
+                z.vinculo = f.zid
                 break
 
     # 6. Filetes y separadores de columna

@@ -2297,6 +2297,8 @@ class BashkarApp(tk.Tk):
              lambda: self._mostrar_pagina("red")),
             ("✔  Verificación OCR palabra por palabra", "verificar",
              self._verif_abrir),
+            ("🔁  Detectar cabeceras repetidas (Etiquetador)", "cabeceras",
+             self._etz_detectar_cabeceras),
         ]
         self._COMANDOS_PALETTE = [
             {"label": lab, "tags": tag, "accion": fn}
@@ -6226,6 +6228,19 @@ class BashkarApp(tk.Tk):
                 [cid_fill, cid_rect, cid_bg, cid_lbl] + ids_orden + ids_handles
             )
 
+        # Línea punteada entre pie de foto y su foto vinculada (z.vinculo = zid).
+        por_zid = {z.zid: i for i, z in enumerate(self._etz_zonas)}
+        for z in self._etz_zonas:
+            if z.tipo != "pie_foto" or not z.vinculo or z.vinculo not in por_zid:
+                continue
+            x0p, y0p, x1p, y1p = self._etz_zona_canvas_coords(por_zid[z.zid])
+            fx0, fy0, fx1, fy1 = self._etz_zona_canvas_coords(por_zid[z.vinculo])
+            cid_link = self._etz_canvas.create_line(
+                (x0p + x1p) / 2, (y0p + y1p) / 2,
+                (fx0 + fx1) / 2, (fy0 + fy1) / 2,
+                fill="#FF8800", width=2, dash=(4, 3), arrow="last")
+            self._etz_canvas_ids.append(cid_link)
+
     def _etz_cargar_imagen_pagina(self, numero: str, pagina: str):
         """Carga la imagen de la página desde el PDF o desde caché."""
         if not ST.out_dir or not ST.archivos_sel:
@@ -7420,6 +7435,18 @@ class BashkarApp(tk.Tk):
         if n_fus:
             menu.add_cascade(label="🔗 Fusionar con…", menu=sub_fus)
 
+        # Vincular pie de foto ↔ foto (Zona.vinculo, por identidad zid estable)
+        if zona_hit.tipo == "pie_foto":
+            fotos_disp = [(j, o) for j, o in enumerate(self._etz_zonas) if o.tipo == "foto"]
+            if fotos_disp:
+                sub_vinc = tk.Menu(menu, tearoff=0)
+                for j, foto in fotos_disp:
+                    marca = "✓ " if zona_hit.vinculo == foto.zid else "   "
+                    sub_vinc.add_command(
+                        label=f"{marca}Foto {j+1} ({foto.x0:.2f},{foto.y0:.2f})",
+                        command=lambda i=idx_hit, fz=foto.zid: self._etz_vincular_foto(i, fz))
+                menu.add_cascade(label="🖇 Vincular a foto…", menu=sub_vinc)
+
         menu.add_command(label="🔢 Recalcular orden de lectura",
                          command=self._etz_recalcular_orden)
         menu.add_separator()
@@ -7437,6 +7464,7 @@ class BashkarApp(tk.Tk):
             return
         a, b = dividir_zona(self._etz_zonas[idx], eje=eje, frac=frac)
         self._etz_zonas[idx:idx + 1] = [a, b]
+        self._etz_limpiar_vinculos_huerfanos()
         self._etz_recalcular_orden(redibujar=False)
         self._etz_zona_sel_idx = idx
         self._etz_actualizar_lista_zonas()
@@ -7452,10 +7480,57 @@ class BashkarApp(tk.Tk):
         for i in sorted((idx_a, idx_b), reverse=True):
             self._etz_zonas.pop(i)
         self._etz_zonas.append(fusion)
+        self._etz_limpiar_vinculos_huerfanos()
         self._etz_recalcular_orden(redibujar=False)
         self._etz_zona_sel_idx = len(self._etz_zonas) - 1
         self._etz_actualizar_lista_zonas()
         self._etz_redibujar_zonas()
+
+    def _etz_limpiar_vinculos_huerfanos(self):
+        """Pone en None cualquier Zona.vinculo que apunte a un zid que ya no
+        existe (tras dividir/fusionar/borrar la zona vinculada)."""
+        zids_vivos = {z.zid for z in self._etz_zonas}
+        for z in self._etz_zonas:
+            if z.vinculo and z.vinculo not in zids_vivos:
+                z.vinculo = None
+
+    def _etz_vincular_foto(self, idx_pie: int, foto_zid: str):
+        """Vincula (o desvincula si ya estaba vinculado a esa misma foto) la
+        zona pie_foto en idx_pie con la zona foto de zid `foto_zid`."""
+        if not (0 <= idx_pie < len(self._etz_zonas)):
+            return
+        pie = self._etz_zonas[idx_pie]
+        pie.vinculo = None if pie.vinculo == foto_zid else foto_zid
+        self._etz_redibujar_zonas()
+
+    def _etz_detectar_cabeceras(self):
+        """Reporta cabeceras repetidas entre las páginas YA etiquetadas
+        manualmente de este número (solo informa; no reetiqueta nada solo).
+        """
+        numero = self._etz_numero.get() if hasattr(self, "_etz_numero") else ""
+        if not numero or not ST.out_dir:
+            self.toast("Selecciona un número con páginas etiquetadas primero.", "warn")
+            return
+        from core.layout_patterns import detectar_cabeceras_repetidas
+        from core.zone_labeler import cargar_todas_manual
+        paginas_et = cargar_todas_manual(Path(ST.out_dir), numero)
+        if len(paginas_et) < 2:
+            self.toast("Se necesitan al menos 2 páginas etiquetadas de este "
+                       "número para comparar cabeceras.", "warn")
+            return
+        zonas_por_pagina = [pg.zonas for pg in paginas_et]
+        grupos = detectar_cabeceras_repetidas(zonas_por_pagina, min_repeticiones=2)
+        if not grupos:
+            messagebox.showinfo("Cabeceras repetidas",
+                "No se detectaron cabeceras con la misma posición en al menos "
+                "2 páginas etiquetadas de este número.")
+            return
+        lineas = []
+        for i, indices_pag in enumerate(grupos.values(), 1):
+            nombres = ", ".join(paginas_et[p].pagina for p in indices_pag)
+            lineas.append(f"Grupo {i}: {len(indices_pag)} páginas → {nombres}")
+        messagebox.showinfo("Cabeceras repetidas",
+            f"{len(grupos)} patrón(es) de cabecera detectado(s):\n\n" + "\n".join(lineas))
 
     def _etz_recalcular_orden(self, redibujar: bool = True):
         """Recalcula el orden de lectura de todas las zonas de la página."""
@@ -7528,6 +7603,7 @@ class BashkarApp(tk.Tk):
         """Elimina la zona en la posición idx."""
         if 0 <= idx < len(self._etz_zonas):
             self._etz_zonas.pop(idx)
+            self._etz_limpiar_vinculos_huerfanos()
             self._etz_zona_sel_idx = None
             self._etz_actualizar_lista_zonas()
             self._etz_redibujar_zonas()

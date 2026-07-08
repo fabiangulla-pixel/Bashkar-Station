@@ -18,8 +18,16 @@ from __future__ import annotations
 import json
 import re
 import statistics
+import uuid
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
+
+
+def _generar_zid() -> str:
+    """Identidad corta y estable para una Zona (8 hex, colisión despreciable
+    dentro de una sola página etiquetada)."""
+    return uuid.uuid4().hex[:8]
+
 
 # ── Detección automática por visión ──────────────────────────────────────────
 
@@ -630,6 +638,15 @@ class Zona:
     confianza: float = 1.0   # 1.0 = manual, <1.0 = predicción
     notas: str = ""
     orden: int = 0     # orden de lectura (1..n); 0 = sin asignar
+    zid: str = ""      # identidad estable (uuid corto); NUNCA usar el índice
+                       # en la lista para referenciar una zona, dividir/fusionar
+                       # la invalidan. Se autogenera si viene vacío (zonas
+                       # nuevas y JSON antiguo sin este campo).
+    vinculo: str | None = None  # zid de otra zona relacionada (p.ej. pie_foto → foto)
+
+    def __post_init__(self):
+        if not self.zid:
+            self.zid = _generar_zid()
 
     def area(self) -> float:
         return max(0.0, (self.x1 - self.x0) * (self.y1 - self.y0))
