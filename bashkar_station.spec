@@ -200,7 +200,11 @@ a = Analysis(
         # Otros innecesarios
         'onnx', 'onnxruntime',
         'jupyter', 'IPython', 'ipykernel', 'ipywidgets',
-        'test', 'tests', 'unittest',
+        # 'unittest' NO se excluye: pyparsing (dependencia de matplotlib) lo
+        # importa a nivel de módulo; excluirlo causaba
+        # "No module named 'unittest'" al arrancar el .exe (matplotlib ->
+        # pyparsing en la cadena de import). Es stdlib, aporta poco excluirlo.
+        'test', 'tests',
         'tkinter.test',
         # Grandes paquetes de visualización no usados directamente
         'bokeh', 'plotly', 'altair', 'dash',
