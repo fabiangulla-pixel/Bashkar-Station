@@ -2,6 +2,207 @@
 
 ---
 
+## Sesión 43 — 2026-07-08 — Modo Ingeniero + LM Studio + 5 fases FineReader + incidente fork bomb
+
+### Contexto
+Disparada por la pregunta "¿por qué Bashkar no se ve como ABBYY FineReader?".
+Ingeniería inversa de FineReader (capturas reales + su `fineUI.CommonSettings.xml`)
+→ plan de 5 fases aprobado por el usuario. De paso, se activó **Modo Ingeniero**:
+Bashkar llevaba ~42 sesiones sin control de versiones — este es el primer
+`git init` real del proyecto. A mitad de sesión se agregó LM Studio como
+proveedor local (pedido del usuario). Cierre con dos incidentes reales
+(uno de infraestructura, uno de packaging) documentados con su causa raíz.
+Suite final: **1047 passed, 11 skipped, 0 failed** (927 al empezar → +120 tests).
+
+### 1. Modo Ingeniero — control de versiones y CI local (NUEVO en este proyecto)
+- `git init` + `.gitignore`/`.gitattributes`, commit inicial capturando v11.6
+  completa (163 archivos) — el primer commit que existe en la historia de Bashkar.
+- `pyproject.toml` con `ruff` (reglas E/F/I/B/C4/UP/W). Corrigió 38 hallazgos
+  reales, el más serio: variables de excepción capturadas por referencia en
+  lambdas de callback de threads (B023) — `NameError` en runtime, no en tiempo
+  de escritura, invisibles hasta que el usuario dispara ese camino exacto.
+- `check.bat` (py_compile + ruff + pytest) + hook de pre-commit
+  (`scripts/install_hooks.py`) que lo corre automáticamente: ningún commit
+  entra sin la suite completa en verde.
+- ~10 commits reales en esta sesión (uno por fase/hito), en vez de un único
+  commit gigante al final.
+
+### 2. LM Studio como proveedor local — `core/ocr_llm.py`, `ner_engine.py`, `extractor_multimodal.py`, `costos.py`
+Patrón calcado 1:1 del ya usado en VideoIndexIA:
+- `_cliente_lmstudio()` (openai.OpenAI con `base_url` propio, sin API key real),
+  `modelos_cargados_lmstudio()` consulta `/v1/models` (timeout 2s, `[]` si el
+  servidor no responde — no es un error, el usuario puede no haberlo iniciado).
+- `"lmstudio"` sumado a `PROVEEDORES_LOCALES` en `costos.py` → costo $0, sin
+  confirmación de gasto (igual que ollama).
+- GUI: selector de modelo en los paneles OCR/MMX/NER consulta los modelos
+  **cargados ahora mismo** en el servidor — mejora real sobre el combobox
+  estático que ya tenía ollama.
+- **Bug de regresión encontrado de paso:** `mejorar_pagina()` solo propagaba
+  el modelo local elegido por el usuario cuando `proveedor=="ollama"`,
+  descartando en silencio el de lmstudio (siempre mandaba `"local-model"`).
+  Corregido con test de regresión.
+
+### 3. Fase 1 — Verificador OCR palabra por palabra — `core/word_verifier.py` (NUEVO)
+- `extraer_palabras_dudosas()` recalcula `image_to_data` de Tesseract por
+  página bajo demanda (el pipeline de OCR normal ya lo calcula para la
+  confianza promedio y descarta el detalle por palabra; aquí se recupera).
+- `recortar_palabra()` (recorte ampliado estilo FineReader), `sugerencias_para()`
+  (combina Hunspell vía `spell_corrector` + palabras más frecuentes del propio
+  corpus — útil para nombres propios que Hunspell no conoce),
+  `aplicar_reemplazo()`/`reemplazar_todas()` (por n-ésima ocurrencia con `\b`,
+  sin adivinar posición si el texto ya divergió del OCR crudo).
+- `core/spell_corrector.py`: vocabulario de usuario ampliable en runtime
+  (`agregar_palabra_usuario`), persiste en `~/.bashkar/vocab_usuario.json`
+  (mismo patrón que `tipos_zona.json`).
+- GUI: ventana `_verif_*` en Normalizar (botón junto al selector Crudo/Manual/
+  IA + Command Palette). Reusa `self._norm_img_orig_full` (ya cargada por
+  `_norm_mostrar_imagen`) en vez de releer disco/Drive. Al cerrar, vuelca el
+  texto corregido al textbox y llama al flujo de guardado YA existente
+  (`_norm_guardar_bloque_actual`) — un solo escritor, nunca dos caminos a BD.
+
+### 4. Fase 2 — Avisos de calidad por página — `core/page_quality.py` (NUEVO)
+- Umbrales de página vacía tomados de la configuración REAL de FineReader 16
+  (`emptyPageDetectionOptions`: `maxAlphabetLetters=2`, `maxTextObjects=20`).
+- Integrado en `_worker_ocr` como **postprocesamiento centralizado sobre
+  `meta_rows`**, después del bucle principal — decisión deliberada de no tocar
+  cada una de las 7 rutas de OCR por separado (demasiado riesgo en un worker
+  de 500+ líneas). "Página vacía" y "confianza baja" se calculan gratis desde
+  datos ya en `meta_rows`; el chequeo de DPI real queda para cuando el
+  investigador abre una página puntual en Normalizar (evita releer cientos
+  de imágenes de un lote completo).
+- Indicador ⚠ en la lista de páginas de Normalizar.
+
+### 5. Fase 3 — Vínculo pie-foto + cabeceras repetidas — `core/zone_labeler.py`, `core/layout_patterns.py` (NUEVO)
+- `Zona` gana `zid` (identidad estable, uuid corto autogenerado) y `vinculo`
+  (zid de otra zona relacionada). Retro-compatible: JSON de sesiones
+  anteriores sin estos campos carga con defaults automáticamente.
+- `core/layout_patterns.py`: `detectar_cabeceras_repetidas` (agrupa zonas
+  altas por bbox similar entre páginas + confirmación opcional por texto),
+  `detectar_capitulares` (glifo de 1 letra con altura >1.8× la mediana =
+  drop cap, señal de inicio de artículo), `asociar_pies_fotos`.
+- GUI (etiquetador): menú "🖇 Vincular a foto…", línea punteada visual entre
+  pie↔foto vinculados, `_etz_limpiar_vinculos_huerfanos()` tras dividir/
+  fusionar/borrar (un vínculo nunca debe apuntar a un zid que ya no existe —
+  identidad estable en vez de índices, que sí se invalidan con esas
+  operaciones). Comando "Detectar cabeceras repetidas" en el Command Palette.
+
+### 6. Fase 4 — PDF buscable + "Guardar como…" — `core/pdf_export.py` (NUEVO)
+- `exportar_pdf_buscable()`: imagen de cada página (recomprimida a JPEG) +
+  capa de texto invisible (`render_mode=3`, PyMuPDF). Decisión de diseño: el
+  texto NORMALIZADO se inserta como una sola caja invisible por página
+  completa (los bboxes de Tesseract ya no casan tras corregir a mano); el
+  posicionamiento por palabra solo aplica si se exporta el OCR crudo.
+- Diálogo con 4 presets: Copia exacta (PDF buscable, nuevo) / Edición
+  académica (TEI+BibTeX, reusa exportadores ya existentes) / Datos de
+  análisis (Excel, reusa `_gen_excel`) / Texto plano (nuevo, mínimo).
+
+### 7. Fase 5 — Pantalla de inicio — `app.py`
+- `_cargar_ultimo_proyecto` es ahora un wrapper delgado: si la pref
+  `mostrar_inicio` (default `True`, `core/user_prefs.py`) está activa y no hay
+  `BASHKAR_NO_WELCOME` en el entorno, muestra `_welcome_mostrar()`; si no,
+  `_cargar_ultimo_proyecto_directo()` (cuerpo original, sin cambios).
+- Regla de seguridad: cerrar la ventana sin elegir nada SIEMPRE dispara
+  `_crear_proyecto_automatico` vía `WM_DELETE_WINDOW` — el resto de la app
+  asume que `ST` siempre tiene un proyecto cargado.
+
+### 8. Infraestructura compartida (Fase 0b) — `core/user_prefs.py`, `core/local_cache.py` (NUEVOS)
+- Preferencias de usuario persistentes (`~/.bashkar/prefs.json`).
+- Caché de miniaturas/derivados SIEMPRE en disco LOCAL
+  (`%LOCALAPPDATA%\BashkarStation`), nunca en la unidad del proyecto (Bashkar
+  vive en Google Drive; generar miles de archivos de caché ahí es lento y
+  ensucia la sincronización).
+
+### 9. Dos bugs reales encontrados al correr la suite completa (no relacionados a las fases)
+- **`ValueError: the truth value of a DataFrame is ambiguous`** en 5 puntos de
+  `app.py` (`getattr(ST, "corpus_meta", {}) or {}` — `ST.corpus_meta` es un
+  DataFrame real en el flujo de OCR; `bool(df)` revienta si tiene >1 fila).
+  Afectaba en SILENCIO a `_dash_actualizar` (timer periódico del dashboard)
+  cada vez que había datos reales — nunca se había notado porque el error
+  queda atrapado dentro de un callback de Tkinter. Encontrado porque un test
+  propio dejó `ST.corpus_meta` contaminado (DataFrame no vacío) en el estado
+  global compartido entre tests. Corregido en los 5 puntos + los 3 archivos
+  de test que asignaban directo a `ST.<attr>` pasan a usar
+  `monkeypatch.setattr` (revierte automáticamente).
+- Un test propio disparaba `messagebox.showwarning` de verdad (diálogo modal
+  bloqueante) → colgaba la suite indefinidamente. Ningún otro test de toda la
+  suite había tocado antes una ruta con `messagebox` real. Corregido
+  mockeándolo con `monkeypatch`.
+
+### 10. INCIDENTE GRAVE — bomba de fork real, forzó reinicio de la máquina del usuario
+Al hacer smoke-test del `.exe` recién compilado: ~90 procesos "BashkarStation"
+en 12 segundos, todos sin responder.
+
+**Causa raíz:** `app.py::_auto_instalar()` corre incondicionalmente al
+importar el módulo, detecta paquetes "faltantes" y por cada uno ejecuta
+`subprocess.check_call([sys.executable, "-m", "pip", "install", pkg, "-q"])`.
+Dentro de un `.exe` congelado por PyInstaller, `sys.executable` apunta al
+**propio `.exe`**, no a un Python con pip real. Esa línea, en vez de instalar
+algo, relanzaba una copia COMPLETA de Bashkar Station. Esa copia nueva volvía
+a ejecutar `_auto_instalar()` desde cero, detectaba los mismos paquetes
+"faltantes" (nada se había instalado) y volvía a relanzarse por cada uno —
+bomba de fork exponencial. El bug llevaba dormido desde v11.5/v11.6 porque
+nunca antes había un paquete "faltante" en un build congelado.
+
+**Fix:** guard `if getattr(sys, "frozen", False): return` al inicio de
+`_auto_instalar()` y `_fijar_numpy()`. Mismo patrón encontrado y corregido en
+`core/layout_neural.py::instalar_motor()` (botón manual "Instalar motor") y
+`core/ocr_kraken.py::_python_kraken()` (caía a `sys.executable` como último
+recurso cuando el venv dedicado `D:/kraken_env` no existe — la unidad D: ya
+no existe en este equipo). 4+3 tests de regresión nuevos
+(`tests/test_frozen_exe_safety.py`, ampliación de `test_ocr_kraken.py`) que
+mockean `subprocess.check_call`/`.run` y verifican que NUNCA se llama cuando
+`sys.frozen=True`.
+
+Lección guardada en memoria permanente (aplica a CUALQUIER proyecto
+compilado con PyInstaller, no solo Bashkar): ver
+`feedback_pyinstaller_frozen_exe_seguridad.md`.
+
+### 11. Bug de packaging adicional (encontrado en el smoke-test posterior al fix del fork bomb)
+`bashkar_station.spec` excluía `'unittest'` de `excludes` (para reducir
+tamaño del `.exe`) pero `pyparsing` (dependencia de `matplotlib`) lo importa
+a nivel de módulo → el `.exe` crasheaba al arrancar con
+`ModuleNotFoundError: No module named 'unittest'`. Quitado de `excludes`.
+
+### 12. Build y despliegue — `.exe v11.7`
+- `bashkar_station.spec`: +6 hiddenimports (`user_prefs`, `local_cache`,
+  `word_verifier`, `page_quality`, `layout_patterns`, `pdf_export` — se
+  importan de forma diferida dentro de funciones, no se detectan solos).
+- `APP_VERSION` y `_APP_VERSION_SPLASH`: `"11.6"` → `"11.7"` (3 ocurrencias).
+- Compilado a disco LOCAL (`C:\build_bashkar\`, `--distpath`/`--workpath`
+  explícitos) para minimizar I/O pesado sobre Google Drive.
+- **Smoke-test vigilado segundo a segundo** (conteo de procesos + título de
+  ventana + `Responding`) — ya no se asume que "compiló sin errores" =
+  "funciona"; se prueba de verdad antes de desplegar.
+- Desplegado a `C:\Programas\BashkarStation\`. Acceso directo del Escritorio
+  renombrado a `Bashkar Station v11.7.lnk`.
+
+### Incidente aparte, resuelto en la misma sesión (no relacionado al código)
+Al vaciar la caché de Google Drive (DriveFS) para liberar espacio en disco
+mientras había un `git commit` en curso, se cayó momentáneamente el montaje
+de `I:\`. Se resolvió reiniciando la app de escritorio de Google Drive; sin
+pérdida de datos (Google Drive nunca perdió los archivos, solo el montaje
+local quedó en un estado inconsistente temporal). Lección: nunca tocar la
+caché de DriveFS mientras hay operaciones de I/O activas sobre la unidad.
+
+### Archivos nuevos
+`core/user_prefs.py`, `core/local_cache.py`, `core/word_verifier.py`,
+`core/page_quality.py`, `core/layout_patterns.py`, `core/pdf_export.py`,
+`check.bat`, `pyproject.toml`, `scripts/install_hooks.py`, y ~15 archivos de
+test nuevos.
+
+### Pendiente / próxima sesión
+1. Prueba end-to-end del usuario con el `.exe` v11.7 real (todo lo de esta
+   sesión se verificó con smoke-tests automatizados y tests unitarios/GUI
+   headless; falta el uso real sobre un proyecto del corpus Estampa).
+2. Nivel 0-A del Plan de Maestría (`gold/` de 20-30 ejemplos anotados a
+   mano) — pendiente clavado desde sesión anterior, necesario para medir
+   cualquier motor contra un estándar real.
+3. Los pendientes de sesión 42 (demo OCR Vision IA, desambiguación Wikidata
+   contextual con LLM, limpieza de enlaces espurios) siguen abiertos, no se
+   tocaron esta sesión.
+
+---
+
 ## Sesión 42 — 2026-06-29 — Wikidata v3 + Gemini 3 + guías por módulo + .exe v11.6
 
 ### Contexto
