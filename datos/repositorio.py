@@ -582,6 +582,21 @@ class Repositorio:
             ).fetchall()]
         return {"nodos": nodos, "aristas": aristas}
 
+    def menciones_de_canonicas(self) -> list[dict]:
+        """
+        Pares {canonica_id, articulo_id} de todas las menciones ya fundidas
+        (join menciones_canonicas↔entidades). Base para construir "apariciones"
+        de una entidad canónica en artículos — usado por el exportador OKF y
+        reutilizable donde antes se hacía este join a mano con sqlite3 directo.
+        """
+        with self._conn() as conn:
+            rows = conn.execute("""
+                SELECT mc.canonica_id AS canonica_id, e.articulo_id AS articulo_id
+                FROM menciones_canonicas mc
+                JOIN entidades e ON e.id = mc.mencion_id
+            """).fetchall()
+            return [dict(r) for r in rows]
+
     # ── Historial IA ───────────────────────────────────────────────────────────
 
     def registrar_llamada_ia(self, etapa: str, proveedor: str, modelo: str,

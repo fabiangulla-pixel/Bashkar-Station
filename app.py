@@ -15194,6 +15194,14 @@ class BashkarApp(tk.Tk):
                    style="S.TButton",
                    command=self._can_editor_relacion).pack(side="left", padx=(8, 0))
 
+        # tercera fila: portabilidad (OKF)
+        bcan3 = tk.Frame(frm_can, bg=CONTENT_BG)
+        bcan3.pack(fill="x", padx=6, pady=(0, 4))
+        self._btn_can_okf = ttk.Button(
+            bcan3, text="📦  Exportar bundle OKF…",
+            style="S.TButton", command=self._can_exportar_okf)
+        self._btn_can_okf.pack(side="left")
+
         self._lbl_can_ok = tk.Label(frm_can, text="", bg=CONTENT_BG, fg=VERDE,
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_can_ok.pack(anchor="w", padx=6, pady=(2, 4))
@@ -15389,6 +15397,39 @@ class BashkarApp(tk.Tk):
         res = exportar_rdf(graf, dest)
         self._red_log(f"[grafo] RDF ({res['motor']}): {res['n_tripletas']} tripletas")
         self.toast(f"RDF exportado ({res['motor']})", "ok")
+
+    # ── Portabilidad: bundle OKF (Open Knowledge Format) ───────────────────────
+
+    def _can_exportar_okf(self):
+        repo = self._can_repo()
+        if repo is None:
+            return
+        dest = filedialog.askdirectory(title="Carpeta destino del bundle OKF")
+        if not dest:
+            return
+        nombre = getattr(ST, "publicacion", "") or "Corpus"
+        self._btn_can_okf.config(state="disabled")
+        self._lbl_can_ok.config(text="Exportando bundle OKF…")
+        threading.Thread(target=self._worker_can_okf,
+                         args=(repo, dest, nombre), daemon=True).start()
+
+    def _worker_can_okf(self, repo, dest, nombre):
+        try:
+            from core.okf_export_engine import exportar_proyecto_okf
+            res = exportar_proyecto_okf(repo, dest, nombre_proyecto=nombre)
+        except Exception as e:
+            self.after(0, lambda err=e: messagebox.showerror("Error", str(err)))
+            self.after(0, lambda: self._btn_can_okf.config(state="normal"))
+            return
+
+        def _ui():
+            self._btn_can_okf.config(state="normal")
+            self._lbl_can_ok.config(
+                text=f"✓ Bundle OKF: {res['n_documentos']} documentos, "
+                     f"{res['n_articulos']} artículos, {res['n_entidades']} entidades")
+            self._red_log(f"[okf] bundle exportado en {res['carpeta']}")
+            self.toast(f"Bundle OKF exportado ({res['n_articulos']} artículos)", "ok")
+        self.after(0, _ui)
 
     # ── Fase 3: exploradores ───────────────────────────────────────────────────
 

@@ -2,6 +2,80 @@
 
 ---
 
+## Sesión 44 — 2026-07-13 — Exportación de bundle OKF (Open Knowledge Format)
+
+### Contexto
+Encargo del usuario: empaquetar el corpus como bundle **OKF**, la especificación
+abierta que Google Cloud anunció el 12-jun-2026 (directorio de `.md` con
+frontmatter YAML, sin depender de SQLite/API propia, pensada para que
+cualquier agente de IA lea el conocimiento sin intermediarios). Ya existía una
+implementación de referencia en VideoIndexIA (dominio distinto, PySide6); aquí
+se adaptó al dominio de prensa histórica y al stack Tkinter de este proyecto,
+verificando primero el modelo de datos real en `datos/schema.py`/`repositorio.py`
+en vez de asumir la memoria de sesiones previas. Es una capa de exportación
+nueva, en paralelo a RDF/GEXF/TEI — no toca NER, el grafo de entidades ni
+Wikidata. Suite final: **1050 passed, 14 skipped, 0 failed** (1047→1050,
++17 tests nuevos; el delta de skips es variación preexistente, no de esta sesión).
+
+### 1. `datos/repositorio.py` — un método nuevo de solo lectura
+- `menciones_de_canonicas()`: join `menciones_canonicas`↔`entidades` que
+  devuelve pares `{canonica_id, articulo_id}` de todas las menciones ya
+  fundidas. Antes este join solo existía como `sqlite3.connect` crudo dentro
+  de `app.py::_worker_can_menciones` (violando la regla propia del proyecto
+  "los módulos nunca tocan sqlite3 directamente"); el exportador OKF lo
+  necesitaba y se resolvió correctamente en la capa de repositorio en vez de
+  repetir el antipatrón.
+
+### 2. `core/okf_export_engine.py` (NUEVO) — exportador puro, sin Tkinter
+Mapeo de dominio → conceptos OKF:
+- **Documento** = cada `numero` (edición) del corpus, agrupa sus artículos.
+- **Articulo** = cada fila de `articulos` con texto OCR no vacío (las que no
+  tienen texto se omiten por no tener contenido que empaquetar — no se
+  filtran artículos anónimos, que en este corpus son mayoría legítima:
+  se exportan igual con "Anónimo" como autor).
+- **Entidad** = cada fila de `entidades_canonicas`, con sus "Apariciones"
+  (artículos donde se menciona — ya fundidas por `fundir_menciones_en_canonicas`,
+  nunca un archivo por mención repetida) y "Relaciones" salientes desde
+  `relaciones`.
+- `index.md` tipo `Bundle` con enlaces a documentos/artículos/entidades.
+- Slugs con sufijo del id real (`titulo-articulo_id`) para artículos; las
+  entidades reusan su id canónico (`tipo:slug-nombre`, ya único por
+  construcción). Frontmatter YAML con escape de comillas/backslashes/saltos
+  de línea (verificado parseando con PyYAML en tests, no solo con match de
+  substring). Cero llamadas a red/LLM — repaquetado local puro, mismo
+  espíritu $0 que `core/exploradores.py` (RDF/GEXF).
+
+### 3. GUI — botón en pestaña Grafo canónico (Redes 🕸)
+- `📦 Exportar bundle OKF…` en una tercera fila de `frm_can`, junto al resto
+  de exportadores de esa pestaña. `_can_exportar_okf`/`_worker_can_okf` en
+  `app.py`: `askdirectory`, worker en thread (corpus grande = muchos archivos
+  pequeños), toast con conteo de documentos/artículos/entidades exportados.
+  Mismo patrón que `_can_exportar_gexf`/`_can_exportar_rdf`. No se agregó al
+  Command Palette porque ninguno de los otros botones de esta pestaña
+  (GEXF/RDF/Mapa/Timeline/Vocabulario) está tampoco — se respetó la
+  convención existente de esa pestaña específica.
+
+### 4. Tests — `tests/test_okf_export_engine.py` (17 nuevos)
+DB real de prueba (fixtures `repo`/`tmp_db`/`articulo_simple` de
+`conftest.py`), sin mocks. Cubre: slugs deterministas sin colisión,
+frontmatter con escape (incluye un test que parsea el YAML resultante con
+PyYAML vía `pytest.importorskip`, no solo compara strings), estructura
+completa del bundle, fusión de una entidad mencionada en dos artículos en un
+solo archivo, filtrado de artículos sin OCR, artículo anónimo exportado con
+autor genérico (no descartado), relaciones entidad→entidad enlazadas.
+
+### Pendiente
+- No se recompiló el `.exe` — el usuario pidió explícitamente no hacerlo
+  todavía. Cuando se confirme: recompilar v11.8 con
+  `core.okf_export_engine` en los `hiddenimports` del `.spec` (mismo patrón
+  de módulos nuevos olvidados en sesiones previas — verificar antes de
+  compilar, no después).
+- Ver [[project_bashkar_station]] para el resto de pendientes acumulados
+  (demo OCR Vision real, desambiguación Wikidata contextual, etc.), que esta
+  sesión no tocó.
+
+---
+
 ## Sesión 43 — 2026-07-08 — Modo Ingeniero + LM Studio + 5 fases FineReader + incidente fork bomb
 
 ### Contexto
