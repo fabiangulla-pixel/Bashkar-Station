@@ -1,4 +1,4 @@
-# ⬡ Bashkar Station v11.2
+# ⬡ Bashkar Station v11.7
 ### Plataforma de Análisis Editorial Computacional para Publicaciones Periódicas Históricas
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
@@ -98,14 +98,63 @@ directamente sin crear proyecto. Útil para demostraciones o análisis explorato
 
 ---
 
+## Versión web (segundo frontend)
+
+Bashkar Station también puede usarse desde el navegador. No es una reescritura:
+`servidor_web.py` es un segundo frontend que consume exactamente los mismos
+módulos `core/` y la misma clase `Estado` (`core/estado.py`) que la app de
+escritorio — ambos comparten el 100% de la lógica de negocio.
+
+### Modo local (un solo usuario, en tu propia máquina)
+```bash
+python servidor_web.py
+```
+Abre `http://127.0.0.1:8421`. Mismo comportamiento que la app de escritorio:
+estado global, acceso a las carpetas del disco, sin login.
+
+### Modo público (multi-sesión, para desplegar y compartir)
+```bash
+BASHKAR_PASSWORD=tu-clave python servidor_web.py     # Windows: set BASHKAR_PASSWORD=tu-clave
+```
+Cada visitante recibe su propia sesión aislada (cookie `sid`, `HttpOnly`) tras
+iniciar sesión con la contraseña. Ningún visitante ve los proyectos, el estado
+ni las claves de API de otro. Las claves de proveedor de IA se guardan **solo
+en memoria de la sesión**, nunca en disco. Las sesiones inactivas por más de
+6 h se liberan automáticamente.
+
+### Capacidades según el host
+El frontend consulta `/api/capacidades` y **oculta con un aviso explícito**
+lo que no esté disponible en el servidor donde corre (Tesseract, Poppler,
+spaCy español) en vez de dejar que el usuario elija algo que va a fallar. En
+un despliegue remoto sin Tesseract/Poppler, el **Conversor PDF** (texto
+embebido vía PyMuPDF) sigue funcionando completo — es la ruta recomendada
+para corpus BNC / Paper Capture en modo web.
+
+### Qué está portado en este tramo
+Configuración/proyectos, Conversor PDF, Normalizar, Segmentar, Analizar
+(léxico básico), Entidades (NER con spaCy), Resultados (TEI/BibTeX/CSV) y
+Dashboard. El resto de los 29 paneles del escritorio (Etiquetador, OCR
+multi-ruta, Lingüística, Redes, etc.) muestran su guía HD y quedan señalados
+como pendientes de portar — la lógica ya vive en `core/`, solo falta la vista.
+
+### Desplegar en Render
+Ver [`render.yaml`](render.yaml). El puerto lo inyecta Render vía `PORT`;
+la contraseña se configura como variable de entorno en el dashboard (nunca
+se commitea).
+
+---
+
 ## Arquitectura técnica
 
 ```
 bashkar_station/
-├── app.py              # UI tkinter (~15.000 líneas), estado global ST = Estado()
+├── app.py              # Frontend escritorio (Tkinter, ~20.000 líneas)
+├── servidor_web.py     # Frontend web (http.server stdlib, sin frameworks)
+├── web/                # Frontend web: HTML/CSS/JS vanilla, sin build
 ├── cli.py              # Interfaz de línea de comandos
 ├── instalar.py         # Instalador de dependencias
-├── core/               # 60+ módulos de procesamiento (sin dependencia de tkinter)
+├── core/               # 80+ módulos de procesamiento (sin dependencia de UI)
+│   ├── estado.py               # Estado del proyecto — compartido por ambos frontends
 │   ├── ocr_engine.py           # Motor OCR multi-ruta
 │   ├── ocr_normalizer.py       # Normalización post-OCR histórica
 │   ├── article_segmenter.py    # Segmentación de artículos
@@ -114,13 +163,14 @@ bashkar_station/
 │   ├── bitacora_engine.py      # Notas de investigación situadas
 │   ├── timeline_engine.py      # Timeline HTML interactiva
 │   ├── tei_engine.py           # Export XML-TEI P5 + validación
+│   ├── okf_export_engine.py    # Export bundle OKF (Open Knowledge Format)
 │   ├── methods_reporter.py     # METHODS.md automático
 │   ├── kraken_trainer.py       # Dataset HTR para reentrenamiento
 │   └── voice_dictation.py      # Dictado por voz en Normalizar
 ├── datos/              # Capa de datos SQLite
 │   ├── schema.py       # DDL: articulos, ocr, entidades, notas_investigacion…
 │   └── repositorio.py  # DAO único punto de acceso
-└── tests/              # 560+ tests (pytest)
+└── tests/              # 1000+ tests (pytest)
 ```
 
 **Decisiones de diseño:**
@@ -205,7 +255,8 @@ python -m pytest tests/test_integration_pipeline.py -v
 python -m pytest tests/test_v11_features.py -v
 ```
 
-**Estado actual:** 560+ tests, 0 fallos.
+**Estado actual:** 1068 tests, 0 fallos (11 se saltan por requerir red o
+dependencias opcionales).
 
 ---
 

@@ -1,0 +1,22 @@
+# Despliegue de Bashkar Station Web en Render.
+# El puerto lo inyecta Render vía la variable PORT (servidor_web.py ya la lee).
+# BASHKAR_PASSWORD se carga a mano en el dashboard de Render (Environment),
+# nunca se commitea aquí — sin esa variable el servidor NO activa modo público.
+#
+# Nota: requirements.txt incluye el stack completo del escritorio (spaCy,
+# torch, transformers, FAISS) porque servidor_web.py reusa los mismos
+# módulos core/ tal cual. En un host sin Tesseract/Poppler (como Render)
+# el Conversor PDF (texto embebido) y los análisis siguen funcionando completos;
+# /api/capacidades avisa en el frontend qué falta.
+services:
+  - type: web
+    name: bashkar-station-web
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python servidor_web.py
+    envVars:
+      - key: BASHKAR_PASSWORD
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.12.7"

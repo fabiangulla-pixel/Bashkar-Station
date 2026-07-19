@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bashkar Station Web</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Overlay de login (solo modo público) -->
+<div id="login-overlay" class="oculto">
+  <div class="login-caja">
+    <h1>📰 Bashkar Station</h1>
+    <p class="login-sub">Análisis editorial computacional — acceso restringido</p>
+    <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="current-password">
+    <button id="login-btn" class="btn btn-primario">Entrar</button>
+    <p id="login-error" class="login-error oculto"></p>
+  </div>
+</div>
+
+<div id="app" class="oculto">
+  <!-- Topbar -->
+  <header id="topbar">
+    <span class="logo">📰 <strong>Bashkar Station</strong> <span id="version-tag"></span></span>
+    <span id="proyecto-activo" class="proyecto-activo">— sin proyecto —</span>
+    <span class="topbar-espacio"></span>
+    <button id="btn-guardar" class="btn btn-topbar" title="Guardar proyecto">💾 Guardar</button>
+  </header>
+
+  <div id="cuerpo">
+    <!-- Activity Bar -->
+    <nav id="activity-bar">
+      <button class="ab-btn ab-activo" data-grupo="flujo"    title="Flujo de trabajo">📥</button>
+      <button class="ab-btn" data-grupo="analisis" title="Análisis">🔬</button>
+      <button class="ab-btn" data-grupo="salida"   title="Salida y colaboración">📤</button>
+    </nav>
+
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <div id="sidebar-titulo">FLUJO DE TRABAJO</div>
+      <div id="sidebar-lista"></div>
+    </aside>
+
+    <!-- Contenido -->
+    <main id="contenido"></main>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

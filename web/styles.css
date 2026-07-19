@@ -1,0 +1,189 @@
+/* Bashkar Station Web — paleta VS Code Dark+ (idéntica a app.py _PALETA_DARK) */
+:root {
+  --ab-bg: #333333; --ab-sel: #FFFFFF; --ab-txt: #858585; --ab-ind: #0078D4;
+  --sb-bg: #252526; --sb-hov: #2A2D2E; --sb-sel: #094771; --sb-txt: #BBBBBB;
+  --content-bg: #1E1E1E; --card-bg: #252526; --card-bor: #474747;
+  --topbar-bg: #3C3C3C; --azul: #0078D4; --azul-claro: #4FC1FF;
+  --acento: #CE9178; --texto: #D4D4D4; --texto2: #9D9D9D;
+  --ok: #4EC9B0; --error: #F48771; --ambar: #DCDCAA;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: var(--content-bg); color: var(--texto);
+  font-size: 14px; overflow: hidden;
+}
+.oculto { display: none !important; }
+
+/* ── Login ── */
+#login-overlay {
+  position: fixed; inset: 0; background: var(--content-bg);
+  display: flex; align-items: center; justify-content: center; z-index: 100;
+}
+.login-caja {
+  background: var(--card-bg); border: 1px solid var(--card-bor);
+  border-radius: 8px; padding: 40px; width: 340px; text-align: center;
+}
+.login-caja h1 { font-size: 22px; margin-bottom: 6px; }
+.login-sub { color: var(--texto2); font-size: 12px; margin-bottom: 22px; }
+.login-caja input {
+  width: 100%; padding: 9px 12px; margin-bottom: 12px;
+  background: var(--content-bg); border: 1px solid var(--card-bor);
+  border-radius: 4px; color: var(--texto); font-size: 14px;
+}
+.login-caja input:focus { outline: 1px solid var(--azul); }
+.login-error { color: var(--error); font-size: 12px; margin-top: 10px; }
+
+/* ── Topbar ── */
+#topbar {
+  height: 40px; background: var(--topbar-bg);
+  display: flex; align-items: center; gap: 16px; padding: 0 14px;
+  border-bottom: 1px solid #2b2b2b;
+}
+.logo { font-size: 13px; }
+#version-tag { color: var(--texto2); font-size: 11px; }
+.proyecto-activo { color: var(--ambar); font-size: 12px; }
+.topbar-espacio { flex: 1; }
+
+/* ── Layout ── */
+#cuerpo { display: flex; height: calc(100% - 40px); }
+#activity-bar {
+  width: 52px; background: var(--ab-bg);
+  display: flex; flex-direction: column; align-items: center; padding-top: 8px; gap: 4px;
+}
+.ab-btn {
+  width: 44px; height: 44px; border: none; background: transparent;
+  font-size: 20px; cursor: pointer; border-left: 2px solid transparent;
+  filter: grayscale(60%); opacity: .65;
+}
+.ab-btn:hover { filter: none; opacity: 1; }
+.ab-activo { border-left-color: var(--ab-ind); filter: none; opacity: 1; }
+
+#sidebar {
+  width: 215px; background: var(--sb-bg); overflow-y: auto;
+  border-right: 1px solid #2b2b2b; flex-shrink: 0;
+}
+#sidebar-titulo {
+  padding: 12px 16px 8px; font-size: 11px; letter-spacing: .08em;
+  color: var(--texto2); text-transform: uppercase;
+}
+.sb-item {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 16px; border: none; background: transparent; text-align: left;
+  color: var(--sb-txt); font-size: 13px; cursor: pointer;
+}
+.sb-item:hover { background: var(--sb-hov); }
+.sb-item.sb-activo { background: var(--sb-sel); color: #fff; }
+.sb-badge { margin-left: auto; font-size: 10px; }
+
+#contenido { flex: 1; overflow-y: auto; padding: 26px 34px; }
+
+/* ── Componentes ── */
+.page-titulo { font-size: 21px; margin-bottom: 2px; }
+.page-sub { color: var(--texto2); font-size: 13px; margin-bottom: 6px; }
+.page-linea { height: 2px; background: var(--azul); width: 60px; margin: 10px 0 18px; }
+
+.card {
+  background: var(--card-bg); border: 1px solid var(--card-bor);
+  border-radius: 6px; padding: 18px; margin-bottom: 16px;
+}
+.card h3 { font-size: 14px; margin-bottom: 10px; color: var(--azul-claro); }
+.guia { font-size: 12.5px; color: var(--texto2); line-height: 1.5; }
+.guia strong { color: var(--texto); }
+
+.btn {
+  padding: 7px 16px; border: 1px solid var(--card-bor); border-radius: 4px;
+  background: #333; color: var(--texto); font-size: 13px; cursor: pointer;
+}
+.btn:hover { background: #3d3d3d; }
+.btn-primario { background: var(--azul); border-color: var(--azul); color: #fff; }
+.btn-primario:hover { background: #1988de; }
+.btn-topbar { padding: 4px 12px; font-size: 12px; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+input[type=text], input[type=password], select {
+  padding: 7px 10px; background: var(--content-bg);
+  border: 1px solid var(--card-bor); border-radius: 4px;
+  color: var(--texto); font-size: 13px; width: 100%;
+}
+input:focus, select:focus { outline: 1px solid var(--azul); }
+label { display: block; font-size: 12px; color: var(--texto2); margin: 10px 0 4px; }
+
+.fila { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+.fila > div { flex: 1; min-width: 150px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; color: var(--azul-claro); padding: 6px 10px; border-bottom: 1px solid var(--card-bor); }
+td { padding: 5px 10px; border-bottom: 1px solid #333; }
+tr:hover td { background: var(--sb-hov); }
+.click { cursor: pointer; }
+
+/* Progreso */
+.prog-caja { margin-top: 14px; }
+.prog-barra { height: 6px; background: #333; border-radius: 3px; overflow: hidden; }
+.prog-fill { height: 100%; background: var(--azul); width: 0%; transition: width .3s; }
+.prog-msg { font-size: 12px; color: var(--texto2); margin-top: 6px; }
+.prog-log {
+  margin-top: 8px; max-height: 140px; overflow-y: auto; font-family: Consolas, monospace;
+  font-size: 11px; color: var(--texto2); background: var(--content-bg);
+  border: 1px solid var(--card-bor); border-radius: 4px; padding: 8px;
+  white-space: pre-wrap;
+}
+
+/* Semáforo de etapas */
+.etapas { display: flex; gap: 10px; flex-wrap: wrap; }
+.etapa { padding: 5px 12px; border-radius: 12px; font-size: 12px; border: 1px solid var(--card-bor); }
+.etapa-ready   { color: var(--ok); border-color: var(--ok); }
+.etapa-stale   { color: var(--ambar); border-color: var(--ambar); }
+.etapa-pending { color: var(--texto2); }
+
+/* Stub de panel pendiente */
+.stub-aviso {
+  border-left: 3px solid var(--ambar); padding: 10px 14px;
+  background: #2a2a20; font-size: 12.5px; color: var(--ambar);
+  border-radius: 0 4px 4px 0; margin-bottom: 16px;
+}
+
+/* Capacidad no disponible */
+.cap-off {
+  border-left: 3px solid var(--error); padding: 10px 14px;
+  background: #2a2020; font-size: 12.5px; color: var(--error);
+  border-radius: 0 4px 4px 0; margin-bottom: 16px;
+}
+
+/* Texto de página / artículo */
+.texto-visor {
+  white-space: pre-wrap; font-family: Georgia, serif; font-size: 14px;
+  line-height: 1.6; background: var(--content-bg); border: 1px solid var(--card-bor);
+  border-radius: 4px; padding: 16px; max-height: 480px; overflow-y: auto;
+}
+
+/* Toasts */
+#toasts { position: fixed; right: 18px; bottom: 18px; z-index: 200; display: flex; flex-direction: column; gap: 8px; }
+.toast {
+  padding: 10px 16px; border-radius: 6px; font-size: 13px; color: #fff;
+  background: #2d2d30; border: 1px solid var(--card-bor);
+  box-shadow: 0 4px 14px rgba(0,0,0,.4); animation: toast-in .25s ease;
+}
+.toast-ok    { border-left: 3px solid var(--ok); }
+.toast-error { border-left: 3px solid var(--error); }
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+
+/* Chips de entidades NER */
+.chip {
+  display: inline-block; padding: 3px 10px; margin: 3px; border-radius: 10px;
+  font-size: 12px; background: #333; border: 1px solid var(--card-bor);
+}
+.chip small { color: var(--texto2); }
+
+/* Barras del análisis */
+.barra-h { display: flex; align-items: center; gap: 8px; margin: 3px 0; font-size: 12px; }
+.barra-h .bh-label { width: 130px; text-align: right; color: var(--texto2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barra-h .bh-fill { height: 14px; background: var(--azul); border-radius: 2px; min-width: 2px; }
+.barra-h .bh-num { color: var(--texto2); }
+
+@media (max-width: 860px) {
+  #sidebar { width: 160px; }
+  #contenido { padding: 16px; }
+}

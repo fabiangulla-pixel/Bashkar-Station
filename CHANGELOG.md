@@ -2,6 +2,90 @@
 
 ---
 
+## Sesión 45 — 2026-07-19 — Segundo frontend web (patrón NativoWeb)
+
+### Contexto
+Encargo del usuario: réplica completa de Bashkar Station como interfaz web,
+con modo local y modo público multi-sesión desplegable en Render (patrón de
+la skill NativoWeb, origen "Revisor Editorial PDF"). No es una reescritura:
+el nuevo frontend consume exactamente los mismos módulos `core/` que la app
+de escritorio. Suite final: **1068 passed, 11 skipped, 0 failed** (1050→1068,
++18 tests nuevos: 15 del servidor + 3 de la extracción de Estado).
+
+### 1. `core/estado.py` (NUEVO) — Estado extraído de `app.py`
+La clase `Estado` (antes definida dentro de `app.py`) pasó a `core/estado.py`
+sin cambios de comportamiento: es la fuente única que ahora comparten la app
+de escritorio y el servidor web. `app.py` solo instancia el singleton
+(`ST = Estado()`) importándola.
+
+### 2. `servidor_web.py` (NUEVO) — backend HTTP de stdlib
+`http.server.ThreadingHTTPServer` sin frameworks. Cubre:
+- **Modo local** (por defecto): un solo usuario, estado global, acceso a
+  carpetas del disco — mismo comportamiento que el escritorio.
+- **Modo público** (`BASHKAR_PASSWORD=xxx`): una `EstadoServidor` por sesión
+  (cookie `sid` HttpOnly, `Secure` condicional a `X-Forwarded-Proto: https`),
+  login con `secrets.compare_digest`, barrido de sesiones inactivas (6 h),
+  API keys que NUNCA se persisten a disco (solo en memoria de la sesión),
+  proveedores de IA locales (Ollama/LM Studio) ocultos en el catálogo.
+- **Detección de capacidades del host** (`/api/capacidades`): Tesseract,
+  Poppler, PyMuPDF, spaCy español — el frontend oculta con aviso explícito
+  lo que falte en vez de dejar elegir algo que va a fallar.
+- **Trabajos en hilo + polling** (`Trabajo`/`_lanzar_trabajo`): conversor PDF,
+  normalizar, segmentar, analizar (léxico básico) y NER corren en background
+  con barra de progreso vía `/api/trabajo?id=`.
+- El body de cada POST se lee **una sola vez**, en un punto compartido, antes
+  de despachar — evita el bug clásico de HTTP/1.1 keep-alive que desincroniza
+  la siguiente petición de la conexión.
+
+### 3. `web/` (NUEVO) — frontend vanilla, sin build
+`index.html` + `app.js` + `styles.css`. Espejo exacto de `_PAGINAS` de
+`app.py` (mismos ids/emojis/nombres/grupos, 29 paneles); los del primer tramo
+(Configuración, Conversor PDF, Normalizar, Segmentar, Analizar, Entidades,
+Resultados, Dashboard) son funcionales, el resto muestra su guía HD
+(`core/guia_modulos.py` vía `/api/guias`) con aviso de "pendiente de portar".
+Paleta idéntica a `_PALETA_DARK` de `app.py` (VS Code Dark+).
+
+### 4. Bug real encontrado y corregido verificando con CDP
+Al ejercitar el flujo completo con un navegador real (Chrome DevTools
+Protocol, sin clics de coordenadas), la segmentación siempre devolvía 0
+artículos pese a llegar a "completado". Causa: `_trabajo_segmentar` llamaba
+`segmentar_numero(carpeta_del_numero, nombre)`, pero la función reconstruye
+la ruta como `ocr_dir/nombre` — al pasarle ya la carpeta del número, buscaba
+`03_ocr/numero/numero/` (inexistente) y volvía `[]` sin lanzar error. Fix:
+pasar la carpeta padre `03_ocr` como `ocr_dir`. El test
+`test_local_pipeline_completo` solo comprobaba `isinstance(arts, list)`
+— se reforzó para exigir `len(arts) >= 1`, así una regresión futura sí
+rompe la suite. (Se detectó además que `cli.py::_etapa_seg` tiene la MISMA
+llamada rota, silenciada por un `except Exception` genérico — no se tocó
+por estar fuera del alcance de esta sesión; queda como pendiente.)
+
+### 5. Verificación
+Suite completa 1068/1068 verdes + ruff limpio. Flujo real por CDP: crear
+proyecto → subir PDF → convertir (texto embebido) → normalizar → segmentar →
+analizar → exportar CSV → descargar, con datos reales en cada paso (no
+mocks). Modo público verificado con **dos perfiles de navegador Edge
+simultáneos** (puertos de depuración y `--user-data-dir` separados): el
+visitante B nunca vio el proyecto, la publicación ni la config del
+visitante A, ni antes ni después de recargar la página — capturas de
+pantalla confirmaron el aislamiento visualmente.
+
+### 6. Documentación
+`README.md`: sección "Versión web", árbol de arquitectura actualizado
+(`servidor_web.py`, `web/`, `core/estado.py`), versión y conteo de tests
+corregidos (v11.2→v11.7, 560+→1068). `render.yaml` (NUEVO) para desplegar
+en Render: `PORT` inyectado por la plataforma, `BASHKAR_PASSWORD` como
+env var sin commitear.
+
+### Pendiente
+- Recompilar `.exe` v11.8 (arrastrado de la sesión 44, exportador OKF).
+- Portar los 21 paneles restantes al frontend web (Etiquetador, OCR
+  multi-ruta, Lingüística, Redes, Tópicos, etc.) — la lógica ya vive en
+  `core/`, falta la vista.
+- Corregir la misma llamada rota a `segmentar_numero` en `cli.py::_etapa_seg`
+  (bug preexistente, no introducido esta sesión).
+
+---
+
 ## Sesión 44 — 2026-07-13 — Exportación de bundle OKF (Open Knowledge Format)
 
 ### Contexto
