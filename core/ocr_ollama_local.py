@@ -16,6 +16,8 @@ Velocidad aproximada: ~30-60 seg/página en CPU i7.
 import base64
 from pathlib import Path
 
+import requests
+
 # Prompt calibrado para prensa histórica colombiana
 PROMPT_OCR_HISTORICO = """Transcribe el texto de esta imagen.
 Es una página de revista o periódico colombiano, circa 1930-1940.
@@ -158,17 +160,31 @@ def ocr_ollama_lote(rutas_imagenes: list[str],
     return resultados
 
 
-def listar_modelos_vision() -> list[str]:
+def listar_modelos_vision(base_url: str = "http://localhost:11434") -> list[str]:
     """
     Lista los modelos de visión disponibles en Ollama.
+
+    Consulta la API REST de Ollama (GET /api/tags) directamente — el resto
+    del proyecto (ocr_llm.py, ner_engine.py) ya llama a Ollama por HTTP en
+    vez del paquete pip "ollama" opcional, así que esto evita una
+    dependencia extra que ni siquiera está en requirements.txt.
+
+    Filtra por la lista `capabilities` que Ollama devuelve para cada
+    modelo (["vision", "completion", "tools", ...]) — NO por coincidencia
+    de nombre. Un filtro por nombre ("vl", "llava", "vision"...) se queda
+    obsoleto cada vez que sale una familia nueva: modelos reales del
+    usuario como qwen3.6, gemma4 o gemma3 sí traen "vision" en
+    `capabilities` pero ninguno de esos nombres contiene esas palabras.
+
     Retorna lista vacía si Ollama no está disponible.
     """
     try:
-        import ollama as _ollama
-        modelos = _ollama.list()
-        todos = [m.model for m in modelos.models] if hasattr(modelos, "models") else []
-        # Filtrar modelos de visión conocidos
-        vision_keywords = ["vl", "vision", "minicpm", "llava", "bakllava", "moondream"]
-        return [m for m in todos if any(k in m.lower() for k in vision_keywords)]
+        resp = requests.get(f"{base_url.rstrip('/')}/api/tags", timeout=5)
+        resp.raise_for_status()
+        modelos = resp.json().get("models", [])
+        return [
+            m["name"] for m in modelos
+            if "vision" in (m.get("capabilities") or [])
+        ]
     except Exception:
         return []

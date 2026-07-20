@@ -4072,7 +4072,11 @@ class BashkarApp(tk.Tk):
              "http://localhost:11434",
              "URL del servidor Ollama local.\n"
              "Por defecto: http://localhost:11434\n\n"
-             "Modelos recomendados (instalar con 'ollama pull'):\n"
+             "Modelos ya instalados en este equipo (detectados con 'ollama list'):\n"
+             "  qwen3.6            — visión + texto + tools/thinking, 36B\n"
+             "  gemma4             — visión + texto + tools/thinking, 8B\n"
+             "  gemma3:4b          — visión + texto, 4B (más liviano)\n\n"
+             "Otros modelos recomendados (instalar con 'ollama pull'):\n"
              "  llava              — visión + texto\n"
              "  mistral            — texto, rápido\n"
              "  llama3.2           — texto, buena calidad\n"
@@ -4129,6 +4133,9 @@ class BashkarApp(tk.Tk):
             ("gemini/gemini-3.1-flash",      "Gemini 3.1 Flash"),
             ("gemini/gemini-2.5-pro",        "Gemini 2.5 Pro"),
             ("gemini/gemini-2.5-flash",      "Gemini 2.5 Flash"),
+            ("ollama/qwen3.6",               "Ollama qwen3.6 (visión+texto ✓ instalado)"),
+            ("ollama/gemma4",                "Ollama gemma4 (visión+texto ✓ instalado)"),
+            ("ollama/gemma3:4b",             "Ollama gemma3:4b (visión, ligero ✓ instalado)"),
             ("ollama/llava",                 "Ollama llava"),
             ("ollama/mistral",               "Ollama mistral"),
         ]
@@ -4735,10 +4742,16 @@ class BashkarApp(tk.Tk):
         oi = tk.Frame(ollama_card, bg=CONTENT_BG, padx=10, pady=6); oi.pack(fill="x")
         tk.Label(oi, text="Modelo Ollama:", bg=CONTENT_BG, fg="#CDD6F4",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
-        self._var_ollama_modelo = tk.StringVar(value="qwen2.5vl:7b")
-        self._cmb_ollama = ttk.Combobox(oi, textvariable=self._var_ollama_modelo,
-                                         values=["qwen2.5vl:7b", "llava:13b", "llava:7b"],
-                                         state="normal", width=20, font=("Segoe UI", 8))
+        self._var_ollama_modelo = tk.StringVar(value="qwen3.6:latest")
+        self._cmb_ollama = ttk.Combobox(
+            oi, textvariable=self._var_ollama_modelo,
+            # Valores por defecto ANTES de que "🔄 Detectar modelos" corra
+            # (se pobla de verdad con lo que haya instalado, vía la API real
+            # de Ollama — ver _ocr_detectar_ollama). qwen3.6/gemma4/gemma3
+            # son los modelos de visión que confirmadamente tiene el
+            # investigador instalados (ollama show → capabilities: vision).
+            values=["qwen3.6:latest", "gemma4:latest", "gemma3:4b", "qwen2.5vl:7b", "llava:13b"],
+            state="normal", width=20, font=("Segoe UI", 8))
         self._cmb_ollama.pack(side="left", padx=6)
         ttk.Button(oi, text="🔄 Detectar modelos", style="S.TButton",
                    command=self._ocr_detectar_ollama).pack(side="left", padx=(0, 6))
@@ -4831,10 +4844,10 @@ class BashkarApp(tk.Tk):
                      font=("Segoe UI", 9))
         cmb_prov_ocr.pack(side="left", padx=(0, 2))
         # Modelo local (visible solo cuando proveedor=ollama/lmstudio)
-        self._var_ocr_ollama_modelo = tk.StringVar(value="latamgpt")
+        self._var_ocr_ollama_modelo = tk.StringVar(value="qwen3.6")
         self._cmb_ocr_ollama_modelo = ttk.Combobox(
             bf, textvariable=self._var_ocr_ollama_modelo,
-            values=["latamgpt", "llama3.1", "mistral", "qwen2.5"],
+            values=["qwen3.6", "gemma4", "gemma3:4b", "latamgpt", "llama3.1", "mistral", "qwen2.5"],
             state="normal", width=10, font=("Segoe UI", 9))
         # mostrar/ocultar según proveedor; para lmstudio consulta qué hay cargado
         def _ocr_prov_changed(*_):
@@ -4848,7 +4861,7 @@ class BashkarApp(tk.Tk):
                 self._cmb_ocr_ollama_modelo.pack(side="left", padx=(0, 8))
             elif prov == "ollama":
                 self._cmb_ocr_ollama_modelo.config(
-                    values=["latamgpt", "llama3.1", "mistral", "qwen2.5"])
+                    values=["qwen3.6", "gemma4", "gemma3:4b", "latamgpt", "llama3.1", "mistral", "qwen2.5"])
                 self._cmb_ocr_ollama_modelo.pack(side="left", padx=(0, 8))
             else:
                 self._cmb_ocr_ollama_modelo.pack_forget()
@@ -5317,7 +5330,7 @@ class BashkarApp(tk.Tk):
         "claude": ["claude-opus-4-8", "claude-sonnet-4-6", "claude-haiku-4-5",
                    "claude-opus-4-7", "claude-fable-5"],
         "openai": ["gpt-5.5", "gpt-5.4-mini", "gpt-4o", "gpt-4o-mini"],
-        "ollama": ["llava", "llama3.2-vision", "qwen2.5-vl", "minicpm-v"],
+        "ollama": ["qwen3.6", "gemma4", "gemma3:4b", "llava", "llama3.2-vision", "qwen2.5-vl", "minicpm-v"],
         "lmstudio": [],  # sin catálogo fijo: se consulta al servidor local
     }
 
@@ -11283,7 +11296,8 @@ class BashkarApp(tk.Tk):
         def _worker():
             try:
                 from core.ocr_ollama_local import listar_modelos_vision
-                modelos = listar_modelos_vision()
+                url_ollama = ST.api_keys.get("ollama", "http://localhost:11434") or "http://localhost:11434"
+                modelos = listar_modelos_vision(url_ollama)
                 def _update(ms=modelos):
                     if ms:
                         self._cmb_ollama["values"] = ms
@@ -11716,7 +11730,7 @@ class BashkarApp(tk.Tk):
                         # Ruta 5: Ollama Vision local
                         from core.ocr_ollama_local import ocr_ollama_lote
                         modelo_o = getattr(self, "_var_ollama_modelo",
-                                           tk.StringVar(value="qwen2.5vl:7b")).get()
+                                           tk.StringVar(value="qwen3.6:latest")).get()
                         rutas_imgs = [str(ip) for ip in imgs]
                         resultados_o = ocr_ollama_lote(
                             rutas_imgs, modelo=modelo_o,
