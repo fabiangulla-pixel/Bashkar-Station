@@ -3,7 +3,7 @@
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1068%20passing-brightgreen.svg)](#tests)
+[![Tests](https://img.shields.io/badge/tests-1070%20passing-brightgreen.svg)](#tests)
 
 Bashkar Station es una aplicación de escritorio **100% offline** para el análisis
 computacional de publicaciones periódicas históricas en español. Desarrollada para
@@ -256,8 +256,8 @@ python -m pytest tests/test_integration_pipeline.py -v
 python -m pytest tests/test_v11_features.py -v
 ```
 
-**Estado actual:** 1068 tests, 0 fallos (11 se saltan por requerir red o
-dependencias opcionales).
+**Estado actual:** 1070 tests, 0 fallos (14 se saltan por requerir red o
+dependencias opcionales). Verificado el 29-jul-2026 en Python 3.14.
 
 ---
 
