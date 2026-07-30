@@ -2,8 +2,8 @@
 ### Plataforma de Análisis Editorial Computacional para Publicaciones Periódicas Históricas
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Zenodo DOI](https://img.shields.io/badge/DOI-10.XXXX%2Fzenodo.XXXXXXX-blue)](https://zenodo.org)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-1068%20passing-brightgreen.svg)](#tests)
 
 Bashkar Station es una aplicación de escritorio **100% offline** para el análisis
 computacional de publicaciones periódicas históricas en español. Desarrollada para
@@ -228,17 +228,18 @@ de Metodología de papers en revistas de humanidades digitales.
 Si usas Bashkar Station en tu investigación, por favor cita:
 
 ```bibtex
-@software{bashkar_station_2026,
-  author    = {[Nombre del investigador]},
+@software{gulla_bashkar_station_2026,
+  author    = {Gulla, Fabián},
   title     = {Bashkar Station: Plataforma de Análisis Editorial Computacional
                para Publicaciones Periódicas Históricas},
   year      = {2026},
-  version   = {11.2},
-  publisher = {Zenodo},
-  doi       = {10.XXXX/zenodo.XXXXXXX},
-  url       = {https://github.com/[usuario]/bashkar-station}
+  version   = {11.7},
+  url       = {https://github.com/fabiangulla-pixel/Bashkar-Station}
 }
 ```
+
+Los metadatos de citación legibles por máquina están en
+[`CITATION.cff`](CITATION.cff).
 
 ---
 
@@ -262,7 +263,16 @@ dependencias opcionales).
 
 ## Licencia
 
-MIT License. Ver [LICENSE](LICENSE).
+**Apache License 2.0** — ver [LICENSE](LICENSE) y [NOTICE](NOTICE).
+
+Software libre: puedes usarlo, estudiarlo, modificarlo y redistribuirlo,
+incluso con fines comerciales, conservando el aviso de copyright y de licencia
+e indicando los cambios que hagas. La licencia incluye una concesión expresa de
+patentes. Se ofrece sin garantías.
+
+El corpus de la revista *Estampa* **no** se distribuye con el software: fue
+digitalizado por la Biblioteca Nacional de Colombia y tiene sus propias
+condiciones de uso. La licencia de este repositorio cubre únicamente el código.
 
 ---
 

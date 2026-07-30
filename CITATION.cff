@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "Si usas Bashkar Station en tu investigación, por favor cítalo así."
+title: "Bashkar Station: Plataforma de Análisis Editorial Computacional para Publicaciones Periódicas Históricas"
+abstract: >-
+  Aplicación de escritorio offline para el análisis computacional de publicaciones
+  periódicas históricas en español: OCR multi-ruta, normalización conservadora que
+  preserva arcaísmos, segmentación de artículos, NER híbrido, análisis léxico,
+  vinculación de entidades a Wikidata y exportación en XML-TEI P5.
+type: software
+authors:
+  - given-names: Fabián
+    family-names: Gulla
+    email: fabian.gulla@gmail.com
+version: "11.7"
+date-released: "2026-07-29"
+license: Apache-2.0
+repository-code: "https://github.com/fabiangulla-pixel/Bashkar-Station"
+keywords:
+  - humanidades digitales
+  - digital humanities
+  - prensa histórica
+  - historical newspapers
+  - OCR
+  - XML-TEI
+  - reconocimiento de entidades nombradas
+  - Wikidata
+  - Colombia
+  - español histórico
