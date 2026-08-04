@@ -5,14 +5,17 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-1070%20passing-brightgreen.svg)](#tests)
 
-Bashkar Station es una aplicación de escritorio **100% offline** para el análisis
+Bashkar Station es una plataforma que integra varios módulos y servicios en un solo entorno, 
+donde el usuario puede acceder, configurar y ejecutar cosas sin salir de ahí. 
+No es un framework, no es una biblioteca, no es un IDE, en el sentido estricto porque no se programa ahí. 
+Es un sistema de consumo y orquestación. Una aplicación de escritorio para el análisis
 computacional de publicaciones periódicas históricas en español. Desarrollada para
 investigadores en historia de la prensa, estudios editoriales y humanidades digitales.
 
 **Corpus de referencia:** Revista *Estampa* (Colombia, 1930–1940), digitalizada por
 la Biblioteca Nacional de Colombia (BNC).
 
-**Institución:** Instituto Caro y Cuervo, Bogotá, Colombia.
+**Institución mentora:** Instituto Caro y Cuervo, Bogotá, Colombia.
 
 ---
 
