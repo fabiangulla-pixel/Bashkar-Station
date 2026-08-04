@@ -3,7 +3,7 @@
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1144%20passing-brightgreen.svg)](#tests)
+[![Tests](https://img.shields.io/badge/tests-1142%20passing-brightgreen.svg)](#tests)
 
 Bashkar Station es una plataforma que integra varios módulos y servicios en un solo entorno, 
 donde el usuario puede acceder, configurar y ejecutar cosas sin salir de ahí. 
@@ -240,6 +240,10 @@ recientes, ambos **locales y sin costo por página**:
   costo 15,5× menor. Corre en CPU (varios minutos por página): pensado para
   **construir el estándar de oro**, no para procesar el corpus entero. Descarga
   ~7 GB la primera vez y después funciona sin conexión.
+  **Solo disponible ejecutando desde código fuente** (`python app.py`): PyTorch
+  se excluye del `.exe` a propósito, porque incluirlo llevaría el ejecutable de
+  ~1 GB a más de 3 GB. La versión compilada lo indica en pantalla en vez de
+  fallar.
 - **[PERO-OCR](https://github.com/DCGM/pero-ocr)** (Ruta 7) — motor especializado
   en **prensa digitalizada desde microfilm**, que es exactamente el material de
   la BNC. Cadena clásica (detección de párrafos y líneas + transcripción +
@@ -313,7 +317,7 @@ python -m pytest tests/test_integration_pipeline.py -v
 python -m pytest tests/test_v11_features.py -v
 ```
 
-**Estado actual:** 1144 tests, 0 fallos (14 se saltan por requerir red o
+**Estado actual:** 1142 tests, 0 fallos (16 se saltan por requerir red o
 dependencias opcionales). Verificado el 29-jul-2026 en Python 3.14.
 
 ---

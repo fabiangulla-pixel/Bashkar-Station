@@ -16,40 +16,71 @@ import pytest
 from core import benchmark_ocr, ocr_churro, ocr_pero
 
 
+def _sin(monkeypatch, *ausentes):
+    """Simula que faltan ciertos módulos.
+
+    Se parchea el helper `_hay_modulo` del propio módulo, NUNCA
+    `importlib.util.find_spec`: parchear la maquinaria de importación de forma
+    global rompe a pytest por dentro (llega a provocar un access violation al
+    crear los directorios temporales de los fixtures).
+    """
+    monkeypatch.setattr(ocr_churro, "_hay_modulo",
+                        lambda nombre: nombre not in ausentes)
+
+
 class TestChurroDisponibilidad:
     def test_reporta_motivo_accionable_si_falta_torch(self, monkeypatch):
-        import importlib.util
-        real = importlib.util.find_spec
-
-        def falso(nombre, *a, **k):
-            return None if nombre == "torch" else real(nombre, *a, **k)
-
-        monkeypatch.setattr(importlib.util, "find_spec", falso)
+        _sin(monkeypatch, "torch")
+        monkeypatch.setattr(ocr_churro, "_esta_congelado", lambda: False)
         motivo = ocr_churro.motivo_no_disponible()
         assert motivo is not None
         assert "pip install torch" in motivo      # dice QUÉ hacer, no solo que falla
         assert not ocr_churro.disponible()
 
+    def test_en_el_exe_no_aconseja_pip_porque_seria_imposible(self, monkeypatch):
+        """En un .exe congelado torch está excluido y no hay pip dentro.
+
+        Decir «pip install torch» ahí sería un consejo que el usuario no puede
+        seguir. El mensaje debe mandarlo al código fuente.
+        """
+        _sin(monkeypatch, "torch")
+        monkeypatch.setattr(ocr_churro, "_esta_congelado", lambda: True)
+        motivo = ocr_churro.motivo_no_disponible()
+        assert "pip install" not in motivo
+        assert "código fuente" in motivo
+
     def test_reporta_motivo_si_falta_transformers(self, monkeypatch):
-        import importlib.util
-        real = importlib.util.find_spec
-
-        def falso(nombre, *a, **k):
-            return None if nombre == "transformers" else real(nombre, *a, **k)
-
-        monkeypatch.setattr(importlib.util, "find_spec", falso)
+        _sin(monkeypatch, "transformers")
+        monkeypatch.setattr(ocr_churro, "_esta_congelado", lambda: False)
         assert "transformers" in ocr_churro.motivo_no_disponible()
 
+    def test_hay_modulo_tolera_spec_none(self, monkeypatch):
+        """`find_spec` lanza ValueError si __spec__ es None (pasa en un .exe)."""
+        import importlib.util
+        monkeypatch.setattr(
+            importlib.util, "find_spec",
+            lambda *a, **k: (_ for _ in ()).throw(ValueError("__spec__ is None")))
+        monkeypatch.setitem(sys.modules, "modulo_de_prueba", types.ModuleType("x"))
+        assert ocr_churro._hay_modulo("modulo_de_prueba") is True
+        assert ocr_churro._hay_modulo("modulo_que_no_existe_jamas") is False
+
     def test_detecta_transformers_sin_soporte_qwen(self, monkeypatch):
-        falso = types.ModuleType("transformers")   # sin Qwen2_5_VLForConditionalGeneration
-        monkeypatch.setitem(sys.modules, "transformers", falso)
+        """Una versión vieja de transformers no trae la clase de Qwen2.5-VL."""
+        monkeypatch.setattr(ocr_churro, "_soporta_qwen", lambda: (False, None))
         motivo = ocr_churro.motivo_no_disponible()
         assert motivo is not None
         assert "Qwen2.5-VL" in motivo
 
-    def test_en_este_entorno_esta_disponible(self):
-        """La máquina de desarrollo tiene torch y transformers 5.x."""
+    def test_transformers_roto_se_reporta_sin_reventar(self, monkeypatch):
+        monkeypatch.setattr(ocr_churro, "_soporta_qwen",
+                            lambda: (False, "DLL load failed"))
+        assert "DLL load failed" in ocr_churro.motivo_no_disponible()
+
+    def test_todo_presente_devuelve_none(self, monkeypatch):
+        monkeypatch.setattr(ocr_churro, "_hay_modulo", lambda n: True)
+        monkeypatch.setattr(ocr_churro, "_soporta_qwen", lambda: (True, None))
         assert ocr_churro.motivo_no_disponible() is None
+        assert ocr_churro.disponible() is True
 
     def test_esta_descargado_no_falla_sin_cache(self, monkeypatch, tmp_path):
         monkeypatch.setenv("HF_HOME", str(tmp_path))

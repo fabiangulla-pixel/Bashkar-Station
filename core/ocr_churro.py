@@ -30,6 +30,7 @@ Referencias:
 from __future__ import annotations
 
 import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -75,18 +76,55 @@ def motivo_no_disponible() -> str | None:
     Se prefiere un mensaje accionable a un booleano: el investigador necesita
     saber qué instalar, no solo que algo falta.
     """
+    # En el .exe compilado PyTorch está EXCLUIDO a propósito (bashkar_station.spec):
+    # empaquetarlo llevaría el ejecutable de ~1 GB a más de 3 GB. Decirle al
+    # usuario «pip install torch» dentro de un .exe congelado sería un consejo
+    # imposible de seguir: no hay pip ahí dentro y auto-instalar está prohibido
+    # en este proyecto desde el incidente de la bomba de fork.
+    congelado = _esta_congelado()
     if not _hay_modulo("torch"):
+        if congelado:
+            return ("CHURRO-3B no está disponible en la versión compilada: "
+                    "PyTorch se excluye del .exe a propósito (pesaría más de "
+                    "3 GB).\n\nPara usar esta ruta, ejecuta Bashkar Station "
+                    "desde el código fuente:  python app.py")
         return "Falta PyTorch. Instala:  pip install torch"
     if not _hay_modulo("transformers"):
+        if congelado:
+            return ("CHURRO-3B no está disponible en la versión compilada. "
+                    "Ejecuta Bashkar Station desde el código fuente para usarlo.")
         return "Faltan los transformers. Instala:  pip install transformers accelerate"
+    soporta, error = _soporta_qwen()
+    if error:
+        return f"No se pudo inspeccionar transformers: {error}"
+    if not soporta:
+        return ("Tu versión de transformers no soporta Qwen2.5-VL. "
+                "Actualiza:  pip install -U transformers")
+    return None
+
+
+def _soporta_qwen() -> tuple[bool, str | None]:
+    """¿Trae esta versión de transformers la clase de Qwen2.5-VL?
+
+    Aislado en su propia función para poder probarlo sin importar transformers
+    de verdad en la suite: ese import arrastra torch y desestabiliza el proceso
+    de pytest (llega a provocar un access violation al crear los temporales).
+    """
     try:
         import transformers
-        if not hasattr(transformers, "Qwen2_5_VLForConditionalGeneration"):
-            return ("Tu versión de transformers no soporta Qwen2.5-VL. "
-                    "Actualiza:  pip install -U transformers")
+        return hasattr(transformers, "Qwen2_5_VLForConditionalGeneration"), None
     except Exception as e:                      # noqa: BLE001
-        return f"No se pudo inspeccionar transformers: {e}"
-    return None
+        return False, str(e)
+
+
+def _esta_congelado() -> bool:
+    """¿Corremos dentro de un .exe de PyInstaller?
+
+    Existe como función propia en vez de leer `sys.frozen` en línea para poder
+    probarlo: parchear `sys.frozen` de verdad en un test hace que otras
+    librerías cambien de comportamiento y tumba al intérprete.
+    """
+    return bool(getattr(sys, "frozen", False))
 
 
 def _hay_modulo(nombre: str) -> bool:
