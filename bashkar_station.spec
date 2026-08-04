@@ -205,8 +205,12 @@ a = Analysis(
     hooksconfig={},
     runtime_hooks=[],
     excludes=[
-        # Deep learning — pesados e innecesarios en runtime
-        'torch', 'torchvision', 'torchaudio', 'detectron2',
+        # Deep learning — pesados. torch YA NO se excluye (decisión del
+        # 2026-08-04): sin él, la ruta CHURRO-3B solo funcionaba ejecutando
+        # `python app.py`, y el usuario de este programa no abre una terminal.
+        # Incluirlo sube el paquete ~772 MB; es el precio de que la función
+        # exista de verdad para quien usa el .exe.
+        'torchvision', 'torchaudio', 'detectron2',
         'tensorflow', 'tensorflow_core', 'keras',
         'cupy', 'cuml', 'numba', 'llvmlite',
         # spaCy internals — PyInstaller se queda sin RAM intentando introspeccionar thinc

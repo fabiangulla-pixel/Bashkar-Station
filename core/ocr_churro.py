@@ -143,11 +143,62 @@ def _hay_modulo(nombre: str) -> bool:
 
 
 def _dir_cache() -> Path:
-    """Carpeta de la caché de HuggingFace, en disco local."""
+    """Carpeta de la caché de HuggingFace.
+
+    Si junto al ejecutable existe una carpeta `modelos_ia/`, se usa esa: así el
+    modelo viaja con la aplicación en una memoria USB y funciona en cualquier
+    PC sin volver a descargar 7 GB. Si no, la caché normal del usuario.
+    """
     env = os.environ.get("HF_HOME") or os.environ.get("HUGGINGFACE_HUB_CACHE")
     if env:
         return Path(env)
+    portatil = _dir_portatil()
+    if portatil is not None:
+        return portatil
     return Path.home() / ".cache" / "huggingface"
+
+
+def _dir_portatil() -> Path | None:
+    """`modelos_ia/` junto al .exe (o al proyecto), si existe."""
+    base = Path(sys.executable).parent if _esta_congelado() else Path(__file__).parent.parent
+    candidata = base / "modelos_ia"
+    return candidata if candidata.is_dir() else None
+
+
+def descargar_modelo(callback=None) -> Path:
+    """Descarga el modelo a la caché local. Pensada para llamarse desde la GUI.
+
+    El usuario de este programa no abre una terminal: la descarga tiene que
+    poder dispararse con un botón y reportar avance. `callback(mensaje)` se
+    llama con líneas de estado.
+
+    Devuelve la carpeta donde quedó. Si ya estaba, no vuelve a bajar nada
+    (huggingface_hub reutiliza lo que haya en caché).
+    """
+    motivo = motivo_no_disponible()
+    if motivo:
+        raise RuntimeError(motivo)
+
+    from huggingface_hub import snapshot_download
+
+    destino = _dir_cache()
+    destino.mkdir(parents=True, exist_ok=True)
+    if callback:
+        callback(f"Descargando {MODELO_ID} (~7 GB) en {destino}…")
+        callback("Es una sola vez. Después funciona sin conexión.")
+
+    # Quitar el modo offline si estaba puesto por una sesión anterior: aquí
+    # SÍ queremos ir a la red.
+    os.environ.pop("HF_HUB_OFFLINE", None)
+
+    ruta = snapshot_download(
+        repo_id=MODELO_ID,
+        cache_dir=str(destino / "hub") if (destino / "hub").exists() else str(destino),
+        allow_patterns=["*.safetensors", "*.json", "*.txt", "*.model"],
+    )
+    if callback:
+        callback(f"✔ Modelo listo en {ruta}")
+    return Path(ruta)
 
 
 def esta_descargado() -> bool:

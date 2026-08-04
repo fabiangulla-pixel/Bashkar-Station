@@ -17261,6 +17261,10 @@ class BashkarApp(tk.Tk):
         self._btn_bench = ttk.Button(acc, text="▶  Ejecutar benchmark",
                                      style="P.TButton", command=self._bench_iniciar)
         self._btn_bench.pack(side="left", padx=(0, 8))
+        self._btn_bench_descargar = ttk.Button(
+            acc, text="⬇ Descargar modelo CHURRO",
+            command=self._bench_descargar_churro)
+        self._btn_bench_descargar.pack(side="left", padx=4)
         ttk.Button(acc, text="💾 Exportar CSV",
                    command=lambda: self._bench_exportar("csv")).pack(side="left", padx=4)
         ttk.Button(acc, text="📋 Copiar tabla Markdown",
@@ -17306,6 +17310,45 @@ class BashkarApp(tk.Tk):
         else:
             catalogo.append(("pero", "PERO-OCR (microfilm de prensa)", "~12 s/página"))
         return catalogo
+
+    def _bench_descargar_churro(self):
+        """Descarga el modelo CHURRO desde la propia aplicación.
+
+        El usuario de Bashkar no abre una terminal: si la única forma de tener
+        la ruta fuera `huggingface-cli download`, la función no existiría para
+        quien usa el .exe.
+        """
+        from core import ocr_churro
+        motivo = ocr_churro.motivo_no_disponible()
+        if motivo:
+            messagebox.showerror("CHURRO no disponible", motivo); return
+        if ocr_churro.esta_descargado():
+            self.toast("El modelo CHURRO ya está descargado.", "ok"); return
+        if not messagebox.askyesno(
+                "Descargar CHURRO-3B",
+                "Se van a descargar unos 7 GB del modelo CHURRO-3B.\n\n"
+                "Es una sola vez: después funciona sin conexión.\n"
+                "Puede tardar bastante según tu conexión.\n\n¿Continuar?"):
+            return
+
+        self._btn_bench_descargar.config(state="disabled")
+        self._txt_bench.delete("1.0", "end")
+
+        def log(m):
+            self.after(0, lambda msg=m: (self._txt_bench.insert("end", msg + "\n"),
+                                         self._txt_bench.see("end")))
+
+        def _trabajo():
+            try:
+                ocr_churro.descargar_modelo(callback=log)
+                self.after(0, lambda: (
+                    self._btn_bench_descargar.config(state="normal"),
+                    self.toast("Modelo CHURRO descargado.", "ok")))
+            except Exception as e:                  # noqa: BLE001
+                log(f"✖ Error en la descarga: {e}")
+                self.after(0, lambda: self._btn_bench_descargar.config(state="normal"))
+
+        threading.Thread(target=_trabajo, daemon=True).start()
 
     def _bench_elegir_oro(self):
         d = filedialog.askdirectory(title="Carpeta con las transcripciones de referencia")
