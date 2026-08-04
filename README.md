@@ -1,9 +1,9 @@
-# ⬡ Bashkar Station v11.8
+# ⬡ Bashkar Station v11.9
 ### Plataforma de Análisis Editorial Computacional para Publicaciones Periódicas Históricas
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1076%20passing-brightgreen.svg)](#tests)
+[![Tests](https://img.shields.io/badge/tests-1144%20passing-brightgreen.svg)](#tests)
 
 Bashkar Station es una plataforma que integra varios módulos y servicios en un solo entorno, 
 donde el usuario puede acceder, configurar y ejecutar cosas sin salir de ahí. 
@@ -209,6 +209,45 @@ bashkar_station/
 | Stopwords personalizables | Corpus histórico requiere listas propias (topónimos, arcaísmos válidos) |
 | Tres rutas OCR | Cada ruta tiene trade-offs documentados (tiempo, costo, calidad); el investigador elige |
 | Multi-proveedor IA | Sin dependencia de un proveedor; degrada gracefully a spaCy/BERT offline |
+| Elección de OCR medida, no intuida | El módulo Benchmark compara rutas con CER/WER contra un estándar de oro (ver abajo) |
+
+---
+
+## Benchmark de OCR — elegir motor con datos
+
+Elegir ruta de OCR «porque se ve mejor» no es defendible en una publicación.
+El panel **⚖️ Benchmark OCR** transcribe las mismas páginas con varias rutas y
+las compara contra una transcripción de referencia hecha a mano:
+
+| Métrica | Qué mide | Lectura |
+|---|---|---|
+| **CER** | proporción de caracteres a corregir | ≤0,05 casi limpio · ≤0,10 explotable · ≤0,25 requiere corrección · >0,25 inservible |
+| **WER** | lo mismo por palabras | siempre mayor que el CER: un carácter invalida la palabra |
+| **Similitud normalizada** | `1 − CER` | comparable con la literatura de HTR |
+| **s/página** | costo en tiempo | decide qué ruta sirve para el corpus completo y cuál solo para la muestra |
+
+Exporta a CSV o como tabla Markdown lista para pegar en un artículo.
+
+### Rutas comparables
+
+Además de Tesseract (página completa y por zonas), se integran dos motores
+recientes, ambos **locales y sin costo por página**:
+
+- **[CHURRO-3B](https://huggingface.co/stanford-oval/churro-3B)** (Ruta 6) —
+  modelo de visión-lenguaje de pesos abiertos entrenado sobre 99.491 páginas
+  históricas de 46 grupos lingüísticos ([EMNLP 2025](https://aclanthology.org/2025.emnlp-main.1763/)).
+  Reporta 82,3 % de similitud en impreso, por encima de Gemini 2.5 Pro y con un
+  costo 15,5× menor. Corre en CPU (varios minutos por página): pensado para
+  **construir el estándar de oro**, no para procesar el corpus entero. Descarga
+  ~7 GB la primera vez y después funciona sin conexión.
+- **[PERO-OCR](https://github.com/DCGM/pero-ocr)** (Ruta 7) — motor especializado
+  en **prensa digitalizada desde microfilm**, que es exactamente el material de
+  la BNC. Cadena clásica (detección de párrafos y líneas + transcripción +
+  refinamiento con modelo de lenguaje), órdenes de magnitud más rápida que un
+  VLM. Requiere `pip install pero-ocr` y descargar un motor entrenado.
+
+Si a alguna le faltan dependencias, la interfaz la ofrece **deshabilitada con el
+motivo a la vista** en vez de fallar a mitad de un lote.
 
 ---
 
@@ -251,7 +290,7 @@ Si usas Bashkar Station en tu investigación, por favor cita:
   title     = {Bashkar Station: Plataforma de Análisis Editorial Computacional
                para Publicaciones Periódicas Históricas},
   year      = {2026},
-  version   = {11.8},
+  version   = {11.9},
   url       = {https://github.com/fabiangulla-pixel/Bashkar-Station}
 }
 ```
@@ -274,7 +313,7 @@ python -m pytest tests/test_integration_pipeline.py -v
 python -m pytest tests/test_v11_features.py -v
 ```
 
-**Estado actual:** 1076 tests, 0 fallos (14 se saltan por requerir red o
+**Estado actual:** 1144 tests, 0 fallos (14 se saltan por requerir red o
 dependencias opcionales). Verificado el 29-jul-2026 en Python 3.14.
 
 ---

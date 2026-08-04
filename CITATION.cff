@@ -11,7 +11,7 @@ authors:
   - given-names: Fabián
     family-names: Gulla
     email: fabian.gulla@gmail.com
-version: "11.8"
+version: "11.9"
 date-released: "2026-08-04"
 license: Apache-2.0
 repository-code: "https://github.com/fabiangulla-pixel/Bashkar-Station"

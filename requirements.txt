@@ -65,6 +65,22 @@ sentence-transformers>=3.0.0
 torch>=2.0.0
 faiss-cpu>=1.7.0
 
+# Benchmark de OCR y modelos recientes (v11.9)
+# accelerate lo necesita transformers para cargar CHURRO-3B con
+# low_cpu_mem_usage=True sin agotar la RAM al inicializar los pesos.
+accelerate>=0.30.0
+
+# OPCIONALES — el programa funciona sin ellos y avisa del motivo si faltan:
+#
+#   pero-ocr>=0.7.0
+#     Ruta 7: motor especializado en prensa digitalizada desde microfilm.
+#     No se instala por defecto porque además del paquete hay que descargar
+#     un motor entrenado desde https://pero-ocr.fit.vutbr.cz
+#
+#   El modelo CHURRO-3B (Ruta 6) NO es un paquete pip: son ~7 GB de pesos que
+#   se descargan de HuggingFace (stanford-oval/churro-3B) la primera vez que
+#   se usa la ruta, y quedan en la caché local para trabajar sin conexión.
+
 # External binaries (not pip):
 # - Tesseract OCR >= 5.0 (Windows: UB-Mannheim installer)
 # - Poppler (Windows: oschwartz10612/poppler-windows)

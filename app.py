@@ -1,4 +1,4 @@
-﻿"""
+"""
 ╔══════════════════════════════════════════════════════════════════════╗
 ║  BASHKAR STATION v11.7 — Análisis editorial computacional           ║
 ║  Aplicación de escritorio · 100% offline · Publicaciones históricas ║
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 # ── Rutas Windows (Tesseract/Poppler) ────────────────────────────────────────
 _APP_DIR = Path(__file__).parent
-_APP_VERSION_SPLASH = "11.8"   # sincronizar con APP_VERSION abajo
+_APP_VERSION_SPLASH = "11.9"   # sincronizar con APP_VERSION abajo
 
 def _configurar_rutas_windows():
     for cfg_file in ["tesseract_path.txt", "poppler_path.txt"]:
@@ -170,7 +170,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-APP_VERSION = "11.8"
+APP_VERSION = "11.9"
 APP_NAME    = "Bashkar Station"
 
 # ── Paleta visual v2 — Dark mode académico ────────────────────────────────────
@@ -775,6 +775,7 @@ class BashkarApp(tk.Tk):
         ("vis",   "🖼",  "Tipografía",     "Visual y tipografía",                 "vis_done",  "analisis"),
         ("imgdesc","🎨", "Desc. imágenes", "Descripción e iconografía de imágenes etiquetadas", None, "analisis"),
         # ── SALIDA Y COLABORACIÓN ──────────────────────────────────────────────
+        ("bench", "⚖️", "Benchmark OCR",  "Compara rutas de OCR contra un estándar de oro (CER/WER)", None, "salida"),
         ("rep",   "📝",  "Reporte",        "Reporte narrativo (IA)",              None,        "salida"),
         ("dash",  "📊",  "Dashboard",      "Dashboard ejecutivo",                 None,        "salida"),
         ("valid", "✅",  "Validar",        "Validación humana y semáforo",        None,        "salida"),
@@ -899,6 +900,7 @@ class BashkarApp(tk.Tk):
             "sem":  self._build_sem,
             "top":  self._build_top,
             "viz":  self._build_viz,
+            "bench": self._build_bench,
             "rep":   self._build_rep,
             "dash":  self._build_dash,
             "comp2": self._build_comp2,
@@ -2321,6 +2323,8 @@ class BashkarApp(tk.Tk):
             ("⚡  Modo análisis rápido",   "adhoc",     self._modo_adhoc),
             ("📓  Abrir bitácora",         "bitacora",  self._bitacora_abrir),
             ("🌙  Cambiar tema claro/oscuro", "tema",   self._toggle_theme),
+            ("⚖️  Benchmark de OCR (CER/WER por ruta)", "bench",
+             lambda: self._mostrar_pagina("bench")),
             ("🖼  Análisis de encuadre (framing)", "frame",
              lambda: self._ir_a_ling_pestania(6)),
             ("⚖  Polaridad discriminante", "pol",
@@ -17192,6 +17196,295 @@ class BashkarApp(tk.Tk):
     # ══════════════════════════════════════════════════════════════════════════
     # PESTAÑA: REPORTE (v15) — narrativas académicas + HTML + Word
     # ══════════════════════════════════════════════════════════════════════════
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # BENCHMARK OCR — comparar rutas contra un estándar de oro
+    # ══════════════════════════════════════════════════════════════════════════
+    def _build_bench(self):
+        self._page_header(
+            self._tab_bench, "Benchmark de OCR",
+            "Mide qué ruta transcribe mejor tu corpus: CER, WER y similitud "
+            "contra una transcripción de referencia", "⚖️")
+        pad = tk.Frame(self._tab_bench, bg=CONTENT_BG, padx=16, pady=8)
+        pad.pack(fill="both", expand=True)
+
+        tk.Label(
+            pad,
+            text="Elegir ruta de OCR «a ojo» no es defendible en una publicación. "
+                 "Aquí se compara cada ruta contra páginas que tú transcribiste a "
+                 "mano (el estándar de oro) y se obtienen las métricas que pide la "
+                 "literatura: CER, WER y similitud de Levenshtein normalizada.",
+            bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9),
+            wraplength=880, justify="left").pack(anchor="w", pady=(0, 10))
+
+        # ── 1. Estándar de oro ────────────────────────────────────────────────
+        f1 = tk.LabelFrame(pad, text=" 1 · Estándar de oro ", bg=CONTENT_BG,
+                           fg=TXT_SEC, font=("Segoe UI", 9, "bold"), padx=10, pady=8)
+        f1.pack(fill="x", pady=(0, 8))
+        tk.Label(f1, text="Carpeta con las transcripciones de referencia (un .txt "
+                          "por página, con el mismo nombre que la imagen).",
+                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 8),
+                 wraplength=820, justify="left").pack(anchor="w")
+        fr1 = tk.Frame(f1, bg=CONTENT_BG); fr1.pack(fill="x", pady=(4, 0))
+        self._var_bench_oro = tk.StringVar()
+        ttk.Entry(fr1, textvariable=self._var_bench_oro, width=70).pack(side="left")
+        ttk.Button(fr1, text="📂 Elegir…",
+                   command=self._bench_elegir_oro).pack(side="left", padx=6)
+
+        # ── 2. Imágenes a transcribir ─────────────────────────────────────────
+        f2 = tk.LabelFrame(pad, text=" 2 · Páginas a evaluar ", bg=CONTENT_BG,
+                           fg=TXT_SEC, font=("Segoe UI", 9, "bold"), padx=10, pady=8)
+        f2.pack(fill="x", pady=(0, 8))
+        fr2 = tk.Frame(f2, bg=CONTENT_BG); fr2.pack(fill="x")
+        self._var_bench_imgs = tk.StringVar()
+        ttk.Entry(fr2, textvariable=self._var_bench_imgs, width=70).pack(side="left")
+        ttk.Button(fr2, text="📂 Elegir…",
+                   command=self._bench_elegir_imgs).pack(side="left", padx=6)
+
+        # ── 3. Rutas a comparar ───────────────────────────────────────────────
+        f3 = tk.LabelFrame(pad, text=" 3 · Rutas a comparar ", bg=CONTENT_BG,
+                           fg=TXT_SEC, font=("Segoe UI", 9, "bold"), padx=10, pady=8)
+        f3.pack(fill="x", pady=(0, 8))
+
+        self._bench_rutas_vars = {}
+        for clave, etiqueta, nota in self._bench_catalogo_rutas():
+            fila = tk.Frame(f3, bg=CONTENT_BG); fila.pack(fill="x", anchor="w")
+            var = tk.BooleanVar(value=(clave == "tesseract"))
+            self._bench_rutas_vars[clave] = var
+            ttk.Checkbutton(fila, text=etiqueta, variable=var).pack(side="left")
+            if nota:
+                tk.Label(fila, text=f"  {nota}", bg=CONTENT_BG, fg=TXT_DIM,
+                         font=("Segoe UI", 8)).pack(side="left")
+
+        # ── Acciones ──────────────────────────────────────────────────────────
+        acc = tk.Frame(pad, bg=CONTENT_BG); acc.pack(fill="x", pady=(4, 8))
+        self._btn_bench = ttk.Button(acc, text="▶  Ejecutar benchmark",
+                                     style="P.TButton", command=self._bench_iniciar)
+        self._btn_bench.pack(side="left", padx=(0, 8))
+        ttk.Button(acc, text="💾 Exportar CSV",
+                   command=lambda: self._bench_exportar("csv")).pack(side="left", padx=4)
+        ttk.Button(acc, text="📋 Copiar tabla Markdown",
+                   command=self._bench_copiar_md).pack(side="left", padx=4)
+        self._lbl_bench = tk.Label(acc, text="", bg=CONTENT_BG, fg=TXT_DIM,
+                                   font=("Segoe UI", 9))
+        self._lbl_bench.pack(side="left", padx=10)
+
+        # ── Resultados ────────────────────────────────────────────────────────
+        cols = ("ruta", "cer", "wer", "sim", "spp", "calidad")
+        self._tv_bench = ttk.Treeview(pad, columns=cols, show="headings", height=8)
+        for c, txt, w in (("ruta", "Ruta", 220), ("cer", "CER ↓", 90),
+                          ("wer", "WER ↓", 90), ("sim", "Similitud ↑", 100),
+                          ("spp", "s/página", 90), ("calidad", "Calidad", 160)):
+            self._tv_bench.heading(c, text=txt)
+            self._tv_bench.column(c, width=w, anchor="w" if c in ("ruta", "calidad") else "e")
+        self._tv_bench.pack(fill="both", expand=True, pady=(0, 6))
+
+        self._txt_bench = scrolledtext.ScrolledText(
+            pad, height=9, bg="#0D1117", fg="#C9D1D9", font=("Consolas", 9),
+            insertbackground="#C9D1D9", wrap="word")
+        self._txt_bench.pack(fill="both", expand=True)
+        self._bench_resultados = []
+
+    def _bench_catalogo_rutas(self):
+        """Rutas ofrecidas, con su estado real de disponibilidad a la vista."""
+        from core import ocr_churro, ocr_pero
+        catalogo = [
+            ("tesseract", "Tesseract (local, rápido)", ""),
+            ("zonas",     "Tesseract por zonas (deskew + RLSA)", ""),
+        ]
+        motivo_ch = ocr_churro.motivo_no_disponible()
+        if motivo_ch:
+            catalogo.append(("churro", "CHURRO-3B", "no disponible: dependencias"))
+        elif not ocr_churro.esta_descargado():
+            catalogo.append(("churro", "CHURRO-3B (visión, local)",
+                             "requiere descargar ~7 GB la primera vez"))
+        else:
+            catalogo.append(("churro", "CHURRO-3B (visión, local)", "~3 min/página en CPU"))
+
+        if ocr_pero.motivo_no_disponible():
+            catalogo.append(("pero", "PERO-OCR", "no instalado: pip install pero-ocr"))
+        else:
+            catalogo.append(("pero", "PERO-OCR (microfilm de prensa)", "~12 s/página"))
+        return catalogo
+
+    def _bench_elegir_oro(self):
+        d = filedialog.askdirectory(title="Carpeta con las transcripciones de referencia")
+        if d:
+            self._var_bench_oro.set(d)
+
+    def _bench_elegir_imgs(self):
+        d = filedialog.askdirectory(title="Carpeta con las imágenes de las páginas")
+        if d:
+            self._var_bench_imgs.set(d)
+
+    def _bench_iniciar(self):
+        """Valida, estima el costo en tiempo y pide confirmación antes de lanzar."""
+        # OJO: Path("") es Path(".") y `.is_dir()` daría True — un campo vacío
+        # habría pasado la validación y el benchmark se habría lanzado sobre el
+        # directorio de trabajo. Hay que comprobar la cadena antes.
+        s_oro = (self._var_bench_oro.get() or "").strip()
+        s_imgs = (self._var_bench_imgs.get() or "").strip()
+        oro, imgs = Path(s_oro), Path(s_imgs)
+        if not s_oro or not s_imgs or not oro.is_dir() or not imgs.is_dir():
+            messagebox.showwarning("Faltan carpetas",
+                                   "Indica la carpeta del estándar de oro y la de imágenes.")
+            return
+        seleccionadas = [k for k, v in self._bench_rutas_vars.items() if v.get()]
+        if not seleccionadas:
+            messagebox.showwarning("Sin rutas", "Marca al menos una ruta a comparar.")
+            return
+
+        refs = sorted(oro.glob("*.txt"))
+        if not refs:
+            messagebox.showwarning("Estándar de oro vacío",
+                                   f"No hay archivos .txt en:\n{oro}")
+            return
+
+        # Estimación previa: estándar del proyecto, nunca lanzar un lote caro a ciegas
+        from core import ocr_churro, ocr_pero
+        n = len(refs)
+        detalle = []
+        total_min = 0.0
+        for r in seleccionadas:
+            if r == "churro":
+                e = ocr_churro.estimar_tiempo(n); total_min += e["minutos"]
+                extra = (f" + descarga de {e['descarga_pendiente_gb']:.0f} GB"
+                         if e["descarga_pendiente_gb"] else "")
+                detalle.append(f"  · CHURRO-3B: {e['minutos']} min{extra}")
+            elif r == "pero":
+                e = ocr_pero.estimar_tiempo(n); total_min += e["minutos"]
+                detalle.append(f"  · PERO-OCR: {e['minutos']} min")
+            else:
+                m = round(n * 4 / 60, 1); total_min += m
+                detalle.append(f"  · {r}: ~{m} min")
+
+        if not messagebox.askyesno(
+                "Confirmar benchmark",
+                f"Se van a transcribir {n} página(s) con {len(seleccionadas)} ruta(s).\n\n"
+                + "\n".join(detalle)
+                + f"\n\nTiempo total estimado: ~{round(total_min, 1)} min.\n"
+                  "Costo en dinero: $0 (todas las rutas son locales).\n\n¿Continuar?"):
+            return
+
+        self._btn_bench.config(state="disabled")
+        self._lbl_bench.config(text="Ejecutando…", fg="#D29922")
+        self._txt_bench.delete("1.0", "end")
+        threading.Thread(target=self._worker_bench,
+                         args=(oro, imgs, seleccionadas), daemon=True).start()
+
+    def _worker_bench(self, oro: Path, imgs: Path, rutas: list):
+        """Corre cada ruta sobre las mismas páginas y compara. En hilo."""
+        import time as _t
+
+        from core import benchmark_ocr
+
+        def log(m):
+            self.after(0, lambda msg=m: (self._txt_bench.insert("end", msg + "\n"),
+                                         self._txt_bench.see("end")))
+
+        try:
+            referencias = {p.stem: p.read_text(encoding="utf-8", errors="replace")
+                           for p in sorted(oro.glob("*.txt"))}
+            imagenes = [p for p in sorted(imgs.iterdir())
+                        if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".tif", ".tiff")
+                        and p.stem in referencias]
+            log(f"Estándar de oro: {len(referencias)} página(s)")
+            log(f"Imágenes emparejadas: {len(imagenes)}")
+            if not imagenes:
+                log("⚠ Ninguna imagen coincide por nombre con el estándar de oro.")
+                self.after(0, self._bench_fin, [])
+                return
+
+            salidas, tiempos = {}, {}
+            for ruta in rutas:
+                log(f"\n▶ Ruta «{ruta}»…")
+                t0 = _t.perf_counter()
+                try:
+                    salidas[ruta] = self._bench_correr_ruta(ruta, imagenes, log)
+                except Exception as e:                      # noqa: BLE001
+                    log(f"  ✖ {ruta} falló: {e}")
+                    continue
+                tiempos[ruta] = _t.perf_counter() - t0
+                log(f"  ✔ {len(salidas[ruta])} página(s) en {tiempos[ruta]:.1f} s")
+
+            resultados = benchmark_ocr.evaluar_rutas(referencias, salidas, tiempos)
+            log("\n" + benchmark_ocr.tabla_markdown(resultados))
+            self.after(0, self._bench_fin, resultados)
+        except Exception as e:                              # noqa: BLE001
+            log(f"\n✖ Error: {e}")
+            self.after(0, self._bench_fin, [])
+
+    def _bench_correr_ruta(self, ruta: str, imagenes: list, log) -> dict:
+        """Ejecuta UNA ruta sobre las imágenes. Devuelve {nombre_pagina: texto}."""
+        def avance(i, total, nombre, seg):
+            log(f"    {i}/{total}  {nombre}  ({seg:.1f} s)")
+
+        if ruta == "churro":
+            from core import ocr_churro
+            return ocr_churro.ocr_lote([str(p) for p in imagenes], callback=avance)
+        if ruta == "pero":
+            from core import ocr_pero
+            candidatas = ocr_pero.rutas_config_probables()
+            if not candidatas:
+                raise RuntimeError(
+                    "No se encontró el config.ini de PERO-OCR. Descarga un motor "
+                    "de https://pero-ocr.fit.vutbr.cz")
+            return ocr_pero.ocr_lote([str(p) for p in imagenes],
+                                     candidatas[0], callback=avance)
+        if ruta == "zonas":
+            from core.layout_tesseract import ocr_pagina_con_zonas
+            salida = {}
+            for i, p in enumerate(imagenes):
+                salida[p.stem] = ocr_pagina_con_zonas(str(p)) or ""
+                avance(i + 1, len(imagenes), p.stem, 0.0)
+            return salida
+        # Ruta por defecto: Tesseract página completa
+        from core.ocr_engine import ocr_pagina
+        salida = {}
+        for i, p in enumerate(imagenes):
+            texto, _conf = ocr_pagina(p, lang="spa")
+            salida[p.stem] = texto or ""
+            avance(i + 1, len(imagenes), p.stem, 0.0)
+        return salida
+
+    def _bench_fin(self, resultados):
+        """Vuelca los resultados en la tabla. Solo hilo principal."""
+        self._bench_resultados = resultados
+        self._tv_bench.delete(*self._tv_bench.get_children())
+        for r in resultados:
+            self._tv_bench.insert("", "end", values=(
+                r.ruta, f"{r.cer:.4f}", f"{r.wer:.4f}", f"{r.similitud:.4f}",
+                f"{r.segundos_por_pagina:.1f}", r.calidad))
+        self._btn_bench.config(state="normal")
+        if resultados:
+            self._lbl_bench.config(text=f"✅ Mejor: {resultados[0].ruta}", fg="#3FB950")
+            self.toast(f"Benchmark listo — mejor ruta: {resultados[0].ruta}", "ok")
+        else:
+            self._lbl_bench.config(text="Sin resultados", fg="#F85149")
+
+    def _bench_exportar(self, formato: str = "csv"):
+        if not self._bench_resultados:
+            messagebox.showinfo("Sin datos", "Ejecuta primero el benchmark."); return
+        from core import benchmark_ocr
+        destino = filedialog.asksaveasfilename(
+            defaultextension=f".{formato}",
+            filetypes=[(formato.upper(), f"*.{formato}")],
+            initialfile=f"benchmark_ocr.{formato}")
+        if not destino:
+            return
+        if formato == "csv":
+            benchmark_ocr.exportar_csv(self._bench_resultados, Path(destino))
+        else:
+            benchmark_ocr.exportar_json(self._bench_resultados, Path(destino))
+        self.toast(f"Exportado a {Path(destino).name}", "ok")
+
+    def _bench_copiar_md(self):
+        if not self._bench_resultados:
+            messagebox.showinfo("Sin datos", "Ejecuta primero el benchmark."); return
+        from core import benchmark_ocr
+        md = benchmark_ocr.tabla_markdown(self._bench_resultados)
+        self.clipboard_clear(); self.clipboard_append(md)
+        self.toast("Tabla Markdown copiada al portapapeles", "ok")
 
     def _build_rep(self):
         pad = tk.Frame(self._tab_rep, bg=CONTENT_BG, padx=16, pady=12)

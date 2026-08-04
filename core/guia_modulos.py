@@ -593,6 +593,42 @@ GUIA_MODULOS: dict[str, dict[str, str]] = {
                        "específicos, no con el panel.",
     },
 
+    "bench": {
+        "que_es": "Evaluación comparativa de las rutas de OCR: transcribe las "
+                  "mismas páginas con varios motores y mide cuánto se aleja "
+                  "cada uno de una transcripción que tú hiciste a mano (el "
+                  "estándar de oro).",
+        "para_que": "Justificar con datos qué motor usar, en vez de elegirlo "
+                    "por impresión. Es la respuesta a la pregunta que hace "
+                    "cualquier evaluador: «¿por qué este OCR y no otro?».",
+        "resultado": "Una tabla con CER, WER, similitud de Levenshtein "
+                     "normalizada y segundos por página para cada ruta, "
+                     "exportable a CSV o como tabla Markdown lista para pegar "
+                     "en el artículo.",
+        "interpretar": "El CER (Character Error Rate) es la métrica principal: "
+                       "es la proporción de caracteres que habría que corregir. "
+                       "Por debajo de 0,05 el texto está casi limpio; hasta "
+                       "0,10 es explotable para análisis léxico y NER; entre "
+                       "0,10 y 0,25 exige corrección manual antes de analizar; "
+                       "por encima de 0,25 el texto es inservible y cualquier "
+                       "conclusión que saques de él será ruido. El WER siempre "
+                       "sale más alto que el CER porque un solo carácter mal "
+                       "invalida la palabra entera — es la métrica realista si "
+                       "vas a hacer búsquedas o frecuencias. La similitud "
+                       "normalizada (1 − CER) es la que reportan los papers de "
+                       "HTR, úsala para comparar tus cifras con la literatura: "
+                       "CHURRO reporta 0,823 en impreso histórico. Mira también "
+                       "los segundos por página: una ruta con CER 0,02 que "
+                       "tarda tres minutos por página sirve para construir el "
+                       "estándar de oro, no para procesar mil páginas. Lo "
+                       "habitual es usar la lenta y buena para crear la "
+                       "referencia, y la rápida para el corpus completo. "
+                       "Advertencia metodológica: el estándar de oro debe ser "
+                       "una muestra REPRESENTATIVA (páginas limpias y sucias, "
+                       "con y sin fotograbado), no las mejores; si eliges solo "
+                       "páginas fáciles medirás una calidad que no tendrás en "
+                       "producción.",
+    },
     "valid": {
         "que_es": "Validación humana y semáforo de calidad: marca cada dato "
                   "como fiable (verde), dudoso (amarillo) o problemático (rojo) "

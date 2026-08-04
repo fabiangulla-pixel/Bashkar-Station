@@ -2,6 +2,112 @@
 
 ---
 
+## Sesión 49 — 2026-08-04 — v11.9 · Benchmark de OCR y modelos recientes
+
+### Contexto
+Al discutir si este proyecto sirve como trabajo de grado de la maestría en IA,
+apareció la objeción que haría cualquier evaluador: **¿por qué no usas los
+modelos recientes?** La respuesta honesta era que no había forma de compararlos,
+porque la elección de ruta de OCR se hacía por impresión visual. Esta sesión
+cierra ese hueco por los dos lados: se integran dos motores recientes y se añade
+la infraestructura para **medir** cuál es mejor sobre el corpus real.
+
+### 1. `core/benchmark_ocr.py` (NUEVO) — el módulo que faltaba
+Función pura, sin red ni motores: recibe transcripciones ya producidas y las
+compara contra un estándar de oro.
+
+- **CER**, **WER** y **similitud de Levenshtein normalizada** (`1 − CER`), que es
+  la que reporta la literatura de HTR y permite comparar con papers publicados.
+- Distancia de Levenshtein propia, iterativa con dos filas, sin dependencias: una
+  página son unos miles de caracteres, no hace falta más.
+- **Micro-promedio, no macro**: se agregan distancias sobre longitudes totales.
+  Con macro-promedio una página de 4 caracteres pesaría igual que una de 100, lo
+  que da cifras infladas. Hay un test que fija esto explícitamente.
+- **Normalización indulgente por defecto** (minúsculas, sin tildes, espacios
+  colapsados, y une palabras partidas por guion de corte de línea). Penalizar las
+  tildes en prensa de 1939 mide la ortografía de la época, no el OCR. Con
+  `estricta=True` se compara literal.
+- Una página que la ruta no produjo cuenta como **error total**, no como dato
+  ausente: no reconocer nada ES un fallo.
+- `calidad` traduce el CER a una lectura accionable: ≤0,05 casi limpio · ≤0,10
+  explotable · ≤0,25 requiere corrección · >0,25 inservible.
+- Exporta CSV (utf-8-sig) y JSON con el detalle por página, y `tabla_markdown()`
+  devuelve la tabla lista para pegar en un artículo.
+
+### 2. `core/ocr_churro.py` (NUEVO) — Ruta 6: CHURRO-3B
+Modelo de visión-lenguaje de **pesos abiertos** (Stanford OVAL, EMNLP 2025), 3B
+sobre Qwen2.5-VL, entrenado con 99.491 páginas históricas de 46 grupos
+lingüísticos. Reporta 82,3 % de similitud en impreso, superando a Gemini 2.5 Pro
+con un costo 15,5× menor.
+
+Resuelve el hallazgo de la sesión 36: los microfilms de la BNC no los rescata
+ningún preproceso clásico y **hacen falta modelos de visión** — hasta ahora eso
+significaba pagar API y sacar el corpus del equipo. CHURRO da esa capacidad en
+local y gratis.
+
+- No existe versión GGUF, así que no puede correr por Ollama ni LM Studio: se
+  ejecuta con `transformers` (`Qwen2_5_VLForConditionalGeneration`).
+- Carga perezosa con lock: dos hilos de la GUI no pueden disparar dos cargas
+  simultáneas de 6 GB. `liberar()` la suelta.
+- `float32` en CPU a propósito: `float16` va más lento y da NaN.
+- Si ya está en caché, fuerza `HF_HUB_OFFLINE=1` para que el arranque no se
+  cuelgue consultando el Hub sin conexión.
+- `estimar_tiempo()` avisa **antes** de lanzar un lote (~3 min/página en CPU) y
+  de la descarga pendiente de ~7 GB, siguiendo el estándar del proyecto.
+- `motivo_no_disponible()` devuelve un mensaje accionable («instala X») en vez de
+  un booleano.
+
+### 3. `core/ocr_pero.py` (NUEVO) — Ruta 7: PERO-OCR
+Motor de la Universidad Tecnológica de Brno cuya documentación declara estar
+**especializado en periódicos de baja calidad digitalizados desde microfilm**.
+Es el caso exacto del corpus *Estampa*. Cadena clásica (párrafos → líneas →
+transcripción → refinamiento con modelo de lenguaje), ~12 s/página frente a los
+~180 s de un VLM de 3B: candidato para procesar el corpus completo, no solo la
+muestra.
+
+Es dependencia **opcional**: si falta el paquete o el motor entrenado, la ruta se
+ofrece deshabilitada con el motivo a la vista.
+
+### 4. Panel «⚖️ Benchmark OCR» en la GUI
+Nueva página en el grupo *salida* de la Activity Bar. Elegir carpeta de estándar
+de oro y de imágenes, marcar rutas, confirmar la estimación de tiempo, y obtener
+la tabla comparativa. Exporta CSV y copia la tabla Markdown al portapapeles.
+El catálogo de rutas muestra el **estado real** de cada una (disponible, hay que
+descargar 7 GB, no instalada) en vez de ofrecerlas todas por igual.
+
+### 5. Dos bugs propios cazados por los tests, no por revisión visual
+- `ocr_churro.motivo_no_disponible` reventaba con `ValueError: transformers.
+  __spec__ is None`. `importlib.util.find_spec` lanza si el módulo está en
+  `sys.modules` con `__spec__` a None — pasa con módulos inyectados y dentro de
+  un `.exe` congelado. Se añadió `_hay_modulo()`, que cae a mirar `sys.modules`.
+- `_bench_iniciar` aceptaba carpetas vacías: **`Path("")` es `Path(".")` y
+  `.is_dir()` devuelve True**, así que el benchmark se habría lanzado sobre el
+  directorio de trabajo. Ahora se comprueba la cadena antes de construir el Path.
+
+### 6. Auditoría de Modo Ingeniero sobre el trabajo de esta misma sesión
+Se pasó el checklist al código recién escrito y aparecieron **seis huecos
+propios**, todos corregidos antes de comitear:
+1. Los tres módulos nuevos **no estaban en `hiddenimports` del `.spec`** — el
+   mismo fallo corregido para otros ocho módulos en la sesión 48. Reincidencia.
+2. `accelerate` sin declarar en `requirements.txt` (lo necesita `transformers`
+   para `low_cpu_mem_usage=True`), y `pero-ocr` sin documentar como opcional.
+3. El panel nuevo no tenía guía HD, siendo el único de los 30 sin ella.
+4. No estaba en el Command Palette.
+5. y 6. README y CHANGELOG no mencionaban nada.
+
+**Lección:** la parte que se olvida no es el código nuevo, es su integración con
+todo lo que ya existe. Conviene pasar el checklist al final de cada sesión, no
+solo al empezar un proyecto.
+
+### Tests
+`tests/test_benchmark_ocr.py` (40) + `tests/test_ocr_modelos_recientes.py` (19) +
+`tests/test_bench_gui.py` (9) = **68 nuevos**. Las métricas se comprueban contra
+valores calculados a mano (incluido el caso canónico `kitten`/`sitting` = 3), no
+contra la propia implementación: un test que repite la fórmula del código no
+prueba nada. Ninguno descarga modelos ni toca la red.
+
+---
+
 ## Sesión 48 — 2026-08-04 — v11.8 · La aplicación deja de congelarse
 
 ### Contexto

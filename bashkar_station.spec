@@ -134,6 +134,13 @@ a = Analysis(
         'core.layout_neural',
         'core.methods_reporter',
         'core.voice_dictation',
+        # Evaluación comparativa de OCR y rutas de modelos recientes (sesión 49).
+        # benchmark_ocr es puro y siempre debe estar; churro y pero degradan con
+        # gracia si faltan sus dependencias, pero el módulo tiene que viajar en
+        # el paquete para poder mostrar el motivo al usuario.
+        'core.benchmark_ocr',
+        'core.ocr_churro',
+        'core.ocr_pero',
         'datos',
         'datos.repositorio',
         'datos.schema',

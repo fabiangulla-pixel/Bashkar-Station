@@ -139,10 +139,23 @@ def test_local_estaticos_y_traversal(servidor_local):
     assert r.status_code == 404
 
 
-def test_local_guias_29_paneles(servidor_local):
+def test_local_guias_cubren_los_paneles_registrados(servidor_local):
+    """Cada panel de la Activity Bar debe tener su guía HD.
+
+    Antes esto fijaba el número exacto (29) y se rompía al añadir un panel, sin
+    decir cuál faltaba. Lo que importa no es el conteo sino el invariante: que
+    no haya paneles huérfanos de guía. Si en el futuro se decide que algún panel
+    no la lleva, se añade aquí como excepción explícita y documentada.
+    """
     _, base = servidor_local
     guias = requests.get(f"{base}/api/guias", timeout=10).json()
-    assert len(guias) == 29
+
+    import app as appmod
+    registrados = {p[0] for p in appmod.BashkarApp._PAGINAS}
+
+    sin_guia = registrados - set(guias)
+    assert not sin_guia, f"Paneles sin guía HD: {sorted(sin_guia)}"
+    assert len(guias) >= len(registrados)
     assert "que_es" in guias["cfg"]
 
 
