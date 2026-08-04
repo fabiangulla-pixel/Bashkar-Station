@@ -8,9 +8,24 @@
 Bashkar Station es una plataforma que integra varios módulos y servicios en un solo entorno, 
 donde el usuario puede acceder, configurar y ejecutar cosas sin salir de ahí. 
 No es un framework, no es una biblioteca, no es un IDE, en el sentido estricto porque no se programa ahí. 
-Es un sistema de consumo y orquestación. Una aplicación de escritorio para el análisis
-computacional de publicaciones periódicas históricas en español. Desarrollada para
-investigadores en historia de la prensa, estudios editoriales y humanidades digitales.
+Es un sistema de consumo y orquestación. Una aplicación de escritorio **100 % offline**
+para el análisis computacional de publicaciones periódicas históricas en español.
+Desarrollada para investigadores en historia de la prensa, estudios editoriales y
+humanidades digitales.
+
+**Offline por defecto, no como opción escondida.** El estado de la aplicación arranca con
+un interruptor global `ia_habilitada = False`: mientras no lo actives, ninguna función
+llama a una API externa. Todo el recorrido está cubierto sin salir de tu máquina — OCR con
+Tesseract o Kraken, modelos de spaCy locales, embeddings y búsqueda semántica con FAISS, y
+modelos de lenguaje locales vía Ollama o LM Studio, sin costo por token.
+
+Las APIs en la nube (Anthropic, OpenAI, Gemini) son **opcionales** y exigen que tú
+configures una clave. Cuando las usas, la aplicación **estima el costo y te lo muestra
+antes de ejecutar**, y registra el gasto real después.
+
+Esto no es un detalle técnico: trabajar con prensa histórica implica material sujeto a las
+condiciones de uso de la institución que lo digitalizó. Que el corpus no salga del equipo
+salvo decisión explícita del investigador es un requisito, no una comodidad.
 
 **Corpus de referencia:** Revista *Estampa* (Colombia, 1930–1940), digitalizada por
 la Biblioteca Nacional de Colombia (BNC).
