@@ -121,6 +121,19 @@ a = Analysis(
         'core.page_quality',
         'core.layout_patterns',
         'core.pdf_export',
+        # Módulos que faltaban en el .spec: se importan de forma perezosa dentro
+        # de los handlers, así que el análisis estático de PyInstaller no
+        # siempre los alcanza. core.estado es la clase Estado extraída en la
+        # sesión 45; core.okf_export_engine es el exportador OKF de la 44;
+        # core.ocr_ollama_local trae el fix de detección de visión de la 46.
+        'core.estado',
+        'core.okf_export_engine',
+        'core.ocr_ollama_local',
+        'core.conversor_pdf_a_word',
+        'core.kraken_trainer',
+        'core.layout_neural',
+        'core.methods_reporter',
+        'core.voice_dictation',
         'datos',
         'datos.repositorio',
         'datos.schema',

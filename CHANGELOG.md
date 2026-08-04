@@ -2,6 +2,89 @@
 
 ---
 
+## Sesión 48 — 2026-08-04 — v11.8 · La aplicación deja de congelarse
+
+### Contexto
+El usuario reportó dos cosas: que el `.bat` del Escritorio no abría nada y que
+la aplicación «se congela demasiado». Resultaron ser problemas distintos y sin
+relación entre sí. El diagnóstico se hizo sobre el proceso real (`py-spy`,
+`Responding` de Win32) y con una auditoría AST del propio `app.py`, no por
+inspección a ojo.
+
+### 1. El `.bat` del Escritorio no abría nada — ruta obsoleta
+`Escritorio\Mis Apps\Bashkar Station.bat` (de abril, título «v10.1») hacía
+`cd /d` a `I:\Mi unidad\programas y macros\...`. La carpeta se renombró en su
+momento a **`00_Programas y macros`**, así que el `cd` fallaba y `python app.py`
+se ejecutaba en un directorio donde no existe el archivo. Reescrito con la ruta
+correcta y con una comprobación explícita que avisa si `I:` no está montado.
+Mismo arreglo en `Bashkar Test Pipeline.bat` (que además apunta a un
+`test_pipeline.py` que ya no existe en el repo).
+
+`Ejecutar.bat` tampoco servía tal cual: al no existir el marcador `.installed`
+lanzaba `instalar.py`, que reinstala con pip, descarga modelos de HuggingFace y
+termina en un `input()`, dando la impresión de estar colgado. Se creó el
+marcador (las dependencias ya estaban instaladas) y se añadió `.installed` al
+`.gitignore`.
+
+### 2. Arranque: 16,8 s → 0,06 s en el chequeo de dependencias
+`_auto_instalar()` comprobaba cada dependencia con `__import__(mod)`, que
+**carga el módulo de verdad**: `spacy` arrastra `torch`, más `sklearn`. Es decir,
+el arranque pagaba el costo completo de importar la pila de ML solo para
+averiguar si estaba instalada. Cambiado a `importlib.util.find_spec`, que
+resuelve lo mismo consultando el sistema de importación sin ejecutar el módulo.
+
+Medición A/B, cada variante en un proceso limpio
+(`scripts` de la sesión, 14 paquetes):
+
+| | tiempo |
+|---|---|
+| antes (`__import__`) | **16,755 s** |
+| después (`find_spec`) | **0,056 s** |
+
+### 3. La causa real de los congelamientos: trabajo pesado en el hilo de Tk
+Cada cambio de página hacía **en el hilo principal**: recorrer carpetas, abrir
+el PDF con PyMuPDF, `get_pixmap`, decodificar, `convert("RGB")`, copiar la
+imagen completa y `thumbnail(..., LANCZOS)`. Con la ventana bloqueada, en cada
+clic. Y `_etz_poblar_miniaturas` leía además **un JSON de disco por página**
+(48 lecturas en un número de 48 páginas, a menudo contra Google Drive).
+
+- `_norm_mostrar_imagen` se partió en tres: lanzador (hilo principal),
+  `_norm_render_pagina` (puro, sin Tk, corre en hilo) y `_norm_pintar_imagen`
+  (vuelve al principal solo para crear el `PhotoImage`, que es objeto Tk).
+- Igual para el etiquetador: `_etz_render_pdf` + `_etz_pintar_imagen`.
+- Los dos renders **cachean el PNG en disco local** vía `core.local_cache`
+  (que existía justamente para no escribir derivados en Google Drive).
+- `_etz_poblar_miniaturas` pinta los indicadores apagados y los enciende desde
+  un hilo (`_etz_marcar_etiquetadas` → `_etz_pintar_dots`).
+- **Token de página**: si el usuario cambia de página antes de que termine un
+  render, la respuesta vieja se descarta en vez de pintar la página equivocada.
+
+### 4. Accesos a Tk desde hilos worker: 20 → 0
+Auditoría con AST sobre los 45 workers de `app.py`. Tcl no es thread-safe:
+leer una variable Tk desde un hilo serializa la llamada contra el bucle de
+eventos, con riesgo de bloqueo mutuo. Se encontraron **20 accesos en 6 workers**
+(`_worker_anal`, `_worker_ocr`, `_worker_ocr_carpetas`, `_worker_vis`,
+`_worker_ner_articulo`, `_worker_ner_corpus`) — todos lecturas; las escrituras
+de widgets ya estaban correctamente marshaladas con `self.after`.
+
+Las lecturas se movieron al **lanzador**, que sí corre en el hilo principal:
+`_snapshot_ocr()` / `_snapshot_ner()` y un `cfg` explícito para el análisis. La
+clase `_VarCongelada` conserva la interfaz `.get()` para no reescribir el cuerpo
+de los workers. De paso se eliminó un `tk.StringVar(...)` de respaldo que se
+construía **dentro** del hilo (crear un widget Tk desde un hilo es peor que
+leerlo). La auditoría queda en **0 de 45 workers afectados**.
+
+### 5. `.spec`: 8 módulos que no se empaquetaban
+Faltaban en `hiddenimports`, entre ellos `core.estado` (la clase `Estado`
+extraída en la sesión 45), `core.okf_export_engine` (exportador OKF de la 44) y
+`core.ocr_ollama_local` (fix de detección de visión de la 46). Se importan de
+forma perezosa dentro de los handlers, así que el análisis estático de
+PyInstaller no siempre los alcanzaba. Añadidos los 8.
+
+`APP_VERSION` y `_APP_VERSION_SPLASH`: 11.7 → **11.8**.
+
+---
+
 ## Sesión 45 — 2026-07-19 — Segundo frontend web (patrón NativoWeb)
 
 ### Contexto

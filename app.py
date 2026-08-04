@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 # ── Rutas Windows (Tesseract/Poppler) ────────────────────────────────────────
 _APP_DIR = Path(__file__).parent
-_APP_VERSION_SPLASH = "11.7"   # sincronizar con APP_VERSION abajo
+_APP_VERSION_SPLASH = "11.8"   # sincronizar con APP_VERSION abajo
 
 def _configurar_rutas_windows():
     for cfg_file in ["tesseract_path.txt", "poppler_path.txt"]:
@@ -108,11 +108,21 @@ def _auto_instalar():
     if getattr(sys, "frozen", False):
         return
     import subprocess
+    # Comprobar con find_spec, NO con __import__: __import__ CARGA el paquete de
+    # verdad, y "spacy" arrastra torch (~11 s en frío) más sklearn — es decir, el
+    # arranque pagaba el costo completo de importar la pila de ML solo para
+    # averiguar si estaba instalada. find_spec resuelve lo mismo mirando el
+    # sistema de importación, sin ejecutar el módulo (~0,02 s en total).
+    # Los módulos que la app necesita de verdad ya se importan más abajo, cada
+    # uno en su sitio.
+    import importlib.util
     faltantes = []
     for mod, pkg in _PAQUETES:
         try:
-            __import__(mod)
-        except ImportError:
+            encontrado = importlib.util.find_spec(mod) is not None
+        except (ImportError, ValueError):
+            encontrado = False
+        if not encontrado:
             faltantes.append((mod, pkg))
     if not faltantes:
         return
@@ -160,7 +170,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-APP_VERSION = "11.7"
+APP_VERSION = "11.8"
 APP_NAME    = "Bashkar Station"
 
 # ── Paleta visual v2 — Dark mode académico ────────────────────────────────────
@@ -321,6 +331,25 @@ CAMPOS_DEFAULT = {
 from core.estado import Estado
 
 ST = Estado()
+
+
+class _VarCongelada:
+    """Valor de una variable Tk ya leído, para usar dentro de un hilo worker.
+
+    Tcl no es thread-safe: llamar `.get()` de una variable Tk desde un hilo
+    secundario serializa la llamada contra el bucle de eventos del hilo
+    principal, con riesgo de bloqueo mutuo si el principal está esperando al
+    worker. La lectura se hace ANTES de lanzar el hilo y el worker recibe esto,
+    que mantiene la misma interfaz `.get()` para no alterar el código existente.
+    """
+
+    __slots__ = ("_valor",)
+
+    def __init__(self, valor):
+        self._valor = valor
+
+    def get(self):
+        return self._valor
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -6961,6 +6990,7 @@ class BashkarApp(tk.Tk):
         for w in self._etz_pages_inner.winfo_children():
             w.destroy()
         self._etz_thumb_btns.clear()
+        self._etz_thumb_dots = {}
 
         for pag in pags:
             frm = tk.Frame(self._etz_pages_inner, bg="#161B22",
@@ -6972,18 +7002,14 @@ class BashkarApp(tk.Tk):
                            font=("Segoe UI", 7), anchor="w")
             lbl.pack(fill="x", padx=4)
 
-            # Indicador de estado (etiquetada / sin etiquetar)
-            from core.zone_labeler import cargar_pagina
-            num = self._etz_numero.get()
-            tiene_zonas = False
-            if ST.out_dir and num:
-                pd = cargar_pagina(ST.out_dir, num, pag)
-                tiene_zonas = bool(pd and pd.zonas)
-
-            dot_color = "#3FB950" if tiene_zonas else TXT_DIM
-            dot = tk.Label(frm, text="●", bg="#161B22", fg=dot_color,
+            # Indicador de estado (etiquetada / sin etiquetar).
+            # Se pinta apagado y se corrige después desde un hilo: leer el JSON
+            # de zonas de CADA página aquí significaba una lectura de disco por
+            # página (decenas, y sobre Google Drive), con la ventana congelada.
+            dot = tk.Label(frm, text="●", bg="#161B22", fg=TXT_DIM,
                            font=("Segoe UI", 7))
             dot.pack(side="right", padx=4)
+            self._etz_thumb_dots[pag] = dot
 
             # Click navega a esa página
             def _goto(p=pag):
@@ -7000,6 +7026,44 @@ class BashkarApp(tk.Tk):
         self._etz_pages_canvas.update_idletasks()
         self._etz_pages_canvas.configure(
             scrollregion=self._etz_pages_canvas.bbox("all"))
+
+        self._etz_marcar_etiquetadas(list(pags), self._etz_numero.get())
+
+    def _etz_marcar_etiquetadas(self, pags: list[str], num: str):
+        """Enciende en verde las páginas que ya tienen zonas, sin bloquear la UI.
+
+        Lee un JSON por página, así que va en un hilo: en un número de 48
+        páginas eran 48 lecturas de disco (a menudo sobre Google Drive) con la
+        ventana congelada.
+        """
+        if not (ST.out_dir and num and pags):
+            return
+
+        out_dir = ST.out_dir
+
+        def _trabajo():
+            from core.zone_labeler import cargar_pagina
+            etiquetadas = []
+            for pag in pags:
+                try:
+                    pd = cargar_pagina(out_dir, num, pag)
+                    if pd and pd.zonas:
+                        etiquetadas.append(pag)
+                except Exception:
+                    continue
+            self.after(0, lambda: self._etz_pintar_dots(etiquetadas))
+
+        threading.Thread(target=_trabajo, daemon=True).start()
+
+    def _etz_pintar_dots(self, etiquetadas: list[str]):
+        """Aplica el resultado del hilo. Solo hilo principal."""
+        for pag in etiquetadas:
+            dot = getattr(self, "_etz_thumb_dots", {}).get(pag)
+            try:
+                if dot is not None and dot.winfo_exists():
+                    dot.config(fg="#3FB950")
+            except tk.TclError:
+                pass                    # la miniatura ya se destruyó
 
     def _etz_resaltar_miniatura(self, pag: str):
         """Resalta la miniatura de la página activa."""
@@ -8403,33 +8467,75 @@ class BashkarApp(tk.Tk):
         self._etz_lbl_train.config(text=f"✅ {nombre} — {len(pags)} páginas")
 
     def _etz_cargar_imagen_desde_pdf(self, pdf_path: str, n_pag: int):
-        """Carga una página de PDF directamente como imagen en el canvas."""
-        try:
-            import fitz
-            from PIL import Image, ImageTk
+        """Carga una página de PDF en el canvas del etiquetador, sin congelar la UI.
+
+        El render con PyMuPDF al 150 % más el redimensionado LANCZOS tardaban
+        cientos de milisegundos a segundos POR PÁGINA en el hilo principal.
+        Ahora eso ocurre en un hilo; solo el PhotoImage vuelve al principal.
+        """
+        self._etz_img_token = getattr(self, "_etz_img_token", 0) + 1
+        token = self._etz_img_token
+
+        def _trabajo():
+            try:
+                img, escala = self._etz_render_pdf(pdf_path, n_pag)
+                error = None
+            except Exception as ex:     # noqa: BLE001 — se reporta en la UI
+                img, escala, error = None, 1.0, ex
+            self.after(0, lambda: self._etz_pintar_imagen(img, escala, error, token))
+
+        threading.Thread(target=_trabajo, daemon=True).start()
+
+    def _etz_render_pdf(self, pdf_path: str, n_pag: int):
+        """Renderiza la página y la escala. Puro: NO toca Tk, corre en hilo."""
+        import fitz
+        from PIL import Image
+
+        from core.local_cache import clave_cache, ruta_cache
+        cache_png = (ruta_cache("etz_paginas")
+                     / f"{clave_cache(Path(pdf_path))}_{n_pag}_150.png")
+        if cache_png.exists():
+            img = Image.open(cache_png).convert("RGB")
+        else:
             doc  = fitz.open(pdf_path)
             page = doc[n_pag]
             mat  = fitz.Matrix(1.5, 1.5)  # 150% escala para mejor resolución
             pix  = page.get_pixmap(matrix=mat)
             doc.close()
             img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            try:
+                img.save(cache_png)
+            except OSError:
+                pass                    # la caché es un lujo, no una condición
 
-            # Escalar al canvas
-            max_h = 900
-            if img.height > max_h:
-                escala = max_h / img.height
-                img = img.resize((int(img.width * escala), max_h), Image.LANCZOS)
-                self._etz_escala = escala
-            else:
-                self._etz_escala = 1.0
+        # Escalar al canvas
+        max_h = 900
+        if img.height > max_h:
+            escala = max_h / img.height
+            img = img.resize((int(img.width * escala), max_h), Image.LANCZOS)
+        else:
+            escala = 1.0
+        return img, escala
 
+    def _etz_pintar_imagen(self, img, escala: float, error, token: int):
+        """Pinta la imagen ya renderizada. Solo hilo principal."""
+        if token != getattr(self, "_etz_img_token", 0):
+            return                      # el usuario ya cambió de página
+        from PIL import ImageTk
+        if error is not None or img is None:
+            self._etz_canvas.delete("all")
+            self._etz_canvas.create_text(
+                150, 100, text=f"Error cargando imagen:\n{error}",
+                fill="#94A3B8", font=("Segoe UI", 9), anchor="nw")
+            return
+        try:
+            self._etz_escala   = escala
             self._etz_img_orig = img
             self._etz_img_tk   = ImageTk.PhotoImage(img)
             self._etz_canvas.delete("all")
             self._etz_canvas.create_image(0, 0, anchor="nw", image=self._etz_img_tk)
             self._etz_canvas.configure(scrollregion=(0, 0, img.width, img.height))
             self._etz_redibujar_zonas()
-
         except Exception as ex:
             self._etz_canvas.delete("all")
             self._etz_canvas.create_text(
@@ -8789,68 +8895,130 @@ class BashkarApp(tk.Tk):
         self._norm_mostrar_imagen(b)
 
     def _norm_mostrar_imagen(self, bloque: dict):
-        """Carga la imagen ORIGINAL a color de la página."""
-        self._norm_canvas_img.delete("all")
-        try:
-            from PIL import Image, ImageTk
-            numero  = bloque["numero"]
-            pagina  = bloque["pagina"]
-            img_pil = None
+        """Muestra la imagen de la página SIN bloquear la ventana.
 
-            # 1. Buscar en 02_imagenes/ (originales a color, cualquier extensión)
+        Antes, todo esto (recorrer carpetas, abrir el PDF, renderizar con
+        PyMuPDF, decodificar y redimensionar con LANCZOS) corría en el hilo
+        principal en CADA cambio de página: era la causa principal de que la
+        aplicación se congelara al trabajar. Ahora el trabajo pesado va a un
+        hilo y solo vuelve al principal la parte que obliga Tk (crear el
+        PhotoImage y pintar el canvas).
+        """
+        self._norm_canvas_img.delete("all")
+        self._norm_canvas_img.create_text(
+            150, 90, text="Cargando imagen…", fill="#484F58",
+            font=("Segoe UI", 9), anchor="center")
+
+        # Token: si el usuario cambia de página antes de que termine el render,
+        # la respuesta vieja se descarta en vez de pintar la página equivocada.
+        self._norm_img_token = getattr(self, "_norm_img_token", 0) + 1
+        token = self._norm_img_token
+
+        def _trabajo():
+            try:
+                img = self._norm_render_pagina(bloque)
+                error = None
+            except Exception as e:          # noqa: BLE001 — se reporta en la UI
+                img, error = None, e
+            self.after(0, lambda: self._norm_pintar_imagen(img, error, token))
+
+        threading.Thread(target=_trabajo, daemon=True).start()
+
+    def _norm_render_pagina(self, bloque: dict):
+        """Devuelve la imagen PIL de la página. Puro: NO toca Tk, corre en hilo.
+
+        Cachea el render del PDF en disco local (`core.local_cache`) porque el
+        proyecto suele vivir en Google Drive y volver a renderizar la misma
+        página en cada visita es lo que hacía lenta la navegación.
+        """
+        from PIL import Image
+        numero  = bloque["numero"]
+        pagina  = bloque["pagina"]
+        img_pil = None
+
+        # 1. Buscar en 02_imagenes/ (originales a color, cualquier extensión)
+        if ST.out_dir:
+            img_dir = Path(ST.out_dir) / "02_imagenes" / numero
+            for ext in ("*.png", "*.jpg", "*.tif", "*.tiff"):
+                hits = sorted(img_dir.glob(f"*{pagina}*{ext[1:]}")) if img_dir.exists() else []
+                if not hits:
+                    hits = sorted(img_dir.glob(ext)) if img_dir.exists() else []
+                if hits:
+                    img_pil = Image.open(hits[0]).convert("RGB")
+                    break
+
+        # 2. Renderizar directamente desde el PDF (sin necesitar imágenes extraídas)
+        if img_pil is None:
+            import re as _re
+            m_pag = _re.search(r'\d+', pagina)
+            n_pag = max(0, int(m_pag.group()) - 1) if m_pag else 0
+
+            # Candidatos: 01_pdfs/, archivos_sel, pdf_dir de entrada, carpeta entrada conversor
+            candidatos_pdf: list[Path] = []
             if ST.out_dir:
-                img_dir = Path(ST.out_dir) / "02_imagenes" / numero
-                for ext in ("*.png", "*.jpg", "*.tif", "*.tiff"):
-                    hits = sorted(img_dir.glob(f"*{pagina}*{ext[1:]}")) if img_dir.exists() else []
-                    if not hits:
-                        hits = sorted(img_dir.glob(ext)) if img_dir.exists() else []
-                    if hits:
-                        img_pil = Image.open(hits[0]).convert("RGB")
+                pdf_dir = Path(ST.out_dir) / "01_pdfs"
+                if pdf_dir.exists():
+                    candidatos_pdf += list(pdf_dir.glob(f"{numero}*.pdf"))
+            candidatos_pdf += [p for p in getattr(ST, "archivos_sel", [])
+                               if hasattr(p, "suffix") and p.suffix.lower() == ".pdf"]
+            # Buscar en pdf_dir de entrada (lo que usó el conversor)
+            if ST.pdf_dir and Path(ST.pdf_dir).exists():
+                candidatos_pdf += list(Path(ST.pdf_dir).glob("*.pdf"))
+            # Filtrar: preferir el que tenga el número en el stem
+            exactos = [p for p in candidatos_pdf if numero in p.stem]
+            pdfs = exactos or candidatos_pdf
+
+            for pdf_path in pdfs:
+                try:
+                    import io
+
+                    import fitz
+
+                    from core.local_cache import clave_cache, ruta_cache
+                    cache_png = (ruta_cache("norm_paginas")
+                                 / f"{clave_cache(Path(pdf_path))}_{n_pag}_120.png")
+                    if cache_png.exists():
+                        img_pil = Image.open(cache_png).convert("RGB")
                         break
 
-            # 2. Renderizar directamente desde el PDF (sin necesitar imágenes extraídas)
-            if img_pil is None:
-                import re as _re
-                m_pag = _re.search(r'\d+', pagina)
-                n_pag = max(0, int(m_pag.group()) - 1) if m_pag else 0
+                    doc = fitz.open(str(pdf_path))
+                    if n_pag < doc.page_count:
+                        pix = doc[n_pag].get_pixmap(dpi=120)
+                        datos = pix.tobytes("png")
+                        img_pil = Image.open(io.BytesIO(datos)).convert("RGB")
+                        try:
+                            cache_png.write_bytes(datos)
+                        except OSError:
+                            pass   # la caché es un lujo, no una condición
+                    doc.close()
+                    if img_pil:
+                        break
+                except Exception:
+                    continue
 
-                # Candidatos: 01_pdfs/, archivos_sel, pdf_dir de entrada, carpeta entrada conversor
-                candidatos_pdf: list[Path] = []
-                if ST.out_dir:
-                    pdf_dir = Path(ST.out_dir) / "01_pdfs"
-                    if pdf_dir.exists():
-                        candidatos_pdf += list(pdf_dir.glob(f"{numero}*.pdf"))
-                candidatos_pdf += [p for p in getattr(ST, "archivos_sel", [])
-                                   if hasattr(p, "suffix") and p.suffix.lower() == ".pdf"]
-                # Buscar en pdf_dir de entrada (lo que usó el conversor)
-                if ST.pdf_dir and Path(ST.pdf_dir).exists():
-                    candidatos_pdf += list(Path(ST.pdf_dir).glob("*.pdf"))
-                # Filtrar: preferir el que tenga el número en el stem
-                exactos = [p for p in candidatos_pdf if numero in p.stem]
-                pdfs = exactos or candidatos_pdf
+        return img_pil
 
-                for pdf_path in pdfs:
-                    try:
-                        import io
+    def _norm_pintar_imagen(self, img_pil, error, token: int):
+        """Pinta en el canvas la imagen que preparó el hilo. Solo hilo principal."""
+        if token != getattr(self, "_norm_img_token", 0):
+            return                      # el usuario ya cambió de página
+        from PIL import Image, ImageTk
+        self._norm_canvas_img.delete("all")
 
-                        import fitz
-                        doc = fitz.open(str(pdf_path))
-                        if n_pag < doc.page_count:
-                            pix = doc[n_pag].get_pixmap(dpi=120)
-                            img_pil = Image.open(io.BytesIO(pix.tobytes("png"))).convert("RGB")
-                        doc.close()
-                        if img_pil:
-                            break
-                    except Exception:
-                        continue
+        if error is not None:
+            self._norm_canvas_img.create_text(
+                150, 90, text=f"Error: {error}",
+                fill="#F85149", font=("Segoe UI", 8), anchor="center")
+            return
 
-            if img_pil is None:
-                self._norm_canvas_img.create_text(
-                    150, 90,
-                    text="Sin imagen\n(configura la carpeta de entrada en Configuración)",
-                    fill="#484F58", font=("Segoe UI", 9), anchor="center")
-                return
+        if img_pil is None:
+            self._norm_canvas_img.create_text(
+                150, 90,
+                text="Sin imagen\n(configura la carpeta de entrada en Configuración)",
+                fill="#484F58", font=("Segoe UI", 9), anchor="center")
+            return
 
+        try:
             # Guardar original completa para zoom y resetear nivel
             self._norm_img_orig_full = img_pil.copy()
             self._norm_zoom = 1.0
@@ -11458,13 +11626,37 @@ class BashkarApp(tk.Tk):
         ttk.Button(ctrl, text="↺ Actualizar", command=_mostrar).pack(side="left", padx=10)
         ttk.Button(ctrl, text="Cerrar", command=win.destroy).pack(side="left", padx=10)
 
+    # Variables de la UI que lee el worker de OCR. Se congelan ANTES de lanzar
+    # el hilo: Tcl no es thread-safe y leerlas desde el worker serializa la
+    # llamada contra el bucle de eventos (con riesgo de bloqueo mutuo).
+    _VARS_OCR = (
+        "_var_dpi", "_var_lang", "_var_ruta_ocr", "_var_ocr_usar_etiquetas",
+        "_var_ocr_det_auto", "_var_ocr_prov", "_var_ocr_modelo",
+        "_var_pre_deskew", "_var_pre_enhance", "_var_pre_despeckle",
+        "_var_kraken_modelo", "_var_kraken_workers", "_var_kraken_timeout",
+        "_var_ollama_modelo",
+        # Ruta 2 (IA de visión): no llevan prefijo _var_ pero son StringVar igual.
+        "_ocr_vision_prov", "_ocr_vision_model",
+    )
+
+    def _snapshot_ocr(self) -> dict:
+        """Lee en el hilo principal las variables Tk que necesita el worker OCR."""
+        snap = {}
+        for nombre in self._VARS_OCR:
+            var = getattr(self, nombre, None)
+            if var is not None and hasattr(var, "get"):
+                snap[nombre] = _VarCongelada(var.get())
+        return snap
+
     def _start_ocr(self):
         if ST.pdf_dir is None:
             messagebox.showwarning("Sin config","Confirma la configuración primero."); return
         self._btn_ocr.config(state="disabled")
-        threading.Thread(target=self._worker_ocr, daemon=True).start()
+        threading.Thread(target=self._worker_ocr, args=(self._snapshot_ocr(),),
+                         daemon=True).start()
 
-    def _worker_ocr(self):
+    def _worker_ocr(self, snap: dict | None = None):
+        snap = snap if snap is not None else self._snapshot_ocr()
         from core.ocr_engine import (
             EXTS_IMAGEN,
             analizar_pdf,
@@ -11487,16 +11679,17 @@ class BashkarApp(tk.Tk):
                 })
             self._put(tipo="log",
                 texto=f"📁 Modo subcarpetas: {len(archivos_expandidos)} número(s) detectado(s)")
-            self._worker_ocr_carpetas(archivos_expandidos)
+            self._worker_ocr_carpetas(archivos_expandidos, snap)
             return
 
         archivos   = ST.archivos_sel; total = len(archivos)
-        dpi, lang  = self._var_dpi.get(), self._var_lang.get()
-        ruta_ocr   = getattr(self, "_var_ruta_ocr", None)
+        dpi  = snap["_var_dpi"].get()  if "_var_dpi"  in snap else 300
+        lang = snap["_var_lang"].get() if "_var_lang" in snap else "spa"
+        ruta_ocr   = snap.get("_var_ruta_ocr")
         ruta_ocr      = ruta_ocr.get() if ruta_ocr else "tesseract"
-        usar_etiq     = getattr(self, "_var_ocr_usar_etiquetas", None)
+        usar_etiq     = snap.get("_var_ocr_usar_etiquetas")
         usar_etiq     = usar_etiq.get() if usar_etiq else False
-        det_auto      = getattr(self, "_var_ocr_det_auto", None)
+        det_auto      = snap.get("_var_ocr_det_auto")
         det_auto      = det_auto.get() if det_auto else False
         out           = ST.out_dir
         dir_img       = out/"02_imagenes"; dir_ocr = out/"03_ocr"
@@ -11504,10 +11697,12 @@ class BashkarApp(tk.Tk):
         meta_rows, errores = [], []
 
         # Leer proveedor/modelo de visión si se seleccionó Ruta 2
-        _ocr_vision_prov  = getattr(self, "_ocr_vision_prov",
-                                     tk.StringVar(value="claude")).get()
-        _ocr_vision_model = getattr(self, "_ocr_vision_model",
-                                     tk.StringVar(value="claude-sonnet-4-6")).get()
+        # Ojo: aquí antes se construía un tk.StringVar de respaldo, lo que era
+        # una llamada a Tcl desde el hilo. El valor viene ya congelado del snapshot.
+        _vp = snap.get("_ocr_vision_prov")
+        _ocr_vision_prov  = (_vp.get() if _vp else "") or "claude"
+        _vm = snap.get("_ocr_vision_model")
+        _ocr_vision_model = (_vm.get() if _vm else "") or "claude-sonnet-4-6"
 
         RUTA_LABELS = {
             "tesseract": "Ruta 1 · Tesseract propio",
@@ -11618,9 +11813,9 @@ class BashkarApp(tk.Tk):
                     # ── Preprocesamiento opcional — guarda en carpeta separada ──
                     # Las originales a color se preservan en 02_imagenes/<nombre>/
                     # Las procesadas para OCR van a 02_imagenes_ocr/<nombre>/
-                    pre_deskew    = getattr(self, "_var_pre_deskew",    None)
-                    pre_enhance   = getattr(self, "_var_pre_enhance",   None)
-                    pre_despeckle = getattr(self, "_var_pre_despeckle", None)
+                    pre_deskew    = snap.get("_var_pre_deskew")
+                    pre_enhance   = snap.get("_var_pre_enhance")
+                    pre_despeckle = snap.get("_var_pre_despeckle")
                     do_pre = (
                         (pre_deskew    and pre_deskew.get()) or
                         (pre_enhance   and pre_enhance.get()) or
@@ -11686,13 +11881,14 @@ class BashkarApp(tk.Tk):
                     elif ruta_ocr == "kraken":
                         # Ruta 4: Kraken CATMuS-Print
                         from core.ocr_kraken import ocr_kraken_lote
-                        modelo_k = self._var_kraken_modelo.get() or None
+                        _vk = snap.get("_var_kraken_modelo")
+                        modelo_k = (_vk.get() if _vk else "") or None
                         try:
-                            workers_k = max(1, int(self._var_kraken_workers.get()))
+                            workers_k = max(1, int(snap["_var_kraken_workers"].get()))
                         except Exception:
                             workers_k = 3
                         try:
-                            timeout_k = max(60, int(self._var_kraken_timeout.get()))
+                            timeout_k = max(60, int(snap["_var_kraken_timeout"].get()))
                         except Exception:
                             timeout_k = 600
                         rutas_imgs = [str(ip) for ip in imgs]
@@ -11729,8 +11925,8 @@ class BashkarApp(tk.Tk):
                     elif ruta_ocr == "ollama":
                         # Ruta 5: Ollama Vision local
                         from core.ocr_ollama_local import ocr_ollama_lote
-                        modelo_o = getattr(self, "_var_ollama_modelo",
-                                           tk.StringVar(value="qwen3.6:latest")).get()
+                        _vo = snap.get("_var_ollama_modelo")
+                        modelo_o = (_vo.get() if _vo else "") or "qwen3.6:latest"
                         rutas_imgs = [str(ip) for ip in imgs]
                         resultados_o = ocr_ollama_lote(
                             rutas_imgs, modelo=modelo_o,
@@ -11891,7 +12087,7 @@ class BashkarApp(tk.Tk):
         self._put(tipo="log",texto=f"🎉 {len(df):,} páginas · {tp:,} palabras")
         self._put(tipo="ok",res="ocr")
 
-    def _worker_ocr_carpetas(self, numeros: list[dict]):
+    def _worker_ocr_carpetas(self, numeros: list[dict], snap: dict | None = None):
         """
         Worker OCR para el modo 'subcarpetas': cada elemento de numeros es
         {'nombre': str, 'pdfs': list[Path], 'carpeta': Path}.
@@ -11905,9 +12101,11 @@ class BashkarApp(tk.Tk):
         from core.ocr_normalizer import normalizar_texto_ocr
 
         out  = ST.out_dir
-        ruta_ocr = getattr(self, "_var_ruta_ocr",
-                            type("V", (), {"get": lambda s: "bnc"})()).get()
-        lang = self._var_dpi and self._var_lang.get() or "spa"
+        snap = snap if snap is not None else self._snapshot_ocr()
+        _vr = snap.get("_var_ruta_ocr")
+        ruta_ocr = (_vr.get() if _vr else "") or "bnc"
+        _vl = snap.get("_var_lang")
+        lang = (_vl.get() if _vl else "") or "spa"
 
         _MARCA_BNC = "Digitalizado Biblioteca Nacional de Colombia"
         meta_rows  = []
@@ -12195,9 +12393,21 @@ class BashkarApp(tk.Tk):
                 "No se encontró texto en 03_ocr/.\n"
                 "Usá primero el Conversor PDF o la Extracción OCR."); return
         self._btn_anal.config(state="disabled")
-        threading.Thread(target=self._worker_anal, daemon=True).start()
+        # Las variables Tk se leen AQUÍ, en el hilo principal. Tcl no es
+        # thread-safe: leerlas desde el worker serializa la llamada contra el
+        # bucle de eventos y congela la ventana.
+        cfg = {
+            "colabs": self._txt_col.get("1.0", "end"),
+            "modelo": self._var_spacy.get(),
+            "n_t":    self._var_nt.get(),
+            "min_f":  self._var_mf.get(),
+            "wv":     self._var_wv.get(),
+            "layout": self._var_layout.get(),
+            "red":    self._var_red.get(),
+        }
+        threading.Thread(target=self._worker_anal, args=(cfg,), daemon=True).start()
 
-    def _worker_anal(self):
+    def _worker_anal(self, cfg: dict):
         import spacy
 
         from core.analysis_engine import (
@@ -12214,8 +12424,8 @@ class BashkarApp(tk.Tk):
         def log(m): self.after(0, lambda msg=m: self._log_a_write(msg))
         def prg(v,t=""): self.after(0, lambda: self._set_prog_a(v,t))
 
-        colabs  = [c.strip() for c in self._txt_col.get("1.0","end").strip().splitlines() if c.strip()]
-        modelo  = self._var_spacy.get(); n_t=self._var_nt.get(); min_f=self._var_mf.get()
+        colabs  = [c.strip() for c in cfg["colabs"].strip().splitlines() if c.strip()]
+        modelo  = cfg["modelo"]; n_t=cfg["n_t"]; min_f=cfg["min_f"]
         out     = ST.out_dir; txt_dir=out/"03_ocr"; img_dir=out/"02_imagenes"
         ad      = out/"04_analisis"; ad.mkdir(exist_ok=True)
         campos_semillas = getattr(ST,"campos_semillas",CAMPOS_DEFAULT)
@@ -12242,7 +12452,7 @@ class BashkarApp(tk.Tk):
 
         # --- Paso 1: Word2Vec (si activado)
         word_model = None
-        if self._var_wv.get():
+        if cfg["wv"]:
             log("🔢 Recopilando corpus para Word2Vec…"); prg(5,"Corpus Word2Vec…")
             corpus_txt = []
             for nombre in numeros:
@@ -12285,7 +12495,7 @@ class BashkarApp(tk.Tk):
             campos["numero"]=nombre; ca_rows.append(campos)
             if lema.strip(): lema_docs.append(lema); lema_nms.append(nombre)
             del texto; gc.collect()
-            if self._var_layout.get():
+            if cfg["layout"]:
                 imgd = img_dir/nombre
                 if imgd.exists():
                     for ip in sorted(imgd.glob("*.png")):
@@ -12305,7 +12515,7 @@ class BashkarApp(tk.Tk):
 
         # --- Red de autoría
         graph_path=None
-        if self._var_red.get() and fr_rows:
+        if cfg["red"] and fr_rows:
             log("🕸️ Red de autoría…"); prg(85,"Red…")
             import networkx as nx
             df_f_tmp=pd.DataFrame(fr_rows)
@@ -12341,9 +12551,11 @@ class BashkarApp(tk.Tk):
                 "No se encontró texto en 03_ocr/.\n"
                 "Usá primero el Conversor PDF o la Extracción OCR."); return
         self._btn_vis.config(state="disabled")
-        threading.Thread(target=self._worker_vis, daemon=True).start()
+        # dpi se lee en el hilo principal (ver nota en _start_anal).
+        threading.Thread(target=self._worker_vis, args=(self._var_dpi.get(),),
+                         daemon=True).start()
 
-    def _worker_vis(self):
+    def _worker_vis(self, dpi: int):
         from core.image_analyzer import analizar_numero_imagenes
         from core.visual_analyzer import analizar_tipografia_numero
         out     = ST.out_dir
@@ -12362,7 +12574,6 @@ class BashkarApp(tk.Tk):
 
         api_key, _modelo_vis = _resolver_api_key_modelo("asistente")
         max_ia  = getattr(ST, "max_ia", 15)
-        dpi     = self._var_dpi.get()
 
         for k, nombre in enumerate(numeros):
             self._put(tipo="log",  texto=f"🖼️  {nombre} ({k+1}/{len(numeros)})…")
@@ -13108,16 +13319,33 @@ class BashkarApp(tk.Tk):
                 "2. Completa la extracción OCR primero")
             return
         self._btn_ner_art.config(state="disabled")
-        threading.Thread(target=self._worker_ner_articulo, args=(texto, art_id), daemon=True).start()
+        # Parámetros y variables Tk leídos en el hilo principal (ver _start_anal).
+        threading.Thread(target=self._worker_ner_articulo,
+                         args=(texto, art_id, self._snapshot_ner()),
+                         daemon=True).start()
 
-    def _worker_ner_articulo(self, texto: str, art_id: str):
+    def _snapshot_ner(self) -> dict:
+        """Lee en el hilo principal todo lo que el worker NER necesita de la UI.
+
+        `_params_get_values` recorre variables Tk, así que también tiene que
+        ejecutarse aquí y no dentro del hilo.
+        """
+        p = self._params_get_values(self._ner_params) if self._ner_params else {}
+        return {
+            "params":        p,
+            "usar_ia":       p.get("usar_ia", self._var_ner_llm.get()),
+            "proveedor_llm": p.get("proveedor_llm", self._var_ner_prov.get()),
+            "modelo_ollama": p.get("modelo_ollama_ner", self._var_ner_ollama_modelo.get()),
+        }
+
+    def _worker_ner_articulo(self, texto: str, art_id: str, snap: dict):
         import spacy
 
         from core.ner_engine import actualizar_indice_global, pipeline_ner
-        p = self._params_get_values(self._ner_params) if self._ner_params else {}
-        usar_ia = p.get("usar_ia", self._var_ner_llm.get())
-        proveedor_llm = p.get("proveedor_llm", self._var_ner_prov.get())
-        modelo_ollama = p.get("modelo_ollama_ner", self._var_ner_ollama_modelo.get())
+        p = snap["params"]
+        usar_ia = snap["usar_ia"]
+        proveedor_llm = snap["proveedor_llm"]
+        modelo_ollama = snap["modelo_ollama"]
         if usar_ia:
             if proveedor_llm == "ollama":
                 api_key = ST.api_keys.get("ollama", "http://localhost:11434")
@@ -13167,9 +13395,10 @@ class BashkarApp(tk.Tk):
             return
         self._btn_ner_corpus.config(state="disabled")
         self._btn_ner_art.config(state="disabled")
-        threading.Thread(target=self._worker_ner_corpus, daemon=True).start()
+        threading.Thread(target=self._worker_ner_corpus,
+                         args=(self._snapshot_ner(),), daemon=True).start()
 
-    def _worker_ner_corpus(self):
+    def _worker_ner_corpus(self, snap: dict):
         import spacy
 
         from core.ner_engine import (
@@ -13177,10 +13406,10 @@ class BashkarApp(tk.Tk):
             indice_global_vacio,
             pipeline_ner,
         )
-        p = self._params_get_values(self._ner_params) if self._ner_params else {}
-        usar_ia = p.get("usar_ia", self._var_ner_llm.get())
-        proveedor_llm = p.get("proveedor_llm", self._var_ner_prov.get())
-        modelo_ollama = p.get("modelo_ollama_ner", self._var_ner_ollama_modelo.get())
+        p = snap["params"]
+        usar_ia = snap["usar_ia"]
+        proveedor_llm = snap["proveedor_llm"]
+        modelo_ollama = snap["modelo_ollama"]
         if usar_ia:
             if proveedor_llm == "ollama":
                 api_key = ST.api_keys.get("ollama", "http://localhost:11434")

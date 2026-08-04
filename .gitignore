@@ -26,6 +26,9 @@ modelos/
 .env
 *.key
 
+# Marcador local de "dependencias ya instaladas" que usa Ejecutar.bat
+.installed
+
 # SO / editor
 Thumbs.db
 .DS_Store
