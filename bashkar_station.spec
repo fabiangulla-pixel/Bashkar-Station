@@ -141,6 +141,7 @@ a = Analysis(
         'core.benchmark_ocr',
         'core.ocr_churro',
         'core.ocr_pero',
+        'core.estandar_oro',
         'datos',
         'datos.repositorio',
         'datos.schema',

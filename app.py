@@ -17265,6 +17265,10 @@ class BashkarApp(tk.Tk):
             acc, text="⬇ Descargar modelo CHURRO",
             command=self._bench_descargar_churro)
         self._btn_bench_descargar.pack(side="left", padx=4)
+        ttk.Button(acc, text="📤 Preparar estándar de oro",
+                   command=self._bench_preparar_oro).pack(side="left", padx=4)
+        ttk.Button(acc, text="📊 Avance",
+                   command=self._bench_estado_oro).pack(side="left", padx=4)
         ttk.Button(acc, text="💾 Exportar CSV",
                    command=lambda: self._bench_exportar("csv")).pack(side="left", padx=4)
         ttk.Button(acc, text="📋 Copiar tabla Markdown",
@@ -17310,6 +17314,85 @@ class BashkarApp(tk.Tk):
         else:
             catalogo.append(("pero", "PERO-OCR (microfilm de prensa)", "~12 s/página"))
         return catalogo
+
+    def _bench_preparar_oro(self):
+        """Exporta las zonas etiquetadas listas para transcribir a mano.
+
+        Sin transcripción de referencia solo se pueden comparar unas rutas con
+        otras; el CER absoluto exige un estándar de oro. Se exporta por ZONAS
+        —no por páginas— porque transcribir bloques cortos y homogéneos es
+        mucho más llevadero, se puede parar y seguir, y el avance es medible.
+        """
+        from core.estandar_oro import exportar_zonas
+
+        if not ST.out_dir:
+            messagebox.showwarning("Sin proyecto",
+                                   "Abre primero un proyecto con corpus."); return
+        numero = ""
+        if hasattr(self, "_etz_numero"):
+            numero = self._etz_numero.get() or ""
+        if not numero:
+            messagebox.showwarning(
+                "Sin número",
+                "Elige un número en el Etiquetador: se exportan sus zonas."); return
+
+        etq_dir = Path(ST.out_dir) / "05_etiquetas" / numero
+        paginas = sorted(p.stem for p in etq_dir.glob("*.json")) if etq_dir.is_dir() else []
+        if not paginas:
+            messagebox.showwarning(
+                "Sin páginas etiquetadas",
+                f"No hay etiquetas en:\n{etq_dir}\n\n"
+                "Etiqueta primero las zonas en el panel Etiquetador."); return
+
+        destino = filedialog.askdirectory(
+            title="¿Dónde dejar los recortes para transcribir?")
+        if not destino:
+            return
+
+        self._txt_bench.delete("1.0", "end")
+
+        def log(m):
+            self.after(0, lambda msg=m: (self._txt_bench.insert("end", msg + "\n"),
+                                         self._txt_bench.see("end")))
+
+        def _trabajo():
+            try:
+                zonas = exportar_zonas(ST.out_dir, numero, paginas, destino,
+                                       callback=log)
+                self.after(0, lambda: (
+                    self.toast(f"{len(zonas)} zona(s) listas para transcribir", "ok"),
+                    self._var_bench_oro.set(destino)))
+                log("\nAbre la carpeta y lee INSTRUCCIONES.md antes de empezar.")
+            except Exception as e:                  # noqa: BLE001
+                log(f"✖ Error: {e}")
+
+        threading.Thread(target=_trabajo, daemon=True).start()
+
+    def _bench_estado_oro(self):
+        """Cuánto se lleva transcrito, sin tener que abrir la carpeta."""
+        from core.estandar_oro import estado
+
+        carpeta = (self._var_bench_oro.get() or "").strip()
+        if not carpeta or not Path(carpeta).is_dir():
+            messagebox.showinfo("Sin carpeta",
+                                "Indica primero la carpeta del estándar de oro."); return
+        e = estado(carpeta)
+        if not e["total"]:
+            messagebox.showinfo(
+                "Carpeta no preparada",
+                "Esa carpeta no tiene manifiesto. Usa «Preparar estándar de oro»."); return
+
+        detalle = "\n".join(
+            f"   {tipo}: {d['hechas']}/{d['total']}"
+            for tipo, d in sorted(e["por_tipo"].items()))
+        aviso = ("\n\n⚠ Se prellenó con OCR automático: revisa que no hayas dado "
+                 "por buenos errores del motor." if e.get("prellenado") else "")
+        messagebox.showinfo(
+            "Avance del estándar de oro",
+            f"{e['hechas']} de {e['total']} zonas transcritas "
+            f"({e['porcentaje']} %)\n"
+            f"{e['pendientes']} pendiente(s) · {e['palabras']} palabras escritas\n\n"
+            f"Por tipo:\n{detalle}{aviso}")
 
     def _bench_descargar_churro(self):
         """Descarga el modelo CHURRO desde la propia aplicación.
@@ -17436,8 +17519,16 @@ class BashkarApp(tk.Tk):
                                          self._txt_bench.see("end")))
 
         try:
-            referencias = {p.stem: p.read_text(encoding="utf-8", errors="replace")
-                           for p in sorted(oro.glob("*.txt"))}
+            # Carpeta preparada con «Preparar estándar de oro»: se lee por su
+            # manifiesto, que sabe qué zona es cada .txt y en qué orden van.
+            # Si no lo tiene, se acepta una carpeta suelta de .txt por página.
+            from core.estandar_oro import MANIFIESTO, recolectar
+            if (oro / MANIFIESTO).exists():
+                referencias = recolectar(oro, por_pagina=True)
+                log(f"Estándar de oro por zonas: {len(referencias)} página(s)")
+            else:
+                referencias = {p.stem: p.read_text(encoding="utf-8", errors="replace")
+                               for p in sorted(oro.glob("*.txt"))}
             imagenes = [p for p in sorted(imgs.iterdir())
                         if p.suffix.lower() in (".png", ".jpg", ".jpeg", ".tif", ".tiff")
                         and p.stem in referencias]

@@ -2,6 +2,44 @@
 
 ---
 
+## Sesión 51 — 2026-08-05 — Captura del estándar de oro
+
+Las dos mediciones de la sesión 50 solo podían comparar unas rutas con otras:
+sin transcripción de referencia no hay CER absoluto. `core/estandar_oro.py`
+cubre ese hueco con el mínimo trabajo manual posible.
+
+**Por zonas, no por páginas.** Transcribir una página entera de prensa
+ilustrada es desalentador; pero el investigador ya etiquetó la tipología de
+cada zona, así que se exporta **un recorte por zona con texto** con su `.txt`
+vacío al lado. Bloques cortos y homogéneos: se transcriben de a poco, se puede
+parar y seguir, y el avance es medible.
+
+- `exportar_zonas()` — recorta con margen, respeta el orden de lectura, y
+  **nunca pisa un `.txt` ya escrito** (reexportar no puede destruir horas de
+  trabajo manual; hay test que lo fija). Escribe `INSTRUCCIONES.md` con las
+  reglas de transcripción —«transcribe lo que ves, no lo que debería decir»— y
+  un `manifiesto.json` que sabe qué zona es cada archivo.
+- `recolectar()` — devuelve `{clave: texto}` listo para `benchmark_ocr`, por
+  zona o concatenado por página. Descarta las zonas sin transcribir: no se
+  puede medir error contra una referencia que no existe. Distinto de una zona
+  que el OCR no reconoció, que sí cuenta como fallo.
+- `estado()` — avance total y desglosado por tipo de zona.
+- Botones **📤 Preparar estándar de oro** y **📊 Avance** en el panel Benchmark.
+  El panel detecta el manifiesto y lee la carpeta por zonas; sin él, acepta una
+  carpeta suelta de `.txt` por página.
+
+**Sobre prellenar con el OCR automático:** `prellenar` permite volcar la salida
+de un motor para corregirla en vez de escribir desde cero. Ahorra mucho tiempo
+y es práctica habitual en *ground truth* de HTR, pero **sesga** —quien corrige
+da por buenos los errores que no saltan a la vista— y si el estándar se usa
+para evaluar ese mismo motor, invalida la comparación. Desactivado por defecto,
+y cuando se usa queda registrado en el manifiesto y el panel de avance lo
+advierte.
+
+14 tests nuevos.
+
+---
+
 ## Sesión 50 — 2026-08-04 — CHURRO ejecutado por primera vez, y por zonas
 
 ### La primera medición real
