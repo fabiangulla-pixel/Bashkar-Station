@@ -42,7 +42,14 @@ def clase_app() -> ast.ClassDef:
 
 
 def _workers(cls: ast.ClassDef) -> dict[str, ast.FunctionDef]:
-    """Métodos `_worker_*` más cualquier método usado como `target=` de un Thread."""
+    """Métodos que se ejecutan en un hilo, incluidos los que estos llaman.
+
+    No basta con los `_worker_*` y los `target=` de `Thread`: un worker puede
+    delegar en un método auxiliar, y ese auxiliar corre igualmente en el hilo.
+    Ese punto ciego dejó pasar un acceso a Tk real (`_bench_correr_ruta`
+    leyendo `self._etz_numero.get()`), así que la transitividad se sigue hasta
+    punto fijo.
+    """
     metodos = {n.name: n for n in cls.body if isinstance(n, ast.FunctionDef)}
     targets = set()
     for n in ast.walk(cls):
@@ -55,7 +62,26 @@ def _workers(cls: ast.ClassDef) -> dict[str, ast.FunctionDef]:
                         targets.add(t.attr)
                     elif isinstance(t, ast.Name):
                         targets.add(t.id)
+
     nombres = {m for m in metodos if m.startswith("_worker_")} | (targets & set(metodos))
+
+    # Cierre transitivo: todo `self.X(...)` llamado desde un método en hilo
+    # también corre en hilo. Se excluye `self.after`, que es precisamente el
+    # mecanismo para volver al hilo principal.
+    cambio = True
+    while cambio:
+        cambio = False
+        for nombre in list(nombres):
+            for n in ast.walk(metodos[nombre]):
+                if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                        and isinstance(n.func.value, ast.Name)
+                        and n.func.value.id == "self"
+                        and n.func.attr in metodos
+                        and n.func.attr not in nombres
+                        and n.lineno not in _lineas_seguras(metodos[nombre])):
+                    nombres.add(n.func.attr)
+                    cambio = True
+
     return {m: metodos[m] for m in sorted(nombres)}
 
 

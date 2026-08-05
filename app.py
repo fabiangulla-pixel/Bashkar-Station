@@ -17412,10 +17412,20 @@ class BashkarApp(tk.Tk):
         self._btn_bench.config(state="disabled")
         self._lbl_bench.config(text="Ejecutando…", fg="#D29922")
         self._txt_bench.delete("1.0", "end")
+        # El número del corpus se lee AQUÍ (hilo principal): el worker lo
+        # necesita para localizar las zonas etiquetadas y no puede tocar Tk.
+        numero_etq = ""
+        if hasattr(self, "_etz_numero"):
+            try:
+                numero_etq = self._etz_numero.get() or ""
+            except tk.TclError:
+                numero_etq = ""
         threading.Thread(target=self._worker_bench,
-                         args=(oro, imgs, seleccionadas), daemon=True).start()
+                         args=(oro, imgs, seleccionadas, numero_etq),
+                         daemon=True).start()
 
-    def _worker_bench(self, oro: Path, imgs: Path, rutas: list):
+    def _worker_bench(self, oro: Path, imgs: Path, rutas: list,
+                      numero_etq: str = ""):
         """Corre cada ruta sobre las mismas páginas y compara. En hilo."""
         import time as _t
 
@@ -17443,7 +17453,8 @@ class BashkarApp(tk.Tk):
                 log(f"\n▶ Ruta «{ruta}»…")
                 t0 = _t.perf_counter()
                 try:
-                    salidas[ruta] = self._bench_correr_ruta(ruta, imagenes, log)
+                    salidas[ruta] = self._bench_correr_ruta(ruta, imagenes, log,
+                                                            numero_etq)
                 except Exception as e:                      # noqa: BLE001
                     log(f"  ✖ {ruta} falló: {e}")
                     continue
@@ -17457,14 +17468,41 @@ class BashkarApp(tk.Tk):
             log(f"\n✖ Error: {e}")
             self.after(0, self._bench_fin, [])
 
-    def _bench_correr_ruta(self, ruta: str, imagenes: list, log) -> dict:
-        """Ejecuta UNA ruta sobre las imágenes. Devuelve {nombre_pagina: texto}."""
+    def _bench_correr_ruta(self, ruta: str, imagenes: list, log,
+                           numero_etq: str = "") -> dict:
+        """Ejecuta UNA ruta sobre las imágenes. Devuelve {nombre_pagina: texto}.
+
+        Corre DENTRO del hilo del benchmark: no debe tocar Tk. `numero_etq` (el
+        número del corpus cuyas etiquetas hay que buscar) viene ya leído desde
+        el hilo principal.
+        """
         def avance(i, total, nombre, seg):
             log(f"    {i}/{total}  {nombre}  ({seg:.1f} s)")
 
         if ruta == "churro":
             from core import ocr_churro
-            return ocr_churro.ocr_lote([str(p) for p in imagenes], callback=avance)
+
+            # Si la página está etiquetada, se transcribe SOLO por zonas de
+            # texto: es el flujo del proyecto (el investigador etiqueta primero
+            # la tipología) y evita gastar miles de tokens visuales en
+            # fotografías, publicidad y filetes. Sin etiquetas, página completa.
+            from core.zone_labeler import cargar_pagina
+            salida = {}
+            numero = numero_etq          # leído en el hilo principal
+            for i, p in enumerate(imagenes):
+                pag_etq = None
+                if ST.out_dir and numero:
+                    pag_etq = cargar_pagina(ST.out_dir, numero, p.stem)
+                if pag_etq and pag_etq.zonas:
+                    log(f"    {p.stem}: usando {len(pag_etq.zonas)} zona(s) etiquetada(s)")
+                    r = ocr_churro.ocr_pagina_con_zonas(p, pag_etq.zonas,
+                                                        callback=log)
+                    salida[p.stem] = r["texto"]
+                else:
+                    log(f"    {p.stem}: sin etiquetar — página completa (más lento)")
+                    salida[p.stem] = ocr_churro.ocr_pagina(p)
+                avance(i + 1, len(imagenes), p.stem, 0.0)
+            return salida
         if ruta == "pero":
             from core import ocr_pero
             candidatas = ocr_pero.rutas_config_probables()

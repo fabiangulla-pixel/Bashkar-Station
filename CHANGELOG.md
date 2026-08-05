@@ -2,6 +2,72 @@
 
 ---
 
+## Sesión 50 — 2026-08-04 — CHURRO ejecutado por primera vez, y por zonas
+
+### La primera medición real
+Se descargó el modelo (7,01 GB) y se transcribió la **página 2 de
+`rev_estampa_mar_1939`** a 200 dpi, comparando con Tesseract:
+
+| Ruta | Palabras | Tiempo |
+|---|---:|---:|
+| Tesseract | **0** | 1 s |
+| CHURRO-3B | **499** | **51,1 min** |
+
+Tesseract devolvió **cero palabras** — el fallo documentado en la sesión 36,
+que ninguna estrategia de preproceso resolvía. CHURRO recuperó la página
+entera con texto coherente: nombres comerciales de 1939 correctos (Leonidas
+Lara e Hijos, J. Glottmann S. A., Muñoz Hermanos, «Estudio 38»), cifras con el
+formato de la época, guiones de corte de línea, tildes y eñes.
+
+Es el primer resultado medido que respalda la ruta: en material donde el motor
+estándar no produce nada, un modelo de visión de pesos abiertos y ejecución
+local recupera el contenido.
+
+**Constante corregida:** `SEGUNDOS_POR_PAGINA_CPU` pasa de 180 a **3060**. La
+estimación inicial estaba equivocada por un orden de magnitud; no se tuvo en
+cuenta que Qwen2.5-VL convierte una página a 200 dpi en miles de tokens
+visuales. El modelo ocupó 11,97 GB de RAM en `float32` (3B × 4 bytes).
+
+### Corrección de diseño: el OCR trabaja sobre las zonas etiquetadas
+La ruta se había implementado procesando la **página completa**, que es
+justamente lo que el flujo de Bashkar evita: el investigador etiqueta primero
+la tipología de cada zona, y el OCR trabaja sobre esa marca — para no gastar
+tokens en fotografías, publicidad y filetes, y para no invitar al modelo a
+alucinar describiendo imágenes.
+
+- **`ocr_pagina_con_zonas(img, zonas)`** nueva: respeta el flag `ocr` de
+  `TIPOS_ZONA` (se saltan foto, publicidad, filete, cabecera, colofón y número
+  de página; se transcriben artículo, título, pie de foto e índice), recorta
+  con margen, sigue el orden de lectura y devuelve **la misma forma que
+  `layout_tesseract.ocr_por_zonas`** para que las dos rutas sean
+  intercambiables aguas arriba.
+- `estimar_tiempo_zonas(zonas)` cuenta solo las zonas con texto.
+- El panel Benchmark usa las etiquetas si la página las tiene, y avisa por el
+  registro cuando cae a página completa por no haberlas.
+- Como CHURRO no da confianza por token, el campo `confianza` informa
+  **cobertura**: qué proporción de las zonas con texto devolvió algo.
+
+### Carga desde carpeta local (modo portátil)
+`_carpeta_modelo_local()` acepta `modelos_ia/churro-3B/` junto al ejecutable o
+la ruta de `BASHKAR_CHURRO_DIR`. Dos motivos: que el modelo viaje en la memoria
+USB y funcione en cualquier PC sin volver a bajar 7 GB, y que valga descargarlo
+con otra herramienta cuando `huggingface_hub` se atasca (pasó: los pesos de
+4,77 GB se colgaron repetidamente y hubo que traerlos con `curl -C -`).
+
+### Dos bugs propios corregidos
+- **`esta_descargado()` daba `True` con el modelo a medias.** Comprobaba que
+  existiera *algún* `.safetensors`, y el modelo viene en dos fragmentos. Con eso
+  la aplicación creía tenerlo y fallaba al cargarlo. Ahora exige que estén todos
+  los que declara `model.safetensors.index.json`, y descarta los de 0 bytes.
+- **Acceso a Tk desde un hilo, introducido en esta misma sesión:**
+  `_bench_correr_ruta` leía `self._etz_numero.get()` y corre dentro del worker.
+  El auditor no lo vio porque **solo miraba los métodos `_worker_*`**, no los
+  que estos llaman. `tests/test_hilos_tk.py` ahora calcula el **cierre
+  transitivo** de las llamadas `self.X(...)` desde código en hilo (excluyendo
+  `self.after`, que es precisamente el mecanismo para volver al principal).
+
+---
+
 ## Sesión 49 — 2026-08-04 — v11.9 · Benchmark de OCR y modelos recientes
 
 ### Contexto

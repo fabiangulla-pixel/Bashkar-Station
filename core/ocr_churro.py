@@ -41,16 +41,26 @@ __all__ = [
     "esta_descargado",
     "motivo_no_disponible",
     "estimar_tiempo",
+    "estimar_tiempo_zonas",
     "ocr_pagina",
+    "ocr_pagina_con_zonas",
     "ocr_lote",
+    "descargar_modelo",
     "liberar",
 ]
 
 MODELO_ID = "stanford-oval/churro-3B"
 
-# Segundos por página observados en CPU de 6 núcleos. Es una estimación para
-# avisar al investigador ANTES de lanzar un lote, no una promesa.
-SEGUNDOS_POR_PAGINA_CPU = 180.0
+# Medido el 2026-08-04 en un Ryzen 5 5500U (6 núcleos, sin GPU) sobre una
+# página completa de *Estampa* renderizada a 200 dpi: **51,1 minutos**.
+# La estimación inicial de 180 s estaba equivocada por un orden de magnitud:
+# Qwen2.5-VL convierte una página grande en miles de tokens visuales.
+SEGUNDOS_POR_PAGINA_CPU = 3060.0
+
+# Por zona etiquetada el costo baja muchísimo: una zona de artículo es una
+# fracción de la página y las fotos/publicidad ni se procesan. Estimación
+# conservadora a la espera de medirla sobre zonas reales.
+SEGUNDOS_POR_ZONA_CPU = 420.0
 
 PROMPT_POR_DEFECTO = (
     "Transcribe all the text in this historical document image. "
@@ -165,6 +175,34 @@ def _dir_portatil() -> Path | None:
     return candidata if candidata.is_dir() else None
 
 
+def _carpeta_modelo_local() -> Path | None:
+    """Carpeta con el modelo desempaquetado, si la hay.
+
+    Además de la caché de HuggingFace, se acepta una carpeta plana con los
+    archivos del modelo. Dos motivos:
+
+    1. **Portabilidad**: `modelos_ia/churro-3B/` junto al ejecutable viaja en la
+       memoria USB y funciona en cualquier PC sin volver a descargar 7 GB.
+    2. **Descargas por otra vía**: `huggingface_hub` se atasca con los pesos de
+       varios GB en algunas redes; bajarlos con otra herramienta y dejarlos en
+       una carpeta tiene que ser suficiente para que la ruta funcione.
+
+    `BASHKAR_CHURRO_DIR` permite apuntar a una carpeta arbitraria.
+    """
+    candidatas = []
+    env = os.environ.get("BASHKAR_CHURRO_DIR")
+    if env:
+        candidatas.append(Path(env))
+    portatil = _dir_portatil()
+    if portatil is not None:
+        candidatas.append(portatil / "churro-3B")
+
+    for c in candidatas:
+        if c.is_dir() and (c / "config.json").exists() and any(c.glob("*.safetensors")):
+            return c
+    return None
+
+
 def descargar_modelo(callback=None) -> Path:
     """Descarga el modelo a la caché local. Pensada para llamarse desde la GUI.
 
@@ -202,11 +240,40 @@ def descargar_modelo(callback=None) -> Path:
 
 
 def esta_descargado() -> bool:
-    """¿El modelo ya está en la caché local? (para no exigir red al arrancar)"""
+    """¿Está el modelo COMPLETO en la caché local?
+
+    Ojo con la versión ingenua de esto: comprobar que exista *algún* archivo
+    `.safetensors` daba `True` con una descarga a medias (el modelo viene en
+    dos fragmentos de 4,8 y 2,4 GB). Con eso, la aplicación creía tener el
+    modelo, no volvía a descargarlo y fallaba al cargarlo. Hay que exigir que
+    estén TODOS los fragmentos que declara el índice.
+    """
+    import json
+
+    if _carpeta_modelo_local() is not None:
+        return True
+
     raiz = _dir_cache()
     for base in (raiz / "hub", raiz):
         carpeta = base / ("models--" + MODELO_ID.replace("/", "--"))
-        if carpeta.exists() and any(carpeta.rglob("*.safetensors")):
+        if not carpeta.exists():
+            continue
+
+        indices = list(carpeta.rglob("model.safetensors.index.json"))
+        if indices:
+            try:
+                datos = json.loads(indices[0].read_text(encoding="utf-8"))
+                requeridos = set(datos.get("weight_map", {}).values())
+            except (OSError, ValueError):
+                requeridos = set()
+            if requeridos:
+                presentes = {p.name for p in carpeta.rglob("*.safetensors")
+                             if p.stat().st_size > 0}
+                return requeridos.issubset(presentes)
+
+        # Modelo de un solo archivo: basta con que exista y no esté vacío
+        sueltos = [p for p in carpeta.rglob("*.safetensors") if p.stat().st_size > 0]
+        if sueltos:
             return True
     return False
 
@@ -245,19 +312,24 @@ def _cargar():
         import torch
         from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
-        # Si ya está en caché, forzar modo offline: evita que el arranque se
-        # cuelgue consultando el Hub sin conexión (lección de otros proyectos).
-        if esta_descargado():
+        # Una carpeta local con el modelo tiene prioridad sobre la caché: es lo
+        # que hace posible el modo portátil en la memoria USB.
+        local = _carpeta_modelo_local()
+        origen = str(local) if local else MODELO_ID
+
+        # Si ya está en caché (o es local), forzar modo offline: evita que el
+        # arranque se cuelgue consultando el Hub sin conexión.
+        if local or esta_descargado():
             os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
         modelo = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            MODELO_ID,
+            origen,
             dtype=torch.float32,   # CPU: float16 va más lento y da NaN
             device_map="cpu",
             low_cpu_mem_usage=True,
         )
         modelo.eval()
-        _procesador = AutoProcessor.from_pretrained(MODELO_ID)
+        _procesador = AutoProcessor.from_pretrained(origen)
         _modelo = modelo
         return _modelo, _procesador
 
@@ -299,6 +371,99 @@ def ocr_pagina(imagen, prompt: str = PROMPT_POR_DEFECTO,
     salida = procesador.batch_decode(recortado, skip_special_tokens=True,
                                      clean_up_tokenization_spaces=False)
     return salida[0].strip() if salida else ""
+
+
+def ocr_pagina_con_zonas(img_path, zonas, prompt: str = PROMPT_POR_DEFECTO,
+                         margen_px: int = 6, max_tokens: int = 1024,
+                         callback=None) -> dict:
+    """Transcribe SOLO las zonas etiquetadas como texto, en orden de lectura.
+
+    Es la forma correcta de usar este modelo dentro del flujo de Bashkar: el
+    investigador etiqueta primero la tipología de cada zona, y el OCR trabaja
+    sobre esa marca. Pasarle la página entera a un modelo de visión gasta miles
+    de tokens en fotografías, filetes y publicidad —que no llevan texto que
+    interese— y encima invita a que el modelo alucine describiendo imágenes.
+
+    Se respeta el flag `ocr` de `TIPOS_ZONA`: fotografía, publicidad, filete,
+    cabecera, colofón y número de página se saltan; artículo, título, pie de
+    foto e índice se transcriben.
+
+    Devuelve la misma forma que `layout_tesseract.ocr_por_zonas` para que las
+    dos rutas sean intercambiables aguas arriba:
+        {"texto": str, "zonas": [{orden, tipo, texto}], "confianza": float}
+    """
+    from PIL import Image
+
+    from core.zone_labeler import TIPOS_ZONA, calcular_orden_lectura
+
+    def log(m):
+        if callback:
+            callback(m)
+
+    procesables = [z for z in zonas
+                   if TIPOS_ZONA.get(z.tipo, {}).get("ocr", True)]
+    if not procesables:
+        log("Ninguna zona de esta página lleva texto a transcribir.")
+        return {"texto": "", "zonas": [], "confianza": 0.0}
+
+    if all(getattr(z, "orden", 0) == 0 for z in procesables):
+        calcular_orden_lectura(zonas)
+    procesables.sort(key=lambda z: (z.orden if z.orden > 0 else 9999, z.y0, z.x0))
+
+    img = Image.open(img_path).convert("RGB")
+    W, H = img.size
+    saltadas = len(zonas) - len(procesables)
+    log(f"{len(procesables)} zona(s) con texto · {saltadas} saltada(s) "
+        f"(foto/publicidad/filete)")
+
+    salida, partes = [], []
+    for i, z in enumerate(procesables):
+        x0, y0, x1, y1 = z.a_pixeles(W, H)
+        x0 = max(0, x0 - margen_px); y0 = max(0, y0 - margen_px)
+        x1 = min(W, x1 + margen_px); y1 = min(H, y1 + margen_px)
+        if x1 - x0 < 8 or y1 - y0 < 8:
+            continue
+
+        t0 = time.perf_counter()
+        try:
+            texto = ocr_pagina(img.crop((x0, y0, x1, y1)), prompt=prompt,
+                               max_tokens=max_tokens)
+        except Exception as e:                  # noqa: BLE001
+            texto = ""
+            log(f"  zona {i + 1}/{len(procesables)} ({z.tipo}) — ERROR: {e}")
+        seg = time.perf_counter() - t0
+
+        salida.append({"orden": z.orden, "tipo": z.tipo, "texto": texto,
+                       "zid": getattr(z, "zid", "")})
+        if texto:
+            partes.append(texto)
+        log(f"  zona {i + 1}/{len(procesables)} ({z.tipo}): "
+            f"{len(texto.split())} palabras en {seg / 60:.1f} min")
+
+    return {
+        "texto": "\n\n".join(partes),
+        "zonas": salida,
+        # CHURRO no reporta confianza por token; se informa cobertura: qué
+        # proporción de las zonas con texto devolvió algo.
+        "confianza": round(100 * sum(1 for z in salida if z["texto"])
+                           / max(len(salida), 1), 1),
+    }
+
+
+def estimar_tiempo_zonas(zonas) -> dict:
+    """Estimación previa contando SOLO las zonas que llevan texto."""
+    from core.zone_labeler import TIPOS_ZONA
+    n = sum(1 for z in zonas if TIPOS_ZONA.get(z.tipo, {}).get("ocr", True))
+    segundos = n * SEGUNDOS_POR_ZONA_CPU
+    return {
+        "zonas_con_texto": n,
+        "zonas_saltadas": len(zonas) - n,
+        "segundos": segundos,
+        "minutos": round(segundos / 60, 1),
+        "texto": (f"{n} zona(s) con texto de {len(zonas)} · "
+                  f"~{round(segundos / 60, 1)} min en CPU"),
+        "costo_usd": 0.0,
+    }
 
 
 def ocr_lote(rutas_imagenes, prompt: str = PROMPT_POR_DEFECTO,

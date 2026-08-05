@@ -86,6 +86,48 @@ class TestChurroDisponibilidad:
         monkeypatch.setenv("HF_HOME", str(tmp_path))
         assert ocr_churro.esta_descargado() is False
 
+    def _cache_falsa(self, tmp_path, fragmentos_presentes):
+        """Monta una caché de HuggingFace con los fragmentos indicados."""
+        import json
+        carpeta = (tmp_path / "hub"
+                   / ("models--" + ocr_churro.MODELO_ID.replace("/", "--"))
+                   / "snapshots" / "abc123")
+        carpeta.mkdir(parents=True)
+        indice = {"weight_map": {
+            "capa.0": "model-00001-of-00002.safetensors",
+            "capa.1": "model-00002-of-00002.safetensors",
+        }}
+        (carpeta / "model.safetensors.index.json").write_text(
+            json.dumps(indice), encoding="utf-8")
+        for nombre in fragmentos_presentes:
+            (carpeta / nombre).write_bytes(b"pesos falsos")
+        return carpeta
+
+    def test_descarga_a_medias_NO_cuenta_como_descargado(self, monkeypatch, tmp_path):
+        """El modelo son 2 fragmentos: con uno solo, no está listo.
+
+        La version ingenua devolvia True en cuanto encontraba cualquier
+        .safetensors, y entonces la app creia tener el modelo y fallaba al
+        cargarlo. Paso de verdad durante la descarga real.
+        """
+        monkeypatch.setenv("HF_HOME", str(tmp_path))
+        self._cache_falsa(tmp_path, ["model-00002-of-00002.safetensors"])
+        assert ocr_churro.esta_descargado() is False
+
+    def test_con_los_dos_fragmentos_si_esta_descargado(self, monkeypatch, tmp_path):
+        monkeypatch.setenv("HF_HOME", str(tmp_path))
+        self._cache_falsa(tmp_path, ["model-00001-of-00002.safetensors",
+                                     "model-00002-of-00002.safetensors"])
+        assert ocr_churro.esta_descargado() is True
+
+    def test_fragmento_vacio_no_cuenta(self, monkeypatch, tmp_path):
+        """Un archivo de 0 bytes es una descarga interrumpida, no un peso."""
+        monkeypatch.setenv("HF_HOME", str(tmp_path))
+        carpeta = self._cache_falsa(tmp_path, ["model-00001-of-00002.safetensors",
+                                               "model-00002-of-00002.safetensors"])
+        (carpeta / "model-00001-of-00002.safetensors").write_bytes(b"")
+        assert ocr_churro.esta_descargado() is False
+
 
 class TestChurroEstimacion:
     def test_estima_tiempo_y_costo_cero(self):
