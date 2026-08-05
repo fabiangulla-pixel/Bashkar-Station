@@ -2,6 +2,58 @@
 
 ---
 
+## Sesión 52 — 2026-08-05 — Manual de usuario
+
+Un manual que es a la vez pieza citable y guía práctica: **42 páginas**, en HTML
+autocontenido y PDF A4.
+
+### Se genera, no se escribe entero
+La referencia de los treinta paneles **sale de `core/guia_modulos.py`**, la misma
+fuente que alimenta la ayuda dentro de la aplicación. El manual no puede
+contradecir a la interfaz: si se corrige una guía en el código, se corrige aquí
+al regenerar. Lo escrito a mano son los capítulos narrativos, en
+`manual/contenido/*.md`.
+
+```
+python manual/generar_manual.py --pdf
+```
+
+### Estructura
+Marco metodológico (por qué la prensa histórica es difícil, qué es y qué no es
+la plataforma, las cuatro decisiones de diseño) · puesta en marcha · seis
+recorridos de trabajo completos · referencia de los 30 paneles, problemas
+frecuentes y glosario.
+
+Los recorridos incorporan las cifras medidas en las sesiones 50-51, con lo que
+el manual documenta **por qué** se hacen las cosas así y no solo cómo.
+
+### Decisiones editoriales
+- **HTML autocontenido**: estilos incrustados, sin recursos externos. Se abre
+  desde una memoria USB sin conexión, igual que la aplicación.
+- **PDF por Chrome sin ventana**, que respeta el `@page` diseñado: portada sin
+  folio, saltos de parte controlados, huérfanas y viudas.
+- **Márgenes anchos a propósito** (40 mm laterales sobre A4). La primera versión
+  usaba los márgenes estrechos habituales de una página web y la línea se iba a
+  más de cien caracteres; con la caja en 130 mm quedan 70-75, la medida legible.
+- Modo oscuro en pantalla, siempre claro en papel.
+
+### Dos fallos propios corregidos durante la revisión
+1. **La referencia de los 30 paneles no llegó al primer PDF.** Se usaba un byte
+   nulo como marcador y CommonMark obliga a sustituir U+0000 por U+FFFD, así que
+   el reemplazo posterior no encontraba nada: quince páginas desaparecieron **en
+   silencio**. Ahora el marcador sobrevive al conversor y el generador
+   **comprueba que los treinta paneles estén en el documento**, devolviendo error
+   si falta alguno.
+2. **`break-inside: avoid` en las fichas** empujaba cada ficha larga a página
+   nueva y dejaba media página en blanco. Con treinta fichas eran nueve páginas
+   desperdiciadas (51 → 42). Se conserva solo la protección contra títulos
+   huérfanos.
+
+Se detectó abriendo el PDF y **mirándolo**, no contando bytes: el archivo existía
+y pesaba lo razonable en los dos casos.
+
+---
+
 ## Sesión 51 — 2026-08-05 — Captura del estándar de oro
 
 Las dos mediciones de la sesión 50 solo podían comparar unas rutas con otras:

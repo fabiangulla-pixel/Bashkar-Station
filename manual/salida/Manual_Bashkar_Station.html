@@ -1,0 +1,1193 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bashkar Station — Manual de uso y guía metodológica</title>
+<style>/* Manual de Bashkar Station — tipografía de pantalla e imprenta.
+ *
+ * Sin recursos externos: el manual tiene que abrirse desde una memoria USB sin
+ * conexión, igual que la aplicación. Se usan familias del sistema con una pila
+ * de reserva razonable en Windows, macOS y Linux.
+ *
+ * Dos medios, una fuente: `screen` para leer en pantalla, `print` para el PDF
+ * (portada sin folio, saltos controlados, cabeceras vivas). */
+
+:root {
+  --tinta:        #1a1d21;
+  --tinta-suave:  #4a5057;
+  --tinta-tenue:  #767d85;
+  --papel:        #fbfaf8;
+  --papel-caja:   #f2efe9;
+  --regla:        #d9d3c9;
+  --acento:       #1f6feb;   /* el azul de la aplicación */
+  --acento-suave: #e8f0fe;
+  --medida:       34rem;     /* ~68 caracteres: la línea legible */
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 17px; }
+
+body {
+  margin: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua",
+               Georgia, "Times New Roman", serif;
+  line-height: 1.62;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  hyphens: auto;
+}
+
+/* ── Portada ─────────────────────────────────────────────────────────────── */
+
+.portada {
+  min-height: 96vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+.portada-marca { font-size: 3.4rem; color: var(--acento); line-height: 1; }
+.portada-tit {
+  font-size: clamp(2.6rem, 7vw, 4.2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 1.2rem 0 0.3rem;
+}
+.portada-sub {
+  font-size: 1.2rem;
+  color: var(--tinta-suave);
+  font-style: italic;
+  margin: 0;
+}
+.portada-regla {
+  width: 6rem; height: 2px;
+  background: var(--acento);
+  margin: 2.4rem 0;
+}
+.portada-meta {
+  font-size: 0.92rem;
+  color: var(--tinta-tenue);
+  line-height: 1.9;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ── Sumario ─────────────────────────────────────────────────────────────── */
+
+.sumario-pagina { max-width: var(--medida); margin: 0 auto 4rem; padding: 0 1.5rem; }
+.sumario-tit {
+  font-size: 1.5rem; font-weight: 600;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--regla);
+  margin-bottom: 1.4rem;
+}
+ol.sumario { list-style: none; margin: 0; padding: 0; }
+ol.sumario a {
+  display: flex; gap: 0.9rem; align-items: baseline;
+  text-decoration: none; color: inherit;
+  padding: 0.3rem 0;
+  border-bottom: 1px dotted transparent;
+}
+ol.sumario a:hover { border-bottom-color: var(--regla); color: var(--acento); }
+.sum-parte { margin-top: 1.3rem; }
+.sum-parte a { font-weight: 600; font-size: 1.02rem; }
+.sum-parte .sum-num {
+  color: var(--acento);
+  font-family: system-ui, sans-serif;
+  font-size: 0.74rem; letter-spacing: 0.09em; text-transform: uppercase;
+  min-width: 4.6rem;
+}
+.sum-cap { padding-left: 4.6rem; }
+.sum-cap .sum-num {
+  color: var(--tinta-tenue);
+  font-family: system-ui, sans-serif; font-size: 0.82rem;
+  min-width: 1.5rem; text-align: right;
+}
+
+/* ── Cuerpo ──────────────────────────────────────────────────────────────── */
+
+main { max-width: var(--medida); margin: 0 auto; padding: 0 1.5rem; }
+
+h1.parte {
+  margin: 5rem 0 2.6rem;
+  padding-top: 2.4rem;
+  border-top: 3px solid var(--tinta);
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.parte-num {
+  font-family: system-ui, sans-serif;
+  font-size: 0.76rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--acento); font-weight: 600;
+}
+.parte-tit { font-size: 2.1rem; font-weight: 600; letter-spacing: -0.02em; }
+
+h2.capitulo {
+  font-size: 1.55rem; font-weight: 600;
+  margin: 3.2rem 0 1.1rem;
+  display: flex; gap: 0.8rem; align-items: baseline;
+  letter-spacing: -0.01em;
+}
+.cap-num {
+  font-family: system-ui, sans-serif;
+  font-size: 0.95rem; color: var(--acento); font-weight: 600;
+  border: 1.5px solid var(--acento); border-radius: 50%;
+  width: 1.85rem; height: 1.85rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 auto;
+}
+
+h3 { font-size: 1.18rem; font-weight: 600; margin: 2.2rem 0 0.7rem; }
+h4 { font-size: 1.02rem; font-weight: 600; margin: 1.6rem 0 0.4rem; }
+
+p { margin: 0 0 1.05rem; }
+main > section > p:first-of-type { margin-top: 0; }
+
+/* Entradilla: el primer párrafo tras un título de parte */
+h1.parte + p {
+  font-size: 1.12rem;
+  color: var(--tinta-suave);
+  line-height: 1.55;
+}
+
+strong { font-weight: 600; }
+em { font-style: italic; }
+
+a { color: var(--acento); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+ul, ol { margin: 0 0 1.05rem; padding-left: 1.4rem; }
+li { margin-bottom: 0.35rem; }
+
+blockquote {
+  margin: 1.4rem 0;
+  padding: 0.2rem 0 0.2rem 1.2rem;
+  border-left: 3px solid var(--regla);
+  color: var(--tinta-suave);
+  font-style: italic;
+}
+
+code {
+  font-family: "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+  font-size: 0.86em;
+  background: var(--papel-caja);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+}
+pre {
+  background: var(--papel-caja);
+  border: 1px solid var(--regla);
+  border-radius: 5px;
+  padding: 0.9rem 1.1rem;
+  overflow-x: auto;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+
+/* ── Tablas ──────────────────────────────────────────────────────────────── */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.92rem;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+th, td {
+  text-align: left;
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--regla);
+  vertical-align: top;
+}
+thead th {
+  border-bottom: 2px solid var(--tinta);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+tbody tr:last-child td { border-bottom: 1px solid var(--tinta); }
+
+/* ── Avisos ──────────────────────────────────────────────────────────────── */
+
+.aviso {
+  margin: 1.7rem 0;
+  padding: 1rem 1.2rem 0.5rem;
+  border-radius: 6px;
+  border-left: 4px solid var(--acento);
+  background: var(--acento-suave);
+  font-size: 0.95rem;
+}
+.aviso p:last-child { margin-bottom: 0.6rem; }
+.aviso-tit {
+  font-family: system-ui, sans-serif;
+  font-size: 0.72rem; letter-spacing: 0.11em; text-transform: uppercase;
+  font-weight: 700; color: var(--acento);
+  margin: 0 0 0.5rem;
+}
+.aviso-metodo { border-left-color: #6f42c1; background: #f3effb; }
+.aviso-metodo .aviso-tit { color: #6f42c1; }
+.aviso-aviso  { border-left-color: #d1620a; background: #fdf2e6; }
+.aviso-aviso .aviso-tit  { color: #b4530a; }
+.aviso-atajo  { border-left-color: #1a7f37; background: #eaf6ec; }
+.aviso-atajo .aviso-tit  { color: #1a7f37; }
+.aviso-dato   { border-left-color: #0969da; background: #eaf2fd; }
+.aviso-dato .aviso-tit   { color: #0969da; }
+
+/* ── Referencia de paneles ───────────────────────────────────────────────── */
+
+.grupo {
+  margin-top: 2.8rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid var(--regla);
+}
+.grupo-intro { color: var(--tinta-suave); font-size: 0.97rem; }
+
+.panel {
+  margin: 1.6rem 0;
+  padding: 1rem 1.2rem;
+  background: #fff;
+  border: 1px solid var(--regla);
+  border-radius: 6px;
+}
+/* A propósito SIN `break-inside: avoid`: hay fichas largas y forzarlas enteras
+ * dejaba media página en blanco antes de cada una. Con treinta fichas eso son
+ * muchas páginas desperdiciadas. Lo que sí se evita es que una ficha empiece
+ * al final de la página con el título huérfano. */
+.panel-tit, .panel-sub { break-after: avoid; page-break-after: avoid; }
+.panel-campo { break-inside: avoid; }
+.panel-tit { margin: 0 0 0.15rem; display: flex; gap: 0.55rem; align-items: center; }
+.panel-emoji { font-size: 1.15rem; }
+.panel-sub {
+  margin: 0 0 0.7rem;
+  color: var(--tinta-tenue);
+  font-size: 0.87rem;
+  font-family: system-ui, sans-serif;
+}
+.panel-campo { font-size: 0.92rem; margin-bottom: 0.55rem; }
+.campo-et {
+  font-family: system-ui, sans-serif;
+  font-size: 0.68rem; letter-spacing: 0.09em; text-transform: uppercase;
+  font-weight: 700; color: var(--acento);
+  display: block; margin-bottom: 0.1rem;
+}
+.panel-sin-guia { color: var(--tinta-tenue); font-style: italic; }
+
+/* ── Colofón ─────────────────────────────────────────────────────────────── */
+
+.colofon {
+  max-width: var(--medida);
+  margin: 5rem auto 3rem;
+  padding: 1.8rem 1.5rem 0;
+  border-top: 2px solid var(--regla);
+  font-size: 0.86rem;
+  color: var(--tinta-tenue);
+  font-family: system-ui, sans-serif;
+}
+.colofon .url { font-family: Consolas, monospace; }
+
+/* ── Modo oscuro en pantalla ─────────────────────────────────────────────── */
+
+@media screen and (prefers-color-scheme: dark) {
+  :root {
+    --tinta: #e6e1d8; --tinta-suave: #b3aca0; --tinta-tenue: #8b857b;
+    --papel: #16181c; --papel-caja: #1f2228; --regla: #343941;
+    --acento: #6cb0ff; --acento-suave: #16243a;
+  }
+  .panel { background: #1b1e24; }
+  .aviso-metodo { background: #211a33; }
+  .aviso-aviso  { background: #2c1f12; }
+  .aviso-atajo  { background: #142616; }
+  .aviso-dato   { background: #13223a; }
+}
+
+/* ── Impresión / PDF ─────────────────────────────────────────────────────── */
+
+@media print {
+  :root {
+    --tinta: #000; --tinta-suave: #333; --tinta-tenue: #555;
+    --papel: #fff; --papel-caja: #f4f2ee; --regla: #ccc;
+    --acento: #14539a; --acento-suave: #eef3fa;
+  }
+
+  html { font-size: 11pt; }
+  body { hyphens: auto; }
+
+  /* Márgenes anchos a propósito: sobre A4, dejar la caja en ~130 mm da una
+   * línea de 70-75 caracteres, que es la medida legible. Con los márgenes
+   * estrechos habituales de una página web la línea se va a más de 100
+   * caracteres y el ojo pierde el renglón al volver. */
+  @page {
+    size: A4;
+    margin: 24mm 40mm 20mm;
+    @bottom-center { content: counter(page); font-size: 9pt; color: #666; }
+  }
+  /* La portada no lleva folio ni márgenes de caja */
+  @page :first { margin: 0; @bottom-center { content: ""; } }
+
+  main, .sumario-pagina, .colofon { max-width: none; padding: 0; }
+
+  .portada {
+    height: 100vh;
+    page-break-after: always;
+    break-after: page;
+  }
+  .sumario-pagina { page-break-after: always; break-after: page; }
+
+  h1.parte { page-break-before: always; break-before: page; margin-top: 0; }
+  h2.capitulo, h3, h4 { page-break-after: avoid; break-after: avoid; }
+  p, li, blockquote { orphans: 3; widows: 3; }
+  .aviso, table, pre, figure { page-break-inside: avoid; break-inside: avoid; }
+
+  a { color: inherit; text-decoration: none; }
+  /* En papel un enlace sin su dirección es inútil, pero solo los externos */
+  main a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.82em; color: #555; word-break: break-all;
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="portada">
+  <div class="portada-marca">⬡</div>
+  <h1 class="portada-tit">Bashkar Station</h1>
+  <p class="portada-sub">Manual de uso y guía metodológica</p>
+  <div class="portada-regla"></div>
+  <p class="portada-meta">
+    Versión 11.9 · 05 de agosto de 2026<br>
+    Fabián Gulla<br>
+    Instituto Caro y Cuervo · Bogotá, Colombia
+  </p>
+</header>
+
+<nav class="sumario-pagina">
+  <h2 class="sumario-tit">Sumario</h2>
+  <ol class='sumario'><li class="sum-parte"><a href="#parte-1-el-problema-antes-que-la-herramienta"><span class="sum-num">Parte I</span><span class="sum-tit">El problema antes que la herramienta</span></a></li>
+<li class="sum-cap"><a href="#cap-1-qué-tiene-de-difícil-la-prensa-histórica"><span class="sum-num">1</span><span class="sum-tit">Qué tiene de difícil la prensa histórica</span></a></li>
+<li class="sum-cap"><a href="#cap-2-qué-es-bashkar-station-y-qué-no-es"><span class="sum-num">2</span><span class="sum-tit">Qué es Bashkar Station, y qué no es</span></a></li>
+<li class="sum-cap"><a href="#cap-3-las-decisiones-que-conviene-conocer"><span class="sum-num">3</span><span class="sum-tit">Las decisiones que conviene conocer</span></a></li>
+<li class="sum-cap"><a href="#cap-4-el-corpus-de-referencia"><span class="sum-num">4</span><span class="sum-tit">El corpus de referencia</span></a></li>
+<li class="sum-parte"><a href="#parte-2-poner-en-marcha"><span class="sum-num">Parte II</span><span class="sum-tit">Poner en marcha</span></a></li>
+<li class="sum-cap"><a href="#cap-5-instalar-y-abrir-por-primera-vez"><span class="sum-num">5</span><span class="sum-tit">Instalar y abrir por primera vez</span></a></li>
+<li class="sum-cap"><a href="#cap-6-tu-primer-corpus-en-veinte-minutos"><span class="sum-num">6</span><span class="sum-tit">Tu primer corpus en veinte minutos</span></a></li>
+<li class="sum-parte"><a href="#parte-3-recorridos-de-trabajo"><span class="sum-num">Parte III</span><span class="sum-tit">Recorridos de trabajo</span></a></li>
+<li class="sum-cap"><a href="#cap-7-de-la-imagen-al-texto"><span class="sum-num">7</span><span class="sum-tit">De la imagen al texto</span></a></li>
+<li class="sum-cap"><a href="#cap-8-etiquetar-zonas-el-paso-que-lo-cambia-todo"><span class="sum-num">8</span><span class="sum-tit">Etiquetar zonas: el paso que lo cambia todo</span></a></li>
+<li class="sum-cap"><a href="#cap-9-del-texto-al-corpus-analizable"><span class="sum-num">9</span><span class="sum-tit">Del texto al corpus analizable</span></a></li>
+<li class="sum-cap"><a href="#cap-10-entidades-redes-y-conocimiento-enlazado"><span class="sum-num">10</span><span class="sum-tit">Entidades, redes y conocimiento enlazado</span></a></li>
+<li class="sum-cap"><a href="#cap-11-medir-la-calidad-del-reconocimiento"><span class="sum-num">11</span><span class="sum-tit">Medir la calidad del reconocimiento</span></a></li>
+<li class="sum-cap"><a href="#cap-12-publicar-los-resultados"><span class="sum-num">12</span><span class="sum-tit">Publicar los resultados</span></a></li>
+<li class="sum-parte"><a href="#parte-4-referencia"><span class="sum-num">Parte IV</span><span class="sum-tit">Referencia</span></a></li>
+<li class="sum-cap"><a href="#cap-13-los-treinta-paneles"><span class="sum-num">13</span><span class="sum-tit">Los treinta paneles</span></a></li>
+<li class="sum-cap"><a href="#cap-14-cuando-algo-no-funciona"><span class="sum-num">14</span><span class="sum-tit">Cuando algo no funciona</span></a></li>
+<li class="sum-cap"><a href="#cap-15-glosario"><span class="sum-num">15</span><span class="sum-tit">Glosario</span></a></li></ol>
+</nav>
+
+<main>
+<section class="cap"><h1 id="parte-1-el-problema-antes-que-la-herramienta" class="parte"><span class="parte-num">Parte I</span><span class="parte-tit">El problema antes que la herramienta</span></h1>
+<p>Este manual no empieza explicando botones. Empieza explicando qué problema
+intenta resolver Bashkar Station, porque la mayoría de las decisiones de la
+aplicación —incluidas las que parecen incómodas— solo tienen sentido a la luz
+de ese problema.</p>
+<h2 id="cap-1-qué-tiene-de-difícil-la-prensa-histórica" class="capitulo"><span class="cap-num">1</span>Qué tiene de difícil la prensa histórica</h2>
+<p>Una colección de prensa ilustrada de los años treinta no es un corpus de texto.
+Es un objeto material fotografiado, y entre la fotografía y el texto analizable
+hay una cadena de pérdidas que conviene mirar de frente.</p>
+<p><strong>El soporte llega degradado.</strong> Buena parte de la prensa colombiana del siglo XX
+se conserva en microfilm, y la digitalización de ese microfilm arrastra su
+grano, su contraste plano y la inclinación de la cámara. En el corpus de
+referencia de este proyecto —la revista <em>Estampa</em>, digitalizada por la
+Biblioteca Nacional de Colombia— las páginas llegan con entre doce y diecisiete
+grados de inclinación y una saturación de tinta que ronda el cuarenta por
+ciento.</p>
+<p><strong>La página no es lineal.</strong> Una revista ilustrada organiza el contenido en
+columnas, recuadros, pies de foto, publicidad y filetes. Un motor de OCR que
+lea la página de arriba abajo entrega un texto donde la primera línea de la
+columna izquierda se pega con la primera de la derecha. El resultado se lee como
+prosa rota y contamina cualquier análisis posterior.</p>
+<p><strong>La lengua es de otra época.</strong> El español de 1939 no es el de hoy: hay
+ortografía inestable, cursivas y versalitas con función semántica, extranjerismos
+sin adaptar, y nombres propios que ya no existen. Un lematizador entrenado con
+prensa contemporánea trata esas variantes como errores y las borra —borrando
+justo el dato que interesa al historiador de la lengua.</p>
+<p><strong>Los volúmenes son grandes y el tiempo es finito.</strong> Un año de una revista
+semanal son cincuenta números de veinte páginas. Nadie los transcribe a mano, y
+por eso hay que automatizar; pero automatizar sin medir el error es publicar
+conclusiones construidas sobre ruido.</p>
+<div class="aviso aviso-metodo"><p class="aviso-tit">Por qué esto importa para el resultado</p>
+<p>Cada eslabón de la cadena introduce un error que el siguiente amplifica. Un OCR
+con un diez por ciento de error de carácter puede parecer aceptable, pero al
+llegar al reconocimiento de entidades convierte «Rifa» en «Rita» y produce dos
+personas donde había un sorteo. La calidad del dato no es una preocupación
+técnica previa al análisis: <strong>es el análisis</strong>.</p>
+</div>
+<h2 id="cap-2-qué-es-bashkar-station-y-qué-no-es" class="capitulo"><span class="cap-num">2</span>Qué es Bashkar Station, y qué no es</h2>
+<p>Bashkar Station es una <strong>plataforma de escritorio que orquesta la cadena
+completa</strong>, desde la imagen escaneada hasta los formatos que exige una
+publicación académica. Reúne en un solo entorno el reconocimiento de texto, la
+normalización, la segmentación en artículos, el análisis lingüístico y la
+exportación, sin obligar a salir a la línea de comandos ni a encadenar scripts
+sueltos.</p>
+<p>Conviene decir también lo que <strong>no</strong> es:</p>
+<ul>
+<li><strong>No es un framework ni una biblioteca.</strong> Aquí no se programa. Es una
+herramienta de consumo y orquestación, pensada para el investigador que tiene
+las preguntas, no necesariamente para quien escribe el código.</li>
+<li><strong>No es un servicio en la nube.</strong> Funciona sin conexión de principio a fin. Es
+una decisión deliberada, no una limitación, y el capítulo siguiente explica
+por qué.</li>
+<li><strong>No es una caja negra.</strong> Cada módulo dice qué método aplica, con qué
+parámetros y con qué umbrales; y hay un módulo dedicado a medir cuánto se
+equivoca.</li>
+</ul>
+<h2 id="cap-3-las-decisiones-que-conviene-conocer" class="capitulo"><span class="cap-num">3</span>Las decisiones que conviene conocer</h2>
+<p>Cuatro decisiones de diseño explican la mayor parte del comportamiento de la
+aplicación. Un usuario que las entiende deja de pelearse con la herramienta.</p>
+<h3>Funciona sin conexión por defecto</h3>
+<p>La aplicación arranca con un interruptor global apagado: mientras no se active
+explícitamente, ninguna función llama a un servicio externo. El recorrido
+completo está cubierto en local —reconocimiento con Tesseract o Kraken, modelos
+lingüísticos de spaCy, búsqueda semántica con FAISS, y modelos de lenguaje
+locales a través de Ollama o LM Studio— sin coste por página.</p>
+<p>Las interfaces de programación en la nube existen, son opcionales y exigen
+configurar una clave. Cuando se usan, la aplicación <strong>estima el coste y lo
+muestra antes de ejecutar</strong>, y registra el gasto real después.</p>
+<div class="aviso aviso-aviso"><p class="aviso-tit">No es una comodidad, es un requisito</p>
+<p>Trabajar con prensa histórica implica material sujeto a las condiciones de uso
+de la institución que lo digitalizó. Que el corpus no salga del equipo salvo
+decisión explícita del investigador no es una preferencia técnica: es lo que
+permite firmar un convenio con una biblioteca.</p>
+</div>
+<h3>La página es la unidad atómica</h3>
+<p>El texto se organiza por página y no por artículo continuo, porque el
+reconocimiento de una página escaneada no conserva información espacial
+suficiente para reconstruir con fiabilidad qué columna sigue a cuál. La
+segmentación en artículos ocurre <strong>después</strong>, sobre texto ya revisado, y las
+señales de continuación entre páginas se marcan de forma explícita.</p>
+<h3>No se lematiza por defecto</h3>
+<p>La variación ortográfica histórica es un dato lingüístico, no un error. Reducir
+«assí» a «así» antes de analizar destruye evidencia sobre la norma escrita de la
+época. La lematización está disponible cuando la pregunta la requiere, pero hay
+que activarla a conciencia.</p>
+<h3>Se etiquetan las zonas antes de reconocer el texto</h3>
+<p>Este es el punto que más cuesta al principio y el que más rendimiento da. Antes
+de pasar el reconocimiento, el investigador marca sobre la imagen qué es cada
+región: artículo, título, pie de foto, fotografía, publicidad, filete. El motor
+de reconocimiento trabaja <strong>solo sobre las zonas que llevan texto</strong>, en el orden
+de lectura que se le indicó.</p>
+<div class="aviso aviso-dato"><p class="aviso-tit">Cuánto cambia esto, medido</p>
+<p>Sobre una página real de <em>Estampa</em>, Tesseract aplicado a la página completa
+devolvió <strong>cero palabras</strong>. La misma página, recortada por zonas etiquetadas,
+devolvió <strong>578 palabras</strong>. El etiquetado previo no es un trámite: es lo que
+hace utilizable al motor rápido.</p>
+</div>
+<h2 id="cap-4-el-corpus-de-referencia" class="capitulo"><span class="cap-num">4</span>El corpus de referencia</h2>
+<p>Todo lo que se explica en este manual se ha probado sobre la revista <em>Estampa</em>
+(Bogotá, 1930-1940), un semanario ilustrado digitalizado por la Biblioteca
+Nacional de Colombia. Se eligió porque reúne todas las dificultades a la vez:
+microfilm degradado, maquetación a varias columnas con fotograbado, publicidad
+integrada en el cuerpo, y una lengua que ya es moderna pero conserva usos de
+época.</p>
+<p>Los ejemplos y las cifras de este manual proceden de ese corpus. Cuando aparece
+un número medido, procede de una ejecución real y se indica sobre qué material.</p>
+</section><section class="cap"><h1 id="parte-2-poner-en-marcha" class="parte"><span class="parte-num">Parte II</span><span class="parte-tit">Poner en marcha</span></h1>
+<p>Dos capítulos para pasar de no tener nada a tener un corpus analizable. El
+primero instala; el segundo recorre el camino completo con un solo número de
+revista, para que la lógica del conjunto quede clara antes de entrar en detalle.</p>
+<h2 id="cap-5-instalar-y-abrir-por-primera-vez" class="capitulo"><span class="cap-num">5</span>Instalar y abrir por primera vez</h2>
+<p>Bashkar Station se distribuye de dos maneras, y la elección depende de si se va a
+programar sobre ella o solo a usarla.</p>
+<h3>Con el ejecutable (lo habitual)</h3>
+<p>Basta copiar la carpeta <code>BashkarStation</code> y hacer doble clic en
+<code>BashkarStation.exe</code>. No hay instalación, ni permisos de administrador, ni
+dependencias que resolver: todo viaja dentro, incluidos los motores de análisis.</p>
+<p>La carpeta ocupa alrededor de 1,7 GB, así que cabe en cualquier memoria USB y
+funciona igual en otro equipo. El primer arranque tarda unos veinte segundos
+porque carga los modelos lingüísticos; los siguientes son más rápidos.</p>
+<h3>Desde el código fuente (para desarrollar)</h3>
+<pre><code>git clone https://github.com/fabiangulla-pixel/Bashkar-Station.git
+cd Bashkar-Station
+python instalar.py
+python app.py
+</code></pre>
+<p><code>instalar.py</code> resuelve las dependencias de Python, descarga el modelo de spaCy
+para español e instala Tesseract y Poppler en Windows si faltan.</p>
+<div class="aviso aviso-aviso"><p class="aviso-tit">Requisitos reales</p>
+<p>Python 3.9 o superior (el desarrollo se hace sobre 3.14). Para los modelos de
+visión hacen falta al menos 16 GB de memoria: un modelo de tres mil millones de
+parámetros ocupa cerca de doce. Sin ellos, el resto de la aplicación funciona
+con holgura en 8 GB.</p>
+</div>
+<h3>La primera pantalla</h3>
+<p>Al abrir aparece una pantalla de bienvenida con tres opciones: continuar el
+último proyecto, crear uno nuevo o abrir uno existente. Si se cierra sin elegir,
+la aplicación crea un proyecto automático para no dejar al usuario en el vacío.</p>
+<p>Un <strong>proyecto</strong> es un archivo <code>.bashkar</code> más una carpeta hermana con los datos
+pesados. Guarda la configuración, el progreso de cada etapa y las rutas del
+corpus; no guarda las imágenes, que permanecen donde estén.</p>
+<div class="aviso aviso-aviso"><p class="aviso-tit">Las claves de interfaz de programación se guardan en claro</p>
+<p>Si se configuran claves de servicios de nube, quedan escritas en el archivo
+<code>.bashkar</code> <strong>en texto plano y en el disco</strong>. Es una limitación conocida, no un
+descuido: el archivo nunca sale del equipo y nunca entra al repositorio. Pero si
+se comparte un <code>.bashkar</code> con un colega, hay que borrar las claves antes.</p>
+</div>
+<h2 id="cap-6-tu-primer-corpus-en-veinte-minutos" class="capitulo"><span class="cap-num">6</span>Tu primer corpus en veinte minutos</h2>
+<p>Este recorrido usa un solo número de revista en PDF y llega hasta un texto
+segmentado en artículos. Es el camino corto: sirve para entender la lógica antes
+de afinar nada.</p>
+<h3>1 · Configurar el proyecto</h3>
+<p>En <strong>⚙ Configuración</strong> se indican tres cosas: el nombre de la publicación, el
+periodo, y la carpeta donde están los archivos de entrada. La carpeta de salida
+se crea sola y organiza el trabajo en subcarpetas numeradas —<code>01_pdfs</code>,
+<code>02_imagenes</code>, <code>03_ocr</code>, <code>04_analisis</code>, <code>05_etiquetas</code>— que se irán llenando en
+orden.</p>
+<div class="aviso aviso-atajo"><p class="aviso-tit">Si el PDF ya trae texto</p>
+<p>Muchos PDF de bibliotecas digitales llevan una capa de texto de un
+reconocimiento previo. En ese caso, el panel <strong>⚡ Conversor PDF</strong> extrae ese
+texto directamente y ahorra el reconocimiento entero: un número de cuarenta y
+ocho páginas en unos siete segundos. Merece la pena comprobarlo antes de
+empezar.</p>
+</div>
+<h3>2 · Obtener el texto</h3>
+<p>Si no hay texto embebido, hay que reconocerlo. El panel <strong>📄 Extracción OCR</strong>
+ofrece varias rutas y el capítulo siguiente las compara en detalle; para este
+primer recorrido, Tesseract con idioma español es suficiente.</p>
+<h3>3 · Revisar lo que salió</h3>
+<p><strong>📝 Normalizar</strong> muestra cada página con su imagen al lado y el texto
+reconocido debajo. Aquí se corrige lo que el motor entendió mal. No hace falta
+dejarlo perfecto: el objetivo es que el texto sea lo bastante fiable para lo que
+se vaya a preguntar después.</p>
+<p>La aplicación conserva tres versiones de cada página —el texto crudo, la
+corrección manual y la sugerencia automática— y permite elegir cuál pasa al
+análisis. Esa elección se guarda con el proyecto.</p>
+<h3>4 · Separar los artículos</h3>
+<p><strong>📋 Segmentar</strong> detecta dónde empieza y acaba cada pieza, y distingue artículo,
+índice, publicidad y colofón. Aquí la unidad de trabajo deja de ser la página y
+pasa a ser el artículo, que es la unidad con la que razona un investigador.</p>
+<h3>5 · Analizar y exportar</h3>
+<p>Con el corpus segmentado se abre todo lo demás: frecuencias, entidades, redes,
+tópicos. <strong>📈 Resultados</strong> exporta en los formatos que pide una publicación
+—TEI P5, BibTeX, hojas de cálculo— y arma un paquete completo listo para
+depositar.</p>
+<div class="aviso aviso-metodo"><p class="aviso-tit">Guardar es parte del método</p>
+<p>La aplicación guarda sola cada tres minutos, y un punto ámbar junto al nombre
+del proyecto avisa cuando hay cambios sin guardar. Aun así, conviene guardar a
+mano antes de cualquier operación larga: la bitácora del proyecto es parte de la
+trazabilidad de la investigación, no solo una copia de seguridad.</p>
+</div>
+</section><section class="cap"><h1 id="parte-3-recorridos-de-trabajo" class="parte"><span class="parte-num">Parte III</span><span class="parte-tit">Recorridos de trabajo</span></h1>
+<p>Cada capítulo de esta parte resuelve una tarea completa, de principio a fin.
+No hace falta leerlos en orden: se puede ir al que corresponda al problema que
+se tenga delante.</p>
+<h2 id="cap-7-de-la-imagen-al-texto" class="capitulo"><span class="cap-num">7</span>De la imagen al texto</h2>
+<p>Reconocer texto sobre prensa histórica no es un problema resuelto, y por eso la
+aplicación no ofrece un botón sino <strong>siete rutas</strong>. Elegir bien ahorra semanas.</p>
+<h3>Las rutas disponibles</h3>
+<table>
+<thead>
+<tr>
+<th>Ruta</th>
+<th>Cómo funciona</th>
+<th>Cuándo conviene</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tesseract</strong></td>
+<td>Motor clásico, local, muy rápido</td>
+<td>Impresos limpios, o cualquier página ya etiquetada por zonas</td>
+</tr>
+<tr>
+<td><strong>Tesseract por zonas</strong></td>
+<td>Recorta cada zona, la mejora y la reconoce aparte</td>
+<td>Maquetación a varias columnas; <strong>es la ruta por defecto recomendada</strong></td>
+</tr>
+<tr>
+<td><strong>Texto embebido (BNC)</strong></td>
+<td>Extrae la capa de texto del PDF y reconstruye el orden por coordenadas</td>
+<td>PDF de biblioteca con reconocimiento previo</td>
+</tr>
+<tr>
+<td><strong>Kraken / CATMuS</strong></td>
+<td>Modelo entrenado para impresos históricos</td>
+<td>Tipografías antiguas donde Tesseract falla</td>
+</tr>
+<tr>
+<td><strong>IA de visión en la nube</strong></td>
+<td>Claude, GPT o Gemini leen la imagen</td>
+<td>Páginas irrecuperables, cuando el presupuesto lo permite</td>
+</tr>
+<tr>
+<td><strong>CHURRO-3B</strong></td>
+<td>Modelo de visión de pesos abiertos, <strong>local y gratuito</strong></td>
+<td>Lo mismo que el anterior, sin coste ni salida de datos</td>
+</tr>
+<tr>
+<td><strong>PERO-OCR</strong></td>
+<td>Cadena especializada en prensa desde microfilm</td>
+<td>El caso típico de las hemerotecas latinoamericanas</td>
+</tr>
+</tbody>
+</table>
+<h3>Cómo elegir sin adivinar</h3>
+<p>La respuesta corta: <strong>midiendo</strong>. El capítulo «Medir la calidad del
+reconocimiento» explica cómo, y es el que convierte esta elección en una
+decisión defendible ante un evaluador.</p>
+<p>La respuesta larga tiene una regla práctica que se sostiene en datos medidos
+sobre <em>Estampa</em>:</p>
+<div class="aviso aviso-dato"><p class="aviso-tit">Dos mediciones sobre el mismo corpus</p>
+<p>Sobre una página completa sin etiquetar, Tesseract devolvió <strong>0 palabras</strong> y
+CHURRO-3B <strong>499</strong>, en 51 minutos de proceso.</p>
+<p>Sobre una página etiquetada por zonas, Tesseract devolvió <strong>578</strong> palabras en
+11 segundos y CHURRO <strong>569</strong> en 38 minutos.</p>
+<p>La lectura: <strong>el etiquetado rescata al motor rápido</strong>, y el modelo de visión es
+la herramienta para lo que ni así se recupera —o para construir la referencia
+con la que se mide todo lo demás.</p>
+</div>
+<div class="aviso aviso-aviso"><p class="aviso-tit">El recuento de palabras no mide la calidad</p>
+<p>En esa segunda medición las dos rutas produjeron casi las mismas palabras, pero
+Tesseract escribió «Rita» donde decía «Rifa», «£sta maqgnilica» donde decía
+«Esta magnífica» y «s 75 00» donde decía «$ 75.00», además de inventar líneas
+enteras. Para un recuento de frecuencias eso es ruido; para el reconocimiento de
+entidades, «Rita» y «Rifa» son cosas distintas. Contar palabras no basta: hay
+que medir el error de carácter.</p>
+</div>
+<h3>Usar CHURRO-3B</h3>
+<p>Es un modelo de pesos abiertos entrenado sobre casi cien mil páginas históricas
+de ciento cincuenta y cinco colecciones, veintidós siglos y cuarenta y seis
+grupos lingüísticos —el español entre ellos—. Corre en el equipo, no cuesta
+dinero y no saca el corpus fuera.</p>
+<p>Pesa unos siete gigabytes que se descargan una sola vez desde el propio panel
+de <strong>⚖️ Benchmark OCR</strong>, con el botón <em>Descargar modelo CHURRO</em>. Después
+funciona sin conexión. Si se coloca la carpeta del modelo en <code>modelos_ia</code>, junto
+al ejecutable, viaja con la aplicación en la memoria USB.</p>
+<div class="aviso aviso-aviso"><p class="aviso-tit">Es lento, y hay que contar con ello</p>
+<p>Entre tres y cuatro minutos por zona en un procesador de seis núcleos sin tarjeta
+gráfica. Sirve para construir una referencia de calidad sobre unas decenas de
+zonas, no para procesar un corpus entero. La aplicación estima el tiempo y pide
+confirmación antes de lanzar un lote.</p>
+</div>
+<h2 id="cap-8-etiquetar-zonas-el-paso-que-lo-cambia-todo" class="capitulo"><span class="cap-num">8</span>Etiquetar zonas: el paso que lo cambia todo</h2>
+<p>Es el capítulo más importante de este manual. El etiquetado parece trabajo
+manual prescindible y es justo lo contrario: es lo que hace que el resto
+funcione.</p>
+<h3>Qué se hace</h3>
+<p>En <strong>✏️ Etiquetar</strong> se dibujan rectángulos sobre la imagen de la página y se
+asigna a cada uno un tipo. Los tipos que llevan texto —artículo, título, pie de
+foto, índice— se reconocen; los que no —fotografía, publicidad, filete,
+cabecera, colofón, número de página— se saltan.</p>
+<h3>Por qué importa tanto</h3>
+<p>Tres razones, y las tres tienen consecuencias medibles:</p>
+<ol>
+<li><strong>Preserva el orden de lectura.</strong> Un motor que lee la página entera mezcla
+las columnas. Uno que lee zona por zona, en el orden que se le indicó,
+entrega prosa continua.</li>
+<li><strong>Evita el ruido.</strong> Una fotografía no contiene texto que interese, pero un
+motor de reconocimiento intentará leerla igual y devolverá basura que luego
+contamina las frecuencias.</li>
+<li><strong>Ahorra recursos.</strong> Con un modelo de visión, cada zona que no se procesa son
+miles de unidades de cómputo que no se gastan. Y evita que el modelo se ponga
+a describir la imagen en lugar de transcribirla.</li>
+</ol>
+<div class="aviso aviso-metodo"><p class="aviso-tit">El orden de lectura es una decisión editorial</p>
+<p>La aplicación calcula un orden automático por bandas y columnas, pero se puede
+corregir a mano. Ese orden es una interpretación de la maquetación, y en
+publicaciones con recuadros o continuaciones puede haber más de una lectura
+razonable. Conviene dejar constancia del criterio en la bitácora del proyecto.</p>
+</div>
+<h3>Ayudas para no hacerlo todo a mano</h3>
+<p>Hay detección automática de zonas —por análisis de imagen o por inteligencia
+artificial de visión— que propone un etiquetado inicial. Es un punto de partida,
+no un resultado: siempre conviene revisarlo. También se pueden dividir y
+fusionar zonas, y vincular un pie de foto con su fotografía.</p>
+<h2 id="cap-9-del-texto-al-corpus-analizable" class="capitulo"><span class="cap-num">9</span>Del texto al corpus analizable</h2>
+<h3>Normalizar sin destruir</h3>
+<p><strong>📝 Normalizar</strong> es donde el texto reconocido se convierte en texto fiable. La
+pantalla muestra la imagen y el texto, y permite corregir palabra por palabra.</p>
+<p>El verificador señala las palabras dudosas y propone alternativas del diccionario
+y del propio corpus. Se puede ampliar el vocabulario con los nombres propios y
+los términos de época que la revista usa y ningún diccionario recoge.</p>
+<div class="aviso aviso-aviso"><p class="aviso-tit">Normalizar no es modernizar</p>
+<p>La normalización de esta aplicación es deliberadamente conservadora: limpia
+artefactos del reconocimiento, no la ortografía de la época. Si el original
+escribe «obscuro», se queda «obscuro». Modernizar aquí destruiría el dato que
+busca el historiador de la lengua.</p>
+</div>
+<h3>Segmentar en artículos</h3>
+<p><strong>📋 Segmentar</strong> localiza dónde empieza y acaba cada pieza y le asigna una
+tipología. A partir de aquí la unidad de análisis es el artículo, que es como
+razona el investigador, y no la página, que es como llegó el material.</p>
+<p>Las continuaciones entre páginas se marcan de forma explícita, porque
+adivinarlas automáticamente produce errores silenciosos difíciles de detectar
+después.</p>
+<h2 id="cap-10-entidades-redes-y-conocimiento-enlazado" class="capitulo"><span class="cap-num">10</span>Entidades, redes y conocimiento enlazado</h2>
+<h3>Reconocer entidades</h3>
+<p><strong>🏷 Entidades</strong> identifica personas, lugares, organizaciones, fechas, obras y
+eventos. Combina tres métodos: un modelo estadístico de spaCy, un modelo neuronal
+específico para español, y opcionalmente un modelo de lenguaje que valida los
+casos dudosos.</p>
+<p>Cada entidad recibe un semáforo de confianza. <strong>🔍 Revisión NER</strong>, dentro del
+panel de Lingüística, presenta una cola con las dudosas para confirmarlas,
+descartarlas o renombrarlas. Las decisiones quedan registradas y se aplican al
+índice global.</p>
+<div class="aviso aviso-metodo"><p class="aviso-tit">Por qué hay revisión humana</p>
+<p>Ninguna combinación de modelos alcanza precisión suficiente sobre texto
+histórico degradado. Una cola de revisión con trazabilidad no es una concesión:
+es lo que permite escribir en el artículo cuántas entidades se validaron a mano
+y con qué criterio.</p>
+</div>
+<h3>Enlazar con Wikidata</h3>
+<p>Las entidades se pueden vincular a Wikidata, lo que las convierte en
+identificadores globales citables. La desambiguación tiene en cuenta el contexto
+del artículo, filtra por tipo de entidad y descarta homónimos modernos fuera de
+la ventana histórica.</p>
+<div class="aviso aviso-dato"><p class="aviso-tit">Lo que costó afinarlo</p>
+<p>En una primera versión, cinco de cada siete entidades del corpus se enlazaban
+mal: «Francisco Franco» apuntaba a un tenista colombiano y «España» a un
+acorazado de 1912. Con la desambiguación actual, seis de siete son correctas. El
+caso que resiste es «Alfonso López», presidente colombiano de los años treinta,
+que Wikidata no distingue sin contexto adicional.</p>
+</div>
+<h3>Construir la red</h3>
+<p><strong>🕸 Redes</strong> construye el grafo de entidades que aparecen juntas, calcula
+métricas de centralidad y detecta comunidades. Exporta a GEXF para trabajar en
+Gephi.</p>
+<div class="aviso aviso-aviso"><p class="aviso-tit">Una red de autores no siempre tiene sentido</p>
+<p>En <em>Estampa</em>, el 74 % de los artículos son anónimos. Una red de coautoría sobre
+ese material no mide colaboración: mide coincidencia en el mismo número, que es
+trivial. Por eso la red se construye sobre entidades mencionadas y no sobre
+firmas. Conviene comprobar este tipo de supuestos antes de graficar.</p>
+</div>
+<h2 id="cap-11-medir-la-calidad-del-reconocimiento" class="capitulo"><span class="cap-num">11</span>Medir la calidad del reconocimiento</h2>
+<p>Este capítulo describe el módulo que convierte «elegí este motor» en «medí los
+motores y elegí este».</p>
+<h3>Por qué hace falta</h3>
+<p>Elegir una ruta de reconocimiento porque «se ve mejor» no es defendible en una
+publicación. <strong>⚖️ Benchmark OCR</strong> transcribe las mismas páginas con varias rutas
+y las compara contra una transcripción de referencia hecha a mano.</p>
+<h3>Las métricas</h3>
+<table>
+<thead>
+<tr>
+<th>Métrica</th>
+<th>Qué mide</th>
+<th>Cómo leerla</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CER</strong></td>
+<td>Proporción de caracteres a corregir</td>
+<td>≤0,05 casi limpio · ≤0,10 explotable · ≤0,25 exige corrección · &gt;0,25 inservible</td>
+</tr>
+<tr>
+<td><strong>WER</strong></td>
+<td>Lo mismo por palabras</td>
+<td>Siempre mayor que el CER: un carácter mal invalida la palabra entera</td>
+</tr>
+<tr>
+<td><strong>Similitud</strong></td>
+<td><code>1 − CER</code></td>
+<td>Comparable con la literatura publicada</td>
+</tr>
+<tr>
+<td><strong>Segundos por página</strong></td>
+<td>Coste en tiempo</td>
+<td>Decide qué ruta sirve para el corpus completo y cuál solo para la muestra</td>
+</tr>
+</tbody>
+</table>
+<h3>Construir el estándar de oro</h3>
+<p>Sin transcripción de referencia solo se pueden comparar rutas entre sí. El CER
+absoluto exige que alguien transcriba a mano, y la aplicación reduce ese trabajo
+al mínimo.</p>
+<p>El botón <strong>📤 Preparar estándar de oro</strong> exporta <strong>un recorte por zona con
+texto</strong>, cada uno con su archivo de texto vacío al lado. Se transcriben bloques
+cortos, no páginas enteras: se puede parar y seguir, y el botón <strong>📊 Avance</strong>
+dice cuánto queda.</p>
+<p>Las reglas de transcripción van en un archivo de instrucciones dentro de la
+propia carpeta. La primera es la que más se incumple: <strong>transcribir lo que se ve,
+no lo que debería decir</strong>. Si el original escribe «Kadet» con una sola te, se
+transcribe «Kadet». El estándar mide al motor, no corrige a la revista.</p>
+<div class="aviso aviso-aviso"><p class="aviso-tit">Sobre rellenar previamente con el resultado automático</p>
+<p>La aplicación permite volcar la salida de un motor para corregirla en lugar de
+escribir desde cero. Ahorra mucho tiempo y es práctica habitual, pero <strong>sesga</strong>:
+quien corrige tiende a dar por buenos los errores que no saltan a la vista. Y si
+el estándar se usa después para evaluar ese mismo motor, la comparación queda
+invalidada. Por eso viene desactivado y, cuando se usa, queda registrado.</p>
+</div>
+<h3>Interpretar el resultado</h3>
+<p>La tabla se exporta a hoja de cálculo o se copia como tabla lista para pegar en
+un artículo. Lo habitual es que ninguna ruta gane en todo: una es exacta y lenta,
+otra rápida y sucia. La decisión razonable suele ser <strong>usar la lenta y buena para
+construir la referencia, y la rápida para el corpus completo</strong>, documentando el
+error que se acepta.</p>
+<h2 id="cap-12-publicar-los-resultados" class="capitulo"><span class="cap-num">12</span>Publicar los resultados</h2>
+<h3>Formatos de intercambio</h3>
+<p><strong>📈 Resultados</strong> exporta en TEI P5 —el estándar de codificación de textos en
+humanidades, con las entidades en su sección correspondiente—, en BibTeX para
+gestores bibliográficos, y en hojas de cálculo para análisis estadístico
+posterior.</p>
+<p>También genera un <strong>paquete de publicación</strong> completo: la codificación, las
+referencias, las tablas, la bitácora de investigación y un documento de métodos
+con los parámetros usados en cada etapa.</p>
+<h3>El bundle de conocimiento abierto</h3>
+<p>El exportador OKF produce un directorio de archivos de texto con metadatos, sin
+depender de una base de datos ni de una interfaz propia. Está pensado para que
+cualquier sistema —incluidos los asistentes de inteligencia artificial— pueda
+leer el conocimiento del corpus directamente.</p>
+<h3>Obtener un identificador citable</h3>
+<p>El repositorio del proyecto puede conectarse a Zenodo, de modo que cada versión
+publicada genere automáticamente un identificador digital permanente. Es el
+requisito que suelen pedir las revistas de humanidades digitales para citar el
+software con el que se produjo un análisis.</p>
+<div class="aviso aviso-metodo"><p class="aviso-tit">La reproducibilidad es parte del resultado</p>
+<p>Un análisis computacional que no puede repetirse no es un resultado, es una
+anécdota. Guardar la bitácora, exportar el documento de métodos y depositar el
+software con identificador permanente son los tres gestos que convierten un
+trabajo en algo que otro investigador puede verificar.</p>
+</div>
+</section><section class="cap"><h1 id="parte-4-referencia" class="parte"><span class="parte-num">Parte IV</span><span class="parte-tit">Referencia</span></h1>
+<p>Las fichas de los treinta paneles, la solución de los problemas más frecuentes
+y un glosario. Esta parte está pensada para consultarla, no para leerla seguida.</p>
+<h2 id="cap-13-los-treinta-paneles" class="capitulo"><span class="cap-num">13</span>Los treinta paneles</h2>
+<p>Las fichas que siguen <strong>se generan desde el código fuente de la aplicación</strong>,
+del mismo archivo que alimenta la ayuda que aparece dentro de cada panel. Por
+eso el manual no puede contradecir a la interfaz: si una guía cambia en el
+programa, cambia aquí al regenerar el documento.</p>
+<p>Cada ficha responde a cuatro preguntas: qué es, para qué sirve, qué resultado
+produce y cómo interpretar ese resultado. La última es la más útil, porque
+incluye los umbrales y las trampas de cada método.</p>
+<h3 class="grupo">El flujo principal</h3>
+<p class="grupo-intro">Los paneles que se recorren en orden para llevar un corpus desde las imágenes hasta el texto analizable.</p>
+<div class="panel" id="panel-cfg">
+<h4 class="panel-tit"><span class="panel-emoji">⚙</span>Configuración</h4>
+<p class="panel-sub">Configuración del corpus</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Punto de partida del proyecto: define el corpus (carpetas de imágenes/PDF), las claves de API y el modelo de IA que usará cada etapa del análisis.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Dejar reproducible de dónde sale el material y con qué herramientas se procesa. Es la base de la trazabilidad metodológica que exige una revista.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Un proyecto .bashkar con rutas, claves y preferencias persistentes. No produce análisis todavía.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> No hay cifras que interpretar aquí, pero sí decisiones que documentar en el paper: qué proveedor de IA se usó (local Ollama vs. nube), qué modelo y por qué. El modelo elegido afecta costo, privacidad (los datos salen a un tercero salvo Ollama) y reproducibilidad (los modelos de nube cambian con el tiempo; anota la fecha y la versión). Para corpus histórico en español, los modelos grandes de visión (Gemini/Claude/GPT) superan a Tesseract en microfilm degradado.</p>
+</div>
+<div class="panel" id="panel-etz">
+<h4 class="panel-tit"><span class="panel-emoji">✏️</span>Etiquetar</h4>
+<p class="panel-sub">Etiquetar zonas de página (opcional)</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Editor manual de zonas: marcas sobre la imagen qué región es título, cuerpo, foto, pie, publicidad o filete, y en qué orden de lectura van.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Enseñar al OCR la estructura de la página (prensa ilustrada multicolumna) para que el texto salga en orden y sin mezclar columnas ni pies de foto con el cuerpo.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Un mapa de zonas con tipo y orden, que alimenta el OCR por regiones y la segmentación posterior.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> El orden de lectura es lo crítico: si los badges de orden saltan de columna incorrectamente, el texto OCR saldrá desordenado y contaminará todo el análisis textual aguas abajo. Revisa que las fotos estén marcadas como tales (su &#x27;texto&#x27; OCR es ruido) y que los pies de foto NO se fundan con el cuerpo del artículo. En layouts tipo &#x27;marco&#x27; (texto rodeando una ilustración) el orden automático suele fallar: corrígelo a mano. Una buena zonificación es la diferencia entre un corpus limpio y uno irrecuperable.</p>
+</div>
+<div class="panel" id="panel-ocr">
+<h4 class="panel-tit"><span class="panel-emoji">📄</span>Extracción OCR</h4>
+<p class="panel-sub">Extracción de texto por OCR</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Reconocimiento óptico de caracteres: convierte la imagen de cada página en texto editable, por varias rutas (Tesseract local, IA de visión, Kraken/HTR, texto embebido).</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Obtener el texto del corpus, materia prima de todo el análisis. Sin texto fiable no hay NER, ni tópicos, ni sentimiento que valgan.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Archivos de texto por página, con un índice de confianza del reconocimiento.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Vigila la CONFIANZA: páginas por debajo de ~30 % suelen estar tan degradadas que su texto es ruido (palabras partidas, &#x27;pofftica&#x27; por &#x27;política&#x27;). El microfilm de la BNC con grano e inclinación da 0 palabras útiles en Tesseract sin deskew+denoise; ahí conviene la ruta de IA de visión. Regla de oro de HD: la calidad del OCR pone el techo a TODO el análisis posterior. Antes de sacar conclusiones, mide la tasa de error sobre una muestra transcrita a mano (CER/WER) y repórtala — es el dato que una revista te va a pedir para confiar en el resto.</p>
+</div>
+<div class="panel" id="panel-conv">
+<h4 class="panel-tit"><span class="panel-emoji">⚡</span>Conversor PDF</h4>
+<p class="panel-sub">Conversión masiva PDF→Word/TXT (texto embebido)</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Conversor masivo de PDF a texto/Word extrayendo el texto YA embebido (PDFs con capa OCR previa, p. ej. Adobe Paper Capture de la BNC), sin re-reconocer.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Aprovechar OCR ya hecho: rapidísimo (48 págs en segundos) y sin costo, cuando el PDF trae texto detrás de la imagen.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Archivos .txt/.docx por página, limpios de coordenadas XY del OCR de origen, listos para Normalizar.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Útil sólo si el PDF tiene capa de texto: si el conversor saca poco o nada, el PDF es imagen pura y necesitas la ruta de OCR/IA. El texto embebido de la BNC suele ser de calidad media (OCR antiguo): trátalo como punto de partida a revisar en Normalizar, no como verdad final. Conserva nota de la procedencia (OCR de origen vs. propio) porque mezclar OCR de distinta calidad introduce sesgos difíciles de rastrear después.</p>
+</div>
+<div class="panel" id="panel-mmx">
+<h4 class="panel-tit"><span class="panel-emoji">🧠</span>Extracción IA</h4>
+<p class="panel-sub">Extracción multimodal estructurada de imágenes (IA de visión → JSON → .md)</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Extracción multimodal con IA de visión: la IA &#x27;lee&#x27; la página y devuelve su estructura en JSON (artículo jerárquico, fotos con sus pies, bloques de publicidad), no sólo texto plano.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Rescatar páginas que el OCR clásico no recupera (microfilm degradado) Y obtener de una vez la estructura editorial, separando cuerpo, pies de foto y anuncios.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Un JSON por página + Markdown legible; alimenta el corpus textual con el cuerpo del artículo (excluyendo pies y publicidad) y registra el costo real de IA.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> La gran ventaja sobre el OCR plano es que la salida viene ya SEPARADA por función editorial: el cuerpo del artículo no se contamina con texto de anuncios. Pero la IA de visión puede &#x27;alucinar&#x27; (inventar texto plausible donde no lo lee); por eso conserva la ortografía de época y DEBES validar una muestra contra la imagen original. Estima siempre el costo antes de lanzar el lote (se muestra el desglose tokens/USD) y registra el costo real post-lote: es parte del estándar de transparencia. Para el paper, reporta proveedor, modelo y fecha: estos modelos evolucionan y el resultado no es perfectamente reproducible.</p>
+</div>
+<div class="panel" id="panel-norm">
+<h4 class="panel-tit"><span class="panel-emoji">📝</span>Normalizar</h4>
+<p class="panel-sub">Revisión y normalización del texto</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Revisión y normalización del texto OCR: corriges errores, eliges entre versiones (cruda / manual / IA), y comparas diferencias antes de fijar el texto definitivo.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Producir la versión del texto sobre la que correrá el análisis, decidiendo cuánto normalizar sin borrar rasgos históricos que son objeto de estudio.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> El texto &#x27;de trabajo&#x27; del corpus, versionado y persistente, más un diccionario de corpus opcional.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Decisión metodológica central: ¿normalizas la ortografía de época (p. ej. acentuación antigua) o la conservas? Si tu objeto de estudio ES la lengua de los años 30, normalizar de más BORRA tu evidencia. Si te interesa el contenido (temas, actores), normalizar ayuda a que NER y tópicos agrupen variantes. Documenta qué criterio usaste y aplícalo de forma consistente a todo el corpus. El diff visual rojo/verde te muestra el impacto de cada cambio: úsalo para no introducir errores nuevos al &#x27;corregir&#x27;.</p>
+</div>
+<div class="panel" id="panel-seg">
+<h4 class="panel-tit"><span class="panel-emoji">📋</span>Segmentar</h4>
+<p class="panel-sub">Segmentación en artículos</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Segmentación: parte el texto continuo de cada número en artículos individuales y los tipifica (artículo, índice, publicidad, portada, colofón).</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Convertir un flujo de páginas en unidades de análisis (el artículo), que es lo que se cuenta, compara y clasifica en el resto del estudio.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Una lista de artículos con su tipo, longitud y texto, base de todos los análisis por documento.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> La unidad de análisis condiciona todo: si la segmentación une dos artículos, sus temas y entidades se mezclan; si parte uno en dos, infla los conteos. Revisa que los textos muy cortos (&lt;20 palabras) no estén inflando la categoría &#x27;Portada&#x27; por diseño del clasificador. Comprueba el reparto de tipos: un corpus de prensa ilustrada con 0 % de publicidad detectada es sospechoso. El recuento de artículos por número y por tipo es un dato descriptivo que conviene reportar como primera caracterización del corpus.</p>
+</div>
+<div class="panel" id="panel-anal">
+<h4 class="panel-tit"><span class="panel-emoji">🔬</span>Analizar</h4>
+<p class="panel-sub">Análisis textual y semántico</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Análisis textual y semántico de base: frecuencias, n-gramas, palabras clave, y expansión semántica con Word2Vec entrenado sobre tu propio corpus.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Una primera lectura cuantitativa del vocabulario: qué se nombra mucho, qué palabras aparecen juntas, qué campos semánticos estructura el corpus.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Tablas de frecuencias y n-gramas, y vecinos semánticos por palabra (p. ej. guerra → hitlerianos, mujer → modas).</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Las frecuencias crudas están dominadas por palabras vacías y por el RUIDO de OCR: filtra stopwords y fragmentos antes de concluir nada. Los n-gramas (bigramas/trigramas) revelan fórmulas y colocaciones de la época. En la expansión semántica (Word2Vec), los &#x27;vecinos&#x27; reflejan co-aparición en contextos similares, NO sinonimia ni causalidad: que &#x27;guerra&#x27; y &#x27;hitlerianos&#x27; estén próximos describe el discurso de 1939, no una opinión. Vecinos raros (&#x27;túon&#x27;, &#x27;pofftica&#x27;) son síntoma de OCR sucio, no hallazgos. Necesitas suficiente corpus (miles de palabras) para que los vectores sean estables.</p>
+</div>
+<div class="panel" id="panel-res">
+<h4 class="panel-tit"><span class="panel-emoji">📈</span>Resultados</h4>
+<p class="panel-sub">Resultados y exportación</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Centro de resultados y exportación: reúne las salidas del proyecto y las empaqueta en formatos estándar (TEI, BibTeX, CSV, Markdown, ZIP de publicación).</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Sacar el material del programa hacia el paper, el repositorio de datos (Zenodo/DOI) y otras herramientas.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Ficheros estándar interoperables y un paquete de publicación reproducible.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> No interpretas cifras aquí, sino que garantizas interoperabilidad: el TEI P5 permite que otros humanistas reusen tu corpus; el BibTeX cita las fuentes; el CSV (utf-8-sig) abre bien en Excel español. Antes de publicar, valida el TEI (debe dar 0 errores) y revisa que los identificadores sean estables. Publicar el paquete con DOI es lo que convierte tu software y tus datos en un objeto citable y reproducible.</p>
+</div>
+<h3 class="grupo">Análisis</h3>
+<p class="grupo-intro">Herramientas que se aplican sobre el corpus ya segmentado. Ninguna es obligatoria: se eligen según la pregunta de investigación.</p>
+<div class="panel" id="panel-ner">
+<h4 class="panel-tit"><span class="panel-emoji">🏷</span>Entidades</h4>
+<p class="panel-sub">Índice de entidades nombradas</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Reconocimiento de Entidades Nombradas (NER): detecta y clasifica personas, lugares y organizaciones en el texto, combinando spaCy, un modelo BERT y opcionalmente un LLM.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Saber QUIÉN, DÓNDE y QUÉ instituciones aparecen en el corpus y con qué frecuencia: el insumo de las redes de actores, los mapas y el grafo de conocimiento.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Un índice de entidades por categoría con su frecuencia y los artículos donde aparecen; exportable a CSV y enlazable a Wikidata.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> El NER sobre OCR histórico tiene falsos positivos (fragmentos OCR tomados por nombres) y falsos negativos (nombres mal escritos no reconocidos). Una misma persona aparece como variantes (&#x27;López&#x27;, &#x27;Alfonso López&#x27;); por eso existe la fusión canónica y la cola de revisión human-in-the-loop. NO leas la frecuencia como &#x27;importancia&#x27; sin más: depende de la cobertura del corpus. Si vas a construir redes, guarda TODAS las entidades por artículo (no sólo la principal), o la red saldrá trivial. Reporta precisión/recall sobre una muestra anotada a mano: es la validación que da credibilidad al análisis de actores.</p>
+</div>
+<div class="panel" id="panel-anot">
+<h4 class="panel-tit"><span class="panel-emoji">✍️</span>Anotar</h4>
+<p class="panel-sub">Anotación semántica revisable</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Anotación semántica revisable estilo Recogito: marcas pasajes con etiquetas, registrando QUIÉN lo anotó, con qué confianza y con historial de cambios (Assertive Edition).</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Construir interpretación trazable: cada afirmación sobre el texto queda con su procedencia, lista para auditar o discutir entre codificadores.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Anotaciones con fuente, confianza e historial, exportables como Web Annotation (JSON-LD).</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> La clave epistemológica es la PROCEDENCIA: una anotación no es un hecho, es una aserción de alguien con un grado de certeza. Aprovecha la confianza para distinguir lo seguro de lo conjetural, y el historial para mostrar cómo evolucionó tu lectura. En equipo, las discrepancias entre anotadores no son errores a esconder: son datos sobre la ambigüedad del material, y se cuantifican con el módulo de Validación (Kappa).</p>
+</div>
+<div class="panel" id="panel-bsem">
+<h4 class="panel-tit"><span class="panel-emoji">🔍</span>Búsqueda</h4>
+<p class="panel-sub">Búsqueda semántica por similitud</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Búsqueda semántica por similitud: encuentra pasajes parecidos en SIGNIFICADO a una consulta, usando embeddings (sentence-transformers + FAISS), no coincidencia exacta de palabras.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Localizar de qué se habla aunque no se usen tus palabras exactas: recuperar el tratamiento de un tema disperso en el corpus con distinto vocabulario.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Una lista de pasajes ordenados por similitud semántica con un puntaje (0–1).</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> El puntaje mide cercanía en el espacio vectorial, no verdad ni relevancia: un valor alto significa &#x27;parecido en uso&#x27;, y puede traer falsos amigos. Es una herramienta de EXPLORACIÓN y recuperación, no de medición: úsala para encontrar material, luego lee los pasajes. Los modelos de embeddings se entrenaron en español moderno, así que en lengua de 1930 pueden perder matices. No reportes &#x27;similitud 0.82&#x27; como hallazgo; repórtalo como criterio con el que reuniste un conjunto de pasajes que luego analizaste cualitativamente.</p>
+</div>
+<div class="panel" id="panel-coloc">
+<h4 class="panel-tit"><span class="panel-emoji">🔤</span>Collocates</h4>
+<p class="panel-sub">Redes léxicas y concordancias</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Collocates y concordancias: muestra qué palabras acompañan habitualmente a un término (su vecindario léxico) y en qué contextos aparece (líneas KWIC).</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Estudiar el USO de una palabra: con qué se asocia &#x27;mujer&#x27;, &#x27;guerra&#x27; o &#x27;moderno&#x27; en la prensa de la época —la base de la lingüística de corpus.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Tablas de colocados con medidas de asociación y concordancias palabra-en-contexto.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Las medidas de asociación (p. ej. información mutua) premian co-apariciones DISTINTIVAS, no sólo frecuentes: un colocado raro pero muy ligado puede ser más revelador que uno común. Cuidado con la frecuencia mínima: con pocos casos, la asociación es inestable (azar). La ventana (cuántas palabras a cada lado) cambia el resultado: ventanas cortas captan sintaxis, largas captan temática. Las concordancias KWIC son la prueba cualitativa: siempre vuelve al texto real antes de afirmar que dos términos &#x27;van juntos&#x27;.</p>
+</div>
+<div class="panel" id="panel-nov">
+<h4 class="panel-tit"><span class="panel-emoji">🆕</span>Novedad</h4>
+<p class="panel-sub">Detección de novedad y cambio discursivo</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Detección de novedad y cambio discursivo: identifica cuándo aparecen temas o vocabulario NUEVOS respecto a lo anterior en la secuencia temporal del corpus.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Detectar inflexiones: el momento en que el discurso de la revista cambia de foco (irrupción de un tema, giro de tono), útil para periodizar.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Una curva/serie de novedad por número o fecha, marcando los picos de cambio.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Un pico de novedad señala que ESE número introduce léxico/temas poco vistos antes; es una pista, no una explicación: hay que ir al material y ver qué pasó (un acontecimiento histórico, un cambio editorial). Distingue novedad real de artefactos: un cambio de OCR o de fuente puede simular &#x27;novedad&#x27; léxica. Con pocos números el cálculo es ruidoso. Es ideal para CONTAR una historia cronológica en el paper, anclando cada pico a evidencia textual concreta.</p>
+</div>
+<div class="panel" id="panel-red">
+<h4 class="panel-tit"><span class="panel-emoji">🕸</span>Redes</h4>
+<p class="panel-sub">Redes de co-ocurrencia</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Redes de co-ocurrencia: construye un grafo donde los nodos son entidades (o palabras) y las aristas indican que aparecen juntas; calcula comunidades y métricas.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Ver la ESTRUCTURA relacional del corpus: qué actores y lugares forman bloques, quién es central, cómo se agrupan los temas.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Un grafo (visual y exportable a GEXF/Gephi) con comunidades coloreadas y métricas: grado, centralidad, modularidad, densidad.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Las métricas tienen umbrales de referencia: la MODULARIDAD &gt; 0.3-0.4 indica que las comunidades detectadas son reales y no azar (en este corpus se obtuvo ~0.57, comunidades coherentes: guerra-España, bloque anglosajón, Europa). La CENTRALIDAD señala nodos puente, no necesariamente importancia histórica. Cuidado: co-ocurrir en un mismo número/artículo NO es relación social ni causal — es co-presencia textual. La densidad y el tamaño dependen de cuántas entidades guardaste por documento: si la base trae ~1 entidad/artículo, la red será pobre (hace falta re-NER guardando todas). Reporta el método de construcción (qué cuenta como arista) o la red no será interpretable por otros.</p>
+</div>
+<div class="panel" id="panel-ling">
+<h4 class="panel-tit"><span class="panel-emoji">🔭</span>Lingüística</h4>
+<p class="panel-sub">Sintaxis, correferencia, morfología, encuadre, polaridad, revisión NER y validación</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Suite de lingüística computacional: sintaxis (dependencias, SVO), correferencia, morfología histórica, encuadre (framing), polaridad y validación inter-codificador.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Pasar del QUÉ se dice al CÓMO se dice y desde qué ÁNGULO: estructura de las frases, arcaísmos, marcos interpretativos y tono hacia actores concretos.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Tablas por artículo de relaciones SVO, cadenas de correferencia, densidad de arcaísmos, frame dominante, polaridad y, en Validación, el Kappa de concordancia.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> ENCUADRE (framing): clasifica cada artículo por el ÁNGULO (guerra, modernidad, mujer, nación…), no por el tema literal; el frame &#x27;dominante&#x27; es el de mayor léxico, pero un texto puede combinar varios. POLARIDAD: pos/neg/neutro discriminante, mejor que el sesgo a &#x27;confianza&#x27; del modelo de 8 emociones; &#x27;polaridad hacia X&#x27; mide el tono en una ventana alrededor de la entidad, sin cruzar de un artículo a otro. MORFOLOGÍA HISTÓRICA: una densidad de arcaísmos baja (~0.6 %) indica español ya moderno en 1939, hallazgo en sí mismo. VALIDACIÓN: el Kappa de Cohen mide acuerdo entre tu etiquetado automático y uno humano sobre una muestra; &gt;0.6 es aceptable, &gt;0.8 bueno. Reportar Kappa es la defensa de fiabilidad que una revista exige antes de creer en cualquier clasificación automática.</p>
+</div>
+<div class="panel" id="panel-sem">
+<h4 class="panel-tit"><span class="panel-emoji">🧠</span>Semántico</h4>
+<p class="panel-sub">Tono, léxico y estilo</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Análisis semántico de tono, léxico y estilo: emociones (NRC), subjetividad, intensidad y rasgos estilométricos del texto.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Caracterizar el registro de la prensa: ¿es sobrio o exaltado?, ¿factual u opinativo?, ¿qué emociones predominan en su retórica?</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Perfiles de emoción (8 categorías), índices de subjetividad/intensidad y métricas de estilo por artículo o corpus.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> El léxico de emociones NRC tiende a sobre-representar &#x27;confianza&#x27; (palabras neutras que el diccionario marca como positivas): por eso para polaridad pura conviene el módulo discriminante de Lingüística. Lee el perfil emocional como RETÓRICA del texto, no como la emoción del autor ni del lector. La subjetividad alta marca opinión/editorial; la baja, registro informativo. Estos diccionarios se calibraron en lengua moderna: en 1930 algunos términos tenían otra carga, así que valida una muestra. Un perfil &#x27;sobrio, dominado por confianza&#x27; es un hallazgo defendible sobre el ESTILO de la publicación.</p>
+</div>
+<div class="panel" id="panel-top">
+<h4 class="panel-tit"><span class="panel-emoji">🧩</span>Tópicos</h4>
+<p class="panel-sub">Topic modeling del corpus</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Topic modeling: descubre automáticamente los TEMAS latentes del corpus agrupando palabras que tienden a aparecer juntas (NMF/BERTopic).</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Obtener un mapa temático del corpus sin leerlo entero: qué grandes asuntos lo organizan y cómo se distribuyen entre números.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Una lista de tópicos, cada uno descrito por sus palabras más representativas, y el peso de cada tópico por documento.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Los tópicos son agrupaciones ESTADÍSTICAS de palabras, no categorías predefinidas: tú les pones nombre leyendo sus términos principales, y ese paso es interpretativo. El número de tópicos es una decisión tuya: pocos = temas vagos, muchos = temas redundantes/ruidosos; pruébalo y justifícalo. Un tópico dominado por fragmentos de OCR es basura, no un tema. La coherencia del tópico (¿sus palabras &#x27;cuelgan juntas&#x27; para un humano?) importa más que cualquier métrica automática. Reporta cómo elegiste el número de tópicos y qué nombre les diste: sin eso, el modelo no es replicable.</p>
+</div>
+<div class="panel" id="panel-viz">
+<h4 class="panel-tit"><span class="panel-emoji">🎨</span>Visualizar</h4>
+<p class="panel-sub">Visualizaciones avanzadas</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Visualizaciones avanzadas: nubes de palabras limpias, mapas de calor temporales, redes y gráficos comparativos del corpus.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Comunicar patrones de un vistazo y explorar el corpus visualmente, tanto para tu propio análisis como para las figuras del paper.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Figuras (PNG/HTML) listas para incrustar: nubes, heatmaps, redes, comparativas.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Las visualizaciones PERSUADEN, así que sé honesto: una nube de palabras muestra frecuencia, no importancia, y sin limpieza léxica se llena de ruido OCR y stopwords (aquí hay una capa de lematización + filtro). El tamaño de fuente no es una medida precisa; para comparar usa barras. Los heatmaps temporales revelan estacionalidad/picos, pero su color depende de la escala elegida — decláralo. Toda figura del paper necesita pie con la fuente de datos y el método; una figura bonita sin método no es evidencia.</p>
+</div>
+<div class="panel" id="panel-comp">
+<h4 class="panel-tit"><span class="panel-emoji">📊</span>Comparativo</h4>
+<p class="panel-sub">Análisis comparativo interno</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Análisis comparativo interno: contrasta subconjuntos del mismo corpus (por número, sección, periodo) en sus métricas léxicas, temáticas o de tono.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Detectar diferencias y evolución dentro del corpus: ¿cambia el vocabulario entre números?, ¿difiere el tono por sección?</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Tablas y gráficos comparativos lado a lado de los grupos elegidos.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Compara grupos de tamaño parecido: un subconjunto mucho mayor domina las frecuencias absolutas, así que usa proporciones o medidas normalizadas. Una diferencia visible no es necesariamente SIGNIFICATIVA: con pocos documentos puede ser azar; si el paper lo exige, respáldala con un test. Asegúrate de comparar lo comparable (no mezcles publicidad con artículos). Las diferencias más interesantes suelen ser cualitativas (qué palabras cambian), no sólo cuantitativas.</p>
+</div>
+<div class="panel" id="panel-comp2">
+<h4 class="panel-tit"><span class="panel-emoji">🔀</span>Multi-corpus</h4>
+<p class="panel-sub">Comparación entre proyectos</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Comparación multi-corpus: contrasta ESTE proyecto con otro distinto (otra revista, otro periodo, otro medio).</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Situar tu corpus frente a un punto de referencia externo: qué tiene de propio Estampa frente a otra publicación.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Métricas y figuras comparativas entre dos o más corpus.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> El riesgo principal es comparar manzanas con naranjas: corpus de distinto tamaño, época, calidad de OCR o criterios de segmentación NO son directamente comparables. Normaliza (proporciones, tasas por mil palabras) y declara las diferencias de origen. Lo que distingue a un corpus de otro puede deberse al objeto de estudio o a un artefacto del procesamiento: descarta lo segundo antes de afirmar lo primero. Bien hecho, el contraste externo es lo que da relieve a tus hallazgos.</p>
+</div>
+<div class="panel" id="panel-intxt">
+<h4 class="panel-tit"><span class="panel-emoji">🔗</span>Intertexto</h4>
+<p class="panel-sub">Análisis intertextual</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Análisis intertextual: detecta pasajes que comparten texto o citas entre artículos (la misma noticia republicada, fuentes comunes) por similitud TF-IDF.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Rastrear circulación de textos y dependencias entre piezas: qué se copia, qué se cita, qué se reescribe.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Pares de artículos con su grado de similitud y los fragmentos compartidos.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Una similitud alta sugiere reutilización, pero distingue cita legítima de fórmula compartida de la época (frases hechas, teletipos): no todo solapamiento es plagio ni copia directa. Fija un umbral y justifícalo: demasiado bajo trae coincidencias triviales, demasiado alto sólo duplicados exactos. El OCR ruidoso BAJA las similitudes reales (errores distintos en cada copia), así que la herramienta subestima la intertextualidad en corpus degradados. Verifica siempre los pares candidatos leyendo los fragmentos.</p>
+</div>
+<div class="panel" id="panel-meta">
+<h4 class="panel-tit"><span class="panel-emoji">🌐</span>Metadatos URL</h4>
+<p class="panel-sub">Metadatos desde URL externa</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Extracción de metadatos desde una URL externa: recupera datos bibliográficos/catalográficos de un recurso en línea.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Completar la ficha del corpus o de una fuente con datos estructurados sin teclearlos a mano.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Campos de metadatos (título, autor, fecha, identificadores) extraídos del recurso.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Verifica siempre los metadatos recuperados contra la fuente: los catálogos en línea tienen errores y campos ambiguos. Anota la fecha de captura y la URL exacta: el recurso puede cambiar o desaparecer. Estos metadatos alimentan tu citación y tu paquete de publicación, así que un dato erróneo aquí se propaga a la bibliografía final.</p>
+</div>
+<div class="panel" id="panel-vis">
+<h4 class="panel-tit"><span class="panel-emoji">🖼</span>Tipografía</h4>
+<p class="panel-sub">Visual y tipografía</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Análisis visual y tipográfico: examina la materialidad de la página —fuentes, negritas/cursivas, número y disposición de fotos, filetes— más allá del texto.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Estudiar el DISEÑO de la prensa ilustrada como objeto: cómo la tipografía y la imagen construyen sentido, no sólo las palabras.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Inventario de elementos visuales y rasgos tipográficos por página.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Es el puente entre el análisis textual y la cultura visual del impreso. La detección de fotos/elementos depende de la calidad de imagen: en microfilm saturado de tinta el detector puede dar 0 elementos por el origen, no por error del método; valídalo sobre imágenes limpias. La presencia de negrita/cursiva marca jerarquías editoriales (titulares, destacados) interpretables como énfasis. Para una revista, el análisis de la materialidad gráfica es un aporte distintivo frente a estudios sólo textuales.</p>
+</div>
+<div class="panel" id="panel-imgdesc">
+<h4 class="panel-tit"><span class="panel-emoji">🎨</span>Desc. imágenes</h4>
+<p class="panel-sub">Descripción e iconografía de imágenes etiquetadas</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Descripción e iconografía de imágenes: la IA describe el contenido de las fotos/ilustraciones etiquetadas (qué se ve, quién, qué escena).</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Hacer BUSCABLE y analizable el componente visual: convertir fotos en texto descriptivo para estudiar la iconografía de la revista.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Descripciones textuales por imagen, agregables en un análisis iconográfico del corpus.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Las descripciones son INTERPRETACIONES de un modelo entrenado en imágenes modernas: puede no reconocer personajes, ropa o contextos de 1930, y proyectar categorías actuales. Trátalas como un primer índice a verificar, no como descripción objetiva. Son muy útiles para encontrar y agrupar imágenes (p. ej. todas las que muestran multitudes, retratos, escenas bélicas), pero el análisis iconográfico fino requiere tu mirada experta. Documenta el modelo usado: distintos modelos describen distinto.</p>
+</div>
+<h3 class="grupo">Salida y control de calidad</h3>
+<p class="grupo-intro">Lo que convierte el análisis en resultados citables, y lo que permite defender su fiabilidad.</p>
+<div class="panel" id="panel-bench">
+<h4 class="panel-tit"><span class="panel-emoji">⚖️</span>Benchmark OCR</h4>
+<p class="panel-sub">Compara rutas de OCR contra un estándar de oro (CER/WER)</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Evaluación comparativa de las rutas de OCR: transcribe las mismas páginas con varios motores y mide cuánto se aleja cada uno de una transcripción que tú hiciste a mano (el estándar de oro).</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Justificar con datos qué motor usar, en vez de elegirlo por impresión. Es la respuesta a la pregunta que hace cualquier evaluador: «¿por qué este OCR y no otro?».</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Una tabla con CER, WER, similitud de Levenshtein normalizada y segundos por página para cada ruta, exportable a CSV o como tabla Markdown lista para pegar en el artículo.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> El CER (Character Error Rate) es la métrica principal: es la proporción de caracteres que habría que corregir. Por debajo de 0,05 el texto está casi limpio; hasta 0,10 es explotable para análisis léxico y NER; entre 0,10 y 0,25 exige corrección manual antes de analizar; por encima de 0,25 el texto es inservible y cualquier conclusión que saques de él será ruido. El WER siempre sale más alto que el CER porque un solo carácter mal invalida la palabra entera — es la métrica realista si vas a hacer búsquedas o frecuencias. La similitud normalizada (1 − CER) es la que reportan los papers de HTR, úsala para comparar tus cifras con la literatura: CHURRO reporta 0,823 en impreso histórico. Mira también los segundos por página: una ruta con CER 0,02 que tarda tres minutos por página sirve para construir el estándar de oro, no para procesar mil páginas. Lo habitual es usar la lenta y buena para crear la referencia, y la rápida para el corpus completo. Advertencia metodológica: el estándar de oro debe ser una muestra REPRESENTATIVA (páginas limpias y sucias, con y sin fotograbado), no las mejores; si eliges solo páginas fáciles medirás una calidad que no tendrás en producción.</p>
+</div>
+<div class="panel" id="panel-rep">
+<h4 class="panel-tit"><span class="panel-emoji">📝</span>Reporte</h4>
+<p class="panel-sub">Reporte narrativo (IA)</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Reporte narrativo con IA: genera un texto que resume e hila los hallazgos del proyecto en prosa académica.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Tener un borrador o andamiaje para la sección de resultados/discusión, a partir de las métricas ya calculadas.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Un documento narrativo en lenguaje natural con los principales resultados.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Es un BORRADOR asistido, no un resultado: la IA puede redondear cifras, inferir relaciones que los datos no sostienen o inventar matices. Trátalo como un co-autor júnior al que hay que revisar línea por línea contra los datos reales. Útil para vencer la página en blanco y para verbalizar patrones, pero la responsabilidad interpretativa y la verificación factual son tuyas. No cites el reporte como evidencia: cita los datos que lo respaldan.</p>
+</div>
+<div class="panel" id="panel-dash">
+<h4 class="panel-tit"><span class="panel-emoji">📊</span>Dashboard</h4>
+<p class="panel-sub">Dashboard ejecutivo</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Dashboard ejecutivo: panel con los indicadores clave del corpus (tamaño, entidades, temas, tono, redes) en una sola vista.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Tener una fotografía sintética del proyecto para presentaciones, seguimiento y control de calidad.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Una vista agregada con cifras y mini-gráficos de las métricas principales.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> Es un RESUMEN: cada indicador remite a un análisis más detallado donde se interpreta con rigor; no saques conclusiones sólo del número del dashboard. Úsalo para control de calidad (un conteo de entidades=0 o un corpus de 0 artículos delatan un problema aguas arriba) y para comunicar el alcance del proyecto. Los KPIs orientan, pero el argumento del paper se construye con los análisis específicos, no con el panel.</p>
+</div>
+<div class="panel" id="panel-valid">
+<h4 class="panel-tit"><span class="panel-emoji">✅</span>Validar</h4>
+<p class="panel-sub">Validación humana y semáforo</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Validación humana y semáforo de calidad: marca cada dato como fiable (verde), dudoso (amarillo) o problemático (rojo) y permite contrastar el etiquetado automático con humano.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Garantizar y DOCUMENTAR la fiabilidad de los datos antes de publicar: separar lo confirmado de lo que falta revisar.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Un estado de calidad por dato/entidad y métricas de concordancia (acuerdo %, Kappa de Cohen) sobre muestras.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> El semáforo prioriza tu esfuerzo de revisión: ataca primero el rojo. El Kappa de Cohen es el dato duro: corrige el acuerdo esperado por azar; valores &gt;0.6 = aceptable, &gt;0.8 = bueno, &lt;0.4 = pobre (tu etiquetado automático no es fiable y hay que mejorarlo). La muestra de validación se extrae con semilla fija para que sea REPRODUCIBLE. Reportar concordancia inter-codificador no es opcional en una revista seria: es lo que separa una afirmación cuantitativa creíble de una impresión. La matriz de confusión te dice DÓNDE falla el método (qué categorías confunde).</p>
+</div>
+<div class="panel" id="panel-colab">
+<h4 class="panel-tit"><span class="panel-emoji">👥</span>Colaborar</h4>
+<p class="panel-sub">Colaboración y trazabilidad</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Colaboración y trazabilidad: registra quién hizo qué en el proyecto y permite trabajo en equipo con historial.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Coordinar varios investigadores y dejar auditable la cadena de decisiones sobre el corpus.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Un registro de acciones y contribuciones por persona.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> No produce análisis, sino RESPONSABILIDAD: en proyectos colaborativos, saber quién tomó cada decisión (qué criterio de normalización, qué anotación) es esencial para la integridad y para los créditos de autoría. El historial respalda la reproducibilidad: otro investigador puede ver cómo se construyó el dato. Acuerda con tu equipo los criterios ANTES de empezar; el registro documenta, no sustituye, el consenso metodológico.</p>
+</div>
+<h2 id="cap-14-cuando-algo-no-funciona" class="capitulo"><span class="cap-num">14</span>Cuando algo no funciona</h2>
+<h3>La aplicación no abre</h3>
+<p>Si se lanza desde un acceso directo o un archivo por lotes y no ocurre nada, lo
+primero a comprobar es la <strong>ruta</strong>: los accesos directos antiguos pueden apuntar
+a carpetas que se renombraron. Un archivo por lotes bien hecho comprueba que la
+carpeta existe y avisa en lugar de cerrarse en silencio.</p>
+<p>Si se ejecuta desde el código fuente y parece colgado en el primer arranque,
+puede estar instalando dependencias. Es normal la primera vez.</p>
+<h3>La ventana se congela</h3>
+<p>Las operaciones largas corren en segundo plano y la ventana debería seguir
+respondiendo. Si se congela al cambiar de página en Normalizar o en el
+Etiquetador, conviene comprobar que la carpeta de trabajo <strong>no esté en una unidad
+de red o en una carpeta sincronizada en la nube</strong>: cada lectura pasa a ser una
+consulta remota.</p>
+<p>La aplicación guarda en caché local las páginas ya vistas, así que la segunda
+visita a una página es mucho más rápida que la primera.</p>
+<h3>El reconocimiento devuelve cero palabras</h3>
+<p>Es el síntoma clásico de una página de microfilm inclinada. En orden:</p>
+<ol>
+<li>Etiquetar las zonas y usar la ruta por zonas, que corrige la inclinación y
+trata cada región por separado.</li>
+<li>Si sigue sin salir nada, probar Kraken o CHURRO-3B.</li>
+<li>Si tampoco, es probable que la imagen de origen no tenga información
+recuperable. Conviene verificarlo con el visor antes de invertir más tiempo.</li>
+</ol>
+<h3>Un modelo de visión no aparece disponible</h3>
+<p>El panel indica el motivo en lugar de fallar a mitad de un trabajo. Los motivos
+habituales son que falte descargar el modelo —hay un botón para ello— o que la
+biblioteca correspondiente no esté instalada, en cuyo caso el propio mensaje
+indica qué hacer.</p>
+<h3>El proyecto de ayer no aparece</h3>
+<p>Está en el botón grande de continuar de la pantalla de bienvenida, con su fecha
+de última modificación. La lista de recientes no repite el proyecto actual. Si
+el nombre despista, conviene recordar que corresponde a la fecha de <strong>creación</strong>,
+no a la del último trabajo.</p>
+<h2 id="cap-15-glosario" class="capitulo"><span class="cap-num">15</span>Glosario</h2>
+<p><strong>CER</strong> (<em>character error rate</em>). Proporción de caracteres que habría que
+corregir en una transcripción automática respecto de una de referencia. Es la
+métrica principal para evaluar reconocimiento de texto.</p>
+<p><strong>Corpus</strong>. El conjunto de textos sobre el que se trabaja, con sus metadatos.
+En esta aplicación, un corpus se organiza en números, páginas y artículos.</p>
+<p><strong>Entidad nombrada</strong>. Una persona, lugar, organización, fecha, obra o evento
+mencionado en el texto. Identificarlas permite pasar del análisis de palabras al
+análisis de actores.</p>
+<p><strong>Estándar de oro</strong>. Transcripción hecha a mano que se toma como verdad para
+medir el error de los métodos automáticos.</p>
+<p><strong>HTR</strong> (<em>handwritten text recognition</em>). Reconocimiento de texto manuscrito.
+Se distingue del OCR clásico, pensado para impresos.</p>
+<p><strong>Kappa de Cohen</strong>. Medida de acuerdo entre dos codificadores que corrige el
+acuerdo esperado por azar. Por encima de 0,6 se considera aceptable; por debajo
+de 0,4, pobre.</p>
+<p><strong>Lematizar</strong>. Reducir cada palabra a su forma de diccionario. Útil para contar
+frecuencias, destructivo para estudiar variación ortográfica histórica.</p>
+<p><strong>OCR</strong> (<em>optical character recognition</em>). Reconocimiento óptico de caracteres:
+convertir la imagen de un texto impreso en texto codificado.</p>
+<p><strong>Orden de lectura</strong>. La secuencia en que deben leerse las zonas de una página
+para reconstruir el discurso. En maquetación a varias columnas no coincide con
+el orden de arriba abajo.</p>
+<p><strong>TEI</strong>. <em>Text Encoding Initiative</em>, el estándar de codificación de textos en
+humanidades digitales. Permite marcar estructura, entidades y variantes de forma
+interoperable.</p>
+<p><strong>Tokenizar</strong>. Dividir un texto en unidades mínimas de análisis, normalmente
+palabras. Es el primer paso de casi cualquier procesamiento lingüístico.</p>
+<p><strong>Wikidata</strong>. Base de conocimiento colaborativa que asigna un identificador
+único a cada entidad. Enlazar a ella convierte una mención en un dato citable y
+comparable entre proyectos.</p>
+<p><strong>Zona</strong>. Región rectangular de una página con una tipología asignada: artículo,
+título, pie de foto, fotografía, publicidad, filete. El reconocimiento trabaja
+sobre las zonas que llevan texto.</p>
+</section>
+</main>
+
+<footer class="colofon">
+  <p>Manual generado desde el código fuente de Bashkar Station.
+     La referencia de paneles procede de <code>core/guia_modulos.py</code>,
+     la misma fuente que alimenta la ayuda dentro de la aplicación.</p>
+  <p>Bashkar Station es software libre bajo licencia Apache 2.0.<br>
+     <span class="url">github.com/fabiangulla-pixel/Bashkar-Station</span></p>
+</footer>
+
+</body>
+</html>

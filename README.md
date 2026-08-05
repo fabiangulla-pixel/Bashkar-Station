@@ -213,6 +213,26 @@ bashkar_station/
 
 ---
 
+## Manual de usuario
+
+[`manual/salida/Manual_Bashkar_Station.pdf`](manual/salida/Manual_Bashkar_Station.pdf)
+— 42 páginas: marco metodológico, puesta en marcha, seis recorridos de trabajo
+completos, y la referencia de los treinta paneles.
+
+No se escribe entero a mano: la referencia **se genera desde
+`core/guia_modulos.py`**, la misma fuente que alimenta la ayuda dentro de la
+aplicación, de modo que manual e interfaz no puedan contradecirse. Para
+regenerarlo tras cambiar el código:
+
+```bash
+python manual/generar_manual.py --pdf     # HTML + PDF (necesita Chrome o Edge)
+```
+
+El HTML es autocontenido —estilos incrustados, sin recursos externos— y se abre
+desde una memoria USB sin conexión.
+
+---
+
 ## Benchmark de OCR — elegir motor con datos
 
 Elegir ruta de OCR «porque se ve mejor» no es defendible en una publicación.
