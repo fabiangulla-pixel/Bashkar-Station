@@ -28,6 +28,38 @@ estimación inicial estaba equivocada por un orden de magnitud; no se tuvo en
 cuenta que Qwen2.5-VL convierte una página a 200 dpi en miles de tokens
 visuales. El modelo ocupó 11,97 GB de RAM en `float32` (3B × 4 bytes).
 
+### Segunda medición: por zonas etiquetadas, y el recuento de palabras engaña
+Sobre `rev_estampa_mar_1939/p0001-02`, página real etiquetada con **13 zonas
+(9 con texto, 4 fotografías saltadas)**:
+
+| Ruta | Palabras | Tiempo |
+|---|---:|---:|
+| Tesseract por zonas | 578 | 11,3 s |
+| CHURRO por zonas | 569 | 37,8 min |
+
+Aquí Tesseract **sí** produce texto: recortar por zonas lo mejora enormemente
+frente a la página completa. Y las cifras de palabras casi coinciden
+(similitud 0,958). **Pero la calidad no**:
+
+| CHURRO | Tesseract |
+|---|---|
+| Primera Gran **Rifa** Anual | Primera Gran **Rita** Anual |
+| **Esta magnífica batería** de cocina | **£sta maqgnilica bateria** |
+| en **aluminio** | en **alum:-nio** |
+| valor de **$ 75.00** | valor de **s 75 00** |
+| — | **IA eee** (línea inventada) |
+
+Vocabulario que solo produce Tesseract: `_gcsrs2—2—`, `auquirlido`,
+`año.¿có-`, `compart!`, `desearst`, `diarió`, `eee`… Para un análisis de
+frecuencias eso es ruido; para NER, «Rita» y «Rifa» son entidades distintas.
+
+**Conclusión metodológica:** contar palabras no mide calidad de OCR. Hace falta
+CER sobre un estándar de oro — que es justo lo que justifica `benchmark_ocr`.
+
+`SEGUNDOS_POR_ZONA_CPU` fijada en **210** con lo medido (2,8–3,7 min por zona).
+Trabajar por zonas ahorra ~26 % frente a la página completa (37,8 vs 51,1 min)
+y además evita que el modelo gaste tokens describiendo fotografías.
+
 ### Corrección de diseño: el OCR trabaja sobre las zonas etiquetadas
 La ruta se había implementado procesando la **página completa**, que es
 justamente lo que el flujo de Bashkar evita: el investigador etiqueta primero

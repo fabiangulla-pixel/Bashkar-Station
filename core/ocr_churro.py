@@ -57,10 +57,12 @@ MODELO_ID = "stanford-oval/churro-3B"
 # Qwen2.5-VL convierte una página grande en miles de tokens visuales.
 SEGUNDOS_POR_PAGINA_CPU = 3060.0
 
-# Por zona etiquetada el costo baja muchísimo: una zona de artículo es una
-# fracción de la página y las fotos/publicidad ni se procesan. Estimación
-# conservadora a la espera de medirla sobre zonas reales.
-SEGUNDOS_POR_ZONA_CPU = 420.0
+# Medido el 2026-08-04 sobre `rev_estampa_mar_1939/p0001-02`, una página real
+# etiquetada con 13 zonas (9 con texto, 4 fotografías saltadas): **37,8 minutos
+# en total, entre 2,8 y 3,7 minutos por zona**. La página completa había tardado
+# 51,1 min, así que trabajar por zonas ahorra ~26 % además de no arriesgar que
+# el modelo describa las fotografías.
+SEGUNDOS_POR_ZONA_CPU = 210.0
 
 PROMPT_POR_DEFECTO = (
     "Transcribe all the text in this historical document image. "
