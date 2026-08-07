@@ -4479,6 +4479,19 @@ class BashkarApp(tk.Tk):
             ""
         )
         self._var_api_key.set(ST.api_key)
+        # Persistir las claves en la carpeta personal, no en el proyecto: así
+        # sobreviven aunque no se guarde proyecto y nunca viajan en el .bashkar.
+        try:
+            from core.user_prefs import guardar_credenciales, separar_secretos
+            secretos, _ = separar_secretos(ST.api_keys)
+            guardar_credenciales({
+                # Incluye los vacíos para que borrar una clave en la interfaz
+                # también la borre del disco.
+                p: secretos.get(p, "")
+                for p in ("anthropic", "openai", "gemini")
+            })
+        except Exception:
+            pass
         # Guardar modelos por etapa
         for etapa_id, var_e in self._vars_modelo_etapa.items():
             ST.modelos_etapa[etapa_id] = var_e.get()

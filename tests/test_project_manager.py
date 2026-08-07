@@ -7,9 +7,17 @@ import pytest
 
 @pytest.fixture
 def dir_proyectos(tmp_path, monkeypatch):
-    """Redirige _dir_proyectos() a un directorio temporal."""
+    """Redirige _dir_proyectos() a un directorio temporal.
+
+    También redirige el almacén de credenciales: sin esto, los tests que
+    guardan claves escribirían en el ~/.bashkar REAL del desarrollador.
+    """
     import core.project_manager as pm
+    from core import user_prefs
     monkeypatch.setattr(pm, "_dir_proyectos", lambda: tmp_path)
+    monkeypatch.setattr(
+        user_prefs, "CREDENCIALES_PATH", tmp_path / "home" / "credenciales.json"
+    )
     return tmp_path
 
 
@@ -146,8 +154,64 @@ class TestGuardarCargar:
         st.api_keys = {"anthropic": "sk-ant-xxx", "openai": ""}
         guardar_proyecto(ruta, st)
         st2 = self._ST()
+        st2.api_keys = {}
         cargar_proyecto(ruta, st2)
         assert st2.api_keys.get("anthropic") == "sk-ant-xxx"
+
+    def test_el_proyecto_nunca_contiene_la_clave(self, dir_proyectos):
+        """Regresión: un .bashkar se comparte y se sincroniza a la nube.
+
+        Una API key escrita ahí es una filtración silenciosa. Esta prueba mira
+        los BYTES del archivo, no la estructura: da igual bajo qué campo se
+        cuele, no debe aparecer.
+        """
+        from core.project_manager import guardar_proyecto, nuevo_proyecto
+        ruta = nuevo_proyecto("Test Fuga", "Estampa")
+        st = self._ST()
+        st.api_key = "sk-ant-SECRETO-LEGADO"
+        st.api_keys = {
+            "anthropic": "sk-ant-SECRETO",
+            "openai": "sk-proj-SECRETO",
+            "gemini": "AIzaSECRETO",
+            "ollama": "http://localhost:11434",
+        }
+        guardar_proyecto(ruta, st)
+
+        crudo = ruta.read_text(encoding="utf-8")
+        assert "SECRETO" not in crudo
+        # …y la URL local de Ollama sí se conserva: no es un secreto.
+        assert "http://localhost:11434" in crudo
+
+    def test_cargar_migra_y_limpia_claves_de_proyecto_viejo(self, dir_proyectos):
+        """Un proyecto creado por la versión anterior trae claves dentro.
+
+        Al abrirlo deben moverse al almacén del usuario y desaparecer del
+        archivo, avisando para que el usuario las rote.
+        """
+        import json
+
+        from core.project_manager import cargar_proyecto, nuevo_proyecto
+        from core.user_prefs import cargar_credenciales
+
+        ruta = nuevo_proyecto("Test Legado", "Estampa")
+        datos = json.loads(ruta.read_text(encoding="utf-8"))
+        datos.setdefault("config", {})
+        datos["config"]["api_keys"] = {
+            "openai": "sk-proj-VIEJO",
+            "ollama": "http://localhost:11434",
+        }
+        datos["config"]["api_key"] = "sk-proj-VIEJO"
+        ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
+
+        st = self._ST()
+        st.api_keys = {}
+        res = cargar_proyecto(ruta, st)
+
+        assert res["credenciales_migradas"] is True
+        assert "VIEJO" not in ruta.read_text(encoding="utf-8")
+        assert cargar_credenciales().get("openai") == "sk-proj-VIEJO"
+        assert st.api_keys.get("openai") == "sk-proj-VIEJO"
+        assert "ROTA" in res["mensaje"]
 
     def test_guardar_persiste_ner(self, dir_proyectos):
         from core.project_manager import (

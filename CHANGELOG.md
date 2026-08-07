@@ -2,6 +2,59 @@
 
 ---
 
+## Sesión 53 — 2026-08-07 — Las API keys salen del archivo de proyecto
+
+Una auditoría de dependencia de proveedor (a raíz del radar semanal de IA)
+destapó algo que no se estaba buscando: **`guardar_proyecto` escribía las claves
+de Anthropic, OpenAI y Gemini en claro dentro del `.bashkar`**, en
+`config.api_key` y `config.api_keys`.
+
+### Por qué era grave y no solo feo
+
+Un `.bashkar` no es un archivo de configuración: es el entregable. Se copia, se
+comparte y vive en carpetas sincronizadas. El barrido encontró **5 archivos con
+claves reales**, dos de ellos bajo
+`I:\...\15_Becas y premios\25-2026\investigación ICC\Pruebas app\` — una carpeta
+de postulación. La clave no se filtraba por un fallo: se filtraba cada vez que
+el programa funcionaba como estaba previsto.
+
+### El arreglo
+
+Las credenciales viven ahora en `~/.bashkar/credenciales.json`, **fuera del
+proyecto y fuera de cualquier carpeta que se sincronice con el trabajo**. No es
+cifrado, es aislamiento: la misma idea de `~/.aws/credentials`. Lo que evita es
+que la clave viaje dentro de un entregable.
+
+| Archivo | Cambio |
+|---|---|
+| `core/user_prefs.py` | Almacén `credenciales.json`, separado de `prefs.json`. `es_secreto()` distingue una clave de una URL local de Ollama/LM Studio, que sí puede quedarse en el proyecto |
+| `core/project_manager.py` | `guardar_proyecto` no escribe claves. `cargar_proyecto` migra las de proyectos viejos, **las borra del archivo** y devuelve `credenciales_migradas` con aviso de rotación |
+| `core/estado.py` | `ST.api_keys` se inicializa desde el almacén del usuario |
+| `app.py` | Guardar ajustes persiste fuera del proyecto; borrar una clave en la interfaz la borra del disco |
+
+### Pruebas (+9)
+
+La que importa mira los **bytes** del archivo, no su estructura: da igual bajo
+qué campo se cuele una clave en el futuro, no debe aparecer.
+
+```python
+crudo = ruta.read_text(encoding="utf-8")
+assert "SECRETO" not in crudo
+assert "http://localhost:11434" in crudo   # la URL de Ollama sí se conserva
+```
+
+También se corrigió que el fixture de `test_project_manager.py` no aislaba el
+almacén: **correr la suite habría escrito en el `~/.bashkar` real** del
+desarrollador.
+
+### Lo que el código no puede arreglar
+
+Los 5 archivos filtrados quedaron limpios y verificados, pero eso solo detiene
+la propagación. Las claves estuvieron sincronizadas en la nube, así que **hay
+que rotarlas** en el panel de cada proveedor.
+
+---
+
 ## Sesión 52 — 2026-08-05 — Manual de usuario
 
 Un manual que es a la vez pieza citable y guía práctica: **42 páginas**, en HTML

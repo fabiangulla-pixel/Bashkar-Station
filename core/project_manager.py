@@ -179,7 +179,8 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
         "out_dir":        str(getattr(st, "out_dir", "") or ""),
         "input_tipo":     getattr(st, "input_tipo", "pdf"),
         "archivos_sel":   [str(p) for p in getattr(st, "archivos_sel", [])],
-        "api_key":        getattr(st, "api_key", ""),
+        # OJO: aquí NO va ninguna API key. Ver el bloque "Configuración
+        # multi-proveedor" más abajo y core/user_prefs.py.
         "max_ia":         getattr(st, "max_ia", 15),
         "campos_semillas": getattr(st, "campos_semillas", {}),
     }
@@ -260,9 +261,23 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
         pass
 
     # ── Configuración multi-proveedor ─────────────────────────────────────────
+    # Las API keys NO se escriben en el .bashkar: el proyecto se comparte y se
+    # sincroniza a la nube, así que una clave aquí es una filtración silenciosa.
+    # Van al directorio del usuario (core/user_prefs.py). Sí se conservan en el
+    # proyecto las URLs locales de Ollama/LM Studio, que no son secretos.
     api_keys = getattr(st, "api_keys", {})
     if api_keys:
-        config["api_keys"] = api_keys
+        from core.user_prefs import guardar_credenciales, separar_secretos
+        secretos, publicos = separar_secretos(api_keys)
+        if secretos:
+            guardar_credenciales(secretos)
+        if publicos:
+            config["api_keys"] = publicos
+        else:
+            config.pop("api_keys", None)
+    # Un proyecto viejo pudo traer claves guardadas en versiones anteriores:
+    # al volver a guardarlo se limpian.
+    config.pop("api_key", None)
     modelos_etapa = getattr(st, "modelos_etapa", {})
     if modelos_etapa:
         config["modelos_etapa"] = modelos_etapa
@@ -366,7 +381,6 @@ def cargar_proyecto(ruta: Path, st):
     st.out_dir      = _P(out_dir) if out_dir else None
     st.input_tipo   = config.get("input_tipo", "pdf")
     st.archivos_sel = [_P(p) for p in config.get("archivos_sel", [])]
-    st.api_key      = config.get("api_key", "")
     st.max_ia       = config.get("max_ia", 15)
     st.campos_semillas = config.get("campos_semillas", {})
 
@@ -404,13 +418,43 @@ def cargar_proyecto(ruta: Path, st):
         pass
 
     # ── Configuración multi-proveedor ─────────────────────────────────────────
-    api_keys = config.get("api_keys", {})
-    if api_keys:
-        st.api_keys = api_keys
-        st.api_key  = next(
-            (v for v in (api_keys.get("anthropic",""), api_keys.get("openai",""),
-                         api_keys.get("gemini","")) if v), ""
-        )
+    # Las claves vienen del directorio del usuario. Si este proyecto fue creado
+    # por una versión anterior que las guardaba dentro del .bashkar, se migran
+    # ahora y se BORRAN del archivo: el proyecto se comparte, las claves no.
+    from core.user_prefs import (
+        cargar_credenciales,
+        guardar_credenciales,
+        separar_secretos,
+    )
+
+    heredadas = dict(config.get("api_keys", {}) or {})
+    legado = config.get("api_key", "")
+    if legado:
+        heredadas.setdefault("anthropic" if legado.startswith("sk-ant") else
+                             "gemini" if legado.startswith("AIza") else "openai",
+                             legado)
+
+    secretos_heredados, publicos = separar_secretos(heredadas)
+    credenciales_migradas = False
+    if secretos_heredados:
+        guardar_credenciales(secretos_heredados)
+        config["api_keys"] = publicos
+        config.pop("api_key", None)
+        datos["config"] = config
+        try:
+            with open(ruta, "w", encoding="utf-8") as _f:
+                json.dump(datos, _f, ensure_ascii=False, indent=2)
+            credenciales_migradas = True
+        except Exception:
+            # Si el archivo es de solo lectura no se pierde la clave (ya está
+            # migrada); solo queda la copia vieja, que el usuario debe rotar.
+            pass
+
+    st.api_keys = {**publicos, **cargar_credenciales()}
+    st.api_key = next(
+        (st.api_keys.get(p, "") for p in ("anthropic", "openai", "gemini")
+         if st.api_keys.get(p, "")), ""
+    )
     modelos_etapa = config.get("modelos_etapa", {})
     if modelos_etapa:
         st.modelos_etapa = modelos_etapa
@@ -485,8 +529,14 @@ def cargar_proyecto(ruta: Path, st):
     msg = "Proyecto cargado"
     if migrado:
         msg = "Proyecto migrado a v11 y cargado"
+    if credenciales_migradas:
+        msg += ("\n\n⚠ Este proyecto guardaba API keys en su interior. Se "
+                "movieron a tu carpeta personal y se borraron del archivo.\n"
+                "Como el proyecto pudo compartirse o sincronizarse a la nube, "
+                "ROTA esas claves en el panel de cada proveedor.")
     return {"ok": True, "mensaje": msg, "historial_ia": historial,
-            "nombre": datos.get("nombre", ruta.stem), "migrado": migrado}
+            "nombre": datos.get("nombre", ruta.stem), "migrado": migrado,
+            "credenciales_migradas": credenciales_migradas}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

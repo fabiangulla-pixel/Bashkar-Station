@@ -48,6 +48,17 @@ class Estado:
         self.api_keys        = {    # claves por proveedor
             "anthropic": "", "openai": "", "gemini": "", "ollama": "",
         }
+        # Las claves se leen del directorio del usuario, NO del proyecto: un
+        # .bashkar se comparte y se sincroniza a la nube. Ver core/user_prefs.py.
+        try:
+            from core.user_prefs import cargar_credenciales
+            self.api_keys.update(cargar_credenciales())
+            self.api_key = next(
+                (self.api_keys.get(p, "") for p in ("anthropic", "openai", "gemini")
+                 if self.api_keys.get(p, "")), ""
+            )
+        except Exception:
+            pass
         # Switch global: False = modo 100% offline, ninguna función llama APIs externas
         self.ia_habilitada   = False
         # Modelo elegido por etapa. Valores: "<proveedor>/<modelo>"
