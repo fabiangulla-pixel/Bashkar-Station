@@ -1,8 +1,6 @@
 """core/ocr_engine.py — OCR inteligente: extrae texto directo si ya existe, aplica OCR si no."""
 
 import gc
-import os
-import platform
 import sys
 from pathlib import Path
 
@@ -19,43 +17,61 @@ PALABRAS_MIN_PAGINA = 40   # umbral para considerar que una página ya tiene tex
 # ── Utilidades de ruta ────────────────────────────────────────────────────────
 
 def _get_poppler_path() -> str | None:
+    """
+    Carpeta bin de poppler para pdf2image, o None si basta con el PATH.
+
+    Orden de prioridad, sin cambios respecto de las versiones Windows: primero
+    poppler_path.txt —la ruta que fijó el usuario o el instalador, que no debe
+    revertirse porque haya otro poppler suelto en el sistema—, luego el PATH y
+    solo al final la detección automática.
+
+    Antes esta función devolvía None de entrada fuera de Windows, dando por
+    hecho que en Unix poppler siempre está en el PATH. No es cierto en macOS:
+    una app lanzada desde Finder hereda un PATH mínimo sin Homebrew, así que
+    ahí también hay que darle a pdf2image la ruta explícita.
+    """
     import shutil
-    if platform.system() != "Windows":
-        return None
-    cfg = Path(__file__).parent.parent / "poppler_path.txt"
+
+    from core import plataforma
+    # _MODULE_ROOT y no Path(__file__) directo: así los tests pueden apuntar la
+    # búsqueda a una raíz temporal y comprobar de verdad quién manda.
+    cfg = _MODULE_ROOT / "poppler_path.txt"
     if cfg.exists():
         p = cfg.read_text(encoding="utf-8").strip()
-        if Path(p, "pdftoppm.exe").exists():
+        if p and Path(p, plataforma.nombre_ejecutable("pdftoppm")).exists():
             return p
     if shutil.which("pdftoppm"):
         return None
-    candidatos = [
-        Path(r"C:\poppler"),
-        Path(r"C:\Program Files\poppler"),
-        Path(r"C:\Program Files (x86)\poppler"),
-        Path(os.environ.get("LOCALAPPDATA", ""), "poppler"),
-        Path(os.environ.get("ProgramFiles", ""), "poppler"),
-    ]
-    for base in candidatos:
-        if not base.exists():
-            continue
-        hits = list(base.glob("**/pdftoppm.exe"))
-        if hits:
-            bin_dir = str(hits[0].parent)
+    bin_dir = plataforma.dir_poppler()
+    if bin_dir:
+        # Cachear el hallazgo: la búsqueda en Windows recorre el zip
+        # descomprimido en profundidad y no conviene repetirla por página.
+        try:
             cfg.write_text(bin_dir, encoding="utf-8")
-            return bin_dir
+        except OSError:
+            pass
+        return bin_dir
     return None
 
 
 def _get_tesseract_cmd() -> str:
-    if platform.system() != "Windows":
-        return "tesseract"
-    cfg = Path(__file__).parent.parent / "tesseract_path.txt"
+    """
+    Ejecutable de Tesseract para pytesseract.
+
+    tesseract_path.txt sigue mandando. El respaldo ya no es la cadena
+    "tesseract" a secas —que solo funciona si el binario está en el PATH— sino
+    la ruta completa detectada según el sistema; "tesseract" queda como último
+    recurso para que el mensaje de error sea el de siempre.
+    """
+    from core import plataforma
+    # _MODULE_ROOT y no Path(__file__) directo: así los tests pueden apuntar la
+    # búsqueda a una raíz temporal y comprobar de verdad quién manda.
+    cfg = _MODULE_ROOT / "tesseract_path.txt"
     if cfg.exists():
         t = cfg.read_text(encoding="utf-8").strip()
-        if Path(t).exists():
+        if t and Path(t).exists():
             return t
-    return "tesseract"
+    return plataforma.buscar_tesseract() or "tesseract"
 
 
 # ── Detección de texto embebido ───────────────────────────────────────────────

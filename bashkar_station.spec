@@ -44,6 +44,9 @@ a = Analysis(
     hiddenimports=[
         # Core modules
         'core',
+        # plataforma se importa al inicio de app.py: sin esta entrada el .exe
+        # ni siquiera llega a mostrar la ventana.
+        'core.plataforma',
         'core.text_extractor',
         'core.ocr_normalizer',
         'core.article_segmenter',

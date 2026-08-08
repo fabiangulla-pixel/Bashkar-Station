@@ -21,11 +21,57 @@ from pathlib import Path
 _MODELOS_DIR = Path(__file__).parent.parent / "modelos"
 _MODELO_DEFAULT = "catmus-print-large.mlmodel"
 
-# Venv dedicado a Kraken (Python 3.12 + kraken instalado ahí)
-# Ruta corta en D: para evitar MAX_PATH en Windows (torch tiene rutas muy profundas)
-_KRAKEN_VENV = Path("D:/kraken_env")
-_KRAKEN_PYTHON = _KRAKEN_VENV / "Scripts" / "python.exe"
-_KRAKEN_EXE   = _KRAKEN_VENV / "Scripts" / "kraken.exe"
+# ── Venv dedicado a Kraken (Python 3.12 + kraken instalado ahí) ──────────────
+# Kraken arrastra torch, cuyas rutas internas son larguísimas; en Windows eso
+# choca contra MAX_PATH, y por eso el venv vive en una raíz corta de D: y no
+# junto al proyecto. En macOS y Linux ese límite no existe, así que ahí el sitio
+# natural es el home del usuario, donde además no hacen falta permisos de
+# administrador para crearlo.
+
+def _candidatos_venv_kraken() -> list[Path]:
+    from core import plataforma
+    # La variable de entorno va primero: permite mover el venv sin tocar código,
+    # que es justo lo que hace falta en un equipo ajeno.
+    propia = os.environ.get("BASHKAR_KRAKEN_VENV")
+    rutas = [Path(propia)] if propia else []
+    if plataforma.es_windows():
+        rutas += [Path("D:/kraken_env"), Path("C:/kraken_env")]
+    else:
+        rutas += [Path.home() / "kraken_env",
+                  Path.home() / ".venvs" / "kraken",
+                  Path("/opt/kraken_env")]
+    return rutas
+
+
+def _resolver_venv_kraken() -> Path:
+    """Primer venv candidato que exista; si ninguno existe, el canónico.
+
+    Devolver siempre algo (aunque no exista) mantiene el contrato anterior:
+    `_KRAKEN_PYTHON.exists()` es la señal de "no está instalado" y los mensajes
+    de error pueden nombrar la ruta esperada.
+    """
+    candidatos = _candidatos_venv_kraken()
+    for ruta in candidatos:
+        try:
+            if ruta.is_dir():
+                return ruta
+        except OSError:      # unidad D: ausente o desconectada
+            continue
+    return candidatos[0]
+
+
+def _bin_venv(venv: Path, nombre: str) -> Path:
+    """Ubicación del ejecutable dentro de un venv, que difiere por sistema:
+    Windows usa Scripts\\x.exe y el resto de los sistemas bin/x."""
+    from core import plataforma
+    if plataforma.es_windows():
+        return venv / "Scripts" / plataforma.nombre_ejecutable(nombre)
+    return venv / "bin" / nombre
+
+
+_KRAKEN_VENV = _resolver_venv_kraken()
+_KRAKEN_PYTHON = _bin_venv(_KRAKEN_VENV, "python")
+_KRAKEN_EXE   = _bin_venv(_KRAKEN_VENV, "kraken")
 
 
 def _python_kraken() -> str | None:
@@ -95,7 +141,7 @@ def ocr_kraken(ruta_imagen: str,
     if python is None:
         raise ImportError(
             "Kraken no está disponible en el .exe compilado (requiere el "
-            "venv dedicado en D:/kraken_env, que no existe en este equipo).")
+            f"venv dedicado en {_KRAKEN_VENV}, que no existe en este equipo).")
 
     # Verificar que kraken esté accesible
     chk = subprocess.run([python, "-c", "import kraken"],

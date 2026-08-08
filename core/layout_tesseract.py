@@ -49,18 +49,19 @@ def _asegurar_tessdata() -> None:
     Mismo orden de búsqueda que app.py.
     """
     import os
+
+    from core import plataforma
     if os.environ.get("TESSDATA_PREFIX"):
         return
-    candidatos = [
-        Path.home() / "tessdata",
-        Path(r"C:\Users\Lenovo\tessdata"),
-        Path(r"C:\Program Files\Tesseract-OCR\tessdata"),
-        Path(r"C:\Program Files (x86)\Tesseract-OCR\tessdata"),
-    ]
-    for td in candidatos:
-        if (td / "spa.traineddata").exists():
-            os.environ["TESSDATA_PREFIX"] = str(td)
-            return
+    # Los candidatos por sistema los decide core.plataforma; aquí solo se
+    # comprueba cuál tiene de verdad el modelo del español.
+    for td in plataforma.dirs_tessdata():
+        try:
+            if (td / "spa.traineddata").exists():
+                os.environ["TESSDATA_PREFIX"] = str(td)
+                return
+        except OSError:      # unidades de red desconectadas
+            continue
 
 
 # ── Deskew ────────────────────────────────────────────────────────────────────

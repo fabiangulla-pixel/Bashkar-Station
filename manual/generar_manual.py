@@ -291,9 +291,34 @@ def componer() -> str:
 
 
 def _navegador() -> str | None:
-    for c in (r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-              r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-              r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"):
+    """Chrome o Edge en modo headless, que es quien imprime el manual a PDF.
+
+    Ninguno de los dos está en el PATH salvo que el usuario lo haya puesto, así
+    que hay que ir a buscarlos donde los deja cada sistema: en macOS viven
+    dentro del bundle .app y en Linux el binario suele llamarse distinto según
+    la distribución (google-chrome, chromium, chromium-browser).
+    """
+    from core import plataforma
+
+    if plataforma.es_windows():
+        candidatos = (r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                      r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+                      r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe")
+    elif plataforma.es_macos():
+        candidatos = (
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+            "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        )
+    else:
+        candidatos = ()
+        for nombre in ("google-chrome", "chromium", "chromium-browser",
+                       "microsoft-edge"):
+            hallado = plataforma.buscar_binario(nombre)
+            if hallado:
+                return hallado
+
+    for c in candidatos:
         if Path(c).exists():
             return c
     return None

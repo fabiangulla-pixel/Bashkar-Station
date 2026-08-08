@@ -96,10 +96,20 @@ def detectar_capacidades() -> dict:
         return bool(_get_tesseract_cmd())
 
     _probar("tesseract", _hay_tesseract)
-    _probar(
-        "poppler",
-        lambda: bool(shutil.which("pdftoppm")) or (BASE_DIR / "poppler_path.txt").exists(),
-    )
+
+    def _hay_poppler():
+        # Se pregunta por lo mismo que usará el OCR, no solo por el PATH: en
+        # macOS, un proceso lanzado desde Finder no ve Homebrew, y el
+        # diagnóstico diría "falta poppler" cuando en realidad sí se encuentra.
+        if shutil.which("pdftoppm"):
+            return True
+        if (BASE_DIR / "poppler_path.txt").exists():
+            return True
+        from core.plataforma import buscar_poppler
+
+        return bool(buscar_poppler())
+
+    _probar("poppler", _hay_poppler)
     _probar("pymupdf", lambda: __import__("fitz") and True)
     _probar("python_docx", lambda: __import__("docx") and True)
 

@@ -73,14 +73,27 @@ def disponible(config_ini: str | Path | None = None) -> bool:
 
 def rutas_config_probables() -> list[Path]:
     """Sitios donde suele quedar el motor descargado, para autodetectarlo."""
+    from core import plataforma
     candidatas = [
         Path.home() / "pero_ocr" / "config.ini",
         Path.home() / ".pero_ocr" / "config.ini",
-        Path("C:/pero_ocr/config.ini"),
-        Path("D:/pero_ocr/config.ini"),
         Path.home() / "Documents" / "pero_ocr" / "config.ini",
     ]
-    return [c for c in candidatas if c.exists()]
+    if plataforma.es_windows():
+        # PERO-OCR se descarga como carpeta suelta y el usuario suele dejarla en
+        # la raíz de un disco; las letras de unidad solo tienen sentido aquí.
+        candidatas += [Path("C:/pero_ocr/config.ini"), Path("D:/pero_ocr/config.ini")]
+    else:
+        candidatas += [Path("/opt/pero_ocr/config.ini"),
+                       Path("/usr/local/share/pero_ocr/config.ini")]
+    salida = []
+    for c in candidatas:
+        try:
+            if c.exists():
+                salida.append(c)
+        except OSError:      # unidad ausente o sin permisos
+            continue
+    return salida
 
 
 def estimar_tiempo(n_paginas: int) -> dict:

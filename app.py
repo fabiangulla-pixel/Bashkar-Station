@@ -6,7 +6,6 @@
 """
 import gc
 import os
-import platform
 import queue
 import sys
 import threading
@@ -14,19 +13,35 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+# Única dependencia del proyecto que se importa antes de resolver paquetes:
+# core.plataforma es solo biblioteca estándar, así que no puede fallar aquí, y
+# hace falta ya para saber dónde busca cada sistema tesseract y poppler.
+from core import plataforma
+
 if TYPE_CHECKING:
     from core.bitacora_engine import BitacoraEngine
 
-# ── Rutas Windows (Tesseract/Poppler) ────────────────────────────────────────
+# ── Rutas de binarios externos (Tesseract/Poppler) ───────────────────────────
 _APP_DIR = Path(__file__).parent
 _APP_VERSION_SPLASH = "11.10"   # sincronizar con APP_VERSION abajo
 
-def _configurar_rutas_windows():
+
+def _configurar_rutas_binarios():
+    """Prepara PATH, pytesseract y TESSDATA_PREFIX antes de que arranque la UI.
+
+    Antes esto corría solo en Windows, porque se daba por hecho que en Unix los
+    binarios están siempre en el PATH. En macOS no es así: una app abierta desde
+    Finder hereda un PATH mínimo que no incluye Homebrew, de modo que tesseract
+    "desaparece" aunque el usuario lo tenga instalado. Por eso ahora se ejecuta
+    en los tres sistemas; lo que cambia son las rutas, no el procedimiento.
+    """
     for cfg_file in ["tesseract_path.txt", "poppler_path.txt"]:
         cfg = _APP_DIR / cfg_file
         if not cfg.exists():
             continue
         ruta = cfg.read_text(encoding="utf-8").strip()
+        if not ruta:
+            continue
         p = Path(ruta)
         if not p.exists():
             continue
@@ -36,26 +51,33 @@ def _configurar_rutas_windows():
         if cfg_file.startswith("tesseract"):
             try:
                 import pytesseract
-                exe = str(p) if p.suffix.lower() == ".exe" else str(p / "tesseract.exe")
+                exe = (str(p) if p.is_file()
+                       else str(p / plataforma.nombre_ejecutable("tesseract")))
                 pytesseract.pytesseract.tesseract_cmd = exe
+            except ImportError:
+                pass
+
+    # Si no había tesseract_path.txt, buscarlo donde lo deja cada sistema.
+    if not (_APP_DIR / "tesseract_path.txt").exists():
+        hallado = plataforma.buscar_tesseract()
+        if hallado:
+            try:
+                import pytesseract
+                pytesseract.pytesseract.tesseract_cmd = hallado
             except ImportError:
                 pass
 
     # ── TESSDATA_PREFIX — buscar tessdata/spa.traineddata ────────────────────
     # Orden de prioridad: carpeta local del usuario → carpeta de instalación
-    _tessdata_candidatos = [
-        Path.home() / "tessdata",
-        Path(r"C:\Users\Lenovo\tessdata"),
-        Path(r"C:\Program Files\Tesseract-OCR\tessdata"),
-        Path(r"C:\Program Files (x86)\Tesseract-OCR\tessdata"),
-    ]
-    for _td in _tessdata_candidatos:
-        if (_td / "spa.traineddata").exists():
-            os.environ["TESSDATA_PREFIX"] = str(_td)
-            break
+    for _td in plataforma.dirs_tessdata():
+        try:
+            if (_td / "spa.traineddata").exists():
+                os.environ["TESSDATA_PREFIX"] = str(_td)
+                break
+        except OSError:      # unidades de red desconectadas
+            continue
 
-if platform.system() == "Windows":
-    _configurar_rutas_windows()
+_configurar_rutas_binarios()
 
 # ── Fijar NumPy < 2 ───────────────────────────────────────────────────────────
 def _fijar_numpy():
@@ -3486,10 +3508,17 @@ class BashkarApp(tk.Tk):
 
     def _abrir_docs(self):
         doc = Path(__file__).parent / "PROMPT_SISTEMA.md"
-        if doc.exists():
+        if not doc.exists():
+            return
+        if plataforma.es_windows():
+            # En Windows .md no siempre tiene programa asociado; el bloc de
+            # notas está siempre y garantiza que el documento se vea.
             import subprocess
-            subprocess.Popen(["notepad.exe" if platform.system()=="Windows"
-                              else "open", str(doc)])
+            subprocess.Popen(["notepad.exe", str(doc)])
+        else:
+            # "open" solo existe en macOS: fuera de Windows manda la capa de
+            # sistema, que en Linux usa xdg-open.
+            plataforma.abrir_en_sistema(doc)
 
     # ── Compatibilidad con código que usa self._nb.select(n) ──────────────────
     class _FakeNb:
@@ -6885,9 +6914,10 @@ class BashkarApp(tk.Tk):
                     "La zona no tiene dimensiones suficientes."); return
 
             recorte = self._etz_img_orig.crop(box)
-            # Guardar en temp ASCII para evitar problemas con FAISS/Windows
+            # Guardar en temp ASCII para evitar problemas con FAISS/Windows.
+            # dir=None (macOS/Linux) deja que tempfile use la suya, que ya es ASCII.
             tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False,
-                                              dir="C:\\Windows\\Temp")
+                                              dir=plataforma.dir_temp_ascii())
             tmp.close()
             recorte.save(tmp.name)
 
@@ -12892,11 +12922,7 @@ class BashkarApp(tk.Tk):
 
     def _abrir_carpeta(self):
         if not ST.out_dir: return
-        import subprocess
-        p=str(ST.out_dir)
-        if platform.system()=="Windows": subprocess.Popen(f'explorer "{p}"')
-        elif platform.system()=="Darwin": subprocess.Popen(["open",p])
-        else: subprocess.Popen(["xdg-open",p])
+        plataforma.abrir_en_sistema(ST.out_dir)
 
     # ══════════════════════════════════════════════════════════════════════════
     # DISPATCHER
@@ -17057,8 +17083,7 @@ class BashkarApp(tk.Tk):
         if not self._nube_path or not self._nube_path.exists():
             messagebox.showinfo("Sin imagen", "Genera la nube de palabras primero.")
             return
-        import os
-        os.startfile(str(self._nube_path))
+        plataforma.abrir_en_sistema(self._nube_path)
 
     # ── Workers: Heatmap ──────────────────────────────────────────────────────
     def _viz_heatmap(self):
@@ -17097,8 +17122,7 @@ class BashkarApp(tk.Tk):
         if not self._heat_path or not self._heat_path.exists():
             messagebox.showinfo("Sin imagen", "Genera el heatmap primero.")
             return
-        import os
-        os.startfile(str(self._heat_path))
+        plataforma.abrir_en_sistema(self._heat_path)
 
     # ── Workers: Mapa ─────────────────────────────────────────────────────────
     def _viz_mapa(self):
@@ -18372,7 +18396,7 @@ class BashkarApp(tk.Tk):
             self.after(0, lambda: self.toast(
                 f"✅ PDF buscable exportado: {len(paginas)} páginas", "ok"))
             if abrir_al_terminar:
-                self.after(0, lambda: os.startfile(dest))
+                self.after(0, lambda: plataforma.abrir_en_sistema(dest))
         except Exception as e:
             self.after(0, prog_win.destroy)
             self.after(0, lambda err=str(e): messagebox.showerror("Error", err))
@@ -18400,7 +18424,7 @@ class BashkarApp(tk.Tk):
             Path(dest).write_text(contenido, encoding="utf-8")
             self.toast(f"✅ Texto plano exportado: {len(corpus_txt)} artículos", "ok")
             if abrir_al_terminar:
-                os.startfile(dest)
+                plataforma.abrir_en_sistema(dest)
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -18760,8 +18784,7 @@ class BashkarApp(tk.Tk):
                     f"Paquete generado exitosamente:\n{dest_zip}\n\n"
                     f"Contiene: corpus.xml · corpus.bib · entidades.csv · "
                     f"bitacora.md · METHODS.md · metadatos.json")
-            import os
-            os.startfile(str(Path(dest_zip).parent))
+            plataforma.abrir_en_sistema(Path(dest_zip).parent)
         self.after(0, _fin)
 
     # ── Diff visual Normalizar ────────────────────────────────────────────────

@@ -25,7 +25,6 @@ no hinchar el JSON principal.
 """
 
 import json
-import platform
 import shutil
 from datetime import datetime
 from pathlib import Path
@@ -36,11 +35,15 @@ VERSION = "11"
 # ── Directorio base de proyectos ──────────────────────────────────────────────
 
 def _dir_proyectos() -> Path:
-    """Devuelve (y crea si no existe) la carpeta de proyectos."""
-    if platform.system() == "Windows":
-        base = Path.home() / "Documents" / "BashkarStation" / "proyectos"
-    else:
-        base = Path.home() / "Documents" / "BashkarStation" / "proyectos"
+    """Devuelve (y crea si no existe) la carpeta de proyectos.
+
+    No hay rama por sistema —había una con las dos mitades idénticas, que solo
+    servía para sugerir una diferencia inexistente—: los proyectos van a
+    ~/Documents en los tres, porque el usuario tiene que poder encontrarlos,
+    copiarlos y respaldarlos a mano. Esa visibilidad pesa más que la convención
+    de cada sistema para datos de aplicación.
+    """
+    base = Path.home() / "Documents" / "BashkarStation" / "proyectos"
     base.mkdir(parents=True, exist_ok=True)
     return base
 

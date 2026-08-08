@@ -13,8 +13,6 @@ Uso:
 from __future__ import annotations
 
 import gc
-import os
-import platform
 from pathlib import Path
 
 # ── Umbral para considerar un PDF "digital" ───────────────────────────────────
@@ -188,32 +186,14 @@ def extraer_pdf_digital(
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _get_poppler_path() -> str | None:
-    if platform.system() != "Windows":
-        return None
-    import shutil
-    if shutil.which("pdftoppm"):
-        return None
+    """Carpeta bin de poppler para pdf2image, o None si basta con el PATH.
 
-    cfg = Path(__file__).parent.parent / "poppler_path.txt"
-    if cfg.exists():
-        p = cfg.read_text(encoding="utf-8").strip()
-        if Path(p, "pdftoppm.exe").exists():
-            return p
-
-    candidatos = [
-        Path(r"C:\poppler"),
-        Path(r"C:\Program Files\poppler"),
-        Path(os.environ.get("LOCALAPPDATA", ""), "poppler"),
-    ]
-    for base in candidatos:
-        if not base.exists():
-            continue
-        hits = list(base.glob("**/pdftoppm.exe"))
-        if hits:
-            bin_dir = str(hits[0].parent)
-            cfg.write_text(bin_dir, encoding="utf-8")
-            return bin_dir
-    return None
+    Delega en core.ocr_engine en vez de repetir la búsqueda: eran dos copias
+    con el mismo propósito y órdenes de prioridad distintos, y ese tipo de
+    divergencia es la que hace que el OCR funcione en una pestaña y no en otra.
+    """
+    from core.ocr_engine import _get_poppler_path as _buscar
+    return _buscar()
 
 
 def extraer_pdf_ocr(
