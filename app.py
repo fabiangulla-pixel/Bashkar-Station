@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 # ── Rutas Windows (Tesseract/Poppler) ────────────────────────────────────────
 _APP_DIR = Path(__file__).parent
-_APP_VERSION_SPLASH = "11.9"   # sincronizar con APP_VERSION abajo
+_APP_VERSION_SPLASH = "11.10"   # sincronizar con APP_VERSION abajo
 
 def _configurar_rutas_windows():
     for cfg_file in ["tesseract_path.txt", "poppler_path.txt"]:
@@ -170,7 +170,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-APP_VERSION = "11.9"
+APP_VERSION = "11.10"
 APP_NAME    = "Bashkar Station"
 
 # ── Paleta visual v2 — Dark mode académico ────────────────────────────────────
