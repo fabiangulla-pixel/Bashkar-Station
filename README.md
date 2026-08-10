@@ -60,19 +60,28 @@ la Biblioteca Nacional de Colombia (BNC).
 
 ## Instalación rápida
 
+Funciona en **Windows, macOS y Linux**. Guía completa y paso a paso, escrita
+para quien no programa: **[INSTALACION.md](INSTALACION.md)**.
+
 ### Requisitos previos
-- Python 3.9 o superior
+- Python 3.10 o superior
 - pip actualizado (`python -m pip install --upgrade pip`)
 
-### Paso 1 — Instalar dependencias
+### Paso 1 — Revisar e instalar lo que falte
 ```bash
-python instalar.py
+python setup_wizard.py
 ```
-El instalador gestiona automáticamente:
-- Paquetes Python (PyMuPDF, spaCy, transformers, FAISS, etc.)
-- Modelo spaCy español (`es_core_news_sm`)
-- Tesseract OCR en Windows
-- Poppler en Windows
+Abre una ventana que revisa el equipo, explica para qué sirve cada componente e
+instala los paquetes de Python que falten. Para Tesseract y Poppler —que son
+programas del sistema— muestra el comando exacto de tu plataforma
+(`brew install …` en macOS, `sudo apt install …` en Linux, el enlace al
+instalador en Windows) con un botón para copiarlo.
+
+Gestiona: paquetes de Python · modelo spaCy español (`es_core_news_sm`) ·
+Tesseract OCR con el idioma español · Poppler · Kraken y dictado (opcionales).
+
+¿Prefieres la terminal? `python instalar.py` sigue existiendo y hace lo mismo
+sin ventana.
 
 ### Paso 2 — Ejecutar la app
 ```bash
@@ -170,7 +179,8 @@ bashkar_station/
 ├── servidor_web.py     # Frontend web (http.server stdlib, sin frameworks)
 ├── web/                # Frontend web: HTML/CSS/JS vanilla, sin build
 ├── cli.py              # Interfaz de línea de comandos
-├── instalar.py         # Instalador de dependencias
+├── setup_wizard.py     # Asistente de instalación (ventana, multiplataforma)
+├── instalar.py         # Instalador de dependencias (consola)
 ├── core/               # 80+ módulos de procesamiento (sin dependencia de UI)
 │   ├── estado.py               # Estado del proyecto — compartido por ambos frontends
 │   ├── ocr_engine.py           # Motor OCR multi-ruta
@@ -272,6 +282,27 @@ recientes, ambos **locales y sin costo por página**:
 
 Si a alguna le faltan dependencias, la interfaz la ofrece **deshabilitada con el
 motivo a la vista** en vez de fallar a mitad de un lote.
+
+---
+
+## Rendimiento en equipos sin GPU
+
+Bashkar reparte la CPU en lugar de tomarla toda: deja núcleos libres para que la
+interfaz siga respondiendo durante un lote. Sin eso, en un portátil de 6 núcleos
+un lote de OCR deja la ventana sin repintar y la aplicación **parece congelada**
+aunque por dentro esté trabajando.
+
+Tres variables de entorno permiten ajustarlo sin tocar código:
+
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `BASHKAR_HILOS` | núcleos físicos − 1 | Hilos de cálculo numérico. Súbelo en una máquina dedicada a un lote nocturno; bájalo si quieres trabajar en otra cosa mientras corre. |
+| `BASHKAR_CHURRO_MAX_PIXELS` | `1003520` | Techo de resolución que recibe CHURRO-3B, en píxeles. Manda sobre su velocidad: el modelo trocea la imagen en parches y el tiempo crece con el número de parches. Súbelo si se pierde cuerpo pequeño; bájalo para ir más rápido. |
+| `BASHKAR_CHURRO_MIN_PIXELS` | `200704` | Piso de resolución, para que un pie de foto recortado no se diluya. |
+
+Al cambiar los límites de píxeles conviene **volver a medir el CER** con el
+benchmark: la velocidad se gana remuestreando hacia abajo, y eso puede costar
+calidad.
 
 ---
 

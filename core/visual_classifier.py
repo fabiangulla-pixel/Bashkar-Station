@@ -134,10 +134,10 @@ def clasificar_imagen(ruta: str) -> dict:
     Usa CLIP si está disponible, OpenCV como fallback.
     """
     try:
-        from transformers import CLIPModel, CLIPProcessor
-        modelo = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-        proc   = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-        modelo.eval()
+        from core import clip_local
+        # Cacheado: antes esto releía 600 MB de pesos en CADA llamada, así que
+        # clasificar cien recortes cargaba el modelo cien veces.
+        modelo, proc = clip_local.cargar()
         return _clasificar_clip(ruta, modelo, proc)
     except (ImportError, Exception):
         return _clasificar_opencv(ruta)
@@ -159,10 +159,8 @@ def clasificar_lote(
     modelo_clip = proc_clip = None
     if usar_clip:
         try:
-            from transformers import CLIPModel, CLIPProcessor
-            modelo_clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-            proc_clip   = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-            modelo_clip.eval()
+            from core import clip_local
+            modelo_clip, proc_clip = clip_local.cargar()
         except (ImportError, Exception):
             pass
 

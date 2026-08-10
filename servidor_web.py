@@ -23,6 +23,13 @@ import json
 import os
 import re
 import secrets
+
+from core import recursos
+
+# Reparto de CPU antes del primer import de torch/numpy (OpenMP lo lee al
+# inicializarse). En el servidor importa más que en el escritorio: si un
+# análisis se come todos los núcleos, deja de responder a las demás peticiones.
+recursos.aplicar_limites_cpu()
 import shutil
 import sys
 import tempfile

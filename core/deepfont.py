@@ -81,13 +81,11 @@ def _clasificar_clip(ruta: str) -> dict:
     try:
         import torch
         from PIL import Image
-        from transformers import CLIPModel, CLIPProcessor
     except ImportError:
         raise ImportError("pip install transformers torch pillow")
 
-    modelo = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-    proc   = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-    modelo.eval()
+    from core import clip_local
+    modelo, proc = clip_local.cargar()   # cacheado: no relee 600 MB por imagen
 
     img    = Image.open(ruta).convert("RGB")
     inputs = proc(text=_PROMPTS_CLIP, images=img,
@@ -262,10 +260,8 @@ def clasificar_lote_tipografia(
     modelo_clip = proc_clip = None
     if usar_clip:
         try:
-            from transformers import CLIPModel, CLIPProcessor
-            modelo_clip = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
-            proc_clip   = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-            modelo_clip.eval()
+            from core import clip_local
+            modelo_clip, proc_clip = clip_local.cargar()
         except Exception:
             pass
 

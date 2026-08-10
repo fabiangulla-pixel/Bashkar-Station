@@ -43,6 +43,13 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from core import recursos
+
+# Antes de que nada importe torch o numpy: OpenMP lee estas variables una sola
+# vez, al inicializarse. Sin esto un lote por CLI deja la máquina sin CPU para
+# nada más, que es justo lo contrario de lo que se espera de un modo desatendido.
+recursos.aplicar_limites_cpu()
+
 
 def _log(msg: str, verbose: bool = True):
     if verbose:

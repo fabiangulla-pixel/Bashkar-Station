@@ -27,19 +27,14 @@ _DIM_CLIP = 512
 
 
 def _cargar_clip():
-    """Carga el modelo CLIP. Descarga ~600 MB la primera vez."""
-    try:
-        import torch
-        from transformers import CLIPModel, CLIPProcessor
-    except ImportError:
-        raise ImportError(
-            "Instala: pip install transformers torch\n"
-            "El modelo CLIP requiere ~600 MB la primera vez."
-        )
-    modelo = CLIPModel.from_pretrained(_MODELO_CLIP)
-    proc   = CLIPProcessor.from_pretrained(_MODELO_CLIP)
-    modelo.eval()
-    return modelo, proc
+    """Carga el modelo CLIP. Descarga ~600 MB la primera vez.
+
+    Delega en `core.clip_local`, que lo cachea para toda la sesión y lo comparte
+    con `visual_classifier` y `deepfont`: las tres rutas usan el mismo
+    checkpoint, y antes cada una mantenía su propia copia en memoria.
+    """
+    from core import clip_local
+    return clip_local.cargar()
 
 
 def _embedding_imagen(ruta: str, modelo, proc) -> np.ndarray | None:

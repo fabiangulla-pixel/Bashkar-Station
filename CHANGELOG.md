@@ -2,6 +2,265 @@
 
 ---
 
+## Sesión 55 — 2026-08-10 — Por qué se congelaba el equipo, y el camino al modelo propio
+
+El encargo empezó como «optimizar los modelos» y terminó siendo un diagnóstico:
+la máquina de desarrollo (Ryzen 5 5500U, 6 núcleos, 20 GB, **sin GPU**) se
+congelaba durante los lotes. Cuatro causas, todas medibles, ninguna en el
+tamaño de los modelos.
+
+### 1. El techo de resolución que nunca se tocó — `core/ocr_churro.py`
+
+La sesión 50 dejó anotado el diagnóstico correcto («Qwen2.5-VL convierte una
+página a 200 dpi en miles de tokens visuales») pero no la consecuencia: el
+`AutoProcessor` se creaba **sin límites de píxeles**, así que heredaba el techo
+por defecto de 12 845 056 px — 16 384 tokens visuales por imagen. El tiempo de
+generación crece con esos tokens; era la causa real de los 51 min por página,
+no los 3 000 millones de parámetros.
+
+Ahora `MAX_PIXELS_POR_DEFECTO = 1 003 520` (1 280 tokens), ajustable con
+`BASHKAR_CHURRO_MAX_PIXELS` para barrer el compromiso velocidad/CER con
+`benchmark_ocr` sobre el estándar de oro.
+
+> **Pendiente de medir:** `SEGUNDOS_POR_PAGINA_CPU` y `SEGUNDOS_POR_ZONA_CPU`
+> siguen con los valores de la sesión 50, medidos sin el techo. Ahora son
+> pesimistas y hay que rehacerlos.
+
+### 2. Doce gigas que se quedaban puestos — `app.py`
+
+`ocr_churro.liberar()` existía desde la sesión 50 y **no lo llamaba nadie**.
+Al acabar un lote, el modelo en `float32` (11,97 GB medidos) seguía residente
+hasta cerrar la aplicación: el propio benchmark comparaba las demás rutas
+contra el archivo de paginación. Ahora se libera en `finally`, porque un error
+a mitad de lote es justo cuando peor viene dejar 12 GB colgados.
+
+### 3. Sobresuscripción de hilos — `core/recursos.py` (NUEVO)
+
+No había un solo `torch.set_num_threads` en el proyecto. PyTorch tomaba los 12
+hilos lógicos, y como los lotes se lanzan con `ThreadPoolExecutor` y cada worker
+abre su propio grupo de BLAS, cuatro workers pedían 48 hilos. El planificador
+pasaba más tiempo cambiando de contexto que calculando y Tkinter no alcanzaba a
+repintar: para la investigadora, «se congeló».
+
+El módulo reserva núcleos en lugar de repartirlos todos (12 lógicos → 5 hilos en
+este equipo), ajustable con `BASHKAR_HILOS`. Solo stdlib y se llama en la
+primera línea de `app.py`, `cli.py` y `servidor_web.py`: OpenMP lee su
+configuración al inicializarse y después ya no la relee.
+
+### 4. Cinco copias del mismo CLIP — `core/clip_local.py` (NUEVO)
+
+`visual_search`, `visual_classifier` (×2) y `deepfont` (×2) cargaban **el mismo**
+checkpoint por separado, sin caché. Y `clasificar_imagen()` llamaba a
+`from_pretrained` en cada invocación: sobre un lote de cien recortes releía
+600 MB de pesos cien veces. Ahora hay un único cargador con `lru_cache`.
+
+### El camino al modelo propio — `core/kraken_finetune.py` (NUEVO)
+
+La pregunta de fondo era si se puede afinar un modelo. A CHURRO-3B no: sin CUDA,
+una LoRA sobre un 3B multimodal no cabe. **A Kraken sí**, y es la jugada mejor:
+`catmus-print-fondue-large.mlmodel` pesa 22 MB y afinarlo en CPU son horas. Un
+modelo pequeño especializado puede batir a uno general enorme en el corpus para
+el que se especializó — y con `benchmark_ocr` + el estándar de oro ya está el
+aparato para demostrarlo con CER.
+
+**El hueco que faltaba:** `kraken_trainer.py` exporta pares a nivel de *página*,
+pero `ketos train` entrena un reconocedor **de líneas**. El puente es la
+alineación forzada (`kraken segment` → `ketos align`), y `plan_ketos()` la deja
+escrita como datos, con el porqué de cada etapa, para que el entrenamiento sea
+reproducible y citable.
+
+**Una trampa en los datos propios:** el mismo número aparece en la base con tres
+nombres distintos («Estampa año 2-2(17)…», el mismo con prefijo `Completo_`, y
+una variante con guiones bajos). Contarlos por separado cuadruplicaba el tamaño
+aparente del ground truth y habría sobreponderado cada página cuatro veces.
+`_normalizar_numero()` los fusiona y se queda con la transcripción más larga.
+
+`scripts/entrenar_kraken.py --diagnostico` responde el estado de un vistazo, y
+verifica cada subcomando de ketos con `--help` antes de lanzar un proceso de
+horas: la CLI cambió entre Kraken 4 y 5.
+
+### El hallazgo que canceló el entrenamiento: no hay ground truth
+
+Con los PDF de la BNC a la vista (`D:\Bashkar\Corpus Estampa\sin`) se pudo
+cerrar el círculo, y lo que apareció obliga a parar.
+
+**Primero, la alineación.** El PDF de marzo tiene 89 páginas y el número
+transcrito 48: no es un 1:1. Alineando por similitud de tri-gramas entre el
+texto embebido del PDF y el `ocr_crudo` de la base, la serie `pXXXX` mapea a las
+páginas **43-89 con desplazamiento constante +41**, con similitudes de 0,91-0,97
+y el segundo candidato muy por debajo. (La serie paralela `p0001-NN` no alinea
+con nada: similitudes de 0,05-0,39 y no monótona.)
+
+**Después, la calidad.** Las 47 páginas alineadas *parecían* ground truth:
+difieren del OCR crudo, tienen miles de caracteres cada una. Midiendo el cambio
+real fuera del espaciado: **0,035 % de los caracteres de media, máximo 0,127 %**.
+Y al mirar las ediciones una por una, todas son guiones sobrantes de unir
+renglones. Cero correcciones de texto. El OCR de la BNC está intacto: la página
+impresa dice «Primera Gran **Rifa** Anual» y la base guarda «Ri**l**a».
+
+Lo que hay en `normalizaciones` es el OCR de Adobe Paper Capture con los
+renglones desenvueltos. Para HTR es inservible dos veces: por contenido (el
+modelo no puede salir mejor que sus objetivos) y por estructura (desenvolver los
+renglones destruye justo las líneas que la alineación forzada necesita).
+
+**Guardián añadido**, porque el filtro ingenuo de «difiere del crudo» dejaba
+pasar las 169 filas: `_solo_reformateo()` compara esqueletos (sin espaciado ni
+guiones de corte, en cualquiera de sus dos convenciones) y `CORRECCION_MINIMA_PCT
+= 0.5` exige que la transcripción cambie algo de verdad. El diagnóstico ahora
+dice **«169 páginas descartadas por no ser transcripción»** en lugar de callar y
+entrenar durante horas contra datos que solo pueden empeorar el modelo.
+
+### Y una sorpresa que reencuadra la ruta CHURRO
+
+Extraídas las 47 páginas a disco local (`C:\build_rf\estampa_paginas\`, imagen
+embebida sin recomprimir, 300 dpi nativos, con manifiesto de trazabilidad),
+**Tesseract produce 608-1 263 palabras por página en 10-18 segundos**, con texto
+coherente.
+
+La sesión 50 midió «Tesseract: 0 palabras» y sobre eso se justificó la ruta
+CHURRO. Pero aquella medición fue sobre «la página 2 de rev_estampa_mar_1939»
+—la página 2 **del PDF**, que con el desplazamiento +41 no pertenece al número
+transcrito—. Sobre las páginas reales del número, el motor estándar sí funciona,
+~300 veces más rápido que los 51 min de CHURRO.
+
+No invalida CHURRO —Tesseract sigue diciendo «Rita» por «Rifa»— pero cambia la
+pregunta: el problema deja de ser «qué modelo enorme rescata esto» y pasa a ser
+«cuánto CER separa a Tesseract de un Kraken afinado», que es exactamente lo que
+`benchmark_ocr` mide. **Conviene rehacer la comparación de la sesión 50 con la
+alineación correcta antes de invertir más en la ruta CHURRO.**
+
+### Verificación
+48 tests nuevos (`test_recursos_clip.py`, `test_kraken_finetune.py`), suite en
+**1 316 en verde**, ruff limpio.
+
+> **Bug detectado y acotado, no corregido — bloquea todos los commits.**
+> La suite aborta con `Windows fatal exception: code 0x80000003` durante una
+> recolección de basura en `core/article_segmenter.py:747`, en el hilo `_correr`
+> de `servidor_web.py:381`. Como el hook de pre-commit corre `check.bat`, ningún
+> commit puede pasar hasta resolverlo.
+>
+> Acotado por bisección: sin `tests/test_requisitos.py` la suite completa pasa
+> (1 335); sin `tests/test_servidor_web.py` también (1 340); **hacen falta los
+> dos**. Reproducción mínima en 26 s:
+> `python -m pytest tests/test_requisitos.py tests/test_servidor_web.py -q`
+> → `test_local_sesion_y_capacidades` falla con `ReadTimeout`; en la suite
+> completa eso escala a la excepción fatal.
+>
+> Los tests gráficos de `test_requisitos.py` están *skipped* por defecto, así
+> que la explicación de «una raíz de Tk de más» no cuadra sin más evidencia.
+> `test_requisitos.py` es trabajo **sin commitear de la sesión 54**, junto con
+> `setup_wizard.py`, `core/requisitos.py`, `INSTALACION.md` y cambios en
+> `README.md`.
+
+---
+
+## Sesión 54 — 2026-08-08 — macOS y Linux, y un instalador que es una ventana
+
+Dos encargos que resultaron ser el mismo problema: que Bashkar deje de dar por
+supuesto que corre en el Windows de su autor.
+
+### `core/plataforma.py` — una sola capa para el sistema operativo
+
+Las decisiones del sistema estaban repartidas por el monolito: `os.startfile`,
+rutas de «Program Files», carpetas con letra de unidad. Cada una es un punto
+donde la app se rompe al arrancar fuera de Windows, y son difíciles de encontrar
+porque están mezcladas con la lógica editorial.
+
+Solo stdlib, a propósito: si necesitara una dependencia externa dejaría de poder
+usarse en el arranque, que es justo cuando hace falta. Ninguna función lanza por
+culpa del sistema.
+
+El detalle que motiva buena parte del módulo: **una app lanzada desde Finder en
+macOS hereda un PATH mínimo que no incluye Homebrew**, así que `shutil.which` no
+ve Tesseract aunque el usuario lo tenga instalado y funcionando en su terminal.
+Sin las rutas explícitas, Bashkar parecería no tener OCR.
+
+Adoptada en `app.py`, los cuatro motores de OCR, `text_extractor`,
+`project_manager`, `servidor_web` y el generador del manual. Se **conserva** la
+prioridad de `tesseract_path.txt` y `poppler_path.txt` sobre la detección
+automática: son la ruta que fijó el usuario.
+
++85 pruebas, que recorren las tres plataformas **simulando el sistema** con
+monkeypatch — única forma de verificar el camino de macOS desde Windows.
+
+### `setup_wizard.py` — el instalador que faltaba
+
+`instalar.py` existía, pero es un script de consola. Para quien no programa, una
+terminal que escupe texto y puede fallar a mitad no es un instalador: es un
+obstáculo. Ahora hay una ventana que revisa el equipo, explica para qué sirve
+cada componente e instala lo que puede.
+
+- `core/requisitos.py` concentra el diagnóstico y no imprime nada: devuelve
+  datos. La consola y la ventana comparten un único criterio de «esto está
+  listo» en vez de dos listas que se separan con el tiempo.
+- Tkinter y no Qt: viene con Python en los dos sistemas, así que el asistente
+  arranca **antes** de que se haya instalado ninguna dependencia.
+- Botones y barra de progreso dibujados en Canvas. Un `tk.Button` nativo se ve
+  como Windows 95 y desentona con el resto de la aplicación.
+- El trabajo pesado va en un hilo que **solo deja mensajes en una cola**; los
+  widgets se tocan únicamente desde `after()`.
+- Congelado (`.exe`) **no llama a pip jamás**, aunque el requisito diga que se
+  puede: da los comandos para pegar en una terminal. Es la barrera contra la
+  bomba de fork de la sesión 43 (~90 procesos en 12 segundos).
+
+### Una falsa alarma cazada al probarlo
+
+La primera versión del diagnóstico reportaba «Tesseract: falta el español» en un
+equipo donde el OCR funcionaba perfectamente. El fallo era de la comprobación,
+no de la instalación: `tesseract --list-langs` solo lista el tessdata de la
+instalación, y Bashkar usa además `~/tessdata`, que es donde se deja el español
+cuando no se tienen permisos de administrador. Ahora se mira primero el archivo
+`spa.traineddata` en todas las carpetas conocidas. Un instalador que manda a
+reinstalar algo que ya está es peor que no tener instalador.
+
+También se corrigió la concordancia de «Falta 1 componente» / «Faltan 3
+componentes» en la ventana.
+
+### Dos defectos del asistente que destapó su propia suite
+
+Al añadir los tests de la ventana, la suite completa empezó a **abortar el
+proceso** —sin traza de Python— cuatro archivos más adelante, en
+`test_servidor_web.py`. Investigarlo dio dos fallos reales del asistente, no del
+test:
+
+1. `_bombear_cola` se reprogramaba con `after()` indefinidamente. Al cerrar la
+   ventana quedaba una llamada pendiente que Tk ejecutaba contra widgets ya
+   destruidos. Ahora se guarda el id del temporizador y `destroy()` lo cancela.
+2. La guarda `if not self.winfo_exists()` **lanzaba** `TclError` en vez de
+   devolver False: sobre una raíz destruida no queda intérprete Tcl al que
+   preguntar.
+
+Ambos habrían afectado a cualquiera que cerrara la ventana, no solo a los tests.
+
+### Límite de Tkinter, documentado
+
+Aun con los dos arreglos y compartiendo una única ventana entre todos sus tests,
+la suite completa seguía cayéndose. La causa es acumulativa: **ya se instancian
+raíces de Tk en ocho archivos de test**, y una más rebasa lo que el intérprete
+Tcl aguanta en un solo proceso. Verificado en las dos direcciones: sin el archivo
+nuevo la suite pasa; con él, no.
+
+Los cinco tests de ventana quedan escritos y **pasan** (59 en verde junto a los
+demás archivos de GUI), pero se saltan por defecto y se ejecutan a propósito:
+
+```
+set BASHKAR_TEST_GUI_WIZARD=1 && python -m pytest tests/test_requisitos.py
+```
+
+Degradar 1279 pruebas por cinco de ventana era mal negocio. La lógica del
+asistente vive en `core/requisitos.py` y sí corre siempre.
+
+`INSTALACION.md` documenta Windows, macOS y Linux paso a paso, para quien no
+programa.
+
+### No verificado
+
+**Nadie ha ejecutado esto en un macOS real.** Lo probado es que la lógica elige
+el camino correcto cuando se le dice que el sistema es macOS. El `.app`/`.dmg`
+hay que generarlo en un Mac: PyInstaller compila por plataforma.
+
+---
+
 ## Sesión 53 — 2026-08-07 — Las API keys salen del archivo de proyecto
 
 Una auditoría de dependencia de proveedor (a raíz del radar semanal de IA)

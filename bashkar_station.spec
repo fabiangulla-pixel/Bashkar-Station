@@ -47,6 +47,10 @@ a = Analysis(
         # plataforma se importa al inicio de app.py: sin esta entrada el .exe
         # ni siquiera llega a mostrar la ventana.
         'core.plataforma',
+        # recursos se importa en la misma línea que plataforma al inicio de
+        # app.py, y por el mismo motivo: si falta, el .exe no abre la ventana.
+        'core.recursos',
+        'core.clip_local',
         'core.text_extractor',
         'core.ocr_normalizer',
         'core.article_segmenter',
@@ -118,6 +122,9 @@ a = Analysis(
         'core.timeline_engine',
         'core.bitacora_engine',
         # Infraestructura compartida + FineReader-style (sesión de Modo Ingeniero)
+        # core.requisitos lo importa el asistente de instalación, al que se
+        # llega desde la app: sin él aquí, el .exe abre la ventana y revienta.
+        'core.requisitos',
         'core.user_prefs',
         'core.local_cache',
         'core.word_verifier',

@@ -16,7 +16,14 @@ from typing import TYPE_CHECKING
 # Única dependencia del proyecto que se importa antes de resolver paquetes:
 # core.plataforma es solo biblioteca estándar, así que no puede fallar aquí, y
 # hace falta ya para saber dónde busca cada sistema tesseract y poppler.
-from core import plataforma
+from core import plataforma, recursos
+
+# Reparto de CPU. Va aquí arriba del todo y no en el arranque de la ventana
+# porque OpenMP/MKL leen estas variables al inicializarse: si para entonces ya
+# se importó torch o numpy por cualquier camino, fijarlas no sirve de nada.
+# Sin esto, un lote de OCR deja la interfaz sin un solo núcleo para repintar y
+# la app parece congelada.
+recursos.aplicar_limites_cpu()
 
 if TYPE_CHECKING:
     from core.bitacora_engine import BitacoraEngine
@@ -17617,19 +17624,29 @@ class BashkarApp(tk.Tk):
             from core.zone_labeler import cargar_pagina
             salida = {}
             numero = numero_etq          # leído en el hilo principal
-            for i, p in enumerate(imagenes):
-                pag_etq = None
-                if ST.out_dir and numero:
-                    pag_etq = cargar_pagina(ST.out_dir, numero, p.stem)
-                if pag_etq and pag_etq.zonas:
-                    log(f"    {p.stem}: usando {len(pag_etq.zonas)} zona(s) etiquetada(s)")
-                    r = ocr_churro.ocr_pagina_con_zonas(p, pag_etq.zonas,
-                                                        callback=log)
-                    salida[p.stem] = r["texto"]
-                else:
-                    log(f"    {p.stem}: sin etiquetar — página completa (más lento)")
-                    salida[p.stem] = ocr_churro.ocr_pagina(p)
-                avance(i + 1, len(imagenes), p.stem, 0.0)
+            try:
+                for i, p in enumerate(imagenes):
+                    pag_etq = None
+                    if ST.out_dir and numero:
+                        pag_etq = cargar_pagina(ST.out_dir, numero, p.stem)
+                    if pag_etq and pag_etq.zonas:
+                        log(f"    {p.stem}: usando {len(pag_etq.zonas)} zona(s) etiquetada(s)")
+                        r = ocr_churro.ocr_pagina_con_zonas(p, pag_etq.zonas,
+                                                            callback=log)
+                        salida[p.stem] = r["texto"]
+                    else:
+                        log(f"    {p.stem}: sin etiquetar — página completa (más lento)")
+                        salida[p.stem] = ocr_churro.ocr_pagina(p)
+                    avance(i + 1, len(imagenes), p.stem, 0.0)
+            finally:
+                # CHURRO en float32 ocupa ~12 GB, más de la mitad de la RAM de un
+                # portátil típico. Si se queda residente al acabar el lote, todo
+                # lo que venga después —incluido el propio benchmark comparando
+                # con otras rutas— trabaja contra el archivo de paginación y el
+                # equipo se arrastra. En `finally` porque un error a mitad de
+                # lote es justo cuando peor viene dejar 12 GB colgados.
+                ocr_churro.liberar()
+                log("    (modelo CHURRO liberado de memoria)")
             return salida
         if ruta == "pero":
             from core import ocr_pero

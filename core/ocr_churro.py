@@ -64,6 +64,24 @@ SEGUNDOS_POR_PAGINA_CPU = 3060.0
 # el modelo describa las fotografías.
 SEGUNDOS_POR_ZONA_CPU = 210.0
 
+# Techo de resolución que se le entrega al modelo, en píxeles totales.
+#
+# Qwen2.5-VL trocea la imagen en parches de 28×28 y fusiona de a 2×2, así que el
+# número de tokens visuales es ≈ píxeles / 3136. El procesador trae por defecto
+# `max_pixels = 12 845 056` (16 384 tokens): una zona recortada a 200 dpi entra
+# entera y el modelo pasa la mayor parte de los 210 s midiendo blanco de página.
+# El tiempo de generación crece con esos tokens, y era la causa real de los
+# 51 min por página medidos en la sesión 50 — no el tamaño del modelo.
+#
+# 1 003 520 px = 1 280 tokens visuales. Para un recorte de zona (una columna de
+# texto) sigue habiendo resolución de sobra; para una página completa implica
+# remuestrear hacia abajo, y ahí sí puede perderse cuerpo pequeño.
+#
+# Ajustable sin tocar código con BASHKAR_CHURRO_MAX_PIXELS, para poder barrer
+# el compromiso velocidad/CER con `core/benchmark_ocr.py` sobre el estándar de oro.
+MAX_PIXELS_POR_DEFECTO = 1_003_520
+MIN_PIXELS_POR_DEFECTO = 200_704      # 256 tokens: piso para que un pie de foto no se diluya
+
 PROMPT_POR_DEFECTO = (
     "Transcribe all the text in this historical document image. "
     "Preserve the original spelling, line breaks and reading order. "
@@ -297,6 +315,23 @@ def estimar_tiempo(n_paginas: int) -> dict:
     }
 
 
+def _limite_pixeles(variable: str, por_defecto: int) -> int:
+    """Lee un techo de píxeles de una variable de entorno, con respaldo.
+
+    Un valor inservible (texto, cero, negativo) no debe tumbar el OCR: se ignora
+    y se sigue con el valor por defecto, que es lo que espera quien solo quería
+    transcribir una página.
+    """
+    crudo = os.environ.get(variable, "").strip()
+    if not crudo:
+        return por_defecto
+    try:
+        valor = int(crudo)
+    except ValueError:
+        return por_defecto
+    return valor if valor > 0 else por_defecto
+
+
 def _cargar():
     """Carga perezosa del modelo. Devuelve (modelo, procesador)."""
     global _modelo, _procesador
@@ -313,6 +348,12 @@ def _cargar():
 
         import torch
         from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
+
+        # Un modelo de 3B en CPU satura los 12 hilos lógicos y deja a la interfaz
+        # sin turno de planificación: la app se ve congelada durante los minutos
+        # que dura la transcripción. Reservar núcleos apenas cuesta tiempo.
+        from core import recursos
+        recursos.limitar_hilos_torch()
 
         # Una carpeta local con el modelo tiene prioridad sobre la caché: es lo
         # que hace posible el modo portátil en la memoria USB.
@@ -331,7 +372,11 @@ def _cargar():
             low_cpu_mem_usage=True,
         )
         modelo.eval()
-        _procesador = AutoProcessor.from_pretrained(origen)
+        _procesador = AutoProcessor.from_pretrained(
+            origen,
+            min_pixels=_limite_pixeles("BASHKAR_CHURRO_MIN_PIXELS", MIN_PIXELS_POR_DEFECTO),
+            max_pixels=_limite_pixeles("BASHKAR_CHURRO_MAX_PIXELS", MAX_PIXELS_POR_DEFECTO),
+        )
         _modelo = modelo
         return _modelo, _procesador
 
