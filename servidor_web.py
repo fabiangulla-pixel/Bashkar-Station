@@ -30,6 +30,7 @@ from core import recursos
 # inicializarse). En el servidor importa más que en el escritorio: si un
 # análisis se come todos los núcleos, deja de responder a las demás peticiones.
 recursos.aplicar_limites_cpu()
+import importlib.util
 import shutil
 import sys
 import tempfile
@@ -117,19 +118,43 @@ def detectar_capacidades() -> dict:
         return bool(buscar_poppler())
 
     _probar("poppler", _hay_poppler)
-    _probar("pymupdf", lambda: __import__("fitz") and True)
-    _probar("python_docx", lambda: __import__("docx") and True)
+
+    # Se pregunta si el paquete ESTÁ, sin importarlo. La versión anterior hacía
+    # `__import__("pandas")` e `import spacy.util` dentro del manejador HTTP:
+    # importar spacy en frío tarda del orden de diez segundos, y el frontend
+    # espera esta respuesta con un timeout de 10 s. El resultado era un endpoint
+    # que funcionaba o no según lo cargada que estuviera la máquina y qué se
+    # hubiera importado antes — y en la suite de tests, un fallo intermitente
+    # que dependía de qué archivo corriera primero.
+    #
+    # `find_spec` resuelve el módulo en el sistema de archivos sin ejecutarlo,
+    # que es exactamente lo que significa «¿está disponible?».
+    def _instalado(modulo: str):
+        def _comprobar():
+            try:
+                return importlib.util.find_spec(modulo) is not None
+            except (ImportError, ValueError):
+                return False
+        return _comprobar
+
+    _probar("pymupdf", _instalado("fitz"))
+    _probar("python_docx", _instalado("docx"))
 
     def _hay_spacy_es():
-        import spacy.util
+        # Los modelos de spaCy se instalan como paquetes normales, así que se
+        # pueden ver en los metadatos de distribución sin cargar spaCy entero.
+        from importlib.metadata import PackageNotFoundError, version
 
-        return any(
-            spacy.util.is_package(m)
-            for m in ("es_core_news_sm", "es_core_news_md", "es_core_news_lg")
-        )
+        for modelo in ("es_core_news_sm", "es_core_news_md", "es_core_news_lg"):
+            try:
+                version(modelo)
+                return True
+            except PackageNotFoundError:
+                continue
+        return False
 
     _probar("spacy_es", _hay_spacy_es)
-    _probar("pandas", lambda: __import__("pandas") and True)
+    _probar("pandas", _instalado("pandas"))
 
     # Los proveedores locales de IA no existen en un servidor remoto
     caps["proveedores_locales"] = {

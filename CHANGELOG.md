@@ -133,24 +133,36 @@ alineación correcta antes de invertir más en la ruta CHURRO.**
 48 tests nuevos (`test_recursos_clip.py`, `test_kraken_finetune.py`), suite en
 **1 316 en verde**, ruff limpio.
 
-> **Bug detectado y acotado, no corregido — bloquea todos los commits.**
-> La suite aborta con `Windows fatal exception: code 0x80000003` durante una
-> recolección de basura en `core/article_segmenter.py:747`, en el hilo `_correr`
-> de `servidor_web.py:381`. Como el hook de pre-commit corre `check.bat`, ningún
-> commit puede pasar hasta resolverlo.
->
-> Acotado por bisección: sin `tests/test_requisitos.py` la suite completa pasa
-> (1 335); sin `tests/test_servidor_web.py` también (1 340); **hacen falta los
-> dos**. Reproducción mínima en 26 s:
-> `python -m pytest tests/test_requisitos.py tests/test_servidor_web.py -q`
-> → `test_local_sesion_y_capacidades` falla con `ReadTimeout`; en la suite
-> completa eso escala a la excepción fatal.
->
-> Los tests gráficos de `test_requisitos.py` están *skipped* por defecto, así
-> que la explicación de «una raíz de Tk de más» no cuadra sin más evidencia.
-> `test_requisitos.py` es trabajo **sin commitear de la sesión 54**, junto con
-> `setup_wizard.py`, `core/requisitos.py`, `INSTALACION.md` y cambios en
-> `README.md`.
+### El bug que bloqueaba todos los commits — `servidor_web.py`
+
+La suite abortaba con `Windows fatal exception: code 0x80000003` durante una
+recolección de basura en `core/article_segmenter.py:747`, en el hilo `_correr`
+del servidor. Como el hook de pre-commit corre `check.bat`, ningún commit podía
+pasar.
+
+Acotado por bisección: sin `tests/test_requisitos.py` la suite pasaba (1 335);
+sin `tests/test_servidor_web.py` también (1 340); **hacían falta los dos**.
+Reproducción mínima en 26 s en vez de 10 min:
+
+```
+python -m pytest tests/test_requisitos.py tests/test_servidor_web.py -q
+```
+
+La causa no era ninguno de los dos tests. **`detectar_capacidades()` hacía
+`import spacy.util` y `__import__("pandas")` dentro del manejador HTTP**, y el
+cliente espera esa respuesta con un timeout de 10 s. Importar spaCy en frío
+tarda del orden de diez segundos: el endpoint funcionaba o no según lo cargada
+que estuviera la máquina y qué se hubiera importado antes. Cualquier archivo de
+tests que corriera primero y gastara tiempo o memoria lo tiraba, y en la suite
+completa el cuelgue escalaba a la excepción fatal.
+
+La pregunta era «¿está disponible este paquete?», y para eso no hace falta
+ejecutarlo: ahora se usa `importlib.util.find_spec`, y para los modelos de spaCy
+—que son paquetes pip normales— `importlib.metadata.version`. **Los tests del
+servidor bajaron de ~25 s a ~10 s** y el fallo intermitente desapareció.
+
+Un endpoint de diagnóstico que se cuelga es peor que uno que dice «no»: es la
+primera llamada que hace el frontend al abrir.
 
 ---
 
