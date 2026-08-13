@@ -56,17 +56,27 @@ MODELO_ID = "stanford-oval/churro-3B"
 # pista fiable cuando el índice del modelo no se llegó a descargar.
 _RE_FRAGMENTO = re.compile(r"^model-(\d+)-of-(\d+)\.safetensors$")
 
-# Medido el 2026-08-04 en un Ryzen 5 5500U (6 núcleos, sin GPU) sobre una
-# página completa de *Estampa* renderizada a 200 dpi: **51,1 minutos**.
-# La estimación inicial de 180 s estaba equivocada por un orden de magnitud:
-# Qwen2.5-VL convierte una página grande en miles de tokens visuales.
-SEGUNDOS_POR_PAGINA_CPU = 3060.0
+# Remedido el 2026-08-12 en el mismo Ryzen 5 5500U (6 núcleos, sin GPU), sobre
+# la página 2 del número del 18-mar-1939 a 300 dpi nativos, ya con el techo de
+# `max_pixels` y con los pesos en bfloat16: **1 121 s (18,7 min)**, 534 palabras,
+# 8,41 GB de RSS en el pico de generación.
+#
+# El 2026-08-04, sin capar los tokens visuales, la misma tarea tardaba 3 060 s
+# (51,1 min). La mejora real es de **2,7×** — menos de lo que hacía esperar la
+# reducción de 16 384 a 1 280 tokens, señal de que buena parte del tiempo no se
+# va en los tokens de imagen sino en generar los de salida, uno a uno.
+SEGUNDOS_POR_PAGINA_CPU = 1121.0
 
 # Medido el 2026-08-04 sobre `rev_estampa_mar_1939/p0001-02`, una página real
 # etiquetada con 13 zonas (9 con texto, 4 fotografías saltadas): **37,8 minutos
 # en total, entre 2,8 y 3,7 minutos por zona**. La página completa había tardado
 # 51,1 min, así que trabajar por zonas ahorra ~26 % además de no arriesgar que
 # el modelo describa las fotografías.
+#
+# ⚠️ Este número es de ANTES de capar `max_pixels`, a diferencia del de página
+# completa, que ya se remidió. Está pendiente rehacerlo: recortar una zona reduce
+# los tokens visuales, así que el techo le afecta menos, y no se puede deducir
+# aplicándole el mismo 2,7× sin medirlo.
 SEGUNDOS_POR_ZONA_CPU = 210.0
 
 # Techo de resolución que se le entrega al modelo, en píxeles totales.

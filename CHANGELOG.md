@@ -133,6 +133,36 @@ alineación correcta antes de invertir más en la ruta CHURRO.**
 48 tests nuevos (`test_recursos_clip.py`, `test_kraken_finetune.py`), suite en
 **1 316 en verde**, ruff limpio.
 
+### La medición que faltaba, y lo que dice del plan
+
+Con el modelo completo y los dos ajustes puestos, sobre la página 2 del número
+del 18-mar-1939 a 300 dpi nativos:
+
+| | tiempo | palabras | RSS pico |
+|---|---:|---:|---:|
+| CHURRO, sesión 50 (sin capar) | 3 060 s (51,1 min) | 499 | 11,97 GB |
+| CHURRO, hoy (1 280 tokens, bfloat16) | **1 121 s (18,7 min)** | 534 | 8,41 GB |
+
+**2,7× más rápido** — real, pero menos de lo que hacía esperar bajar de 16 384 a
+1 280 tokens visuales. Señal de que buena parte del tiempo no se va en los tokens
+de imagen sino en generar los de salida, uno a uno. `SEGUNDOS_POR_PAGINA_CPU`
+pasa de 3 060 a **1 121**, ya con dato medido en vez de estimado.
+`SEGUNDOS_POR_ZONA_CPU` sigue sin remedir y queda marcado como tal en el código.
+
+Y la calidad, que es lo que importa para usarlo como maestro:
+
+| fuente | lo que dice |
+|---|---|
+| página impresa | Primera Gran **Rifa** Anual |
+| OCR de la BNC (la base) | Primera Gran **Rila** Anual |
+| Tesseract | Primera Gran **Rita** Anual |
+| **CHURRO** | Primera Gran **Rifa** Anual ✅ |
+
+También acierta `Automóvil Opel "Kadet"`, `Leonidas Lara e Hijos` y `$ 1.480.00`.
+Es el único de los tres que lee bien la página, así que sirve como maestro para
+destilar. **Coste del corpus: 47 páginas × 18,7 min ≈ 14,6 horas** — una noche
+de máquina, y por eso el lote necesita checkpoint reanudable antes de lanzarlo.
+
 ### Una caché a medias que mataba la aplicación entera
 
 Al intentar transcribir con CHURRO, el proceso murió con *segmentation fault*.
