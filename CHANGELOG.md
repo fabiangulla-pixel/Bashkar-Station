@@ -133,6 +133,45 @@ alineación correcta antes de invertir más en la ruta CHURRO.**
 48 tests nuevos (`test_recursos_clip.py`, `test_kraken_finetune.py`), suite en
 **1 316 en verde**, ruff limpio.
 
+### Una caché a medias que mataba la aplicación entera
+
+Al intentar transcribir con CHURRO, el proceso murió con *segmentation fault*.
+No es un fallo que se pueda atrapar y explicar: es la aplicación cerrándose de
+golpe, llevándose por delante el trabajo sin guardar.
+
+La bisección descartó una por una las causas plausibles —falta de RAM, el techo
+de píxeles nuevo, el reparto de hilos, las variables de OpenMP—: cargando el
+modelo directamente con `transformers`, sin pasar por el proyecto, funcionaba.
+
+La causa: **la caché de HuggingFace está incompleta**. Tiene
+`model-00002-of-00002.safetensors` y le faltan tanto el fragmento 1 (5 GB) como
+el índice. Y `esta_descargado()` devolvía `True`.
+
+La función ya traía un guardián contra descargas a medias —comparar los
+fragmentos que declara `model.safetensors.index.json` contra los presentes—,
+pero aquí **también falta el índice**, así que caía en la rama de «modelo de un
+solo archivo», donde bastaba encontrar un `.safetensors` no vacío. Bashkar
+ofrecía la ruta, transformers intentaba mapear pesos inexistentes y el proceso
+moría.
+
+El arreglo usa la única pista fiable cuando no hay índice: **el nombre del
+archivo**. `model-00002-of-00002` dice por sí solo que es el fragmento 2 de 2.
+Si hay fragmentos, tienen que estar todos los que anuncia el sufijo `-of-N`.
+
+### Corrección a lo escrito más arriba sobre la RAM
+
+En la sección de recursos se afirmó que CHURRO ocupa 11,97 GB en `float32` y que
+por eso no cabe en un portátil de 20 GB. **La cifra es la medida en la sesión 50,
+pero la conclusión no se sostiene:** con `low_cpu_mem_usage=True` y pesos en
+safetensors, la carga los **mapea en memoria** en vez de copiarlos. Medido:
+**1 segundo y 0,57 GB de RSS**. El consumo llega después, durante la inferencia,
+y de forma gradual.
+
+`bfloat16` se mantiene —menos memoria movida por operación y menos huella
+durante la generación—, pero configurable con `BASHKAR_CHURRO_DTYPE` y con la
+advertencia de que pierde bits de mantisa: la calidad hay que compararla contra
+el estándar de oro antes de darla por buena.
+
 ### El bug que bloqueaba todos los commits — `servidor_web.py`
 
 La suite abortaba con `Windows fatal exception: code 0x80000003` durante una

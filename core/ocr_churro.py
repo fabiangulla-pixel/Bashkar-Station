@@ -30,6 +30,7 @@ Referencias:
 from __future__ import annotations
 
 import os
+import re
 import sys
 import threading
 import time
@@ -50,6 +51,10 @@ __all__ = [
 ]
 
 MODELO_ID = "stanford-oval/churro-3B"
+
+# `model-00002-of-00002.safetensors` → fragmento 2 de 2. El nombre es la única
+# pista fiable cuando el índice del modelo no se llegó a descargar.
+_RE_FRAGMENTO = re.compile(r"^model-(\d+)-of-(\d+)\.safetensors$")
 
 # Medido el 2026-08-04 en un Ryzen 5 5500U (6 núcleos, sin GPU) sobre una
 # página completa de *Estampa* renderizada a 200 dpi: **51,1 minutos**.
@@ -291,10 +296,28 @@ def esta_descargado() -> bool:
                              if p.stat().st_size > 0}
                 return requeridos.issubset(presentes)
 
-        # Modelo de un solo archivo: basta con que exista y no esté vacío
+        # Sin índice. Ojo: que no haya índice no significa que el modelo sea de
+        # un solo archivo. Aquí se llegaba con una caché que tenía el fragmento
+        # 2 de 2 y nada más —ni el índice ni el fragmento 1, 5 GB— y se devolvía
+        # True porque «hay un .safetensors no vacío». Con eso la aplicación
+        # ofrecía la ruta, transformers intentaba mapear los pesos que faltaban
+        # y el proceso moría con *segmentation fault*: no una excepción que se
+        # pueda atrapar y explicar, sino la aplicación entera cerrándose de
+        # golpe y llevándose por delante el trabajo sin guardar.
+        #
+        # El propio nombre del archivo dice si es un fragmento, así que se usa
+        # eso: si hay fragmentos, tienen que estar TODOS los que anuncia el
+        # sufijo `-of-N`.
         sueltos = [p for p in carpeta.rglob("*.safetensors") if p.stat().st_size > 0]
+        fragmentos = {}
+        for p in sueltos:
+            m = _RE_FRAGMENTO.match(p.name)
+            if m:
+                fragmentos.setdefault(int(m.group(2)), set()).add(int(m.group(1)))
+        if fragmentos:
+            return any(len(vistos) == total for total, vistos in fragmentos.items())
         if sueltos:
-            return True
+            return True          # modelo de un solo archivo, de verdad
     return False
 
 
@@ -313,6 +336,30 @@ def estimar_tiempo(n_paginas: int) -> dict:
         "costo_usd": 0.0,
         "descarga_pendiente_gb": 0.0 if esta_descargado() else 7.0,
     }
+
+
+def _dtype(torch):
+    """Precisión con la que se cargan los pesos. Manda la RAM, no la velocidad.
+
+    En `float32` el modelo ocupa **11,97 GB medidos**. Un portátil de 20 GB con
+    el navegador y el editor abiertos tiene del orden de 6 GB libres, así que la
+    carga terminaba en *segmentation fault* — no es que fuera lenta: no cabía.
+
+    `bfloat16` lo deja en ~6 GB. No es lo mismo que `float16`: bfloat16 conserva
+    los 8 bits de exponente de float32, así que no tiene el desbordamiento a NaN
+    que hace inservible a float16 en CPU. Lo que sí pierde son bits de mantisa,
+    y por eso el resultado hay que compararlo contra el estándar de oro con
+    `benchmark_ocr` antes de darlo por bueno.
+
+    `BASHKAR_CHURRO_DTYPE=float32` recupera el comportamiento anterior en una
+    máquina con RAM de sobra.
+    """
+    nombre = os.environ.get("BASHKAR_CHURRO_DTYPE", "").strip().lower()
+    if nombre in ("float32", "fp32"):
+        return torch.float32
+    if nombre in ("float16", "fp16"):
+        return torch.float16          # a petición expresa; da NaN en CPU
+    return torch.bfloat16
 
 
 def _limite_pixeles(variable: str, por_defecto: int) -> int:
@@ -367,7 +414,7 @@ def _cargar():
 
         modelo = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             origen,
-            dtype=torch.float32,   # CPU: float16 va más lento y da NaN
+            dtype=_dtype(torch),
             device_map="cpu",
             low_cpu_mem_usage=True,
         )

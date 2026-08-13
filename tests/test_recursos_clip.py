@@ -109,6 +109,120 @@ class TestLimitarHilosTorch:
             assert recursos.limitar_hilos_torch(5) == 5   # no propaga
 
 
+# ─────────────────────── core/ocr_churro.py (recursos) ───────────────────
+
+class TestChurroCabeEnLaMemoria:
+    """Los dos ajustes que hacen a CHURRO ejecutable en un portátil.
+
+    Medido el 2026-08-12: en `float32` el modelo pide 11,97 GB y la carga muere
+    con *segmentation fault* en una máquina de 20 GB con el navegador abierto
+    (~6,5 GB libres). No era lentitud: no cabía.
+    """
+
+    def test_por_defecto_carga_en_bfloat16(self):
+        """float32 no cabe; float16 desborda a NaN en CPU. Queda bfloat16."""
+        from core import ocr_churro
+        falso = MagicMock()
+        with patch.dict(os.environ, {}, clear=True):
+            assert ocr_churro._dtype(falso) is falso.bfloat16
+
+    @pytest.mark.parametrize("valor,esperado", [
+        ("float32", "float32"), ("fp32", "float32"),
+        ("float16", "float16"), ("fp16", "float16"),
+    ])
+    def test_la_variable_de_entorno_manda(self, valor, esperado):
+        """Una máquina con RAM de sobra puede volver a la precisión completa."""
+        from core import ocr_churro
+        falso = MagicMock()
+        with patch.dict(os.environ, {"BASHKAR_CHURRO_DTYPE": valor}):
+            assert ocr_churro._dtype(falso) is getattr(falso, esperado)
+
+    def test_un_dtype_inservible_no_tumba_el_ocr(self):
+        from core import ocr_churro
+        falso = MagicMock()
+        with patch.dict(os.environ, {"BASHKAR_CHURRO_DTYPE": "cuadruple"}):
+            assert ocr_churro._dtype(falso) is falso.bfloat16
+
+    def test_el_techo_de_pixeles_es_muy_inferior_al_de_qwen(self):
+        """1.280 tokens visuales frente a los 16.384 que trae por defecto."""
+        from core import ocr_churro
+        assert ocr_churro.MAX_PIXELS_POR_DEFECTO < 12_845_056 / 10
+        assert ocr_churro.MIN_PIXELS_POR_DEFECTO < ocr_churro.MAX_PIXELS_POR_DEFECTO
+
+    @pytest.mark.parametrize("valor", ["", "  ", "abc", "0", "-1", "1e6"])
+    def test_un_limite_de_pixeles_inservible_cae_en_el_defecto(self, valor):
+        from core import ocr_churro
+        with patch.dict(os.environ, {"BASHKAR_CHURRO_MAX_PIXELS": valor}):
+            assert ocr_churro._limite_pixeles(
+                "BASHKAR_CHURRO_MAX_PIXELS",
+                ocr_churro.MAX_PIXELS_POR_DEFECTO) == ocr_churro.MAX_PIXELS_POR_DEFECTO
+
+    def test_un_limite_valido_se_respeta(self):
+        from core import ocr_churro
+        with patch.dict(os.environ, {"BASHKAR_CHURRO_MAX_PIXELS": "500000"}):
+            assert ocr_churro._limite_pixeles(
+                "BASHKAR_CHURRO_MAX_PIXELS", 1_003_520) == 500_000
+
+
+class TestCacheAMediasNoCuentaComoDescargado:
+    """Una descarga incompleta no puede parecer completa.
+
+    Caso real del 2026-08-12: la caché tenía `model-00002-of-00002.safetensors`
+    y le faltaban el fragmento 1 (5 GB) y el índice. `esta_descargado()` decía
+    True, transformers intentaba mapear los pesos ausentes y el proceso moría
+    con *segmentation fault* — no una excepción, la aplicación entera cerrándose
+    y llevándose el trabajo sin guardar.
+    """
+
+    def _cache(self, tmp_path, nombres, con_indice=None):
+        carpeta = tmp_path / "hub" / "models--stanford-oval--churro-3B" / "snapshots" / "abc"
+        carpeta.mkdir(parents=True)
+        for n in nombres:
+            (carpeta / n).write_bytes(b"x" * 100)
+        if con_indice is not None:
+            import json
+            (carpeta / "model.safetensors.index.json").write_text(
+                json.dumps({"weight_map": {f"w{i}": n for i, n in enumerate(con_indice)}}),
+                encoding="utf-8")
+        return tmp_path
+
+    def _mirar(self, tmp_path, monkeypatch):
+        from core import ocr_churro
+        monkeypatch.setattr(ocr_churro, "_dir_cache", lambda: tmp_path)
+        monkeypatch.setattr(ocr_churro, "_carpeta_modelo_local", lambda: None)
+        return ocr_churro.esta_descargado()
+
+    def test_falta_un_fragmento_y_el_indice(self, tmp_path, monkeypatch):
+        """El caso exacto que provocó el segfault."""
+        raiz = self._cache(tmp_path, ["model-00002-of-00002.safetensors"])
+        assert self._mirar(raiz, monkeypatch) is False
+
+    def test_estan_todos_los_fragmentos_sin_indice(self, tmp_path, monkeypatch):
+        """Sin índice pero completo: los nombres bastan para saberlo."""
+        raiz = self._cache(tmp_path, ["model-00001-of-00002.safetensors",
+                                      "model-00002-of-00002.safetensors"])
+        assert self._mirar(raiz, monkeypatch) is True
+
+    def test_modelo_de_un_solo_archivo_sigue_valiendo(self, tmp_path, monkeypatch):
+        """No romper el caso legítimo: hay modelos sin fragmentar."""
+        raiz = self._cache(tmp_path, ["model.safetensors"])
+        assert self._mirar(raiz, monkeypatch) is True
+
+    def test_con_indice_completo(self, tmp_path, monkeypatch):
+        piezas = ["model-00001-of-00002.safetensors", "model-00002-of-00002.safetensors"]
+        raiz = self._cache(tmp_path, piezas, con_indice=piezas)
+        assert self._mirar(raiz, monkeypatch) is True
+
+    def test_con_indice_y_un_fragmento_de_menos(self, tmp_path, monkeypatch):
+        piezas = ["model-00001-of-00002.safetensors", "model-00002-of-00002.safetensors"]
+        raiz = self._cache(tmp_path, piezas[:1], con_indice=piezas)
+        assert self._mirar(raiz, monkeypatch) is False
+
+    def test_carpeta_vacia(self, tmp_path, monkeypatch):
+        raiz = self._cache(tmp_path, [])
+        assert self._mirar(raiz, monkeypatch) is False
+
+
 # ─────────────────────────── core/clip_local.py ──────────────────────────
 
 class TestClipLocal:
