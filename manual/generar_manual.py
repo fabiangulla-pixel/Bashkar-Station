@@ -41,7 +41,7 @@ MARCA_REF = "{{REFERENCIA_PANELES}}"
 
 TITULO = "Bashkar Station"
 SUBTITULO = "Manual de uso y guía metodológica"
-AUTOR = "Fabián Gulla"
+AUTOR = "Fabián Andrés Gullaván Vera"
 INSTITUCION = "Instituto Caro y Cuervo · Bogotá, Colombia"
 
 
