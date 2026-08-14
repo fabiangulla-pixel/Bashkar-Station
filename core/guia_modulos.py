@@ -26,6 +26,34 @@ from __future__ import annotations
 
 GUIA_MODULOS: dict[str, dict[str, str]] = {
 
+    # ─────────────────────────────── INICIO ────────────────────────────────
+    "inicio": {
+        "que_es": "Tablero de investigación: la primera pantalla al abrir la "
+                  "aplicación. Resume en una sola vista el proyecto activo, "
+                  "cuánto corpus hay procesado y en qué etapa va el flujo.",
+        "para_que": "Retomar el trabajo sin tener que recorrer los paneles "
+                    "para averiguar qué quedó a medias, y comprobar de un "
+                    "vistazo qué motores locales están disponibles en este "
+                    "equipo antes de lanzar un proceso largo.",
+        "resultado": "Cuatro indicadores del corpus (páginas procesadas, "
+                     "confianza media del OCR, artículos segmentados y "
+                     "entidades reconocidas), el estado de las seis etapas "
+                     "del flujo, las acciones sugeridas y la lista de "
+                     "capacidades instaladas. No calcula nada nuevo: lee el "
+                     "estado del proyecto en memoria.",
+        "interpretar": "La confianza media del OCR es el número que decide si "
+                       "vale la pena seguir: por debajo de ~60 conviene "
+                       "revisar el etiquetado de zonas o cambiar de ruta de "
+                       "extracción antes de segmentar, porque todo el análisis "
+                       "textual hereda esos errores. Una etapa en ámbar "
+                       "(«revisar») no significa que falle, sino que se "
+                       "completó y después cambió una etapa anterior: los "
+                       "resultados que muestre están calculados sobre material "
+                       "viejo. La pastilla «IA externa» de la barra superior "
+                       "dice si algún módulo puede enviar texto a un tercero; "
+                       "apagada, el procesamiento es íntegramente local.",
+    },
+
     # ───────────────────────── FLUJO PRINCIPAL ─────────────────────────────
     "cfg": {
         "que_es": "Punto de partida del proyecto: define el corpus (carpetas "

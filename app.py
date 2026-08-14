@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 # ── Rutas de binarios externos (Tesseract/Poppler) ───────────────────────────
 _APP_DIR = Path(__file__).parent
-_APP_VERSION_SPLASH = "11.11"   # sincronizar con APP_VERSION abajo
+_APP_VERSION_SPLASH = "12.0"   # sincronizar con APP_VERSION abajo
 
 
 def _configurar_rutas_binarios():
@@ -158,21 +158,21 @@ def _auto_instalar():
     import tkinter as tk
     from tkinter import ttk
     root = tk.Tk(); root.title(f"Bashkar Station v{_APP_VERSION_SPLASH} — Instalando")
-    root.geometry("520x340"); root.configure(bg="#0A1628"); root.resizable(False,False)
+    root.geometry("520x340"); root.configure(bg="#12171B"); root.resizable(False,False)
     try:
         from PIL import Image, ImageTk
         _sp_img = Image.open(_APP_DIR / "assets" / "logo_splash.png")
         _sp_tk  = ImageTk.PhotoImage(_sp_img)
-        tk.Label(root, image=_sp_tk, bg="#0A1628").pack(pady=(12,0))
+        tk.Label(root, image=_sp_tk, bg="#12171B").pack(pady=(12,0))
         root._sp_tk = _sp_tk  # evitar GC
     except Exception:
-        tk.Label(root, text=f"BASHKAR STATION v{_APP_VERSION_SPLASH}", bg="#0A1628", fg="white",
+        tk.Label(root, text=f"BASHKAR STATION v{_APP_VERSION_SPLASH}", bg="#12171B", fg="white",
                  font=("Segoe UI",16,"bold")).pack(pady=(20,4))
     tk.Label(root, text=f"Instalando {len(faltantes)} paquete(s) faltantes…",
-             bg="#0A1628", fg="#7FB3D3", font=("Segoe UI",10)).pack(pady=(0,12))
-    lbl = tk.Label(root, text="", bg="#0A1628", fg="white", font=("Courier",10)); lbl.pack()
+             bg="#12171B", fg="#6CA8E8", font=("Segoe UI",10)).pack(pady=(0,12))
+    lbl = tk.Label(root, text="", bg="#12171B", fg="white", font=("Courier",10)); lbl.pack()
     prog = ttk.Progressbar(root, length=380, mode="determinate", maximum=len(faltantes)); prog.pack(pady=10)
-    lbl_e = tk.Label(root, text="", bg="#0A1628", fg="#70AD47", font=("Segoe UI",9)); lbl_e.pack()
+    lbl_e = tk.Label(root, text="", bg="#12171B", fg="#6EC69A", font=("Segoe UI",9)); lbl_e.pack()
     errores = []
     def run():
         for i,(mod,pkg) in enumerate(faltantes):
@@ -199,93 +199,120 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-APP_VERSION = "11.11"
+APP_VERSION = "12.0"
 APP_NAME    = "Bashkar Station"
 
-# ── Paleta visual v2 — Dark mode académico ────────────────────────────────────
-# ── Paletas de color — VS Code Dark+ y VS Code Light+ ────────────────────────
-# Colores tomados directamente del tema oficial de VS Code.
-# La activity bar es SIEMPRE oscura (#333333) en ambos modos — decisión de diseño
-# de VS Code para dar contraste y anclar la navegación visualmente.
+# ── Identidad visual — grafito, cobre y teal ──────────────────────────────────
+# La interfaz ya NO imita a VS Code. Los colores viven en `ui_redesign.Theme`,
+# el mismo módulo que dibuja el panel Inicio: así el tablero y los 30 paneles no
+# pueden divergir. Aquí solo se traducen esos tokens a los nombres que el resto
+# de app.py lleva usando desde siempre (CARD_BG, TXT_PRI, AZ3…), de modo que
+# cambiar la identidad no exige tocar ni un panel.
+from ui_redesign import Theme as _T  # noqa: E402  (va aquí, junto a la paleta)
 
 _PALETA_DARK = {
-    # Activity bar — siempre oscura (#333333 VS Code)
-    "AB_BG":     "#333333",
-    "AB_SEL":    "#FFFFFF",       # ícono activo: blanco puro
-    "AB_TXT":    "#858585",       # ícono inactivo: gris medio
-    "AB_IND":    "#0078D4",       # indicador izquierdo: azul VS Code
+    # Activity bar — la franja más oscura, ancla visual de la navegación
+    "AB_BG":     _T.TOPBAR,
+    "AB_SEL":    _T.AMBER,        # ícono activo: ámbar
+    "AB_TXT":    _T.TEXT_3,       # ícono inactivo
+    "AB_IND":    _T.COPPER,       # indicador izquierdo: cobre
 
-    # Sidebar (#252526 VS Code Dark+)
-    "SB_BG":     "#252526",
-    "SB_HOV":    "#2A2D2E",
-    "SB_SEL":    "#094771",       # selección azul oscuro
-    "SB_TXT":    "#BBBBBB",
-    "SB_TXT2":   "#CCCCCC",
+    # Sidebar
+    "SB_BG":     _T.SIDEBAR,
+    "SB_HOV":    _T.SURFACE_HOVER,
+    "SB_SEL":    _T.SURFACE_ACTIVE,   # selección cálida, no azul
+    "SB_TXT":    _T.TEXT_2,
+    "SB_TXT2":   _T.TEXT,
 
-    # Editor / contenido (#1E1E1E VS Code Dark+)
-    "CONTENT_BG":"#1E1E1E",
-    "CARD_BG":   "#252526",
-    "CARD_BOR":  "#474747",
-    "HDR_LINE":  "#0078D4",
+    # Contenido
+    "CONTENT_BG":_T.BG,
+    "CARD_BG":   _T.SURFACE,
+    "CARD_BOR":  _T.BORDER,
+    "HDR_LINE":  _T.COPPER,
 
-    # Topbar / title bar (#3C3C3C VS Code Dark+)
-    "TOPBAR_BG": "#3C3C3C",
+    # Topbar
+    "TOPBAR_BG": _T.TOPBAR,
 
-    # Paleta funcional VS Code Dark+
-    "AZ1":       "#1E1E1E",
-    "AZ2":       "#252526",
-    "AZ3":       "#0078D4",       # azul VS Code
-    "AZ4":       "#4FC1FF",       # azul claro (variables)
-    "ACENT":     "#CE9178",       # naranja strings
-    "VERDE":     "#4EC9B0",       # verde tipos
-    "ROJO":      "#F44747",       # rojo errores
-    "GRIS":      "#252526",
-    "GRIS2":     "#474747",
+    # Paleta funcional
+    "AZ1":       _T.BG,
+    "AZ2":       _T.SURFACE_2,
+    "AZ3":       _T.COPPER,       # acción primaria
+    "AZ4":       _T.AMBER,        # títulos y realces
+    "AZ_INFO":   _T.BLUE,         # información (era el azul de todo)
+    "ACENT":     _T.AMBER,
+    "VERDE":     _T.GREEN,
+    "TEAL":      _T.TEAL,
+    "PURPURA":   _T.PURPLE,
+    "ROJO":      _T.RED,
+    "GRIS":      _T.SURFACE_2,
+    "GRIS2":     _T.TEXT_3,       # se usa como texto atenuado, no como borde
 
-    # Texto (#D4D4D4 VS Code Dark+)
-    "TXT_PRI":   "#D4D4D4",
-    "TXT_SEC":   "#858585",
-    "TXT_DIM":   "#5A5A5A",
+    # Fondos tintados de las pastillas de estado
+    "READY_BG":  _T.READY_BG,
+    "INFO_BG":   _T.INFO_BG,
+    "WARN_BG":   _T.WARN_BG,
+    "ERR_BG":    "#2A1719",
+    "TEAL_BG":   "#132622",
+    "PURP_BG":   "#221C2E",
+
+    # Texto
+    "TXT_PRI":   _T.TEXT,
+    "TXT_SEC":   _T.TEXT_3,
+    "TXT_DIM":   _T.TEXT_MUTED,
 }
 
+# Modo claro: papel y tinta, con el mismo cobre. No es el Light+ de VS Code,
+# es el reverso cálido de la identidad oscura.
 _PALETA_LIGHT = {
-    # Activity bar — SIEMPRE oscura en VS Code (#2C2C2C), igual que dark
-    "AB_BG":     "#2C2C2C",
-    "AB_SEL":    "#FFFFFF",
-    "AB_TXT":    "#858585",
-    "AB_IND":    "#005FB8",       # azul VS Code Light
+    # Activity bar — se mantiene oscura también en claro, para anclar la
+    # navegación con el mismo gesto que el modo oscuro.
+    "AB_BG":     _T.TOPBAR,
+    "AB_SEL":    _T.AMBER,
+    "AB_TXT":    _T.TEXT_3,
+    "AB_IND":    _T.COPPER,
 
-    # Sidebar (#F3F3F3 VS Code Light+)
-    "SB_BG":     "#F3F3F3",
-    "SB_HOV":    "#E8E8E8",
-    "SB_SEL":    "#0060C0",
-    "SB_TXT":    "#616161",
-    "SB_TXT2":   "#383838",
+    # Sidebar
+    "SB_BG":     "#F0EBE3",
+    "SB_HOV":    "#E4DDD2",
+    "SB_SEL":    "#F3E0C9",
+    "SB_TXT":    "#5A544C",
+    "SB_TXT2":   "#2A2622",
 
-    # Editor / contenido (#FFFFFF VS Code Light+)
-    "CONTENT_BG":"#FFFFFF",
-    "CARD_BG":   "#F8F8F8",
-    "CARD_BOR":  "#E5E5E5",
-    "HDR_LINE":  "#005FB8",
+    # Contenido
+    "CONTENT_BG":"#FAF7F2",
+    "CARD_BG":   "#FFFDF9",
+    "CARD_BOR":  "#DED6C9",
+    "HDR_LINE":  _T.COPPER_2,
 
-    # Topbar (#DDDDDD VS Code Light+)
-    "TOPBAR_BG": "#DDDDDD",
+    # Topbar
+    "TOPBAR_BG": "#EDE7DE",
 
-    # Paleta funcional VS Code Light+
-    "AZ1":       "#FFFFFF",
-    "AZ2":       "#F3F3F3",
-    "AZ3":       "#005FB8",
-    "AZ4":       "#0070C1",
-    "ACENT":     "#A31515",       # rojo strings light
-    "VERDE":     "#267F99",       # verde tipos light
-    "ROJO":      "#CD3131",
-    "GRIS":      "#F3F3F3",
-    "GRIS2":     "#E5E5E5",
+    # Paleta funcional
+    "AZ1":       "#FAF7F2",
+    "AZ2":       "#F0EBE3",
+    "AZ3":       _T.COPPER_2,
+    "AZ4":       "#8A5A22",
+    "AZ_INFO":   "#2F6FB0",
+    "ACENT":     "#B96F32",
+    "VERDE":     "#2E7D57",
+    "TEAL":      "#217F71",
+    "PURPURA":   "#6E4C9B",
+    "ROJO":      "#B3423F",
+    "GRIS":      "#F0EBE3",
+    "GRIS2":     "#6B6459",
 
-    # Texto (#383838 VS Code Light+)
-    "TXT_PRI":   "#383838",
-    "TXT_SEC":   "#616161",
-    "TXT_DIM":   "#A0A0A0",
+    # Fondos tintados de las pastillas de estado
+    "READY_BG":  "#E4F0E7",
+    "INFO_BG":   "#E3ECF6",
+    "WARN_BG":   "#F8EBD6",
+    "ERR_BG":    "#F7E2E1",
+    "TEAL_BG":   "#DEEFEC",
+    "PURP_BG":   "#EBE5F3",
+
+    # Texto
+    "TXT_PRI":   "#2A2622",
+    "TXT_SEC":   "#6B6459",
+    "TXT_DIM":   "#948C80",
 }
 
 _MODO_OSCURO = True   # estado global mutable
@@ -299,44 +326,56 @@ def _aplicar_paleta(paleta: dict):
 _aplicar_paleta(_PALETA_DARK)
 
 # ── Variables de color activas (actualizadas por _aplicar_paleta) ─────────────
-# Inicializadas con los valores de _PALETA_DARK arriba
+# Se declaran con los mismos valores que _PALETA_DARK para que los analizadores
+# estáticos (ruff, PyInstaller) vean nombres definidos; _aplicar_paleta las
+# reescribe en caliente al cambiar de tema.
 
 # Activity Bar
-AB_BG   = "#333333"
-AB_HOV  = "#3C3C3C"
-AB_SEL  = "#FFFFFF"
-AB_TXT  = "#858585"
-AB_IND  = "#0078D4"
+AB_BG   = _T.TOPBAR
+AB_HOV  = _T.SURFACE_HOVER
+AB_SEL  = _T.AMBER
+AB_TXT  = _T.TEXT_3
+AB_IND  = _T.COPPER
 
 # Sidebar
-SB_BG   = "#252526"
-SB_HOV  = "#2A2D2E"
-SB_SEL  = "#094771"
-SB_TXT  = "#BBBBBB"
-SB_TXT2 = "#CCCCCC"
+SB_BG   = _T.SIDEBAR
+SB_HOV  = _T.SURFACE_HOVER
+SB_SEL  = _T.SURFACE_ACTIVE
+SB_TXT  = _T.TEXT_2
+SB_TXT2 = _T.TEXT
 
 # Contenido
-CONTENT_BG = "#1E1E1E"
-CARD_BG    = "#252526"
-CARD_BOR   = "#474747"
-HDR_LINE   = "#0078D4"
+CONTENT_BG = _T.BG
+CARD_BG    = _T.SURFACE
+CARD_BOR   = _T.BORDER
+HDR_LINE   = _T.COPPER
 
 # Topbar
-TOPBAR_BG  = "#3C3C3C"
-TOPBAR_H   = 40
+TOPBAR_BG  = _T.TOPBAR
+TOPBAR_H   = 56       # da aire a la marca y a las pastillas de estado
 
 # Paleta funcional
-AZ1="#1E1E1E"; AZ2="#252526"; AZ3="#0078D4"; AZ4="#4FC1FF"
-ACENT="#CE9178"; VERDE="#4EC9B0"; ROJO="#F44747"
-GRIS="#252526"; GRIS2="#474747"
+AZ1=_T.BG; AZ2=_T.SURFACE_2; AZ3=_T.COPPER; AZ4=_T.AMBER
+AZ_INFO=_T.BLUE
+ACENT=_T.AMBER; VERDE=_T.GREEN; TEAL=_T.TEAL; PURPURA=_T.PURPLE; ROJO=_T.RED
+GRIS=_T.SURFACE_2; GRIS2=_T.TEXT_3
+
+# Fondos tintados de las pastillas de estado
+READY_BG = _T.READY_BG
+INFO_BG  = _T.INFO_BG
+WARN_BG  = _T.WARN_BG
+ERR_BG   = "#2A1719"
+TEAL_BG  = "#132622"
+PURP_BG  = "#221C2E"
 
 # Texto
-TXT_PRI = "#D4D4D4"
-TXT_SEC = "#858585"
-TXT_DIM = "#5A5A5A"
+TXT_PRI = _T.TEXT
+TXT_SEC = _T.TEXT_3
+TXT_DIM = _T.TEXT_MUTED
 
-# Legacy para compatibilidad interna
-PALETTE=[AZ1,AZ2,AZ3,AZ4,"#58A6FF","#79C0FF",ACENT,"#F0C070"]
+# Serie categórica para gráficos: cobre, teal, azul, verde, púrpura, ámbar…
+PALETTE=[_T.COPPER, _T.TEAL, _T.BLUE, _T.GREEN, _T.PURPLE, _T.AMBER,
+         _T.COPPER_2, _T.RED]
 
 COLABS_DEFAULT = ("Jorge Zalamea\nLeón de Greiff\nGermán Arciniegas\n"
                   "Eduardo Carranza\nHernando Téllez\nLeo Matiz\n"
@@ -498,28 +537,30 @@ def _estilos():
     # Base dark
     s.configure(".", background=CONTENT_BG, foreground=TXT_PRI,
                 font=("Segoe UI", 10))
-    # Botón primario — azul GitHub
-    s.configure("P.TButton", background=AZ3, foreground="white",
+    # Botón primario — cobre, la acción de la identidad. Tinta oscura encima:
+    # el cobre es un color claro y el texto blanco se le pierde.
+    s.configure("P.TButton", background=AZ3, foreground=_T.BG,
                 font=("Segoe UI", 10, "bold"), padding=[18, 8],
                 borderwidth=0, relief="flat")
     s.map("P.TButton",
-          background=[("active","#388BFD"), ("disabled", TXT_DIM)],
-          foreground=[("disabled", TXT_SEC)])
-    # Botón secundario — gris oscuro
+          background=[("active", _T.AMBER), ("disabled", CARD_BOR)],
+          foreground=[("disabled", TXT_DIM)])
+    # Botón secundario — grafito
     s.configure("S.TButton", background=CARD_BOR, foreground=TXT_PRI,
                 font=("Segoe UI", 9), padding=[12, 6],
                 borderwidth=0, relief="flat")
-    s.map("S.TButton", background=[("active","#444C56"), ("disabled", AZ2)])
-    # Botón acento — naranja
-    s.configure("A.TButton", background=ACENT, foreground="#0D1117",
+    s.map("S.TButton", background=[("active", _T.SURFACE_HOVER),
+                                    ("disabled", AZ2)])
+    # Botón acento — ámbar
+    s.configure("A.TButton", background=ACENT, foreground=_T.BG,
                 font=("Segoe UI", 9, "bold"), padding=[12, 6],
                 borderwidth=0, relief="flat")
-    s.map("A.TButton", background=[("active","#DB6D28")])
+    s.map("A.TButton", background=[("active", _T.COPPER)])
     # Botón éxito — verde
-    s.configure("OK.TButton", background=VERDE, foreground="#0D1117",
+    s.configure("OK.TButton", background=VERDE, foreground=_T.BG,
                 font=("Segoe UI", 9, "bold"), padding=[12, 6],
                 borderwidth=0, relief="flat")
-    s.map("OK.TButton", background=[("active","#2EA043")])
+    s.map("OK.TButton", background=[("active", _T.TEAL)])
     # Etiquetas
     s.configure("H.TLabel",    background=CONTENT_BG, foreground=TXT_PRI,
                 font=("Segoe UI", 13, "bold"))
@@ -564,7 +605,7 @@ def _estilos():
                 font=("Segoe UI", 9, "bold"), relief="flat", borderwidth=0)
     s.map("Treeview",
           background=[("selected", AZ3)],
-          foreground=[("selected", "white")])
+          foreground=[("selected", _T.BG)])
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -776,6 +817,8 @@ class BashkarApp(tk.Tk):
     #   "analisis"  → herramientas de análisis (sin número, opcionales)
     #   "salida"    → exportación y colaboración
     _PAGINAS = [
+        # ── INICIO (tablero de investigación; grupo propio para no numerarse) ─
+        ("inicio","⌂",   "Inicio",         "Panel de investigación",             None,        "inicio"),
         # ── FLUJO PRINCIPAL (numerado, secuencial) ────────────────────────────
         ("cfg",   "⚙",   "Configuración",  "Configuración del corpus",           None,        "flujo"),
         ("etz",   "✏️",  "Etiquetar",      "Etiquetar zonas de página (opcional)","etz_done",  "flujo"),
@@ -824,7 +867,9 @@ class BashkarApp(tk.Tk):
         self.configure(bg=SB_BG)
         _estilos()
         self._q             = queue.Queue()
-        self._pagina_activa = tk.StringVar(value="cfg")
+        # Arranca en el tablero: _activar_contexto compara contra este valor
+        # para no navegar antes de que existan los frames de página.
+        self._pagina_activa = tk.StringVar(value="inicio")
         self._frames_pagina = {}
         self._sb_btns       = {}
         self._proyecto_ruta = None      # Path del .bashkar activo
@@ -848,7 +893,7 @@ class BashkarApp(tk.Tk):
             while True:
                 m = self._q.get_nowait()
                 t = m.get("tipo")
-                if   t == "log":  self._log(m["texto"], m.get("color","#94A3B8"))
+                if   t == "log":  self._log(m["texto"], m.get("color","#B5B6B3"))
                 elif t == "prog": self._set_prog(m["val"], m.get("txt",""))
                 elif t == "fase": self._lbl_fase.config(text=m["txt"])
                 elif t == "ok":   self._on_ok(m.get("res"))
@@ -901,11 +946,15 @@ class BashkarApp(tk.Tk):
         self._content_area = tk.Frame(body, bg=CONTENT_BG)
         self._content_area.pack(side="left", fill="both", expand=True)
 
-        self._build_activity_bar()
+        # El sidebar primero: la activity bar lo puebla al activar su contexto,
+        # y si se construyera después dejaría sus referencias apuntando a
+        # widgets vacíos.
         self._build_sidebar()
+        self._build_activity_bar()
 
         # Crear todos los frames de página (apilados, solo uno visible)
         builds = {
+            "inicio": self._build_inicio,
             "cfg":  self._build_cfg,
             "ocr":  self._build_ocr,
             "etz":  self._build_etz,
@@ -974,19 +1023,23 @@ class BashkarApp(tk.Tk):
             build_fn()
         self._guia_pagina_actual = None
 
-        # Mostrar página inicial
-        self._mostrar_pagina("cfg")
+        # Mostrar página inicial: el tablero de investigación
+        self._mostrar_pagina("inicio")
 
-        # ── STATUS BAR ────────────────────────────────────────────────────────
-        sb = tk.Frame(self, bg="#0A1525", height=24)
+        # ── BARRA DE ESTADO ───────────────────────────────────────────────────
+        sb = tk.Frame(self, bg=TOPBAR_BG, height=26)
         sb.pack(fill="x", side="bottom")
         sb.pack_propagate(False)
+        tk.Frame(sb, bg=CARD_BOR, height=1).pack(fill="x", side="top")
         self._lbl_status = tk.Label(sb, text="  ✓ Listo",
-                                     bg="#0A1525", fg="#8B949E",
+                                     bg=TOPBAR_BG, fg=TXT_SEC,
                                      font=("Segoe UI", 8))
         self._lbl_status.pack(side="left", padx=10, pady=3)
+        tk.Label(sb, text="◇  Todo se procesa en tu equipo",
+                 bg=TOPBAR_BG, fg=VERDE,
+                 font=("Segoe UI", 8)).pack(side="left", padx=10)
         tk.Label(sb, text=f"Bashkar Station v{APP_VERSION}",
-                 bg="#0A1525", fg="#334155",
+                 bg=TOPBAR_BG, fg=TXT_DIM,
                  font=("Segoe UI", 8)).pack(side="right", padx=10)
 
     # ── SIDEBAR ───────────────────────────────────────────────────────────────
@@ -996,28 +1049,44 @@ class BashkarApp(tk.Tk):
     def _build_topbar(self):
         tb = self._topbar
 
-        # Logo + nombre app
-        logo_grp = tk.Frame(tb, bg=TOPBAR_BG)
-        logo_grp.pack(side="left", padx=(12, 0))
-        tk.Label(logo_grp, text="⬡", bg=TOPBAR_BG, fg=AZ4,
-                 font=("Segoe UI", 14, "bold")).pack(side="left")
-        tk.Label(logo_grp, text="Bashkar Station", bg=TOPBAR_BG, fg=TXT_PRI,
-                 font=("Segoe UI", 10, "bold")).pack(side="left", padx=(6, 16))
-
-        # Separador
-        tk.Frame(tb, bg=CARD_BOR, width=1).pack(side="left", fill="y",
-                                                  pady=8, padx=4)
-
-        # Nombre del proyecto activo
-        self._lbl_pub_hdr = tk.Label(tb, text="Sin proyecto",
-                                      bg=TOPBAR_BG, fg=TXT_SEC,
-                                      font=("Segoe UI", 9))
-        self._lbl_pub_hdr.pack(side="left", padx=12)
-
-        # ── Lado derecho: switch IA + botones proyecto ────────────────────────
+        # El grupo derecho se empaqueta PRIMERO: pack reparte por orden, y con
+        # un nombre de proyecto largo la marca y las pastillas se comían el
+        # ancho, dejando los botones de la derecha fuera de la ventana.
         right = tk.Frame(tb, bg=TOPBAR_BG)
         right.pack(side="right", padx=12)
 
+        # ── Marca: la B de cobre en serif, el nombre y el descriptor ──────────
+        logo_grp = tk.Frame(tb, bg=TOPBAR_BG)
+        logo_grp.pack(side="left", padx=(16, 0))
+        tk.Label(logo_grp, text="B", bg=TOPBAR_BG, fg=AZ3,
+                 font=(_T.FONT_DISPLAY, 20, "bold")).pack(side="left",
+                                                          padx=(0, 8))
+        marca_txt = tk.Frame(logo_grp, bg=TOPBAR_BG)
+        marca_txt.pack(side="left")
+        tk.Label(marca_txt, text="BASHKAR STATION", bg=TOPBAR_BG, fg=TXT_PRI,
+                 font=(_T.FONT_DISPLAY, 10, "bold")).pack(anchor="w")
+        tk.Label(marca_txt, text="Plataforma de análisis editorial",
+                 bg=TOPBAR_BG, fg=TXT_SEC,
+                 font=("Segoe UI", 7)).pack(anchor="w")
+
+        # Separador
+        tk.Frame(tb, bg=CARD_BOR, width=1).pack(side="left", fill="y",
+                                                  pady=12, padx=14)
+
+        # Nombre del proyecto activo
+        self._lbl_pub_hdr = tk.Label(tb, text="Sin proyecto",
+                                      bg=TOPBAR_BG, fg=SB_TXT2,
+                                      font=(_T.FONT_DISPLAY, 11))
+        self._lbl_pub_hdr.pack(side="left", padx=4)
+
+        # Pastillas de estado: dónde se procesa y si la IA externa está activa.
+        self._pastillas = tk.Frame(tb, bg=TOPBAR_BG)
+        self._pastillas.pack(side="left", padx=14)
+        self._mk_pastilla("◆", "Procesamiento local", AZ_INFO, INFO_BG)
+        self._pill_ia = self._mk_pastilla("×", "IA externa desactivada",
+                                          TXT_DIM, AZ2)
+
+        # ── Lado derecho: switch IA + botones proyecto ────────────────────────
         # Botón Dark / Light mode
         self._btn_theme = tk.Label(right, text="☀ Claro", bg=TOPBAR_BG,
                                     fg=TXT_SEC, font=("Segoe UI", 8),
@@ -1071,7 +1140,7 @@ class BashkarApp(tk.Tk):
                            font=("Segoe UI", 12), cursor="hand2", padx=6)
         b_adhoc.pack(side="right")
         b_adhoc.bind("<Button-1>", lambda e: self._modo_adhoc())
-        b_adhoc.bind("<Enter>",    lambda e: b_adhoc.config(fg="#F59E0B"))
+        b_adhoc.bind("<Enter>",    lambda e: b_adhoc.config(fg="#E6A64C"))
         b_adhoc.bind("<Leave>",    lambda e: b_adhoc.config(fg=TXT_SEC))
         self._mk_ayuda_topbar(b_adhoc, "⚡ Análisis rápido sin proyecto\n"
                                         "Carga una carpeta de TXT directamente.")
@@ -1100,6 +1169,40 @@ class BashkarApp(tk.Tk):
         self._btn_cp.bind("<Enter>", lambda e: self._btn_cp.config(fg=AZ4))
         self._btn_cp.bind("<Leave>", lambda e: self._btn_cp.config(fg=TXT_SEC))
         self._mk_ayuda_topbar(self._btn_cp, "⌨  Command Palette\nCtrl+K — busca y ejecuta cualquier acción")
+
+    def _set_pub_hdr(self, texto: str):
+        """Escribe el nombre del proyecto en la topbar Y en el sidebar."""
+        for attr in ("_lbl_pub_hdr", "_lbl_pub_sb"):
+            widget = getattr(self, attr, None)
+            if widget is None:
+                continue
+            try:
+                widget.config(text=texto)
+            except Exception:
+                pass
+
+    def _mk_pastilla(self, simbolo: str, texto: str, fg: str, bg: str):
+        """
+        Pastilla de estado de la topbar (fondo tintado + texto del mismo tono).
+
+        Devuelve la terna de widgets para poder repintarla sin reconstruirla.
+        """
+        marco = tk.Frame(self._pastillas, bg=bg, padx=8, pady=3)
+        marco.pack(side="left", padx=3)
+        lbl_sim = tk.Label(marco, text=simbolo, bg=bg, fg=fg,
+                           font=("Segoe UI", 7))
+        lbl_sim.pack(side="left", padx=(0, 4))
+        lbl_txt = tk.Label(marco, text=texto, bg=bg, fg=fg,
+                           font=("Segoe UI", 7, "bold"))
+        lbl_txt.pack(side="left")
+        return (marco, lbl_sim, lbl_txt)
+
+    def _pintar_pastilla(self, pastilla, simbolo: str, texto: str,
+                          fg: str, bg: str):
+        marco, lbl_sim, lbl_txt = pastilla
+        marco.config(bg=bg)
+        lbl_sim.config(text=simbolo, fg=fg, bg=bg)
+        lbl_txt.config(text=texto, fg=fg, bg=bg)
 
     def _mk_ayuda_topbar(self, widget, texto: str):
         """Tooltip simple para widgets de la topbar."""
@@ -1163,9 +1266,8 @@ class BashkarApp(tk.Tk):
         self._actualizar_badges()
 
         # Actualizar etiqueta de proyecto
-        if hasattr(self, "_lbl_pub_hdr"):
-            self._lbl_pub_hdr.config(
-                text=f"⚡ {carpeta.name}  ·  {len(txts)} archivos (modo ad-hoc)")
+        self._set_pub_hdr(
+            f"⚡ {carpeta.name}  ·  {len(txts)} archivos (modo ad-hoc)")
         if hasattr(self, "_lbl_proyecto"):
             try:
                 self._lbl_proyecto.config(text=f"⚡ {carpeta.name}")
@@ -1188,6 +1290,11 @@ class BashkarApp(tk.Tk):
         _MODO_OSCURO = not _MODO_OSCURO
         paleta = _PALETA_DARK if _MODO_OSCURO else _PALETA_LIGHT
         _aplicar_paleta(paleta)
+        # Los tokens de ui_redesign son la misma paleta con otros nombres: si no
+        # se reescriben, el panel Inicio se queda oscuro dentro de una ventana
+        # clara (se repinta más abajo, cuando ya están los colores nuevos).
+        from ui_redesign import aplicar_tema
+        aplicar_tema(paleta)
 
         icono = "☀ Claro" if _MODO_OSCURO else "🌙 Oscuro"
         self._btn_theme.config(text=icono)
@@ -1203,31 +1310,23 @@ class BashkarApp(tk.Tk):
         fg_dim   = paleta["TXT_DIM"]
         bor      = paleta["CARD_BOR"]
 
-        # Mapa completo: todos los colores oscuros hardcodeados → equivalente del tema
-        _DARK_BG_MAP = {
-            # VS Code dark (nuevos)
-            "#1E1E1E": bg_main,  "#252526": bg_card,  "#333333": bg_ab,
-            "#3C3C3C": bg_top,   "#2A2D2E": paleta["SB_HOV"],
-            "#094771": paleta["SB_SEL"],
-            # GitHub dark (legado)
-            "#0D1117": bg_sb,    "#161B22": bg_top,   "#1C2128": bg_card,
-            "#13171F": bg_main,  "#2D333B": paleta["SB_HOV"],
-            # Hardcoded varios
-            "#0D1B2A": bg_card,  "#112240": bg_card,  "#0A1628": bg_card,
-            "#1E2A3A": bg_card,  "#1E293B": bg_card,  "#0A1525": bg_top,
-            "#F0FDF4": bg_card,  "#1F2937": bg_card,  "#111827": bg_main,
-            "#2D2D2D": bg_card,  "#3D3D3D": bg_card,
-        }
-        _DARK_FG_MAP = {
-            # VS Code dark (nuevos)
-            "#D4D4D4": fg_pri,   "#BBBBBB": fg_sec,   "#CCCCCC": fg_pri,
-            "#858585": fg_sec,   "#5A5A5A": fg_dim,
-            # GitHub dark (legado)
-            "#E6EDF3": fg_pri,   "#CDD6F4": fg_pri,   "#E2E8F0": fg_pri,
-            "#8B949E": fg_sec,   "#94A3B8": fg_sec,   "#60A5FA": paleta["AZ3"],
-            "#484F58": fg_dim,   "#30363D": bor,       "#8C959F": fg_dim,
-            "white":   fg_pri,   "#FFFFFF": fg_pri,
-        }
+        # Traducción color viejo → color nuevo, generada de las dos paletas: la
+        # que se deja y la que entra. Antes era una tabla escrita a mano que
+        # perseguía cinco generaciones de colores incrustados; ahora la paleta
+        # está unificada y la tabla se deduce sola, clave por clave.
+        anterior = _PALETA_LIGHT if _MODO_OSCURO else _PALETA_DARK
+        _CLAVES_BG = ("CONTENT_BG", "AZ1", "CARD_BG", "AZ2", "GRIS", "SB_BG",
+                      "TOPBAR_BG", "SB_HOV", "SB_SEL", "CARD_BOR",
+                      "READY_BG", "INFO_BG", "WARN_BG", "ERR_BG",
+                      "TEAL_BG", "PURP_BG")
+        _CLAVES_FG = ("TXT_PRI", "SB_TXT2", "SB_TXT", "TXT_SEC", "GRIS2",
+                      "TXT_DIM", "AZ3", "HDR_LINE", "AZ4", "ACENT", "AZ_INFO",
+                      "VERDE", "TEAL", "PURPURA", "ROJO")
+        _DARK_BG_MAP = {anterior[k]: paleta[k] for k in _CLAVES_BG
+                        if k in anterior and k in paleta}
+        _DARK_FG_MAP = {anterior[k]: paleta[k] for k in _CLAVES_FG
+                        if k in anterior and k in paleta}
+        _DARK_FG_MAP["white"] = fg_pri
 
         def _repintar(widget):
             try:
@@ -1272,7 +1371,7 @@ class BashkarApp(tk.Tk):
                     try:
                         widget.config(bg=bg_card, fg=fg_pri,
                                       selectbackground=paleta["SB_SEL"],
-                                      selectforeground="#FFFFFF")
+                                      selectforeground="#E8E5DF")
                     except Exception:
                         pass
 
@@ -1321,7 +1420,7 @@ class BashkarApp(tk.Tk):
             relief="flat")
         style.map("Treeview",
             background=[("selected", paleta["SB_SEL"])],
-            foreground=[("selected", "#FFFFFF")])
+            foreground=[("selected", "#E8E5DF")])
         style.configure("TScrollbar",
             background=bg_card, troughcolor=bg_main,
             arrowcolor=fg_sec)
@@ -1342,6 +1441,30 @@ class BashkarApp(tk.Tk):
         style.configure("TLabelframe.Label",
             background=bg_card, foreground=fg_pri)
 
+        # La activity bar mantiene su franja oscura en los dos temas, así que
+        # el repintado genérico no le sirve: se recolorea a mano. Primero el
+        # logo, el separador, el espaciador y el botón de ayuda, que no están
+        # en _ab_btns y se quedaban con el fondo del tema contrario.
+        if hasattr(self, "_activity_bar"):
+            for hijo in self._activity_bar.winfo_children():
+                try:
+                    hijo.config(bg=AB_BG)
+                    if hijo.winfo_class() == "Label" and hijo.cget("text") != "⬡":
+                        hijo.config(fg=AB_TXT)
+                except tk.TclError:
+                    pass
+        for cid, widgets in getattr(self, "_ab_btns", {}).items():
+            activo = (cid == self._ctx_activo.get())
+            widgets["frm"].config(bg=AB_BG)
+            widgets["ind"].config(bg=AB_IND if activo else AB_BG)
+            widgets["lbl"].config(bg=AB_BG,
+                                  fg=TXT_PRI if activo else AB_TXT)
+
+        # Sidebar y tablero se reconstruyen enteros: es más fiable que repintar
+        # widget por widget, y ambos saben rehacerse solos.
+        self._poblar_sidebar_contexto(self._ctx_activo.get())
+        self._inicio_refrescar()
+
         # Forzar redibujado de badges/semáforos
         self._actualizar_badges()
 
@@ -1352,6 +1475,15 @@ class BashkarApp(tk.Tk):
             self._lbl_ia_topbar.config(text="● IA ON",  fg=VERDE)
         else:
             self._lbl_ia_topbar.config(text="○ IA OFF", fg=ROJO)
+        # La pastilla dice lo mismo con palabras, para quien no interpreta el
+        # punto: es la garantía de «esto no sale de tu equipo».
+        if getattr(self, "_pill_ia", None):
+            if habilitada:
+                self._pintar_pastilla(self._pill_ia, "●",
+                                      "IA externa activa", ACENT, WARN_BG)
+            else:
+                self._pintar_pastilla(self._pill_ia, "×",
+                                      "IA externa desactivada", TXT_DIM, AZ2)
         # Sincronizar con el checkbox de Configuración si existe
         if hasattr(self, "_cfg_toggle_ia"):
             try:
@@ -1365,6 +1497,7 @@ class BashkarApp(tk.Tk):
 
     # Contextos del Activity Bar: (id_contexto, icono, tooltip, [pids_incluidos])
     _CONTEXTOS = [
+        ("inicio",    "⌂",  "Inicio",      ["inicio"]),
         ("ingest",    "📥", "Ingestión",   ["cfg", "etz", "ocr", "conv", "mmx"]),
         ("normalize", "📝", "Normalizar",  ["norm"]),
         ("segment",   "✂", "Segmentar",   ["seg"]),
@@ -1378,7 +1511,7 @@ class BashkarApp(tk.Tk):
 
     def _build_activity_bar(self):
         ab = self._activity_bar
-        self._ctx_activo = tk.StringVar(value="ingest")
+        self._ctx_activo = tk.StringVar(value="inicio")
         self._ab_btns = {}
 
         # Logo pequeño en el tope
@@ -1403,7 +1536,7 @@ class BashkarApp(tk.Tk):
         help_b.bind("<Leave>",    lambda e: help_b.config(fg=AB_TXT))
 
         # Activar contexto inicial
-        self._activar_contexto("ingest")
+        self._activar_contexto("inicio")
 
     def _make_ab_btn(self, parent, ctx_id, icono, tooltip):
         frm = tk.Frame(parent, bg=AB_BG, cursor="hand2", width=60, height=56)
@@ -1495,6 +1628,9 @@ class BashkarApp(tk.Tk):
         sb = self._sidebar
         for w in sb.winfo_children():
             w.destroy()
+        # Ese bucle acaba de destruir la cabecera fija del sidebar: sin esto,
+        # _set_pub_hdr escribiría sobre un widget muerto.
+        self._lbl_pub_sb = None
 
         pids = next((c[3] for c in self._CONTEXTOS if c[0] == ctx_id), [])
         ctx_label = next((c[2] for c in self._CONTEXTOS if c[0] == ctx_id), "")
@@ -1504,11 +1640,11 @@ class BashkarApp(tk.Tk):
         for old_pid in [p for p in self._sb_btns if p not in pids]:
             del self._sb_btns[old_pid]
 
-        # Cabecera del contexto
+        # Cabecera del contexto, rotulada en cobre como las secciones
         hdr = tk.Frame(sb, bg=SB_BG)
         hdr.pack(fill="x", padx=0, pady=0)
-        tk.Label(hdr, text=ctx_label.upper(), bg=SB_BG, fg=TXT_DIM,
-                 font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=16, pady=(12, 6))
+        tk.Label(hdr, text=ctx_label.upper(), bg=SB_BG, fg=AZ3,
+                 font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=16, pady=(14, 6))
 
         # Nombre del proyecto
         self._lbl_proyecto = tk.Label(sb, text=getattr(ST, "publicacion", "") or "Sin proyecto",
@@ -1567,67 +1703,18 @@ class BashkarApp(tk.Tk):
             self._aplicar_estilo_sb_btn(pid, widgets, pid == actual)
 
     def _build_sidebar(self):
-        sb = self._sidebar
+        """
+        Prepara el sidebar; el contenido lo pone `_poblar_sidebar_contexto`
+        según el contexto elegido en la activity bar.
 
-        # ── CABECERA FIJA (logo + publicación) ───────────────────────────────
-        # Cabecera del proyecto — sin logo, solo nombre y período
-        self._lbl_pub_hdr = tk.Label(sb, text="Sin proyecto",
-                                      bg=SB_BG, fg=TXT_SEC,
-                                      font=("Segoe UI", 8, "bold"),
-                                      wraplength=185, justify="left",
-                                      anchor="w")
-        self._lbl_pub_hdr.pack(fill="x", padx=10, pady=(10, 2))
-        tk.Frame(sb, bg=CARD_BOR, height=1).pack(fill="x", padx=10, pady=(2, 4))
-
-        # ── ÁREA SCROLLABLE DE BOTONES ────────────────────────────────────────
-        nav_container = tk.Frame(sb, bg=SB_BG)
-        nav_container.pack(fill="both", expand=True)
-
-        # Canvas + scrollbar vertical
-        nav_canvas = tk.Canvas(nav_container, bg=SB_BG, highlightthickness=0,
-                                borderwidth=0)
-        nav_scrollbar = tk.Scrollbar(nav_container, orient="vertical",
-                                      command=nav_canvas.yview)
-        nav_canvas.configure(yscrollcommand=nav_scrollbar.set)
-
-        nav_scrollbar.pack(side="right", fill="y")
-        nav_canvas.pack(side="left", fill="both", expand=True)
-
-        # Frame interior que contiene los botones
-        nav_inner = tk.Frame(nav_canvas, bg=SB_BG)
-        nav_canvas_window = nav_canvas.create_window(
-            (0, 0), window=nav_inner, anchor="nw"
-        )
-
-        def _on_nav_inner_configure(event):
-            nav_canvas.configure(scrollregion=nav_canvas.bbox("all"))
-        def _on_nav_canvas_configure(event):
-            nav_canvas.itemconfig(nav_canvas_window, width=event.width)
-
-        nav_inner.bind("<Configure>", _on_nav_inner_configure)
-        nav_canvas.bind("<Configure>", _on_nav_canvas_configure)
-
-        # Scroll con rueda del mouse dentro del canvas de navegación
-        def _nav_wheel(event):
-            if event.num == 4 or event.delta > 0:
-                nav_canvas.yview_scroll(-1, "units")
-            else:
-                nav_canvas.yview_scroll(1, "units")
-
-        nav_canvas.bind("<MouseWheel>", _nav_wheel)
-        nav_canvas.bind("<Button-4>",   _nav_wheel)
-        nav_canvas.bind("<Button-5>",   _nav_wheel)
-        nav_inner.bind("<MouseWheel>",  _nav_wheel)
-        nav_inner.bind("<Button-4>",    _nav_wheel)
-        nav_inner.bind("<Button-5>",    _nav_wheel)
-
-        # Botones de navegación agrupados
-        self._etz_nav_wheel_fn = _nav_wheel   # guardar para bind dinámico
-        self._poblar_nav_sidebar(nav_inner, _nav_wheel)
-
-        # El sidebar se puebla dinámicamente desde _poblar_sidebar_contexto
-        # Este método solo inicializa el label de proyecto (fallback)
-        self._lbl_proyecto = tk.Label(sb, text="Sin proyecto",
+        Hasta la sesión 56 este método pintaba además la lista COMPLETA de los
+        30 paneles, que el primer cambio de contexto borraba. El resultado, al
+        arrancar, era un sidebar con dos listas y el nombre del proyecto
+        repetido. Ahora hay un solo dueño de esa columna.
+        """
+        # Referencias que otros métodos consultan antes de que exista contenido.
+        self._lbl_pub_sb = None
+        self._lbl_proyecto = tk.Label(self._sidebar, text="Sin proyecto",
                                        bg=SB_BG, fg=TXT_SEC,
                                        font=("Segoe UI", 8),
                                        wraplength=180, justify="left")
@@ -1644,121 +1731,121 @@ class BashkarApp(tk.Tk):
         sugerencias = _AI_PROMPTS.get(tab_id, [])
 
         # Contenedor principal del panel — fondo oscuro tipo terminal
-        panel = tk.Frame(parent_frame, bg="#0A1525", bd=0)
+        panel = tk.Frame(parent_frame, bg="#101316", bd=0)
         panel.pack(fill="x", side="bottom")
 
         # ── Cabecera colapsable ───────────────────────────────────────────────
-        hdr = tk.Frame(panel, bg="#112240", cursor="hand2")
+        hdr = tk.Frame(panel, bg="#14202A", cursor="hand2")
         hdr.pack(fill="x")
         self._ai_expanded = getattr(self, "_ai_expanded", {})
         self._ai_expanded[tab_id] = tk.BooleanVar(value=False)
 
         lbl_toggle = tk.Label(hdr,
             text="  🤖  Asistente IA  ▸  haz una pregunta sobre este análisis",
-            bg="#112240", fg="#60A5FA", font=("Segoe UI", 9, "bold"),
+            bg="#14202A", fg="#6CA8E8", font=("Segoe UI", 9, "bold"),
             anchor="w", cursor="hand2")
         lbl_toggle.pack(side="left", fill="x", expand=True, pady=5, padx=8)
-        lbl_chevron = tk.Label(hdr, text="▾", bg="#112240", fg="#60A5FA",
+        lbl_chevron = tk.Label(hdr, text="▾", bg="#14202A", fg="#6CA8E8",
                                 font=("Segoe UI", 11, "bold"))
         lbl_chevron.pack(side="right", padx=10)
 
         # ── Cuerpo (oculto por defecto) ───────────────────────────────────────
-        body = tk.Frame(panel, bg="#0A1525")
+        body = tk.Frame(panel, bg="#101316")
 
         # Prompts sugeridos
         if sugerencias:
-            sug_frame = tk.Frame(body, bg="#0A1525")
+            sug_frame = tk.Frame(body, bg="#101316")
             sug_frame.pack(fill="x", padx=10, pady=(8, 0))
-            tk.Label(sug_frame, text="Sugerencias:", bg="#0A1525", fg="#8B949E",
+            tk.Label(sug_frame, text="Sugerencias:", bg="#101316", fg="#777F84",
                      font=("Segoe UI", 8, "bold")).pack(anchor="w")
-            btn_row = tk.Frame(sug_frame, bg="#0A1525")
+            btn_row = tk.Frame(sug_frame, bg="#101316")
             btn_row.pack(fill="x", pady=(4, 0))
             for i, (label, prompt_txt) in enumerate(sugerencias):
                 btn = tk.Label(btn_row, text=f"  {label}  ",
-                               bg="#1E3A5F", fg="#93C5FD",
+                               bg="#30291F", fg="#6CA8E8",
                                font=("Segoe UI", 8), relief="flat",
                                cursor="hand2", padx=6, pady=3)
                 btn.grid(row=i//3, column=i%3, padx=3, pady=2, sticky="w")
-                btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#1D4ED8", fg="white"))
-                btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#1E3A5F", fg="#93C5FD"))
+                btn.bind("<Enter>", lambda e, b=btn: b.config(bg="#6CA8E8", fg="white"))
+                btn.bind("<Leave>", lambda e, b=btn: b.config(bg="#30291F", fg="#6CA8E8"))
                 btn.bind("<Button-1>",
                          lambda e, t=prompt_txt, tid=tab_id: self._set_ai_prompt(t, tid))
 
         # Área de texto del prompt
-        txt_frame = tk.Frame(body, bg="#0A1525")
+        txt_frame = tk.Frame(body, bg="#101316")
         txt_frame.pack(fill="x", padx=10, pady=(8, 0))
-        tk.Label(txt_frame, text="Tu prompt:", bg="#0A1525", fg="#94A3B8",
+        tk.Label(txt_frame, text="Tu prompt:", bg="#101316", fg="#B5B6B3",
                  font=("Segoe UI", 8)).pack(anchor="w")
 
         prompt_txt_widget = tk.Text(txt_frame, height=3, font=("Segoe UI", 9),
-                                     bg="#112240", fg="#E2E8F0",
-                                     insertbackground="#60A5FA",
+                                     bg="#14202A", fg="#E8E5DF",
+                                     insertbackground="#6CA8E8",
                                      relief="flat", bd=0,
                                      wrap="word", padx=8, pady=6)
         prompt_txt_widget.pack(fill="x", pady=(3, 0))
         prompt_txt_widget.insert("1.0",
             "Escribe tu pregunta o selecciona una sugerencia arriba…")
-        prompt_txt_widget.config(fg="#8B949E")
+        prompt_txt_widget.config(fg="#777F84")
 
         def _on_focus_in(e):
             if prompt_txt_widget.get("1.0","end-1c") ==                "Escribe tu pregunta o selecciona una sugerencia arriba…":
                 prompt_txt_widget.delete("1.0","end")
-                prompt_txt_widget.config(fg="#E2E8F0")
+                prompt_txt_widget.config(fg="#E8E5DF")
         def _on_focus_out(e):
             if not prompt_txt_widget.get("1.0","end-1c").strip():
                 prompt_txt_widget.insert("1.0",
                     "Escribe tu pregunta o selecciona una sugerencia arriba…")
-                prompt_txt_widget.config(fg="#8B949E")
+                prompt_txt_widget.config(fg="#777F84")
         prompt_txt_widget.bind("<FocusIn>",  _on_focus_in)
         prompt_txt_widget.bind("<FocusOut>", _on_focus_out)
 
         # Botones de acción
-        act_row = tk.Frame(body, bg="#0A1525")
+        act_row = tk.Frame(body, bg="#101316")
         act_row.pack(fill="x", padx=10, pady=(6, 0))
         send_btn = tk.Label(act_row, text="  ▶  Enviar a IA  ",
-                            bg="#1D4ED8", fg="white",
+                            bg="#6CA8E8", fg="white",
                             font=("Segoe UI", 9, "bold"),
                             cursor="hand2", padx=8, pady=4)
         send_btn.pack(side="left")
-        send_btn.bind("<Enter>", lambda e: send_btn.config(bg="#2563EB"))
-        send_btn.bind("<Leave>", lambda e: send_btn.config(bg="#1D4ED8"))
+        send_btn.bind("<Enter>", lambda e: send_btn.config(bg="#6CA8E8"))
+        send_btn.bind("<Leave>", lambda e: send_btn.config(bg="#6CA8E8"))
 
         clear_btn = tk.Label(act_row, text="  ✕ Limpiar  ",
-                              bg="#1E3A5F", fg="#94A3B8",
+                              bg="#30291F", fg="#B5B6B3",
                               font=("Segoe UI", 8), cursor="hand2",
                               padx=6, pady=4)
         clear_btn.pack(side="left", padx=(6, 0))
-        clear_btn.bind("<Enter>", lambda e: clear_btn.config(bg="#2D4A6E"))
-        clear_btn.bind("<Leave>", lambda e: clear_btn.config(bg="#1E3A5F"))
+        clear_btn.bind("<Enter>", lambda e: clear_btn.config(bg="#30291F"))
+        clear_btn.bind("<Leave>", lambda e: clear_btn.config(bg="#30291F"))
 
-        lbl_proveedor = tk.Label(act_row, text="", bg="#0A1525", fg="#8B949E",
+        lbl_proveedor = tk.Label(act_row, text="", bg="#101316", fg="#777F84",
                                   font=("Segoe UI", 7, "italic"))
         lbl_proveedor.pack(side="right", padx=8)
 
         # Área de respuesta
-        resp_frame = tk.Frame(body, bg="#0A1525")
+        resp_frame = tk.Frame(body, bg="#101316")
         resp_frame.pack(fill="x", padx=10, pady=(8, 0))
-        resp_hdr = tk.Frame(resp_frame, bg="#112240")
+        resp_hdr = tk.Frame(resp_frame, bg="#14202A")
         resp_hdr.pack(fill="x")
         tk.Label(resp_hdr, text="  Respuesta de la IA",
-                 bg="#112240", fg="#94A3B8",
+                 bg="#14202A", fg="#B5B6B3",
                  font=("Segoe UI", 8, "bold")).pack(side="left", pady=3)
         self._ai_lbl_estado = getattr(self, "_ai_lbl_estado", {})
-        lbl_estado = tk.Label(resp_hdr, text="", bg="#112240", fg="#34D399",
+        lbl_estado = tk.Label(resp_hdr, text="", bg="#14202A", fg="#6EC69A",
                                font=("Segoe UI", 7, "italic"))
         lbl_estado.pack(side="right", padx=8)
         self._ai_lbl_estado[tab_id] = lbl_estado
 
         resp_txt = scrolledtext.ScrolledText(resp_frame, height=6,
                                               font=("Segoe UI", 9),
-                                              bg="#0F1B2D", fg="#E2E8F0",
+                                              bg="#12171B", fg="#E8E5DF",
                                               relief="flat",
                                               insertbackground="white",
                                               state="disabled", wrap="word")
         resp_txt.pack(fill="x", pady=(0, 0))
 
         # Separador inferior
-        tk.Frame(body, bg="#1E3A5F", height=1).pack(fill="x", pady=(8, 0))
+        tk.Frame(body, bg="#30291F", height=1).pack(fill="x", pady=(8, 0))
 
         # ── Guardar referencias ───────────────────────────────────────────────
         if not hasattr(self, "_ai_widgets"):
@@ -1802,7 +1889,7 @@ class BashkarApp(tk.Tk):
         widgets = getattr(self, "_ai_widgets", {}).get(tab_id)
         if not widgets: return
         w = widgets["prompt"]
-        w.config(fg="#E2E8F0")
+        w.config(fg="#E8E5DF")
         w.delete("1.0", "end")
         w.insert("1.0", texto)
         w.focus_set()
@@ -1833,7 +1920,7 @@ class BashkarApp(tk.Tk):
         if not prompt or prompt == "Escribe tu pregunta o selecciona una sugerencia arriba…":
             messagebox.showwarning("Prompt vacío", "Escribe o selecciona un prompt."); return
 
-        widgets["estado"].config(text="⏳ Consultando IA…", fg="#FBBF24")
+        widgets["estado"].config(text="⏳ Consultando IA…", fg="#E6A64C")
         widgets["resp"].config(state="normal")
         widgets["resp"].delete("1.0", "end")
         widgets["resp"].insert("end", "⏳ Esperando respuesta…")
@@ -1998,7 +2085,7 @@ class BashkarApp(tk.Tk):
         widgets["resp"].insert("end", texto)
         widgets["resp"].config(state="disabled")
         if ok:
-            widgets["estado"].config(text="✓ Respuesta recibida", fg="#34D399")
+            widgets["estado"].config(text="✓ Respuesta recibida", fg="#6EC69A")
             # Guardar en historial
             from datetime import datetime as _dt
             self._historial_ia.append({
@@ -2008,7 +2095,7 @@ class BashkarApp(tk.Tk):
                 "fecha":     _dt.now().strftime("%Y-%m-%dT%H:%M:%S"),
             })
         else:
-            widgets["estado"].config(text="⚠ Error", fg="#F87171")
+            widgets["estado"].config(text="⚠ Error", fg="#D96B6B")
 
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -2070,7 +2157,7 @@ class BashkarApp(tk.Tk):
         if recientes:
             tk.Label(pad, text="Recientes:", bg=CONTENT_BG, fg=TXT_PRI,
                      font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(6, 2))
-            lb = tk.Listbox(pad, height=6, bg="#0D1117", fg="#CDD6F4", relief="solid", bd=1)
+            lb = tk.Listbox(pad, height=6, bg="#0E1114", fg="#E8E5DF", relief="solid", bd=1)
             lb.pack(fill="both", expand=True)
             for p in recientes:
                 lb.insert("end", f"{p['nombre']}  ·  {p.get('modificado','')}")
@@ -2119,8 +2206,8 @@ class BashkarApp(tk.Tk):
                 self._sincronizar_ui_con_st()
                 nombre = res.get("nombre", ruta.stem)
                 self._lbl_proyecto.config(text=nombre)
-                self._lbl_pub_hdr.config(
-                    text=f"{ST.publicacion}  ·  {ST.periodo}" if ST.periodo
+                self._set_pub_hdr(
+                    f"{ST.publicacion}  ·  {ST.periodo}" if ST.periodo
                     else ST.publicacion)
                 self._actualizar_badges()
                 self.after(300, self._etz_refrescar_numeros)
@@ -2158,8 +2245,8 @@ class BashkarApp(tk.Tk):
             guardar_proyecto(self._proyecto_ruta, ST, self._historial_ia)
             guardar_ultimo(self._proyecto_ruta)
             self._limpiar_modificado()
-            self._lbl_proyecto.config(fg="#34D399")
-            self.after(1500, lambda: self._lbl_proyecto.config(fg="#94A3B8"))
+            self._lbl_proyecto.config(fg="#6EC69A")
+            self.after(1500, lambda: self._lbl_proyecto.config(fg="#B5B6B3"))
         except Exception as e:
             messagebox.showerror("Error al guardar", str(e))
 
@@ -2188,7 +2275,7 @@ class BashkarApp(tk.Tk):
         try:
             txt = self._lbl_proyecto.cget("text")
             if not txt.startswith("●  "):
-                self._lbl_proyecto.config(text=f"●  {txt}", fg="#F59E0B")
+                self._lbl_proyecto.config(text=f"●  {txt}", fg="#E6A64C")
         except Exception:
             pass
         # Iniciar pulso solo la primera vez que se activa
@@ -2201,7 +2288,7 @@ class BashkarApp(tk.Tk):
         try:
             txt = self._lbl_proyecto.cget("text")
             if txt.startswith("●  "):
-                self._lbl_proyecto.config(text=txt[3:], fg="#94A3B8")
+                self._lbl_proyecto.config(text=txt[3:], fg="#B5B6B3")
         except Exception:
             pass
 
@@ -2230,10 +2317,10 @@ class BashkarApp(tk.Tk):
         tipo: "info" | "ok" | "warn" | "error"
         """
         colores = {
-            "info":  ("#252526", "#4FC1FF", "#4FC1FF"),
-            "ok":    ("#1A2F1A", "#4EC9B0", "#4EC9B0"),
-            "warn":  ("#2F2A1A", "#F59E0B", "#F59E0B"),
-            "error": ("#2F1A1A", "#F44747", "#F44747"),
+            "info":  ("#171C20", "#6CA8E8", "#6CA8E8"),
+            "ok":    ("#15251F", "#62C6B5", "#62C6B5"),
+            "warn":  ("#2A2116", "#E6A64C", "#E6A64C"),
+            "error": ("#2A1719", "#D96B6B", "#D96B6B"),
         }
         iconos = {"info": "ℹ", "ok": "✓", "warn": "⚠", "error": "✕"}
         bg, fg_icon, fg_bor = colores.get(tipo, colores["info"])
@@ -2415,7 +2502,7 @@ class BashkarApp(tk.Tk):
 
         # Campo de búsqueda
         var_q = tk.StringVar()
-        entry = tk.Entry(frame, textvariable=var_q, bg="#1E1E1E", fg=TXT_PRI,
+        entry = tk.Entry(frame, textvariable=var_q, bg="#0E1114", fg=TXT_PRI,
                          insertbackground=TXT_PRI, font=("Segoe UI", 12),
                          relief="flat", bd=0)
         entry.pack(fill="x", padx=14, pady=10, ipady=6)
@@ -2426,16 +2513,16 @@ class BashkarApp(tk.Tk):
 
         # Lista de resultados
         listbox = tk.Listbox(frame, bg=CARD_BG, fg=TXT_PRI,
-                             selectbackground=AZ3, selectforeground="#FFFFFF",
+                             selectbackground=AZ3, selectforeground="#E8E5DF",
                              font=("Segoe UI", 10), relief="flat", bd=0,
                              activestyle="none", height=10)
         listbox.pack(fill="both", expand=True, padx=0, pady=4)
 
         # Hint inferior
-        hint = tk.Frame(frame, bg="#1A1A1A", pady=5)
+        hint = tk.Frame(frame, bg="#0E1114", pady=5)
         hint.pack(fill="x")
         for txt in ["↑↓ navegar", "Enter ejecutar", "Ctrl+K cerrar"]:
-            tk.Label(hint, text=txt, bg="#1A1A1A", fg=TXT_DIM,
+            tk.Label(hint, text=txt, bg="#0E1114", fg=TXT_DIM,
                      font=("Segoe UI", 8)).pack(side="left", padx=10)
 
         def _poblar(q: str = ""):
@@ -2526,7 +2613,7 @@ class BashkarApp(tk.Tk):
             if not txt.startswith("●"):
                 return
             cur = self._lbl_proyecto.cget("fg")
-            nxt = "#E6A817" if cur == "#F59E0B" else "#F59E0B"
+            nxt = "#E6A64C" if cur == "#E6A64C" else "#E6A64C"
             self._lbl_proyecto.config(fg=nxt)
             self.after(800, lambda: self._pulso_modificado(self._hay_cambios))
         except Exception:
@@ -2559,7 +2646,7 @@ class BashkarApp(tk.Tk):
         """Pulsa el brillo de las barras skeleton."""
         if not sk.winfo_exists():
             return
-        colores = [CARD_BOR, "#3A3A3A", CARD_BOR]
+        colores = [CARD_BOR, "#1C2227", CARD_BOR]
         c = colores[fase % len(colores)]
         try:
             for row in sk.winfo_children():
@@ -2639,7 +2726,7 @@ class BashkarApp(tk.Tk):
         win.configure(bg=HDR_LINE)   # borde 1px azul
 
         # Shadow: frame exterior ligeramente más oscuro
-        shadow = tk.Frame(win, bg="#1A1A1A")
+        shadow = tk.Frame(win, bg="#0E1114")
         shadow.pack(padx=1, pady=1, fill="both", expand=True)
 
         # Header del panel
@@ -2745,18 +2832,18 @@ class BashkarApp(tk.Tk):
         self._bvar_ref_num = tk.StringVar()
         self._bvar_ref_pag = tk.StringVar()
         tk.Entry(row_ref, textvariable=self._bvar_ref_num, width=20,
-                 font=("Segoe UI", 9), bg="#1C2128", fg=TXT_PRI,
+                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
                  relief="solid", bd=1, insertbackground=TXT_PRI).pack(side="left", padx=(0, 4))
         tk.Label(row_ref, text="pág:", bg=CONTENT_BG,
                  fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
         tk.Entry(row_ref, textvariable=self._bvar_ref_pag, width=10,
-                 font=("Segoe UI", 9), bg="#1C2128", fg=TXT_PRI,
+                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
                  relief="solid", bd=1, insertbackground=TXT_PRI).pack(side="left", padx=(2, 8))
         tk.Label(row_ref, text="módulo:", bg=CONTENT_BG,
                  fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
         self._bvar_modulo = tk.StringVar()
         tk.Entry(row_ref, textvariable=self._bvar_modulo, width=12,
-                 font=("Segoe UI", 9), bg="#1C2128", fg=TXT_PRI,
+                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
                  relief="solid", bd=1, insertbackground=TXT_PRI,
                  state="readonly").pack(side="left", padx=2)
 
@@ -2767,7 +2854,7 @@ class BashkarApp(tk.Tk):
                  font=("Segoe UI", 9, "bold"), width=10, anchor="w").pack(side="left")
         self._bvar_tags = tk.StringVar()
         tk.Entry(row_tags, textvariable=self._bvar_tags, width=50,
-                 font=("Segoe UI", 9), bg="#1C2128", fg=TXT_PRI,
+                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
                  relief="solid", bd=1, insertbackground=TXT_PRI).pack(side="left")
         tk.Label(row_tags, text="(separadas por coma)", bg=CONTENT_BG,
                  fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left", padx=6)
@@ -2776,7 +2863,7 @@ class BashkarApp(tk.Tk):
         tk.Label(parent, text="Nota:", bg=CONTENT_BG, fg=TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(4, 2))
         self._btxt_nota = scrolledtext.ScrolledText(
-            parent, height=8, bg="#1C2128", fg=TXT_PRI,
+            parent, height=8, bg="#171C20", fg=TXT_PRI,
             insertbackground=TXT_PRI, font=("Segoe UI", 10),
             relief="solid", bd=1, wrap="word")
         self._btxt_nota.pack(fill="both", expand=True)
@@ -2823,7 +2910,7 @@ class BashkarApp(tk.Tk):
                  font=("Segoe UI", 8)).pack(side="left")
         self._bflt_q = tk.StringVar()
         tk.Entry(fbar, textvariable=self._bflt_q, width=20,
-                 font=("Segoe UI", 9), bg="#1C2128", fg=TXT_PRI,
+                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
                  relief="solid", bd=1, insertbackground=TXT_PRI).pack(side="left", padx=(2, 6))
         ttk.Button(fbar, text="🔍", style="S.TButton",
                    command=self._bitacora_refrescar_lista).pack(side="left")
@@ -2845,9 +2932,9 @@ class BashkarApp(tk.Tk):
         self._btv.column("fecha",    width=90,  stretch=False)
 
         # Colores por tipo
-        self._btv.tag_configure("libre",     background="#1C2128", foreground=TXT_SEC)
-        self._btv.tag_configure("hipotesis", background="#1C3A5A", foreground="#93C5FD")
-        self._btv.tag_configure("cita",      background="#1A2E1A", foreground="#86EFAC")
+        self._btv.tag_configure("libre",     background="#171C20", foreground=TXT_SEC)
+        self._btv.tag_configure("hipotesis", background="#14202A", foreground="#6CA8E8")
+        self._btv.tag_configure("cita",      background="#15251F", foreground="#6EC69A")
 
         sb = ttk.Scrollbar(parent, orient="vertical", command=self._btv.yview)
         self._btv.configure(yscrollcommand=sb.set)
@@ -3039,7 +3126,7 @@ class BashkarApp(tk.Tk):
                   ("Período:", ST.periodo)]
         vars_ = []
         for i, (lbl, val) in enumerate(campos):
-            tk.Label(form, text=lbl, bg=CONTENT_BG, fg="#CDD6F4",
+            tk.Label(form, text=lbl, bg=CONTENT_BG, fg="#E8E5DF",
                      font=("Segoe UI", 9)).grid(row=i, column=0, sticky="w", pady=4)
             v = tk.StringVar(value=val)
             tk.Entry(form, textvariable=v, font=("Segoe UI", 9),
@@ -3134,13 +3221,13 @@ class BashkarApp(tk.Tk):
             # Marcar el activo
             if self._proyecto_ruta and str(p["ruta"]) == str(self._proyecto_ruta):
                 tv.item(iid, tags=("activo",))
-        tv.tag_configure("activo", background="#1F3A5C", font=("Segoe UI", 9, "bold"))
+        tv.tag_configure("activo", background="#30291F", font=("Segoe UI", 9, "bold"))
 
         # Botones de acción
         act = tk.Frame(win, bg=CONTENT_BG)
         act.pack(fill="x", padx=12, pady=(0, 10))
         lbl_sel = tk.Label(act, text="Selecciona un proyecto de la lista",
-                            bg=CONTENT_BG, fg="#8B949E", font=("Segoe UI", 9))
+                            bg=CONTENT_BG, fg="#777F84", font=("Segoe UI", 9))
         lbl_sel.pack(side="left")
 
         def _abrir():
@@ -3162,8 +3249,8 @@ class BashkarApp(tk.Tk):
             self._sincronizar_ui_con_st()
             nombre = res.get("nombre", Path(ruta).stem)
             self._lbl_proyecto.config(text=nombre)
-            self._lbl_pub_hdr.config(
-                text=f"{ST.publicacion}  ·  {ST.periodo}" if ST.periodo
+            self._set_pub_hdr(
+                f"{ST.publicacion}  ·  {ST.periodo}" if ST.periodo
                 else ST.publicacion)
             self._actualizar_badges()
             self.after(600, self._ocr_actualizar_estimacion)
@@ -3268,52 +3355,16 @@ class BashkarApp(tk.Tk):
 
     # ── Cabecera de sección en el sidebar ────────────────────────────────────
     def _sb_seccion(self, parent, texto: str, scroll_fn=None):
-        """Renderiza un separador + etiqueta de sección."""
-        tk.Frame(parent, bg="#1E3A5F", height=1).pack(
-            fill="x", padx=12, pady=(8, 2))
-        lbl = tk.Label(parent, text=texto, bg=SB_BG, fg="#8B949E",
+        """Renderiza un separador + etiqueta de sección, rotulada en cobre."""
+        tk.Frame(parent, bg=CARD_BOR, height=1).pack(
+            fill="x", padx=12, pady=(10, 3))
+        lbl = tk.Label(parent, text=texto, bg=SB_BG, fg=AZ3,
                        font=("Segoe UI", 7, "bold"), anchor="w")
         lbl.pack(fill="x", padx=16, pady=(0, 3))
         if scroll_fn:
             lbl.bind("<MouseWheel>", scroll_fn)
             lbl.bind("<Button-4>",   scroll_fn)
             lbl.bind("<Button-5>",   scroll_fn)
-
-    # ── Rellena el área de navegación con grupos ──────────────────────────────
-    def _poblar_nav_sidebar(self, parent, scroll_fn=None):
-        """
-        Crea todos los botones del sidebar agrupados por sección.
-        Flujo principal: numerado 1-6.
-        Análisis opcionales y Salida: sin número, tamaño menor.
-        """
-        # Separar por grupo manteniendo orden
-        grupos = {}
-        for entry in self._PAGINAS:
-            pid, emoji, label, _, badge_attr, grupo = entry
-            grupos.setdefault(grupo, []).append((pid, emoji, label, badge_attr))
-
-        ETIQUETAS_GRUPO = {
-            "flujo":    "FLUJO DE TRABAJO",
-            "analisis": "ANÁLISIS OPCIONALES",
-            "salida":   "EXPORTAR · COLABORAR",
-        }
-
-        flujo_num = 1
-        for grupo_id in ("flujo", "analisis", "salida"):
-            items = grupos.get(grupo_id, [])
-            if not items:
-                continue
-            self._sb_seccion(parent, ETIQUETAS_GRUPO[grupo_id], scroll_fn)
-            for pid, emoji, label, badge_attr in items:
-                num = flujo_num if grupo_id == "flujo" else None
-                btn = self._make_sb_btn(
-                    parent, pid, emoji, label, num, badge_attr,
-                    es_flujo=(grupo_id == "flujo"),
-                    scroll_fn=scroll_fn,
-                )
-                self._sb_btns[pid] = btn
-                if grupo_id == "flujo":
-                    flujo_num += 1
 
     # ── Botón individual del sidebar ──────────────────────────────────────────
     def _make_sb_btn(self, parent, pid, emoji, label, num, badge_attr,
@@ -3358,19 +3409,26 @@ class BashkarApp(tk.Tk):
         }
 
         def _click(e, p=pid):   self._mostrar_pagina(p)
+
+        # Los <Enter>/<Leave> pueden llegar cuando el botón ya no existe: al
+        # cambiar de contexto se repuebla el sidebar entero con el puntero
+        # encima. Sin el guard, Tk imprime un TclError por cada uno.
+        def _pintar(bg, fg):
+            try:
+                for w in (row, bar, em_lbl, txt_lbl, num_lbl):
+                    w.config(bg=bg)
+                txt_lbl.config(fg=fg)
+                em_lbl.config(fg=fg)
+            except tk.TclError:
+                pass
+
         def _enter(e, p=pid):
             if self._pagina_activa.get() != p:
-                # Hover: fondo gris medio, texto bien legible
-                for w in (row, bar, em_lbl, txt_lbl, num_lbl):
-                    w.config(bg="#2D333B")
-                txt_lbl.config(fg="#CDD6F4")
-                em_lbl.config(fg="#CDD6F4")
+                _pintar(SB_HOV, SB_TXT2)
+
         def _leave(e, p=pid):
             if self._pagina_activa.get() != p:
-                for w in (row, bar, em_lbl, txt_lbl, num_lbl):
-                    w.config(bg=SB_BG)
-                txt_lbl.config(fg=TXT_SEC)
-                em_lbl.config(fg=TXT_SEC)
+                _pintar(SB_BG, TXT_SEC)
 
         for w in (row, bar, em_lbl, txt_lbl, num_lbl):
             w.bind("<Button-1>", _click)
@@ -3386,12 +3444,12 @@ class BashkarApp(tk.Tk):
     def _aplicar_estilo_sb_btn(self, pid: str, widgets: dict, activo: bool):
         """Aplica estilos dark mode al botón de sidebar según estado activo/inactivo."""
         if activo:
-            bg     = "#1C2128"   # fondo levemente más claro que sidebar
-            fg_txt = "#E6EDF3"   # texto blanco cálido — siempre legible
-            bg_bar = AB_IND      # barra azul izquierda
+            bg     = SB_SEL      # fondo cálido, no azul de sistema
+            fg_txt = AZ4         # ámbar: el elemento activo se lee de un vistazo
+            bg_bar = AB_IND      # barra de cobre a la izquierda
         else:
             bg     = SB_BG
-            fg_txt = "#8B949E"   # gris medio legible sobre fondo negro
+            fg_txt = SB_TXT
             bg_bar = SB_BG
         widgets["row"].config(bg=bg)
         widgets["bar"].config(bg=bg_bar)
@@ -3409,6 +3467,13 @@ class BashkarApp(tk.Tk):
         Envuelve el frame en un Canvas + Scrollbar vertical dentro de
         `_content_area`; el contenedor externo se guarda en
         `_contenedores_pagina[pid]` (es lo que se muestra/oculta)."""
+        if pid == "inicio":
+            # El tablero trae su propio canvas desplazable: anidarlo dentro de
+            # otro deja dos barras de scroll y una altura que no se propaga.
+            cont = tk.Frame(self._content_area, bg=CONTENT_BG)
+            self._contenedores_pagina[pid] = cont
+            return cont
+
         cont = tk.Frame(self._content_area, bg=CONTENT_BG)
         canvas = tk.Canvas(cont, bg=CONTENT_BG, highlightthickness=0, bd=0)
         vbar = ttk.Scrollbar(cont, orient="vertical", command=canvas.yview)
@@ -3462,11 +3527,17 @@ class BashkarApp(tk.Tk):
         for ctx_id, _, _, pids in self._CONTEXTOS:
             if pid in pids:
                 if self._ctx_activo.get() != ctx_id:
-                    # Actualizar indicadores del activity bar sin repoblar sidebar
                     self._ctx_activo.set(ctx_id)
                     for cid, widgets in self._ab_btns.items():
                         widgets["ind"].config(bg=AB_IND if cid == ctx_id else AB_BG)
                         widgets["lbl"].config(fg=TXT_PRI if cid == ctx_id else AB_TXT)
+                    # …y repoblar el sidebar, que si no se queda mostrando los
+                    # paneles del contexto anterior (llegar aquí desde una
+                    # acción del tablero dejaba «Inicio» en la columna mientras
+                    # el contenido ya era otro). Diferido: repoblar destruye los
+                    # botones del sidebar, y uno de ellos puede ser el que está
+                    # atendiendo este mismo clic.
+                    self.after(0, lambda c=ctx_id: self._poblar_sidebar_contexto(c))
                 break
 
         # Actualizar estilos del sidebar
@@ -3476,6 +3547,10 @@ class BashkarApp(tk.Tk):
         # Acciones al entrar a páginas específicas
         if pid == "norm":
             self.after(50, self._norm_refrescar_numeros)
+        elif pid == "inicio":
+            # El tablero resume el estado del proyecto: al volver a él siempre
+            # se relee, no se deja la foto de cuando se construyó la ventana.
+            self.after(30, self._inicio_refrescar)
 
     def _actualizar_badges(self):
         """Actualiza los semáforos del sidebar según estado de etapas y badges legacy."""
@@ -3490,7 +3565,7 @@ class BashkarApp(tk.Tk):
             badge_lbl = widgets.get("badge")
             if badge_lbl is None:
                 continue
-            bg = SB_BG if self._pagina_activa.get() != pid else "#1C2128"
+            bg = SB_BG if self._pagina_activa.get() != pid else SB_SEL
 
             # Semáforo de flujo (prioridad sobre badge legacy)
             if pid in _semaforo_etapa:
@@ -3499,7 +3574,7 @@ class BashkarApp(tk.Tk):
                     badge_lbl.config(text="✓", fg=VERDE, bg=bg)
                     badge_lbl.pack(side="right", padx=6)
                 elif estado == "stale":
-                    badge_lbl.config(text="⚠", fg="#F59E0B", bg=bg)
+                    badge_lbl.config(text="⚠", fg="#E6A64C", bg=bg)
                     badge_lbl.pack(side="right", padx=6)
                 else:
                     badge_lbl.pack_forget()
@@ -3610,7 +3685,7 @@ class BashkarApp(tk.Tk):
             def _build_interp(frame):
                 ic = tk.Frame(frame, bg=CARD_BG)
                 ic.pack(fill="x")
-                tk.Frame(ic, bg="#3FB950", width=3).pack(side="left", fill="y")
+                tk.Frame(ic, bg="#6EC69A", width=3).pack(side="left", fill="y")
                 tk.Label(ic, text=interpretacion, bg=CARD_BG, fg=TXT_SEC,
                          font=("Segoe UI", 9), anchor="w", justify="left",
                          wraplength=640).pack(side="left", fill="x",
@@ -3647,7 +3722,7 @@ class BashkarApp(tk.Tk):
         def show(event):
             tw = tk.Toplevel(lbl); tw.wm_overrideredirect(True)
             tw.wm_geometry(f"+{event.x_root+12}+{event.y_root+8}")
-            tk.Message(tw, text=texto, bg="#1E3A5F", fg="#E2E8F0",
+            tk.Message(tw, text=texto, bg="#30291F", fg="#E8E5DF",
                        relief="flat", font=("Segoe UI", 9),
                        width=340, padx=12, pady=10).pack()
             tip_win[0] = tw
@@ -3665,7 +3740,7 @@ class BashkarApp(tk.Tk):
         def show(event):
             tw = tk.Toplevel(lbl); tw.wm_overrideredirect(True)
             tw.wm_geometry(f"+{event.x_root+12}+{event.y_root+8}")
-            tk.Message(tw, text=texto, bg="#1E3A5F", fg="#E2E8F0",
+            tk.Message(tw, text=texto, bg="#30291F", fg="#E8E5DF",
                        relief="flat", font=("Segoe UI", 9),
                        width=340, padx=12, pady=10).pack()
             tip_win[0] = tw
@@ -3713,7 +3788,7 @@ class BashkarApp(tk.Tk):
 
             if subtitulo:
                 tk.Label(hdr, text=f"  {subtitulo}", bg=CONTENT_BG,
-                         fg="#8B949E", font=("Segoe UI", 8)).pack(side="left", padx=(8, 0))
+                         fg="#777F84", font=("Segoe UI", 8)).pack(side="left", padx=(8, 0))
 
             # ── Body colapsable ─────────────────────────────────────────────────
             body = tk.Frame(pad, bg=CONTENT_BG)
@@ -3735,7 +3810,7 @@ class BashkarApp(tk.Tk):
 
             for w in (hdr, arrow_lbl):
                 w.bind("<Button-1>", _toggle)
-                w.bind("<Enter>", lambda e, h=hdr: h.config(bg="#161B22"))
+                w.bind("<Enter>", lambda e, h=hdr: h.config(bg="#101316"))
                 w.bind("<Leave>", lambda e, h=hdr: h.config(bg=CONTENT_BG))
             for child in hdr.winfo_children():
                 child.bind("<Button-1>", _toggle)
@@ -3773,30 +3848,29 @@ class BashkarApp(tk.Tk):
         body1 = _seccion("id", "1", "Identificación del proyecto",
                          "Estos datos aparecerán en todos los informes generados.")
         c1 = card_lf("🗞  Publicación y período", body1)
-        tk.Label(c1, text="Nombre:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c1, text="Nombre:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=1,column=0,sticky="w",pady=5)
         self._var_pub = tk.StringVar(value="Mi publicación")
         # Reflejo en tiempo real: actualizar etiqueta de nombre en topbar y sidebar
         def _sync_nombre(*_):
             nombre = self._var_pub.get().strip() or "Sin proyecto"
-            if hasattr(self, "_lbl_pub_hdr"):
-                self._lbl_pub_hdr.config(text=nombre)
+            self._set_pub_hdr(nombre)
             if hasattr(self, "_lbl_proyecto"):
                 self._lbl_proyecto.config(text=nombre)
         self._var_pub.trace_add("write", _sync_nombre)
         tk.Entry(c1, textvariable=self._var_pub, width=52,
                  font=("Segoe UI",10), relief="solid", bd=1,
-                 bg="#1C2128").grid(row=1,column=1,sticky="ew",padx=8)
-        tk.Label(c1, text="Período:", bg=CARD_BG, fg="#CDD6F4",
+                 bg="#171C20").grid(row=1,column=1,sticky="ew",padx=8)
+        tk.Label(c1, text="Período:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=2,column=0,sticky="w",pady=5)
         self._var_per = tk.StringVar()
         tk.Entry(c1, textvariable=self._var_per, width=34,
                  font=("Segoe UI",10), relief="solid", bd=1,
-                 bg="#1C2128").grid(row=2,column=1,sticky="w",padx=8)
+                 bg="#171C20").grid(row=2,column=1,sticky="w",padx=8)
         tk.Label(c1, text='Ej.: "enero–junio 1939"', bg=CARD_BG,
-                 fg="#6E7681", font=("Segoe UI",8)).grid(row=2,column=2,sticky="w")
+                 fg="#646D72", font=("Segoe UI",8)).grid(row=2,column=2,sticky="w")
         # Tipo de corpus
-        tk.Label(c1, text="Tipo:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c1, text="Tipo:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=3,column=0,sticky="w",pady=5)
         self._var_tipo_corpus = tk.StringVar(value="revista")
         ttk.Combobox(c1, textvariable=self._var_tipo_corpus,
@@ -3804,7 +3878,7 @@ class BashkarApp(tk.Tk):
                      state="readonly", width=18,
                      font=("Segoe UI",9)).grid(row=3,column=1,sticky="w",padx=8)
         # Idioma
-        tk.Label(c1, text="Idioma:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c1, text="Idioma:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=4,column=0,sticky="w",pady=5)
         self._var_idioma = tk.StringVar(value="español histórico")
         ttk.Combobox(c1, textvariable=self._var_idioma,
@@ -3812,18 +3886,18 @@ class BashkarApp(tk.Tk):
                      state="readonly", width=18,
                      font=("Segoe UI",9)).grid(row=4,column=1,sticky="w",padx=8)
         # Investigador e institución
-        tk.Label(c1, text="Investigador:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c1, text="Investigador:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=5,column=0,sticky="w",pady=5)
         self._var_investigador = tk.StringVar()
         tk.Entry(c1, textvariable=self._var_investigador, width=34,
                  font=("Segoe UI",9), relief="solid", bd=1,
-                 bg="#1C2128").grid(row=5,column=1,sticky="w",padx=8)
-        tk.Label(c1, text="Institución:", bg=CARD_BG, fg="#CDD6F4",
+                 bg="#171C20").grid(row=5,column=1,sticky="w",padx=8)
+        tk.Label(c1, text="Institución:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=6,column=0,sticky="w",pady=5)
         self._var_institucion = tk.StringVar(value="Instituto Caro y Cuervo")
         tk.Entry(c1, textvariable=self._var_institucion, width=40,
                  font=("Segoe UI",9), relief="solid", bd=1,
-                 bg="#1C2128").grid(row=6,column=1,sticky="ew",padx=8)
+                 bg="#171C20").grid(row=6,column=1,sticky="ew",padx=8)
 
         # ── Sección 2 ─────────────────────────────────────────────────────────
         body2 = _seccion("archivos", "2", "Archivos de entrada",
@@ -3847,30 +3921,30 @@ class BashkarApp(tk.Tk):
         # Separador entre tipo y carpetas
         tk.Frame(c2, bg=CARD_BOR, height=1).grid(row=4, column=0, columnspan=3,
                                                    sticky="ew", pady=(0, 8))
-        tk.Label(c2, text="Carpeta de entrada:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c2, text="Carpeta de entrada:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=5,column=0,sticky="w",pady=4)
         self._var_ent = tk.StringVar()
         ent_row = tk.Frame(c2, bg=CARD_BG); ent_row.grid(row=5,column=1,columnspan=2,sticky="ew",padx=8)
         self._lf_ent = ent_row   # compatibilidad
         tk.Entry(ent_row, textvariable=self._var_ent, width=52,
                  font=("Segoe UI",9), relief="solid", bd=1,
-                 bg="#1C2128").pack(side="left", fill="x", expand=True)
+                 bg="#171C20").pack(side="left", fill="x", expand=True)
         ttk.Button(ent_row, text="Examinar…", style="S.TButton",
                    command=self._pick_ent).pack(side="left", padx=(6,0))
 
         # Salida
-        tk.Label(c2, text="Carpeta de salida:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c2, text="Carpeta de salida:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=6,column=0,sticky="w",pady=4)
         self._var_sal = tk.StringVar()
         sal_row = tk.Frame(c2, bg=CARD_BG); sal_row.grid(row=6,column=1,columnspan=2,sticky="ew",padx=8)
         tk.Entry(sal_row, textvariable=self._var_sal, width=52,
                  font=("Segoe UI",9), relief="solid", bd=1,
-                 bg="#1C2128").pack(side="left", fill="x", expand=True)
+                 bg="#171C20").pack(side="left", fill="x", expand=True)
         ttk.Button(sal_row, text="Examinar…", style="S.TButton",
                    command=self._pick_sal).pack(side="left", padx=(6,0))
 
         # Lista de archivos
-        tk.Label(c2, text="Archivos a analizar:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c2, text="Archivos a analizar:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=7,column=0,sticky="nw",pady=(8,0))
         arch_frame = tk.Frame(c2, bg=CARD_BG)
         arch_frame.grid(row=7,column=1,columnspan=2,sticky="ew",padx=8,pady=(6,0))
@@ -3880,13 +3954,13 @@ class BashkarApp(tk.Tk):
         ttk.Button(btn_arch, text="☐ Ninguno", style="S.TButton",
                    command=lambda: self._sel_todos(False)).pack(side="left")
         self._lbl_arch_info = tk.Label(btn_arch, text="(primero selecciona la carpeta)",
-                                        bg=CARD_BG, fg="#6E7681", font=("Segoe UI",8))
+                                        bg=CARD_BG, fg="#646D72", font=("Segoe UI",8))
         self._lbl_arch_info.pack(side="left", padx=10)
         lb_frame = tk.Frame(arch_frame, bg=CARD_BOR, bd=1, relief="solid")
         lb_frame.pack(fill="x", pady=(4,0))
         sby_lb = ttk.Scrollbar(lb_frame, orient="vertical")
         self._lb = tk.Listbox(lb_frame, selectmode="multiple", height=5,
-                              font=("Courier",9), bg="#1C2128", relief="flat",
+                              font=("Courier",9), bg="#171C20", relief="flat",
                               yscrollcommand=sby_lb.set, selectbackground=AZ3,
                               selectforeground="white", activestyle="none")
         sby_lb.config(command=self._lb.yview)
@@ -3896,7 +3970,7 @@ class BashkarApp(tk.Tk):
         # ── Sección 3 ─────────────────────────────────────────────────────────
         body3 = _seccion("ocr", "3", "Calidad de lectura OCR")
         c3 = card_lf("🔬  Resolución e idioma", body3)
-        tk.Label(c3, text="Resolución (DPI):", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c3, text="Resolución (DPI):", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=1,column=0,sticky="w",pady=5)
         dpi_row = tk.Frame(c3, bg=CARD_BG); dpi_row.grid(row=1,column=1,sticky="w",padx=8)
         self._var_dpi = tk.StringVar(value="150")
@@ -3910,7 +3984,7 @@ class BashkarApp(tk.Tk):
             "200 DPI: mejor para textos con letra pequeña (~90 seg).\n"
             "300 DPI: máxima precisión, lento (~3 min/número).")
 
-        tk.Label(c3, text="Idioma:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c3, text="Idioma:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=2,column=0,sticky="w",pady=5)
         lang_row = tk.Frame(c3, bg=CARD_BG); lang_row.grid(row=2,column=1,sticky="w",padx=8)
         self._var_lang = tk.StringVar(value="spa")
@@ -3919,7 +3993,7 @@ class BashkarApp(tk.Tk):
                             value=val).pack(side="left", padx=8)
 
         # Lematización configurable (corpus histórico = mejor sin lematizar)
-        tk.Label(c3, text="Análisis léxico:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c3, text="Análisis léxico:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=3,column=0,sticky="w",pady=5)
         lem_row = tk.Frame(c3, bg=CARD_BG); lem_row.grid(row=3,column=1,sticky="w",padx=8)
         self._var_lematizar = tk.BooleanVar(value=True)
@@ -3969,7 +4043,7 @@ class BashkarApp(tk.Tk):
         body5 = _seccion("ajuste", "5", "Ajuste fino (opcional)", abierta=False)
         c5 = card_lf("🎛  Parámetros avanzados", body5)
         # spaCy
-        tk.Label(c5, text="Precisión NLP:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c5, text="Precisión NLP:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=1,column=0,sticky="w",pady=5)
         spacy_row = tk.Frame(c5, bg=CARD_BG); spacy_row.grid(row=1,column=1,sticky="w",padx=8)
         self._var_spacy = tk.StringVar(value="es_core_news_sm")
@@ -3983,27 +4057,27 @@ class BashkarApp(tk.Tk):
             "Mediano: incluye vectores pre-entrenados (~43 MB).\n"
             "Grande: máxima precisión, requiere ~700 MB.")
         # LDA
-        tk.Label(c5, text="Temas LDA:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c5, text="Temas LDA:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=2,column=0,sticky="w",pady=5)
         lda_row = tk.Frame(c5, bg=CARD_BG); lda_row.grid(row=2,column=1,sticky="w",padx=8)
         self._var_lda = tk.IntVar(value=6)
         tk.Spinbox(lda_row, from_=3, to=20, textvariable=self._var_lda,
                    width=5, font=("Segoe UI",10), relief="solid", bd=1).pack(side="left")
         tk.Label(lda_row, text="  (3–20 temas latentes)", bg=CARD_BG,
-                 fg="#6E7681", font=("Segoe UI",8)).pack(side="left")
+                 fg="#646D72", font=("Segoe UI",8)).pack(side="left")
         self._mk_ayuda(lda_row,
             "Corpus pequeño (2-5 números): 4-6 temas.\n"
             "Corpus mediano (6-20 números): 6-10 temas.\n"
             "Si los temas son demasiado similares, reduce el número.")
         # Red — umbral
-        tk.Label(c5, text="Umbral red:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c5, text="Umbral red:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=3,column=0,sticky="w",pady=5)
         red_row = tk.Frame(c5, bg=CARD_BG); red_row.grid(row=3,column=1,sticky="w",padx=8)
         self._var_red_min = tk.IntVar(value=2)
         tk.Spinbox(red_row, from_=1, to=10, textvariable=self._var_red_min,
                    width=5, font=("Segoe UI",10), relief="solid", bd=1).pack(side="left")
         tk.Label(red_row, text="  apariciones mínimas en el corpus", bg=CARD_BG,
-                 fg="#6E7681", font=("Segoe UI",8)).pack(side="left")
+                 fg="#646D72", font=("Segoe UI",8)).pack(side="left")
         self._mk_ayuda(red_row,
             "1: todos los autores.\n"
             "2: solo autores en ≥2 números (recomendado).\n"
@@ -4012,27 +4086,27 @@ class BashkarApp(tk.Tk):
         # ── Sección 6 ─────────────────────────────────────────────────────────
         body6 = _seccion("referencia", "6", "Corpus de referencia (comparativo)", abierta=False)
         c6 = card_lf("📚  Carpeta de referencia opcional", body6)
-        tk.Label(c6, text="Carpeta:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c6, text="Carpeta:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=1,column=0,sticky="w",pady=5)
         self._var_ref = tk.StringVar()
         ref_row = tk.Frame(c6, bg=CARD_BG); ref_row.grid(row=1,column=1,columnspan=2,sticky="ew",padx=8)
         tk.Entry(ref_row, textvariable=self._var_ref, width=52,
-                 font=("Segoe UI",9), relief="solid", bd=1, bg="#1C2128").pack(
+                 font=("Segoe UI",9), relief="solid", bd=1, bg="#171C20").pack(
                  side="left", fill="x", expand=True)
         ttk.Button(ref_row, text="Examinar…", style="S.TButton",
                    command=self._pick_ref).pack(side="left", padx=(6,0))
         tk.Label(c6,
                  text="Estructura: referencia/ → El_Tiempo/ → p001.txt, p002.txt…",
-                 bg=CARD_BG, fg="#6E7681", font=("Segoe UI",8)).grid(
+                 bg=CARD_BG, fg="#646D72", font=("Segoe UI",8)).grid(
                  row=2, column=0, columnspan=3, sticky="w", pady=(0,4))
 
         # ── Sección 7 ─────────────────────────────────────────────────────────
         body7 = _seccion("vocab", "7", "Colaboradores y vocabulario", abierta=False)
         c7 = card_lf("👥  Colaboradores conocidos", body7)
         tk.Label(c7, text="Un nombre por línea, exactamente como aparece en la revista:",
-                 bg=CARD_BG, fg="#CDD6F4", font=("Segoe UI",9)).grid(
+                 bg=CARD_BG, fg="#E8E5DF", font=("Segoe UI",9)).grid(
                  row=1, column=0, columnspan=3, sticky="w", pady=(0,6))
-        self._txt_col = scrolledtext.ScrolledText(c7, height=5, width=60, font=("Courier",9), bg="#0D1117", fg="#CDD6F4", insertbackground="#CDD6F4", relief="solid", bd=1)
+        self._txt_col = scrolledtext.ScrolledText(c7, height=5, width=60, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", insertbackground="#E8E5DF", relief="solid", bd=1)
         self._txt_col.grid(row=2, column=0, columnspan=3, sticky="ew")
         self._txt_col.insert("1.0", COLABS_DEFAULT)
 
@@ -4041,7 +4115,7 @@ class BashkarApp(tk.Tk):
         campos_txt = _json.dumps(
             CAMPOS_DEFAULT, ensure_ascii=False, indent=2
         ).strip("{}\n").strip()
-        self._txt_sem = scrolledtext.ScrolledText(c8, height=8, width=70, font=("Courier",9), bg="#0D1117", fg="#CDD6F4", insertbackground="#CDD6F4", relief="solid", bd=1)
+        self._txt_sem = scrolledtext.ScrolledText(c8, height=8, width=70, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", insertbackground="#E8E5DF", relief="solid", bd=1)
         self._txt_sem.grid(row=1, column=0, columnspan=3, sticky="ew")
         self._txt_sem.insert("1.0", campos_txt)
         # _mk_ayuda usa .pack() internamente — necesita frame propio (c8 usa grid)
@@ -4089,7 +4163,7 @@ class BashkarApp(tk.Tk):
             "  • Ollama (si está configurado) funciona localmente sin enviar datos"
         )
         tk.Label(sw_card, text=info_ia,
-                 bg=CARD_BG, fg="#CDD6F4", font=("Segoe UI", 8),
+                 bg=CARD_BG, fg="#E8E5DF", font=("Segoe UI", 8),
                  justify="left", wraplength=580).grid(
                  row=2, column=0, columnspan=3, sticky="w", pady=(0, 4))
 
@@ -4155,12 +4229,12 @@ class BashkarApp(tk.Tk):
         ]
 
         for fila_idx, (prov_id, prov_label, prov_var, placeholder, ayuda_txt) in enumerate(_proveedores_info, 1):
-            tk.Label(c9, text=f"{prov_label}:", bg=CARD_BG, fg="#CDD6F4",
+            tk.Label(c9, text=f"{prov_label}:", bg=CARD_BG, fg="#E8E5DF",
                      font=("Segoe UI",9,"bold")).grid(row=fila_idx, column=0, sticky="w", pady=4)
             prow = tk.Frame(c9, bg=CARD_BG)
             prow.grid(row=fila_idx, column=1, columnspan=2, sticky="ew", padx=8)
             ent = tk.Entry(prow, textvariable=prov_var, width=42,
-                           font=("Courier", 9), relief="solid", bd=1, bg="#1C2128",
+                           font=("Courier", 9), relief="solid", bd=1, bg="#171C20",
                            show="*" if prov_id != "ollama" else "")
             ent.pack(side="left", fill="x", expand=True)
             if prov_id != "ollama":
@@ -4170,7 +4244,7 @@ class BashkarApp(tk.Tk):
             self._mk_ayuda(prow, ayuda_txt)
 
         # Máximo de imágenes
-        tk.Label(c9, text="Máx. imágenes/número:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c9, text="Máx. imágenes/número:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=len(_proveedores_info)+1, column=0, sticky="w", pady=5)
         max_ia_row = tk.Frame(c9, bg=CARD_BG)
         max_ia_row.grid(row=len(_proveedores_info)+1, column=1, sticky="w", padx=8)
@@ -4178,14 +4252,14 @@ class BashkarApp(tk.Tk):
         tk.Spinbox(max_ia_row, from_=1, to=50, textvariable=self._var_max_ia,
                    width=5, font=("Segoe UI",10), relief="solid", bd=1).pack(side="left")
         tk.Label(max_ia_row, text="  (cada imagen consume crédito de API)", bg=CARD_BG,
-                 fg="#6E7681", font=("Segoe UI",8)).pack(side="left")
+                 fg="#646D72", font=("Segoe UI",8)).pack(side="left")
 
         # ── Card: Modelo por etapa (dentro de body8 también) ────────────────
         c9b = card_lf("⚙️  Modelo activo por etapa del análisis", body8)
         tk.Label(c9b,
                  text="Elige qué proveedor y modelo usar en cada función. "
                       "Pulsa ? para ver en qué se destaca cada opción.",
-                 bg=CARD_BG, fg="#8B949E", font=("Segoe UI",8),
+                 bg=CARD_BG, fg="#777F84", font=("Segoe UI",8),
                  wraplength=560, justify="left").grid(
                  row=1, column=0, columnspan=3, sticky="w", pady=(0,8))
 
@@ -4294,7 +4368,7 @@ class BashkarApp(tk.Tk):
 
         self._vars_modelo_etapa = {}
         for fila_e, (etapa_id, etapa_label, etapa_ayuda) in enumerate(_ETAPAS, 2):
-            tk.Label(c9b, text=f"{etapa_label}:", bg=CARD_BG, fg="#CDD6F4",
+            tk.Label(c9b, text=f"{etapa_label}:", bg=CARD_BG, fg="#E8E5DF",
                      font=("Segoe UI",9,"bold")).grid(row=fila_e, column=0, sticky="w", pady=4)
             erow = tk.Frame(c9b, bg=CARD_BG)
             erow.grid(row=fila_e, column=1, sticky="w", padx=8)
@@ -4310,16 +4384,16 @@ class BashkarApp(tk.Tk):
             self._mk_ayuda(erow, etapa_ayuda)
 
         c10 = card_lf("🔗  Extracción de metadatos desde URL", body8)
-        tk.Label(c10, text="URL:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(c10, text="URL:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=1,column=0,sticky="w",pady=5)
         url_row = tk.Frame(c10, bg=CARD_BG); url_row.grid(row=1,column=1,columnspan=2,sticky="ew",padx=8)
         self._var_meta_url = tk.StringVar()
         tk.Entry(url_row, textvariable=self._var_meta_url, width=56,
-                 font=("Segoe UI",9), relief="solid", bd=1, bg="#1C2128").pack(
+                 font=("Segoe UI",9), relief="solid", bd=1, bg="#171C20").pack(
                  side="left", fill="x", expand=True)
         ttk.Button(url_row, text="Extraer →", style="S.TButton",
                    command=self._extraer_metadatos_url).pack(side="left", padx=(6,0))
-        self._txt_meta_result = scrolledtext.ScrolledText(c10, height=5, width=70, font=("Courier",9), bg="#0D1117", fg="#CDD6F4", relief="solid", bd=1, state="disabled")
+        self._txt_meta_result = scrolledtext.ScrolledText(c10, height=5, width=70, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", relief="solid", bd=1, state="disabled")
         self._txt_meta_result.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(8,0))
 
         # ── Botón confirmar ────────────────────────────────────────────────────
@@ -4545,7 +4619,7 @@ class BashkarApp(tk.Tk):
         if hasattr(self, "_txt_stopwords"):
             texto_sw = self._txt_stopwords.get("1.0", "end-1c")
             ST.stopwords_proyecto = [p.strip().lower() for p in texto_sw.splitlines() if p.strip()]
-        self._lbl_pub_hdr.config(text=f"{ST.publicacion}  ·  {ST.periodo}")
+        self._set_pub_hdr(f"{ST.publicacion}  ·  {ST.periodo}")
         self._lbl_cfg_ok.config(text=f"  ✅  {len(sel)} archivo(s) listos")
         self.toast(f"{len(sel)} archivo(s) configurados — continúa con Extracción", tipo="info")
         self._mostrar_pagina("ocr")
@@ -4576,12 +4650,12 @@ class BashkarApp(tk.Tk):
         prog_inner = tk.Frame(prog_card, bg=CARD_BG, padx=16, pady=12)
         prog_inner.pack(fill="x")
         self._lbl_fase = tk.Label(prog_inner, text="Esperando…",
-                                   bg=CARD_BG, fg="#8B949E",
+                                   bg=CARD_BG, fg="#777F84",
                                    font=("Segoe UI", 9, "italic"))
         self._lbl_fase.pack(anchor="w")
         self._prog = ttk.Progressbar(prog_inner, mode="determinate", length=600)
         self._prog.pack(fill="x", pady=(6, 4))
-        self._lbl_pct = tk.Label(prog_inner, text="", bg=CARD_BG, fg="#8B949E",
+        self._lbl_pct = tk.Label(prog_inner, text="", bg=CARD_BG, fg="#777F84",
                                   font=("Courier", 8))
         self._lbl_pct.pack(anchor="w")
 
@@ -4594,7 +4668,7 @@ class BashkarApp(tk.Tk):
 
         ruta_hdr = tk.Frame(ruta_inner, bg=CARD_BG)
         ruta_hdr.pack(fill="x", pady=(0, 6))
-        tk.Label(ruta_hdr, text="Ruta de extracción", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(ruta_hdr, text="Ruta de extracción", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold")).pack(side="left")
         self._mk_ayuda(ruta_hdr,
             "Elige cómo se obtiene el texto de cada página del PDF.\n\n"
@@ -4692,9 +4766,9 @@ class BashkarApp(tk.Tk):
         _on_ruta_change()   # estado inicial
 
         # ── Opción: usar zonas etiquetadas ────────────────────────────────────
-        etz_card = tk.Frame(ruta_inner, bg="#0D1117", relief="solid", bd=1)
+        etz_card = tk.Frame(ruta_inner, bg="#0E1114", relief="solid", bd=1)
         etz_card.pack(fill="x", pady=(8, 0))
-        etz_inner = tk.Frame(etz_card, bg="#0D1117", padx=10, pady=6)
+        etz_inner = tk.Frame(etz_card, bg="#0E1114", padx=10, pady=6)
         etz_inner.pack(fill="x")
 
         self._var_ocr_usar_etiquetas = tk.BooleanVar(value=False)
@@ -4706,10 +4780,10 @@ class BashkarApp(tk.Tk):
 
         tk.Label(etz_inner,
                  text="— solo procesa las zonas marcadas como texto; mantiene el orden de lectura",
-                 bg="#0D1117", fg="#6E7681", font=("Segoe UI", 8)).pack(side="left", padx=(6, 0))
+                 bg="#0E1114", fg="#646D72", font=("Segoe UI", 8)).pack(side="left", padx=(6, 0))
 
         self._var_ocr_det_auto = tk.BooleanVar(value=False)
-        det_row = tk.Frame(etz_card, bg="#0D1117", padx=10, pady=6)
+        det_row = tk.Frame(etz_card, bg="#0E1114", padx=10, pady=6)
         det_row.pack(fill="x")
         ttk.Checkbutton(
             det_row,
@@ -4718,13 +4792,13 @@ class BashkarApp(tk.Tk):
         ).pack(side="left")
         tk.Label(det_row,
                  text="(requiere IA activa)",
-                 bg="#0D1117", fg="#6E7681", font=("Segoe UI", 8)).pack(side="left", padx=4)
+                 bg="#0E1114", fg="#646D72", font=("Segoe UI", 8)).pack(side="left", padx=4)
 
         # ── Sub-opciones Kraken ────────────────────────────────────────────────
         kraken_card = tk.Frame(ruta_inner, bg=CONTENT_BG, relief="solid", bd=1)
         kraken_card.pack(fill="x", pady=(4, 0))
         ki = tk.Frame(kraken_card, bg=CONTENT_BG, padx=10, pady=6); ki.pack(fill="x")
-        tk.Label(ki, text="Modelo Kraken:", bg=CONTENT_BG, fg="#CDD6F4",
+        tk.Label(ki, text="Modelo Kraken:", bg=CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         self._var_kraken_modelo = tk.StringVar(value="")
         tk.Entry(ki, textvariable=self._var_kraken_modelo, width=42,
@@ -4747,7 +4821,7 @@ class BashkarApp(tk.Tk):
 
         # Fila 1: selector de workers + explicación
         kpar_row1 = tk.Frame(kpar, bg=CONTENT_BG); kpar_row1.pack(fill="x")
-        tk.Label(kpar_row1, text="Páginas en paralelo:", bg=CONTENT_BG, fg="#CDD6F4",
+        tk.Label(kpar_row1, text="Páginas en paralelo:", bg=CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         self._var_kraken_workers = tk.IntVar(value=3)
         spin = tk.Spinbox(kpar_row1, from_=1, to=12,
@@ -4759,7 +4833,7 @@ class BashkarApp(tk.Tk):
         spin.bind("<Return>",   lambda e: self._ocr_actualizar_estimacion())
 
         tk.Label(kpar_row1, text="Timeout por página (seg):", bg=CONTENT_BG,
-                 fg="#CDD6F4", font=("Segoe UI", 8)).pack(side="left", padx=(10, 0))
+                 fg="#E8E5DF", font=("Segoe UI", 8)).pack(side="left", padx=(10, 0))
         self._var_kraken_timeout = tk.IntVar(value=600)
         spin_to = tk.Spinbox(kpar_row1, from_=60, to=3600,
                              textvariable=self._var_kraken_timeout,
@@ -4793,11 +4867,11 @@ class BashkarApp(tk.Tk):
 
         # Fila 2: estimación de tiempo
         kpar_row2 = tk.Frame(kpar, bg=CONTENT_BG); kpar_row2.pack(fill="x", pady=(4, 0))
-        tk.Label(kpar_row2, text="Tiempo estimado:", bg=CONTENT_BG, fg="#CDD6F4",
+        tk.Label(kpar_row2, text="Tiempo estimado:", bg=CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         self._lbl_kraken_est = tk.Label(kpar_row2,
                                          text="— (carga un proyecto para estimar)",
-                                         bg=CONTENT_BG, fg="#8B949E",
+                                         bg=CONTENT_BG, fg="#777F84",
                                          font=("Segoe UI", 8))
         self._lbl_kraken_est.pack(side="left", padx=(6, 10))
 
@@ -4822,7 +4896,7 @@ class BashkarApp(tk.Tk):
         ollama_card = tk.Frame(ruta_inner, bg=CONTENT_BG, relief="solid", bd=1)
         ollama_card.pack(fill="x", pady=(4, 0))
         oi = tk.Frame(ollama_card, bg=CONTENT_BG, padx=10, pady=6); oi.pack(fill="x")
-        tk.Label(oi, text="Modelo Ollama:", bg=CONTENT_BG, fg="#CDD6F4",
+        tk.Label(oi, text="Modelo Ollama:", bg=CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         self._var_ollama_modelo = tk.StringVar(value="qwen3.6:latest")
         self._cmb_ollama = ttk.Combobox(
@@ -4837,7 +4911,7 @@ class BashkarApp(tk.Tk):
         self._cmb_ollama.pack(side="left", padx=6)
         ttk.Button(oi, text="🔄 Detectar modelos", style="S.TButton",
                    command=self._ocr_detectar_ollama).pack(side="left", padx=(0, 6))
-        self._lbl_ollama_ok = tk.Label(oi, text="", bg=CONTENT_BG, fg="#8B949E",
+        self._lbl_ollama_ok = tk.Label(oi, text="", bg=CONTENT_BG, fg="#777F84",
                                         font=("Segoe UI", 8))
         self._lbl_ollama_ok.pack(side="left", padx=6)
         self.after(300, self._ocr_detectar_ollama)
@@ -4956,7 +5030,7 @@ class BashkarApp(tk.Tk):
             "  → lmstudio: servidor local (Developer → Start Server),\n"
             "    lista los modelos cargados automáticamente\n"
             "Umbral 60: solo páginas malas. Umbral 40: más agresivo.")
-        tk.Label(bf, text="Umbral IA:", bg=CONTENT_BG, fg="#CDD6F4",
+        tk.Label(bf, text="Umbral IA:", bg=CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9)).pack(side="left", padx=(8, 2))
         self._var_ocr_umbral = tk.IntVar(value=60)
         tk.Spinbox(bf, from_=10, to=90, textvariable=self._var_ocr_umbral,
@@ -4965,18 +5039,18 @@ class BashkarApp(tk.Tk):
                  bg=CONTENT_BG, fg=ACENT, font=("Segoe UI", 9)).pack(side="left")
 
         # ── Log ───────────────────────────────────────────────────────────────
-        log_frame = tk.Frame(pad, bg="#0F1B2D", bd=1, relief="solid")
+        log_frame = tk.Frame(pad, bg="#12171B", bd=1, relief="solid")
         log_frame.pack(fill="both", expand=True)
-        log_hdr = tk.Frame(log_frame, bg="#1A2F4A")
+        log_hdr = tk.Frame(log_frame, bg="#14202A")
         log_hdr.pack(fill="x")
         tk.Label(log_hdr, text="  📋  Registro de actividad",
-                 bg="#1A2F4A", fg="#94A3B8",
+                 bg="#14202A", fg="#B5B6B3",
                  font=("Segoe UI", 8, "bold")).pack(side="left", pady=4)
         self._log_w = scrolledtext.ScrolledText(log_frame, height=12,
                                                  font=("Consolas", 9),
-                                                 bg="#0F1B2D", fg="#7DD3FC",
+                                                 bg="#12171B", fg="#6CA8E8",
                                                  relief="flat", insertbackground="white",
-                                                 selectbackground="#1D4ED8")
+                                                 selectbackground="#6CA8E8")
         self._log_w.pack(fill="both", expand=True, padx=1, pady=(0, 1))
         self._log_w.config(state="disabled")
 
@@ -5008,19 +5082,19 @@ class BashkarApp(tk.Tk):
 
         # ── Dependencias faltantes ────────────────────────────────────────────
         if not self._conv_disponible:
-            err_card = tk.Frame(pad, bg="#2D1B00", relief="solid", bd=1,
-                                highlightbackground="#F97316", highlightthickness=1)
+            err_card = tk.Frame(pad, bg="#2A2116", relief="solid", bd=1,
+                                highlightbackground="#D58B45", highlightthickness=1)
             err_card.pack(fill="x", pady=(0, 16))
-            err_inner = tk.Frame(err_card, bg="#2D1B00", padx=16, pady=14)
+            err_inner = tk.Frame(err_card, bg="#2A2116", padx=16, pady=14)
             err_inner.pack(fill="x")
             tk.Label(err_inner, text="⚠  Faltan librerías requeridas",
-                     bg="#2D1B00", fg="#F97316",
+                     bg="#2A2116", fg="#D58B45",
                      font=("Segoe UI", 10, "bold")).pack(anchor="w")
             tk.Label(err_inner,
                      text=f"Error: {getattr(self, '_conv_import_error', '')}\n\n"
                           "Solución: abrí una terminal y ejecutá\n"
                           "    pip install pymupdf python-docx",
-                     bg="#2D1B00", fg="#FED7AA",
+                     bg="#2A2116", fg="#E5AD5A",
                      font=("Segoe UI", 9), justify="left").pack(anchor="w", pady=(6, 0))
             return
 
@@ -5050,7 +5124,7 @@ class BashkarApp(tk.Tk):
                      anchor="w").pack(side="left")
             tk.Label(fila, text=descripcion, bg=CARD_BG, fg=TXT_DIM,
                      font=("Segoe UI", 8)).pack(side="left", padx=(0, 8))
-            tk.Button(fila, text="📁 Seleccionar", bg=AZ3, fg="#FFFFFF",
+            tk.Button(fila, text="📁 Seleccionar", bg=AZ3, fg="#E8E5DF",
                       relief="flat", font=("Segoe UI", 8), padx=8, pady=3,
                       cursor="hand2", command=comando).pack(side="right")
             tk.Entry(fila, textvariable=var, bg=CARD_BG, fg=TXT_SEC,
@@ -5167,7 +5241,7 @@ class BashkarApp(tk.Tk):
 
         self._btn_conv_iniciar = tk.Button(
             btn_row, text="⚡  Convertir ahora",
-            bg=AZ3, fg="#FFFFFF", relief="flat",
+            bg=AZ3, fg="#E8E5DF", relief="flat",
             font=("Segoe UI", 11, "bold"), padx=24, pady=8,
             cursor="hand2", command=self._conv_iniciar)
         self._btn_conv_iniciar.pack(side="left", padx=(0, 10))
@@ -5218,7 +5292,7 @@ class BashkarApp(tk.Tk):
             wrap="word")
         self._conv_log.pack(fill="both", expand=True)
 
-    def _conv_log_append(self, texto: str, color: str = "#94A3B8"):
+    def _conv_log_append(self, texto: str, color: str = "#B5B6B3"):
         try:
             self._conv_log.config(state="normal")
             tag = f"c{abs(hash(color))}"
@@ -5298,9 +5372,9 @@ class BashkarApp(tk.Tk):
         self._conv_prog["value"] = 0
         self._conv_lbl_fase.config(text="Iniciando conversión…")
         self._conv_log_clear()
-        self._conv_log_append(f"Carpeta de entrada:  {entrada}", "#484F58")
-        self._conv_log_append(f"Carpeta de salida:   {salida}", "#484F58")
-        self._conv_log_append("─" * 48, "#2D333B")
+        self._conv_log_append(f"Carpeta de entrada:  {entrada}", "#646D72")
+        self._conv_log_append(f"Carpeta de salida:   {salida}", "#646D72")
+        self._conv_log_append("─" * 48, "#22292F")
 
         def _on_progress(ev):
             pct  = ev.get("porcentaje", 0)
@@ -5344,7 +5418,7 @@ class BashkarApp(tk.Tk):
         if cancelado:
             self._conv_prog["value"] = 0
             self._conv_lbl_fase.config(text="Conversión detenida por el usuario.")
-            self._conv_log_append("\n⚠  Proceso detenido antes de terminar.", "#F97316")
+            self._conv_log_append("\n⚠  Proceso detenido antes de terminar.", "#D58B45")
         else:
             self._conv_prog["value"] = 100
             mins = int(seg) // 60
@@ -5352,23 +5426,23 @@ class BashkarApp(tk.Tk):
             tiempo = f"{mins} min {secs} s" if mins else f"{secs} s"
             self._conv_lbl_fase.config(
                 text=f"✓  Conversión completada en {tiempo}")
-            self._conv_log_append("─" * 48, "#2D333B")
+            self._conv_log_append("─" * 48, "#22292F")
             self._conv_log_append(
                 f"✓  {n_ok} PDF convertidos  ·  {n_pags} páginas procesadas  ·  {tiempo}",
-                "#3FB950")
+                "#6EC69A")
 
         if n_err:
             self._conv_log_append(
-                f"⚠  {n_err} PDF no pudieron procesarse:", "#F97316")
+                f"⚠  {n_err} PDF no pudieron procesarse:", "#D58B45")
             for d in pdfs:
                 if "error" in d:
                     self._conv_log_append(
-                        f"   • {d['archivo']}: {d['error']}", "#F97316")
+                        f"   • {d['archivo']}: {d['error']}", "#D58B45")
         for d in pdfs:
             if "error" not in d and d.get("paginas_sin_texto", 0) > 0:
                 self._conv_log_append(
                     f"   ℹ  {d['archivo']}: {d['paginas_sin_texto']} páginas sin texto detectable",
-                    "#8B949E")
+                    "#777F84")
 
         # Refrescar Normalizar y reconstruir corpus_meta si se exportó a 03_ocr/
         if self._conv_al_norm.get() and getattr(ST, "out_dir", None):
@@ -5376,7 +5450,7 @@ class BashkarApp(tk.Tk):
                 self._reconstruir_corpus_meta_desde_txt()
                 self._norm_refrescar_numeros()
                 self._conv_log_append(
-                    "📝  Texto disponible en Normalizar y Segmentar.", "#3FB950")
+                    "📝  Texto disponible en Normalizar y Segmentar.", "#6EC69A")
             except Exception:
                 pass
 
@@ -5384,8 +5458,8 @@ class BashkarApp(tk.Tk):
         self._btn_conv_iniciar.config(state="normal")
         self._btn_conv_cancelar.config(state="disabled")
         self._conv_lbl_fase.config(text="Error durante la conversión.")
-        self._conv_log_append(f"\n✗ Error: {exc_str}", "#F97316")
-        self._conv_log_append(tb, "#484F58")
+        self._conv_log_append(f"\n✗ Error: {exc_str}", "#D58B45")
+        self._conv_log_append(tb, "#646D72")
 
     def _conv_cancelar(self):
         if self._conv_proc:
@@ -5441,13 +5515,13 @@ class BashkarApp(tk.Tk):
         pad.pack(fill="both", expand=True, padx=24, pady=16)
 
         if not self._mmx_disponible:
-            err = tk.Frame(pad, bg="#2D1B00", relief="solid", bd=1)
+            err = tk.Frame(pad, bg="#2A2116", relief="solid", bd=1)
             err.pack(fill="x", pady=(0, 16))
             tk.Label(err, text="⚠  No se pudo cargar core/extractor_multimodal",
-                     bg="#2D1B00", fg="#F97316",
+                     bg="#2A2116", fg="#D58B45",
                      font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=14, pady=10)
             tk.Label(err, text=getattr(self, "_mmx_import_error", ""),
-                     bg="#2D1B00", fg="#FED7AA", font=("Segoe UI", 9)).pack(
+                     bg="#2A2116", fg="#E5AD5A", font=("Segoe UI", 9)).pack(
                          anchor="w", padx=14, pady=(0, 10))
             return
 
@@ -5470,7 +5544,7 @@ class BashkarApp(tk.Tk):
                      font=("Segoe UI", 9, "bold"), width=8, anchor="w").pack(side="left")
             tk.Label(fila, text=descripcion, bg=CARD_BG, fg=TXT_DIM,
                      font=("Segoe UI", 8)).pack(side="left", padx=(0, 8))
-            tk.Button(fila, text="📁 Seleccionar", bg=AZ3, fg="#FFFFFF",
+            tk.Button(fila, text="📁 Seleccionar", bg=AZ3, fg="#E8E5DF",
                       relief="flat", font=("Segoe UI", 8), padx=8, pady=3,
                       cursor="hand2", command=comando).pack(side="right")
             tk.Entry(fila, textvariable=var, bg=CARD_BG, fg=TXT_SEC, relief="solid",
@@ -5545,21 +5619,21 @@ class BashkarApp(tk.Tk):
         c4 = self._card(pad, "  4  Procesar")
         rowb = tk.Frame(c4, bg=CARD_BG)
         rowb.pack(fill="x", pady=(0, 8))
-        tk.Button(rowb, text="🧮 Estimar costo", bg="#1F2937", fg="#E5E7EB",
+        tk.Button(rowb, text="🧮 Estimar costo", bg="#1C2227", fg="#B5B6B3",
                   relief="flat", font=("Segoe UI", 9), padx=12, pady=5,
                   cursor="hand2", command=self._mmx_estimar).pack(side="left")
-        self._mmx_btn = tk.Button(rowb, text="🧠 Extraer todo", bg=AZ3, fg="#FFFFFF",
+        self._mmx_btn = tk.Button(rowb, text="🧠 Extraer todo", bg=AZ3, fg="#E8E5DF",
                                   relief="flat", font=("Segoe UI", 9, "bold"),
                                   padx=14, pady=5, cursor="hand2",
                                   command=self._mmx_iniciar)
         self._mmx_btn.pack(side="left", padx=(8, 0))
-        tk.Button(rowb, text="📂 Abrir salida", bg="#1F2937", fg="#E5E7EB",
+        tk.Button(rowb, text="📂 Abrir salida", bg="#1C2227", fg="#B5B6B3",
                   relief="flat", font=("Segoe UI", 9), padx=12, pady=5,
                   cursor="hand2", command=self._mmx_abrir_salida).pack(side="right")
 
         self._mmx_prog = ttk.Progressbar(c4, mode="determinate")
         self._mmx_prog.pack(fill="x", pady=(0, 6))
-        self._mmx_log = tk.Text(c4, height=11, bg="#0D1117", fg="#9CA3AF",
+        self._mmx_log = tk.Text(c4, height=11, bg="#0E1114", fg="#777F84",
                                 relief="solid", bd=1, font=("Consolas", 8),
                                 wrap="word")
         self._mmx_log.pack(fill="both", expand=True)
@@ -5747,15 +5821,15 @@ class BashkarApp(tk.Tk):
 
         # Colores FineReader para tipos de zona
         _FR_COLORS = {
-            "articulo":   "#22AA22",   # verde texto
-            "titulo":     "#0066FF",   # azul titular
-            "publicidad": "#CC2222",   # rojo imagen/publicidad
-            "foto":       "#CC2222",
-            "pie_foto":   "#FF8800",
-            "numero_pag": "#888888",
-            "cabecera":   "#8855BB",
-            "indice":     "#0099CC",
-            "colofon":    "#CC6688",
+            "articulo":   "#6EC69A",   # verde texto
+            "titulo":     "#6CA8E8",   # azul titular
+            "publicidad": "#D96B6B",   # rojo imagen/publicidad
+            "foto":       "#D96B6B",
+            "pie_foto":   "#E6A64C",
+            "numero_pag": "#777F84",
+            "cabecera":   "#B18AD6",
+            "indice":     "#6CA8E8",
+            "colofon":    "#B18AD6",
         }
         # Actualizar colores de TIPOS_ZONA con los de FineReader
         for tid, color in _FR_COLORS.items():
@@ -5763,43 +5837,43 @@ class BashkarApp(tk.Tk):
                 TIPOS_ZONA[tid]["color"] = color
 
         # ── TOOLBAR RIBBON — 2 filas para no desbordar ────────────────────────
-        ribbon_wrap = tk.Frame(f, bg="#2D333B")
+        ribbon_wrap = tk.Frame(f, bg="#22292F")
         ribbon_wrap.pack(fill="x")
 
         # Fila 1: Navegación + Tipos de zona
-        row1 = tk.Frame(ribbon_wrap, bg="#2D333B", height=30)
+        row1 = tk.Frame(ribbon_wrap, bg="#22292F", height=30)
         row1.pack(fill="x")
         row1.pack_propagate(False)
 
-        def _rb_btn(parent, text, cmd, bg="#2D333B", fg="#CDD6F4", bold=False):
+        def _rb_btn(parent, text, cmd, bg="#22292F", fg="#E8E5DF", bold=False):
             b = tk.Label(parent, text=text, bg=bg, fg=fg, cursor="hand2",
                          font=("Segoe UI", 7, "bold" if bold else "normal"),
                          padx=5, pady=2)
             b.pack(side="left", padx=1)
             b.bind("<Button-1>", lambda e, c=cmd: c())
             orig_bg = bg
-            b.bind("<Enter>", lambda e, w=b: w.config(bg="#444C56"))
+            b.bind("<Enter>", lambda e, w=b: w.config(bg="#22292F"))
             b.bind("<Leave>", lambda e, w=b, ob=orig_bg: w.config(bg=ob))
             return b
 
         def _rb_sep(parent):
-            tk.Frame(parent, bg="#444C56", width=1).pack(
+            tk.Frame(parent, bg="#22292F", width=1).pack(
                 side="left", fill="y", pady=3, padx=3)
 
         # Abrir PDF
         _rb_btn(row1, "📂 PDF", self._etz_abrir_pdf_directo,
-                bg="#1F6FEB", fg="white", bold=True)
+                bg="#6CA8E8", fg="white", bold=True)
         _rb_sep(row1)
 
         # Número
-        tk.Label(row1, text="N°:", bg="#2D333B", fg="#8B949E",
+        tk.Label(row1, text="N°:", bg="#22292F", fg="#777F84",
                  font=("Segoe UI", 7)).pack(side="left", padx=(4, 1))
         self._etz_cb_num = ttk.Combobox(row1, textvariable=self._etz_numero,
                                          width=18, state="readonly", font=("Segoe UI", 8))
         self._etz_cb_num.pack(side="left", padx=(0, 3))
         self._etz_cb_num.bind("<<ComboboxSelected>>", self._etz_on_numero)
 
-        tk.Label(row1, text="Pág:", bg="#2D333B", fg="#8B949E",
+        tk.Label(row1, text="Pág:", bg="#22292F", fg="#777F84",
                  font=("Segoe UI", 7)).pack(side="left", padx=(2, 1))
         self._etz_cb_pag = ttk.Combobox(row1, textvariable=self._etz_pagina,
                                          width=8, state="readonly", font=("Segoe UI", 8))
@@ -5807,21 +5881,21 @@ class BashkarApp(tk.Tk):
         self._etz_cb_pag.bind("<<ComboboxSelected>>", self._etz_on_pagina)
 
         for txt, cmd in [("◀", self._etz_pagina_ant), ("▶", self._etz_pagina_sig)]:
-            b = tk.Label(row1, text=txt, bg="#2D333B", fg="#CDD6F4",
+            b = tk.Label(row1, text=txt, bg="#22292F", fg="#E8E5DF",
                          font=("Segoe UI", 9, "bold"), cursor="hand2", padx=3)
             b.pack(side="left", padx=1)
             b.bind("<Button-1>", lambda e, c=cmd: c())
-            b.bind("<Enter>", lambda e, w=b: w.config(bg="#388BFD"))
-            b.bind("<Leave>", lambda e, w=b: w.config(bg="#2D333B"))
+            b.bind("<Enter>", lambda e, w=b: w.config(bg="#6CA8E8"))
+            b.bind("<Leave>", lambda e, w=b: w.config(bg="#22292F"))
 
         _rb_sep(row1)
 
         # Tipos de zona
-        tk.Label(row1, text="Zona:", bg="#2D333B", fg="#8B949E",
+        tk.Label(row1, text="Zona:", bg="#22292F", fg="#777F84",
                  font=("Segoe UI", 7)).pack(side="left", padx=(3, 2))
         self._etz_tipo_btns = {}
         for tid, meta in TIPOS_ZONA.items():
-            color = meta.get("color", "#888")
+            color = meta.get("color", "#777F84")
             lbl   = meta.get("label", tid)[:7]
             btn = tk.Label(row1, text=lbl, bg=color, fg="white",
                            font=("Segoe UI", 7, "bold"), padx=4, pady=1,
@@ -5832,19 +5906,19 @@ class BashkarApp(tk.Tk):
 
         _rb_sep(row1)
         _rb_btn(row1, "＋ Tipo", self._etz_agregar_tipo_custom,
-                fg="#3FB950", bold=True)
+                fg="#6EC69A", bold=True)
         _rb_btn(row1, "🔤 Tipogr.", self._etz_deepfont_zona,
-                fg="#F0883E", bold=True)
+                fg="#D58B45", bold=True)
         _rb_sep(row1)
         _rb_btn(row1, "📊 Estadísticas", self._etz_mostrar_estadisticas,
-                fg="#A371F7", bold=True)
+                fg="#B18AD6", bold=True)
 
         # Fila 2: Acciones + Detección + Estado
-        row2 = tk.Frame(ribbon_wrap, bg="#1C2128", height=28)
+        row2 = tk.Frame(ribbon_wrap, bg="#171C20", height=28)
         row2.pack(fill="x")
         row2.pack_propagate(False)
 
-        tk.Frame(row2, bg="#444C56", width=1).pack(side="left", fill="y", pady=2)
+        tk.Frame(row2, bg="#22292F", width=1).pack(side="left", fill="y", pady=2)
 
         for txt, cmd in [
             ("🗑 Última",   self._etz_borrar_ultima),
@@ -5852,50 +5926,50 @@ class BashkarApp(tk.Tk):
             ("💾 Guardar",  self._etz_guardar_pagina),
             ("⟳ Inclinar", self._etz_deskew_pagina),
         ]:
-            b = tk.Label(row2, text=txt, bg="#1C2128", fg="#8B949E",
+            b = tk.Label(row2, text=txt, bg="#171C20", fg="#777F84",
                          font=("Segoe UI", 7), cursor="hand2", padx=6, pady=2)
             b.pack(side="left", padx=1)
             b.bind("<Button-1>", lambda e, c=cmd: c())
-            b.bind("<Enter>", lambda e, w=b: w.config(bg="#2D333B", fg="#CDD6F4"))
-            b.bind("<Leave>", lambda e, w=b: w.config(bg="#1C2128", fg="#8B949E"))
+            b.bind("<Enter>", lambda e, w=b: w.config(bg="#22292F", fg="#E8E5DF"))
+            b.bind("<Leave>", lambda e, w=b: w.config(bg="#171C20", fg="#777F84"))
 
-        tk.Frame(row2, bg="#444C56", width=1).pack(side="left", fill="y", pady=2, padx=4)
+        tk.Frame(row2, bg="#22292F", width=1).pack(side="left", fill="y", pady=2, padx=4)
 
-        tk.Label(row2, text="Detectar:", bg="#1C2128", fg="#8B949E",
+        tk.Label(row2, text="Detectar:", bg="#171C20", fg="#777F84",
                  font=("Segoe UI", 7)).pack(side="left", padx=(4, 3))
 
         for txt, cmd in [("📄 Esta página", self._etz_detectar_pagina),
                           ("📚 Todo el número", self._etz_detectar_numero)]:
-            b = tk.Label(row2, text=txt, bg="#1F6FEB", fg="white",
+            b = tk.Label(row2, text=txt, bg="#6CA8E8", fg="white",
                          font=("Segoe UI", 7, "bold"), cursor="hand2", padx=6, pady=2)
             b.pack(side="left", padx=2)
             b.bind("<Button-1>", lambda e, c=cmd: c())
-            b.bind("<Enter>", lambda e, w=b: w.config(bg="#388BFD"))
-            b.bind("<Leave>", lambda e, w=b: w.config(bg="#1F6FEB"))
+            b.bind("<Enter>", lambda e, w=b: w.config(bg="#6CA8E8"))
+            b.bind("<Leave>", lambda e, w=b: w.config(bg="#6CA8E8"))
 
         # OCR por zonas — reconoce cada zona por separado en orden de lectura
-        b_oz = tk.Label(row2, text="👁 OCR zonas", bg="#238636", fg="white",
+        b_oz = tk.Label(row2, text="👁 OCR zonas", bg="#6EC69A", fg="white",
                         font=("Segoe UI", 7, "bold"), cursor="hand2",
                         padx=6, pady=2)
         b_oz.pack(side="left", padx=2)
         b_oz.bind("<Button-1>", lambda e: self._etz_ocr_zonas_preview())
-        b_oz.bind("<Enter>", lambda e: b_oz.config(bg="#2EA043"))
-        b_oz.bind("<Leave>", lambda e: b_oz.config(bg="#238636"))
+        b_oz.bind("<Enter>", lambda e: b_oz.config(bg="#6EC69A"))
+        b_oz.bind("<Leave>", lambda e: b_oz.config(bg="#6EC69A"))
 
-        tk.Frame(row2, bg="#444C56", width=1).pack(side="left", fill="y", pady=2, padx=4)
+        tk.Frame(row2, bg="#22292F", width=1).pack(side="left", fill="y", pady=2, padx=4)
 
         # Botón predicción — aplica la plantilla aprendida al resto del número
         self._btn_etz_predecir = tk.Label(
-            row2, text="🔮 Predecir resto", bg="#6E40C9", fg="white",
+            row2, text="🔮 Predecir resto", bg="#B18AD6", fg="white",
             font=("Segoe UI", 7, "bold"), cursor="hand2", padx=6, pady=2)
         self._btn_etz_predecir.pack(side="left", padx=2)
         self._btn_etz_predecir.bind("<Button-1>", lambda e: self._etz_predecir_numero())
         self._btn_etz_predecir.bind("<Enter>",
-            lambda e: self._btn_etz_predecir.config(bg="#8957E5"))
+            lambda e: self._btn_etz_predecir.config(bg="#B18AD6"))
         self._btn_etz_predecir.bind("<Leave>",
-            lambda e: self._btn_etz_predecir.config(bg="#6E40C9"))
+            lambda e: self._btn_etz_predecir.config(bg="#B18AD6"))
 
-        tk.Label(row2, text="Motor:", bg="#1C2128", fg="#8B949E",
+        tk.Label(row2, text="Motor:", bg="#171C20", fg="#777F84",
                  font=("Segoe UI", 7)).pack(side="left", padx=(8, 2))
 
         _cb_motor = ttk.Combobox(row2, textvariable=self._etz_modo_det,
@@ -5905,7 +5979,7 @@ class BashkarApp(tk.Tk):
         _cb_motor.pack(side="left")
 
         # ── Selector proveedor + modelo (visible solo con vision_ia) ─────────
-        self._etz_vision_frame = tk.Frame(row2, bg="#1C2128")
+        self._etz_vision_frame = tk.Frame(row2, bg="#171C20")
         self._etz_vision_frame.pack(side="left", padx=(4, 0))
 
         from core.zone_labeler import VISION_PROVEEDORES
@@ -5928,20 +6002,20 @@ class BashkarApp(tk.Tk):
 
         # Botón editar prompt
         _btn_prompt = tk.Label(self._etz_vision_frame, text="✏ Prompt",
-                                bg="#1C2128", fg="#8B949E",
+                                bg="#171C20", fg="#777F84",
                                 font=("Segoe UI", 7), cursor="hand2", padx=4)
         _btn_prompt.pack(side="left")
         _btn_prompt.bind("<Button-1>", lambda e: self._etz_editar_prompt())
-        _btn_prompt.bind("<Enter>",    lambda e: _btn_prompt.config(fg="#CDD6F4"))
-        _btn_prompt.bind("<Leave>",    lambda e: _btn_prompt.config(fg="#8B949E"))
+        _btn_prompt.bind("<Enter>",    lambda e: _btn_prompt.config(fg="#E8E5DF"))
+        _btn_prompt.bind("<Leave>",    lambda e: _btn_prompt.config(fg="#777F84"))
 
         # ? tooltip proveedor
         _PROV_AYUDA = "\n\n".join(
             f"{k} — {v['label']}\n  {v['help']}"
             for k, v in VISION_PROVEEDORES.items()
         )
-        _btn_qp = tk.Label(self._etz_vision_frame, text="?", bg="#1C2128",
-                            fg="#8B949E", font=("Segoe UI", 7, "bold"),
+        _btn_qp = tk.Label(self._etz_vision_frame, text="?", bg="#171C20",
+                            fg="#777F84", font=("Segoe UI", 7, "bold"),
                             cursor="hand2", padx=2)
         _btn_qp.pack(side="left")
         _btn_qp.bind("<Enter>",    lambda e: self._mostrar_tooltip(_PROV_AYUDA, _btn_qp))
@@ -5970,7 +6044,7 @@ class BashkarApp(tk.Tk):
 
         # Botón instalar dependencias del motor seleccionado
         self._btn_instalar_motor = tk.Label(
-            row2, text="⬇ Instalar", bg="#1C2128", fg="#8B949E",
+            row2, text="⬇ Instalar", bg="#171C20", fg="#777F84",
             font=("Segoe UI", 7), cursor="hand2", padx=4)
         self._btn_instalar_motor.pack(side="left", padx=2)
         self._btn_instalar_motor.bind("<Button-1>", lambda e: self._etz_instalar_motor())
@@ -5993,7 +6067,7 @@ class BashkarApp(tk.Tk):
             "            Gemini o Llava (Ollama local). Usa el prompt editable.\n"
             "            El prompt se puede personalizar con ✏ Prompt."
         )
-        _btn_q = tk.Label(row2, text="?", bg="#1C2128", fg="#8B949E",
+        _btn_q = tk.Label(row2, text="?", bg="#171C20", fg="#777F84",
                           font=("Segoe UI", 7, "bold"), cursor="hand2", padx=3)
         _btn_q.pack(side="left")
         _btn_q.bind("<Enter>",    lambda e: self._mostrar_tooltip(_MOTOR_AYUDA, _btn_q))
@@ -6003,7 +6077,7 @@ class BashkarApp(tk.Tk):
 
         # Status — lado derecho fila 2
         self._etz_lbl_train = tk.Label(row2, text="",
-                                        bg="#1C2128", fg="#3FB950",
+                                        bg="#171C20", fg="#6EC69A",
                                         font=("Segoe UI", 7))
         self._etz_lbl_train.pack(side="right", padx=12)
 
@@ -6016,22 +6090,22 @@ class BashkarApp(tk.Tk):
         body_paned.pack(fill="both", expand=True)
 
         # ── PANEL IZQUIERDO: miniaturas de páginas (estilo Pages Pane) ─────────
-        pages_frm = tk.Frame(body_paned, bg="#161B22", width=160)
+        pages_frm = tk.Frame(body_paned, bg="#101316", width=160)
         pages_frm.pack_propagate(False)
         body_paned.add(pages_frm, minsize=120, width=160)
 
-        tk.Label(pages_frm, text="PÁGINAS", bg="#161B22", fg=TXT_DIM,
+        tk.Label(pages_frm, text="PÁGINAS", bg="#101316", fg=TXT_DIM,
                  font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=8, pady=(8, 4))
 
         # Canvas scrollable para miniaturas
-        pages_canvas = tk.Canvas(pages_frm, bg="#161B22",
+        pages_canvas = tk.Canvas(pages_frm, bg="#101316",
                                   highlightthickness=0, width=152)
         pages_sb = tk.Scrollbar(pages_frm, orient="vertical",
                                  command=pages_canvas.yview)
         pages_canvas.configure(yscrollcommand=pages_sb.set)
         pages_sb.pack(side="right", fill="y")
         pages_canvas.pack(fill="both", expand=True)
-        pages_inner = tk.Frame(pages_canvas, bg="#161B22")
+        pages_inner = tk.Frame(pages_canvas, bg="#101316")
         pages_win = pages_canvas.create_window((0, 0), window=pages_inner, anchor="nw")
         def _pages_cfg(e): pages_canvas.configure(scrollregion=pages_canvas.bbox("all"))
         def _pages_cw(e): pages_canvas.itemconfig(pages_win, width=e.width)
@@ -6046,7 +6120,7 @@ class BashkarApp(tk.Tk):
         self._etz_thumb_btns   = {}   # {pagina: frame_miniatura}
 
         # ── PANEL CENTRAL: imagen con zonas ────────────────────────────────────
-        center_frm = tk.Frame(body_paned, bg="#0D1117")
+        center_frm = tk.Frame(body_paned, bg="#0E1114")
         body_paned.add(center_frm, minsize=400)
 
         # Sub-PanedWindow vertical: imagen arriba | zoom inferior
@@ -6056,26 +6130,26 @@ class BashkarApp(tk.Tk):
         center_paned.pack(fill="both", expand=True)
 
         # Image Pane (canvas principal)
-        img_frm = tk.Frame(center_paned, bg="#0D1117")
+        img_frm = tk.Frame(center_paned, bg="#0E1114")
         center_paned.add(img_frm, minsize=300)
 
         # Toolbar mínima del Image Pane (zoom)
-        img_tb = tk.Frame(img_frm, bg="#161B22", height=24)
+        img_tb = tk.Frame(img_frm, bg="#101316", height=24)
         img_tb.pack(fill="x")
         img_tb.pack_propagate(False)
         tk.Label(img_tb, text="Ctrl+rueda: zoom  ·  Rueda: scroll  ·  "
                               "Medio/Space+drag: pan  ·  Clic der: menú",
-                 bg="#161B22", fg=TXT_DIM,
+                 bg="#101316", fg=TXT_DIM,
                  font=("Segoe UI", 7)).pack(side="left", padx=8)
         self._etz_lbl_zoom = tk.Label(img_tb, text="100%",
-                                       bg="#161B22", fg=TXT_SEC,
+                                       bg="#101316", fg=TXT_SEC,
                                        font=("Segoe UI", 7, "bold"))
         self._etz_lbl_zoom.pack(side="right", padx=8)
 
-        canvas_wrap = tk.Frame(img_frm, bg="#0D1117")
+        canvas_wrap = tk.Frame(img_frm, bg="#0E1114")
         canvas_wrap.pack(fill="both", expand=True)
 
-        self._etz_canvas = tk.Canvas(canvas_wrap, bg="#1A1F2B",
+        self._etz_canvas = tk.Canvas(canvas_wrap, bg="#12171B",
                                       cursor="crosshair",
                                       highlightthickness=0)
         etz_scroll_y = tk.Scrollbar(canvas_wrap, orient="vertical",
@@ -6109,18 +6183,18 @@ class BashkarApp(tk.Tk):
         self._etz_canvas.focus_set()
 
         # Zoom Pane (inferior) — detalle ampliado de la zona activa
-        zoom_frm = tk.Frame(center_paned, bg="#161B22", height=120)
+        zoom_frm = tk.Frame(center_paned, bg="#101316", height=120)
         center_paned.add(zoom_frm, minsize=80, height=120)
 
-        tk.Label(zoom_frm, text="DETALLE (Zoom Pane)", bg="#161B22", fg=TXT_DIM,
+        tk.Label(zoom_frm, text="DETALLE (Zoom Pane)", bg="#101316", fg=TXT_DIM,
                  font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=8, pady=(4, 2))
-        self._etz_zoom_canvas = tk.Canvas(zoom_frm, bg="#1A1F2B",
+        self._etz_zoom_canvas = tk.Canvas(zoom_frm, bg="#12171B",
                                            highlightthickness=0, height=90)
         self._etz_zoom_canvas.pack(fill="both", expand=True, padx=4, pady=(0, 4))
         self._etz_zoom_img_tk = None
 
         # ── PANEL DERECHO: texto OCR + lista zonas ─────────────────────────────
-        right_frm = tk.Frame(body_paned, bg="#161B22", width=220)
+        right_frm = tk.Frame(body_paned, bg="#101316", width=220)
         right_frm.pack_propagate(False)
         body_paned.add(right_frm, minsize=160, width=220)
 
@@ -6131,36 +6205,36 @@ class BashkarApp(tk.Tk):
         right_paned.pack(fill="both", expand=True)
 
         # Text Pane — texto OCR reconocido (sincronizado con imagen)
-        txt_frm = tk.Frame(right_paned, bg="#161B22")
+        txt_frm = tk.Frame(right_paned, bg="#101316")
         right_paned.add(txt_frm, minsize=120)
 
-        tk.Label(txt_frm, text="TEXTO OCR", bg="#161B22", fg=TXT_DIM,
+        tk.Label(txt_frm, text="TEXTO OCR", bg="#101316", fg=TXT_DIM,
                  font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=8, pady=(6, 2))
         self._etz_txt_ocr = scrolledtext.ScrolledText(
             txt_frm, font=("Consolas", 8),
-            bg="#0D1117", fg="#CDD6F4",
-            insertbackground="#CDD6F4",
-            selectbackground="#1F6FEB",
+            bg="#0E1114", fg="#E8E5DF",
+            insertbackground="#E8E5DF",
+            selectbackground="#6CA8E8",
             relief="flat", padx=6, pady=4,
             wrap="word", state="normal")
         self._etz_txt_ocr.pack(fill="both", expand=True, padx=4)
         # Palabras con baja confianza → subrayado azul (estilo FineReader)
         self._etz_txt_ocr.tag_configure("low_conf",
-            foreground="#58A6FF", underline=True)
+            foreground="#6CA8E8", underline=True)
 
         # Zones Pane — lista de zonas + acciones
-        zones_frm = tk.Frame(right_paned, bg="#161B22")
+        zones_frm = tk.Frame(right_paned, bg="#101316")
         right_paned.add(zones_frm, minsize=100)
 
-        tk.Label(zones_frm, text="ZONAS", bg="#161B22", fg=TXT_DIM,
+        tk.Label(zones_frm, text="ZONAS", bg="#101316", fg=TXT_DIM,
                  font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=8, pady=(6, 2))
 
-        zona_list_frame = tk.Frame(zones_frm, bg="#161B22")
+        zona_list_frame = tk.Frame(zones_frm, bg="#101316")
         zona_list_frame.pack(fill="both", expand=True, padx=4)
         self._etz_zona_list = tk.Listbox(zona_list_frame,
                                           font=("Segoe UI", 8),
-                                          bg="#0D1117", fg="#CDD6F4",
-                                          selectbackground="#1F6FEB",
+                                          bg="#0E1114", fg="#E8E5DF",
+                                          selectbackground="#6CA8E8",
                                           selectforeground="white",
                                           activestyle="none",
                                           relief="flat",
@@ -6176,26 +6250,26 @@ class BashkarApp(tk.Tk):
 
         # Estado
         self._etz_lbl_estado = tk.Label(zones_frm, text="—",
-                                         bg="#161B22", fg=TXT_SEC,
+                                         bg="#101316", fg=TXT_SEC,
                                          font=("Segoe UI", 7),
                                          wraplength=200, justify="left")
         self._etz_lbl_estado.pack(anchor="w", padx=8, pady=(2, 4))
 
         # ── STATUS BAR inferior ────────────────────────────────────────────────
-        status_bar = tk.Frame(f, bg="#161B22", height=20)
+        status_bar = tk.Frame(f, bg="#101316", height=20)
         status_bar.pack(fill="x", side="bottom")
         status_bar.pack_propagate(False)
         self._etz_lbl_coords = tk.Label(status_bar, text="x:— y:—",
-                                         bg="#161B22", fg=TXT_DIM,
+                                         bg="#101316", fg=TXT_DIM,
                                          font=("Segoe UI", 7))
         self._etz_lbl_coords.pack(side="left", padx=8)
         self._etz_lbl_tipo_activo = tk.Label(status_bar, text="",
-                                              bg="#161B22", fg="#3FB950",
+                                              bg="#101316", fg="#6EC69A",
                                               font=("Segoe UI", 7, "bold"))
         self._etz_lbl_tipo_activo.pack(side="left", padx=16)
         tk.Label(status_bar,
                  text="Dibuja: clic+arrastre  ·  Mover: Ctrl+arrastre  ·  Eliminar: clic der",
-                 bg="#161B22", fg=TXT_DIM, font=("Segoe UI", 7)).pack(side="right", padx=8)
+                 bg="#101316", fg=TXT_DIM, font=("Segoe UI", 7)).pack(side="right", padx=8)
 
         # Inicializar
         self._etz_sel_tipo("articulo")
@@ -6224,7 +6298,7 @@ class BashkarApp(tk.Tk):
         # Status bar
         if hasattr(self, "_etz_lbl_tipo_activo"):
             label = TIPOS_ZONA.get(tipo, {}).get("label", tipo)
-            color = TIPOS_ZONA.get(tipo, {}).get("color", "#888")
+            color = TIPOS_ZONA.get(tipo, {}).get("color", "#777F84")
             self._etz_lbl_tipo_activo.config(
                 text=f"● {label}", fg=color)
 
@@ -6258,7 +6332,7 @@ class BashkarApp(tk.Tk):
             x0p, y0p, x1p, y1p = self._etz_zona_canvas_coords(i)
             lx, rx = min(x0p, x1p), max(x0p, x1p)
             ty, by = min(y0p, y1p), max(y0p, y1p)
-            color  = TIPOS_ZONA.get(z.tipo, {}).get("color", "#888888")
+            color  = TIPOS_ZONA.get(z.tipo, {}).get("color", "#777F84")
             label  = TIPOS_ZONA.get(z.tipo, {}).get("label", z.tipo)
             manual = z.confianza >= 1.0
             activa = (i == idx_sel)
@@ -6300,7 +6374,7 @@ class BashkarApp(tk.Tk):
                 bx, by_ = rx - 12, ty + 12
                 cid_oc = self._etz_canvas.create_oval(
                     bx - 9, by_ - 9, bx + 9, by_ + 9,
-                    fill="#1F6FEB", outline="white", width=1)
+                    fill="#6CA8E8", outline="white", width=1)
                 cid_on = self._etz_canvas.create_text(
                     bx, by_, text=str(z.orden),
                     font=("Segoe UI", 8, "bold"), fill="white")
@@ -6320,7 +6394,7 @@ class BashkarApp(tk.Tk):
                 for hx, hy in puntos_handle:
                     h_bg = self._etz_canvas.create_rectangle(
                         hx - R, hy - R, hx + R, hy + R,
-                        fill="#1E293B", outline=color, width=1
+                        fill="#1C2227", outline=color, width=1
                     )
                     h_sq = self._etz_canvas.create_rectangle(
                         hx - R + 2, hy - R + 2, hx + R - 2, hy + R - 2,
@@ -6342,7 +6416,7 @@ class BashkarApp(tk.Tk):
             cid_link = self._etz_canvas.create_line(
                 (x0p + x1p) / 2, (y0p + y1p) / 2,
                 (fx0 + fx1) / 2, (fy0 + fy1) / 2,
-                fill="#FF8800", width=2, dash=(4, 3), arrow="last")
+                fill="#E6A64C", width=2, dash=(4, 3), arrow="last")
             self._etz_canvas_ids.append(cid_link)
 
     def _etz_cargar_imagen_pagina(self, numero: str, pagina: str):
@@ -6378,7 +6452,7 @@ class BashkarApp(tk.Tk):
                         text=f"PDF no encontrado para '{numero}'.\n"
                              "Asegurate de tener el PDF en la carpeta\n"
                              "de entrada y de haberlo seleccionado.",
-                        fill="#94A3B8", font=("Segoe UI", 9),
+                        fill="#B5B6B3", font=("Segoe UI", 9),
                         anchor="nw")
                     return
 
@@ -6481,7 +6555,7 @@ class BashkarApp(tk.Tk):
 
         var_id    = tk.StringVar(value="tipo_nuevo")
         var_label = tk.StringVar(value="Mi tipo")
-        var_color = tk.StringVar(value="#FF6B35")
+        var_color = tk.StringVar(value="#D58B45")
         var_ocr   = tk.BooleanVar(value=True)
 
         _fila("ID interno:", var_id, 0)
@@ -6858,11 +6932,11 @@ class BashkarApp(tk.Tk):
                     f"Configura la API key de {prov} en Configuración.")
                 return
             btn_run.config(state="disabled")
-            lbl_estado.config(text="⏳ Describiendo…", fg="#F59E0B")
+            lbl_estado.config(text="⏳ Describiendo…", fg="#E6A64C")
 
             def cb(n, t, pag, desc):
                 self.after(0, lambda: lbl_estado.config(
-                    text=f"⏳ {n}/{t}: {pag} — {desc[:40]}…", fg="#F59E0B"))
+                    text=f"⏳ {n}/{t}: {pag} — {desc[:40]}…", fg="#E6A64C"))
 
             def _worker():
                 db = Path(ST.ruta_db) if ST.ruta_db else None
@@ -6949,7 +7023,7 @@ class BashkarApp(tk.Tk):
         cat   = resultado["categoria"]
         eta   = resultado["etiqueta"]
         conf  = resultado["confianza"]
-        color = resultado.get("color", "#888")
+        color = resultado.get("color", "#777F84")
         metodo = resultado.get("metodo", "?")
 
         self._etz_lbl_train.config(text=f"🔤 {eta[:30]} ({conf:.0%})")
@@ -6988,7 +7062,7 @@ class BashkarApp(tk.Tk):
                 bar_frm = tk.Frame(row, bg=CARD_BOR, width=160, height=10)
                 bar_frm.pack(side="left", padx=4)
                 bar_frm.pack_propagate(False)
-                tk.Frame(bar_frm, bg=COLORES.get(c, "#888"),
+                tk.Frame(bar_frm, bg=COLORES.get(c, "#777F84"),
                          width=int(pct * 160), height=10).pack(side="left")
                 tk.Label(row, text=f"{pct:.0%}", bg=CONTENT_BG, fg=TXT_SEC,
                          font=("Segoe UI", 7)).pack(side="left", padx=2)
@@ -7033,8 +7107,8 @@ class BashkarApp(tk.Tk):
             zc.create_image(0, 0, anchor="nw", image=self._etz_zoom_img_tk)
             # Cruz central
             mx, my = nw // 2, nh // 2
-            zc.create_line(mx - 8, my, mx + 8, my, fill="#F85149", width=1)
-            zc.create_line(mx, my - 8, mx, my + 8, fill="#F85149", width=1)
+            zc.create_line(mx - 8, my, mx + 8, my, fill="#D96B6B", width=1)
+            zc.create_line(mx, my - 8, mx, my + 8, fill="#D96B6B", width=1)
         except Exception:
             pass
 
@@ -7047,12 +7121,12 @@ class BashkarApp(tk.Tk):
         self._etz_thumb_dots = {}
 
         for pag in pags:
-            frm = tk.Frame(self._etz_pages_inner, bg="#161B22",
+            frm = tk.Frame(self._etz_pages_inner, bg="#101316",
                            cursor="hand2", pady=2)
             frm.pack(fill="x", padx=4, pady=1)
 
             # Número de página
-            lbl = tk.Label(frm, text=pag, bg="#161B22", fg=TXT_SEC,
+            lbl = tk.Label(frm, text=pag, bg="#101316", fg=TXT_SEC,
                            font=("Segoe UI", 7), anchor="w")
             lbl.pack(fill="x", padx=4)
 
@@ -7060,7 +7134,7 @@ class BashkarApp(tk.Tk):
             # Se pinta apagado y se corrige después desde un hilo: leer el JSON
             # de zonas de CADA página aquí significaba una lectura de disco por
             # página (decenas, y sobre Google Drive), con la ventana congelada.
-            dot = tk.Label(frm, text="●", bg="#161B22", fg=TXT_DIM,
+            dot = tk.Label(frm, text="●", bg="#101316", fg=TXT_DIM,
                            font=("Segoe UI", 7))
             dot.pack(side="right", padx=4)
             self._etz_thumb_dots[pag] = dot
@@ -7072,8 +7146,8 @@ class BashkarApp(tk.Tk):
                 self._etz_on_pagina()
             for w in (frm, lbl, dot):
                 w.bind("<Button-1>", lambda e, fn=_goto: fn())
-                w.bind("<Enter>",    lambda e, f=frm: f.config(bg="#1C2128"))
-                w.bind("<Leave>",    lambda e, f=frm: f.config(bg="#161B22"))
+                w.bind("<Enter>",    lambda e, f=frm: f.config(bg="#171C20"))
+                w.bind("<Leave>",    lambda e, f=frm: f.config(bg="#101316"))
 
             self._etz_thumb_btns[pag] = frm
 
@@ -7115,16 +7189,16 @@ class BashkarApp(tk.Tk):
             dot = getattr(self, "_etz_thumb_dots", {}).get(pag)
             try:
                 if dot is not None and dot.winfo_exists():
-                    dot.config(fg="#3FB950")
+                    dot.config(fg="#6EC69A")
             except tk.TclError:
                 pass                    # la miniatura ya se destruyó
 
     def _etz_resaltar_miniatura(self, pag: str):
         """Resalta la miniatura de la página activa."""
         for p, frm in self._etz_thumb_btns.items():
-            frm.config(bg="#1F6FEB" if p == pag else "#161B22")
+            frm.config(bg="#6CA8E8" if p == pag else "#101316")
             for child in frm.winfo_children():
-                child.config(bg="#1F6FEB" if p == pag else "#161B22")
+                child.config(bg="#6CA8E8" if p == pag else "#101316")
 
     # ── Carga de texto OCR en el Text Pane ────────────────────────────────────
     def _etz_cargar_texto_ocr(self, numero: str, pagina: str):
@@ -7414,7 +7488,7 @@ class BashkarApp(tk.Tk):
             return
         from core.zone_labeler import TIPOS_ZONA
         x0, y0 = self._etz_rect_ini
-        color = TIPOS_ZONA.get(self._etz_tipo.get(), {}).get("color", "#888")
+        color = TIPOS_ZONA.get(self._etz_tipo.get(), {}).get("color", "#777F84")
         label = TIPOS_ZONA.get(self._etz_tipo.get(), {}).get("label", "")
         if self._etz_rect_tmp:
             self._etz_canvas.delete(self._etz_rect_tmp)
@@ -7702,14 +7776,14 @@ class BashkarApp(tk.Tk):
             return
 
         zonas = list(self._etz_zonas)
-        self._etz_lbl_train.config(text="⏳ OCR por zonas…", fg="#F59E0B")
+        self._etz_lbl_train.config(text="⏳ OCR por zonas…", fg="#E6A64C")
 
         def _worker():
             try:
                 from core.layout_tesseract import ocr_por_zonas
                 def _cb(m):
                     self.after(0, lambda m=m: self._etz_lbl_train.config(
-                        text=m[:80], fg="#F59E0B"))
+                        text=m[:80], fg="#E6A64C"))
                 res = ocr_por_zonas(img_path, zonas, callback=_cb)
                 err = ""
             except Exception as e:
@@ -7718,7 +7792,7 @@ class BashkarApp(tk.Tk):
             def _mostrar():
                 if err or res is None:
                     self._etz_lbl_train.config(
-                        text=f"⚠ Error OCR zonas: {err[:60]}", fg="#EF4444")
+                        text=f"⚠ Error OCR zonas: {err[:60]}", fg="#D96B6B")
                     return
                 from core.zone_labeler import TIPOS_ZONA as _TZ
                 self._etz_txt_ocr.delete("1.0", "end")
@@ -7733,7 +7807,7 @@ class BashkarApp(tk.Tk):
                 self._etz_lbl_train.config(
                     text=f"✅ OCR zonal: {len(res['zonas'])} zonas, "
                          f"{n_pal} palabras, conf {res['confianza']:.0f}",
-                    fg="#22C55E")
+                    fg="#6EC69A")
                 self.toast(f"OCR por zonas: {n_pal} palabras", tipo="ok")
             self.after(0, _mostrar)
 
@@ -7818,9 +7892,9 @@ class BashkarApp(tk.Tk):
         tipos = list(stats.get("tipos", {}).keys())
         self._etz_lbl_train.config(
             text=f"🧠 Modelo: {n} pág · {len(tipos)} tipos aprendidos",
-            fg="#3FB950"
+            fg="#6EC69A"
         )
-        self._btn_etz_predecir.config(bg="#6E40C9")
+        self._btn_etz_predecir.config(bg="#B18AD6")
 
     def _etz_predecir_numero(self):
         """Aplica la plantilla aprendida a todas las páginas sin etiquetar del número."""
@@ -7870,7 +7944,7 @@ class BashkarApp(tk.Tk):
         alto  = self._etz_img_orig.height if self._etz_img_orig else 1400
 
         self._etz_lbl_train.config(
-            text=f"🔮 Prediciendo {len(sin_etiquetar)} páginas…", fg="#F59E0B")
+            text=f"🔮 Prediciendo {len(sin_etiquetar)} páginas…", fg="#E6A64C")
         self.update_idletasks()
 
         def _run():
@@ -7883,7 +7957,7 @@ class BashkarApp(tk.Tk):
             def _after():
                 self._etz_lbl_train.config(
                     text=f"✅ {n} páginas predichas · {len(ya_etiquetadas)} manuales",
-                    fg="#3FB950")
+                    fg="#6EC69A")
                 self._etz_actualizar_estado()
                 # Recargar la página actual si era una de las predichas
                 pagina_actual = self._etz_pagina.get()
@@ -7925,22 +7999,22 @@ class BashkarApp(tk.Tk):
             # Ya hay modelo — mostrar estado del modelo
             self._etz_lbl_train.config(
                 text=f"🧠 Modelo activo · {n_man} pág · {sin} pendientes",
-                fg="#3FB950")
-            self._btn_etz_predecir.config(bg="#6E40C9")
+                fg="#6EC69A")
+            self._btn_etz_predecir.config(bg="#B18AD6")
         elif n_man >= 2:
             # Hay páginas para entrenar pero no se ha entrenado todavía
             self._etz_lbl_train.config(
                 text=f"✅ {n_man} páginas · listo para predecir",
-                fg="#059669")
-            self._btn_etz_predecir.config(bg="#6E40C9")
+                fg="#6EC69A")
+            self._btn_etz_predecir.config(bg="#B18AD6")
             # Entrenar automáticamente
             self._etz_entrenar_detector(numero)
         else:
             falta = 2 - n_man
             self._etz_lbl_train.config(
                 text=f"Etiqueta {falta} página(s) más para activar predicción",
-                fg="#94A3B8")
-            self._btn_etz_predecir.config(bg="#444C56")
+                fg="#B5B6B3")
+            self._btn_etz_predecir.config(bg="#22292F")
 
     def _etz_get_img_path(self, numero: str, pagina: str):
         """
@@ -8023,7 +8097,7 @@ class BashkarApp(tk.Tk):
             # Análisis de layout local (Tesseract + OpenCV) — en thread,
             # tarda varios segundos por página
             self._etz_lbl_train.config(
-                text="⏳ Analizando layout (Tesseract local)…", fg="#F59E0B")
+                text="⏳ Analizando layout (Tesseract local)…", fg="#E6A64C")
 
             def _worker_layout():
                 try:
@@ -8036,11 +8110,11 @@ class BashkarApp(tk.Tk):
                 def _aplicar():
                     if err:
                         self._etz_lbl_train.config(
-                            text=f"⚠ Error: {err[:70]}", fg="#EF4444")
+                            text=f"⚠ Error: {err[:70]}", fg="#D96B6B")
                         return
                     if not zonas_t:
                         self._etz_lbl_train.config(
-                            text="⚠ No se detectaron zonas.", fg="#EF4444")
+                            text="⚠ No se detectaron zonas.", fg="#D96B6B")
                         return
                     self._etz_zonas = zonas_t
                     # Recargar la imagen: el deskew automático pudo corregirla
@@ -8050,7 +8124,7 @@ class BashkarApp(tk.Tk):
                     self._etz_lbl_train.config(
                         text=f"✅ {len(zonas_t)} zonas detectadas (tesseract). "
                              "Revisa y guarda.",
-                        fg="#22C55E")
+                        fg="#6EC69A")
                 self.after(0, _aplicar)
 
             threading.Thread(target=_worker_layout, daemon=True).start()
@@ -8065,10 +8139,10 @@ class BashkarApp(tk.Tk):
                     self._etz_instalar_motor()
                 return
             self._etz_lbl_train.config(
-                text=f"⏳ Analizando con {modo.upper()}…", fg="#F59E0B")
+                text=f"⏳ Analizando con {modo.upper()}…", fg="#E6A64C")
             self.update_idletasks()
 
-            def _log(m): self._etz_lbl_train.config(text=m[:80], fg="#F59E0B")
+            def _log(m): self._etz_lbl_train.config(text=m[:80], fg="#E6A64C")
             zonas_raw = detectar_layout(img_path, motor=modo, callback=_log)
             # Convertir dicts a objetos Zona
             from core.zone_labeler import TIPOS_ZONA, Zona
@@ -8088,20 +8162,20 @@ class BashkarApp(tk.Tk):
                     f"Configura la API key de {prov} en la pestaña Configuración.")
                 return
             self._etz_lbl_train.config(
-                text=f"⏳ Consultando {prov}/{modelo}…", fg="#F59E0B")
+                text=f"⏳ Consultando {prov}/{modelo}…", fg="#E6A64C")
             self.update_idletasks()
             from core.zone_labeler import detectar_zonas_vision
             zonas = detectar_zonas_vision(img_path, proveedor=prov,
                                           api_key=api_key, modelo=modelo,
                                           prompt_custom=ST.prompt_deteccion)
         else:
-            self._etz_lbl_train.config(text="⏳ Analizando con OpenCV…", fg="#F59E0B")
+            self._etz_lbl_train.config(text="⏳ Analizando con OpenCV…", fg="#E6A64C")
             self.update_idletasks()
             from core.zone_labeler import detectar_zonas_opencv
             zonas = detectar_zonas_opencv(img_path)
 
         if not zonas:
-            self._etz_lbl_train.config(text="⚠ No se detectaron zonas.", fg="#EF4444")
+            self._etz_lbl_train.config(text="⚠ No se detectaron zonas.", fg="#D96B6B")
             return
 
         self._etz_zonas = zonas
@@ -8109,7 +8183,7 @@ class BashkarApp(tk.Tk):
         self._etz_redibujar_zonas()
         self._etz_lbl_train.config(
             text=f"✅ {len(zonas)} zonas detectadas ({modo}). Revisa y guarda.",
-            fg="#22C55E"
+            fg="#6EC69A"
         )
 
     def _etz_detectar_numero(self):
@@ -8148,7 +8222,7 @@ class BashkarApp(tk.Tk):
         ):
             return
 
-        self._etz_lbl_train.config(text=f"⏳ Detectando 0/{n_total}…", fg="#F59E0B")
+        self._etz_lbl_train.config(text=f"⏳ Detectando 0/{n_total}…", fg="#E6A64C")
 
         def _worker():
             from core.zone_labeler import (
@@ -8201,13 +8275,13 @@ class BashkarApp(tk.Tk):
 
                 self.after(0, lambda i=i, ok=ok: self._etz_lbl_train.config(
                     text=f"⏳ Detectando {i+1}/{n_total} ({ok} con zonas)…",
-                    fg="#F59E0B"
+                    fg="#E6A64C"
                 ))
 
             self.after(0, lambda: (
                 self._etz_lbl_train.config(
                     text=f"✅ {ok}/{n_total} páginas con zonas detectadas.",
-                    fg="#22C55E"
+                    fg="#6EC69A"
                 ),
                 self._etz_actualizar_estado(),
             ))
@@ -8228,15 +8302,15 @@ class BashkarApp(tk.Tk):
         if ok:
             messagebox.showinfo("Ya instalado", f"El motor '{modo}' ya está disponible.")
             return
-        self._etz_lbl_train.config(text=f"⬇ Instalando {modo}…", fg="#F59E0B")
+        self._etz_lbl_train.config(text=f"⬇ Instalando {modo}…", fg="#E6A64C")
         def _run():
             def cb(m): self.after(0, lambda: self._etz_lbl_train.config(
-                text=m[:80], fg="#F59E0B"))
+                text=m[:80], fg="#E6A64C"))
             exito = instalar_motor(modo, callback=cb)
             msg = f"✅ {modo} instalado. Reinicia la app." if exito \
                   else f"⚠ Error instalando {modo}. Revisa la conexión."
             self.after(0, lambda: (
-                self._etz_lbl_train.config(text=msg, fg="#22C55E" if exito else "#EF4444"),
+                self._etz_lbl_train.config(text=msg, fg="#6EC69A" if exito else "#D96B6B"),
                 messagebox.showinfo("Instalación", msg),
             ))
         threading.Thread(target=_run, daemon=True).start()
@@ -8274,18 +8348,18 @@ class BashkarApp(tk.Tk):
         hdr = tk.Frame(win, bg=CONTENT_BG)
         hdr.pack(fill="x", padx=12, pady=(10, 0))
         tk.Label(hdr, text="Corrección de inclinación",
-                 bg=CONTENT_BG, fg="#CDD6F4",
+                 bg=CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 10, "bold")).pack(side="left")
         lbl_angulo = tk.Label(hdr,
                               text=f"Ángulo detectado: {angulo_detectado:+.2f}°",
-                              bg=CONTENT_BG, fg="#F59E0B" if abs(angulo_detectado) > 0.3 else "#22C55E",
+                              bg=CONTENT_BG, fg="#E6A64C" if abs(angulo_detectado) > 0.3 else "#6EC69A",
                               font=("Segoe UI", 9))
         lbl_angulo.pack(side="left", padx=12)
 
         # Canvas de previsualización
-        canvas_frame = tk.Frame(win, bg="#1E293B", relief="sunken", bd=1)
+        canvas_frame = tk.Frame(win, bg="#1C2227", relief="sunken", bd=1)
         canvas_frame.pack(fill="both", expand=True, padx=12, pady=8)
-        prev_canvas = tk.Canvas(canvas_frame, bg="#1E293B", highlightthickness=0)
+        prev_canvas = tk.Canvas(canvas_frame, bg="#1C2227", highlightthickness=0)
         prev_canvas.pack(fill="both", expand=True)
 
         # Estado interno de la ventana
@@ -8323,22 +8397,22 @@ class BashkarApp(tk.Tk):
             _state["angulo"].set(a)
             lbl_angulo.config(
                 text=f"Ángulo: {a:+.2f}°",
-                fg="#F59E0B" if abs(a) > 0.3 else "#22C55E")
+                fg="#E6A64C" if abs(a) > 0.3 else "#6EC69A")
             _render_preview(a)
 
         # Panel de controles
         ctrl = tk.Frame(win, bg=CONTENT_BG)
         ctrl.pack(fill="x", padx=12, pady=(0, 4))
 
-        tk.Label(ctrl, text="Ajuste fino:", bg=CONTENT_BG, fg="#CDD6F4",
+        tk.Label(ctrl, text="Ajuste fino:", bg=CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
 
         slider = tk.Scale(ctrl, from_=-15.0, to=15.0, resolution=0.1,
                           orient="horizontal", length=400,
                           variable=_state["angulo"],
                           command=_on_slider,
-                          bg=CONTENT_BG, fg="#CDD6F4",
-                          highlightthickness=0, troughcolor="#E2E8F0",
+                          bg=CONTENT_BG, fg="#E8E5DF",
+                          highlightthickness=0, troughcolor="#E8E5DF",
                           font=("Segoe UI", 7))
         slider.pack(side="left", padx=(6, 12))
 
@@ -8349,11 +8423,11 @@ class BashkarApp(tk.Tk):
 
         tk.Button(ctrl, text="↺ Restablecer detectado",
                   command=_reset,
-                  font=("Segoe UI", 8), bg="#1C2128").pack(side="left", padx=4)
+                  font=("Segoe UI", 8), bg="#171C20").pack(side="left", padx=4)
 
         tk.Button(ctrl, text="0° (sin corrección)",
                   command=lambda: (_state["angulo"].set(0), slider.set(0), _on_slider(0)),
-                  font=("Segoe UI", 8), bg="#1C2128").pack(side="left", padx=4)
+                  font=("Segoe UI", 8), bg="#171C20").pack(side="left", padx=4)
 
         # Botones finales
         btn_frame = tk.Frame(win, bg=CONTENT_BG)
@@ -8395,11 +8469,11 @@ class BashkarApp(tk.Tk):
 
         tk.Button(btn_frame, text="Cancelar",
                   command=win.destroy,
-                  font=("Segoe UI", 8), bg="#1C2128").pack(side="right", padx=(4, 0))
+                  font=("Segoe UI", 8), bg="#171C20").pack(side="right", padx=(4, 0))
         tk.Button(btn_frame, text="✅ Aplicar y guardar",
                   command=_aplicar,
                   font=("Segoe UI", 9, "bold"),
-                  bg="#1D4ED8", fg="white").pack(side="right")
+                  bg="#6CA8E8", fg="white").pack(side="right")
 
         # Renderizar preview inicial tras que el canvas tenga tamaño real
         win.update_idletasks()
@@ -8455,18 +8529,18 @@ class BashkarApp(tk.Tk):
             self._etz_lbl_train.config(
                 text="✅ Prompt personalizado guardado." if ST.prompt_deteccion
                      else "✅ Usando prompt generado automáticamente.",
-                fg="#22C55E")
+                fg="#6EC69A")
 
         tk.Button(btn_frame, text="↺ Restaurar por defecto",
                   command=_restaurar,
-                  font=("Segoe UI", 8), bg="#1C2128").pack(side="left")
+                  font=("Segoe UI", 8), bg="#171C20").pack(side="left")
         tk.Button(btn_frame, text="Cancelar",
                   command=win.destroy,
-                  font=("Segoe UI", 8), bg="#1C2128").pack(side="right", padx=(4, 0))
+                  font=("Segoe UI", 8), bg="#171C20").pack(side="right", padx=(4, 0))
         tk.Button(btn_frame, text="💾 Guardar",
                   command=_guardar,
                   font=("Segoe UI", 9, "bold"),
-                  bg="#3B82F6", fg="white").pack(side="right")
+                  bg="#6CA8E8", fg="white").pack(side="right")
 
     def _etz_abrir_pdf_directo(self):
         """Carga un PDF directamente en el etiquetador sin pasar por Configuración."""
@@ -8580,7 +8654,7 @@ class BashkarApp(tk.Tk):
             self._etz_canvas.delete("all")
             self._etz_canvas.create_text(
                 150, 100, text=f"Error cargando imagen:\n{error}",
-                fill="#94A3B8", font=("Segoe UI", 9), anchor="nw")
+                fill="#B5B6B3", font=("Segoe UI", 9), anchor="nw")
             return
         try:
             self._etz_escala   = escala
@@ -8594,7 +8668,7 @@ class BashkarApp(tk.Tk):
             self._etz_canvas.delete("all")
             self._etz_canvas.create_text(
                 150, 100, text=f"Error cargando imagen:\n{ex}",
-                fill="#94A3B8", font=("Segoe UI", 9), anchor="nw")
+                fill="#B5B6B3", font=("Segoe UI", 9), anchor="nw")
 
     def _etz_refrescar_numeros(self):
         """Llamado cuando el corpus cambia para actualizar el combobox."""
@@ -8665,12 +8739,12 @@ class BashkarApp(tk.Tk):
         self._lbl_norm_estado.pack(side="right", padx=8)
 
         # ── Selector de versión para el pipeline ──────────────────────────────
-        vbar = tk.Frame(f, bg="#0D1117", pady=6)
+        vbar = tk.Frame(f, bg="#0E1114", pady=6)
         vbar.pack(fill="x", padx=24, pady=(0, 4))
 
         tk.Label(vbar,
                  text="Versión que pasa al análisis:",
-                 bg="#0D1117", fg=TXT_SEC,
+                 bg="#0E1114", fg=TXT_SEC,
                  font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 12))
 
         self._norm_var_version = tk.StringVar(
@@ -8699,10 +8773,10 @@ class BashkarApp(tk.Tk):
                                   value=val,
                                   command=self._norm_version_cambio)
             rb.pack(side="left", padx=(0, 4))
-            self._mk_ayuda_bg(vbar, ayuda, bg="#0D1117")
+            self._mk_ayuda_bg(vbar, ayuda, bg="#0E1114")
 
         self._norm_lbl_version_info = tk.Label(
-            vbar, text="", bg="#0D1117", fg=TXT_DIM,
+            vbar, text="", bg="#0E1114", fg=TXT_DIM,
             font=("Segoe UI", 8, "italic"))
         self._norm_lbl_version_info.pack(side="right", padx=8)
 
@@ -8713,7 +8787,7 @@ class BashkarApp(tk.Tk):
             "recorre las palabras de baja confianza del OCR de esta página,\n"
             "muestra el recorte ampliado y sugerencias, y aplica la\n"
             "corrección elegida al texto manual del bloque actual.",
-            bg="#0D1117")
+            bg="#0E1114")
 
         # ── Selector de bloque (listbox de bloques de la página) ─────────────
         mid = tk.Frame(f, bg=CONTENT_BG)
@@ -8728,7 +8802,7 @@ class BashkarApp(tk.Tk):
                  font=("Segoe UI", 9, "bold")).pack(pady=(8, 4), padx=8, anchor="w")
 
         self._norm_lb = tk.Listbox(izq, bg=CARD_BG, fg=TXT_SEC, selectbackground=AB_SEL,
-                                    selectforeground="#FFFFFF", relief="flat",
+                                    selectforeground="#E8E5DF", relief="flat",
                                     font=("Segoe UI", 9), activestyle="none",
                                     exportselection=False)
         sb_lb = ttk.Scrollbar(izq, orient="vertical", command=self._norm_lb.yview)
@@ -8796,7 +8870,7 @@ class BashkarApp(tk.Tk):
                             relief="solid", bd=1)
         v2.pack(side="left", fill="both", expand=True)
         self._norm_txt_ocr = scrolledtext.ScrolledText(
-            v2, bg="#0D1117", fg="#8B949E", insertbackground="#CDD6F4",
+            v2, bg="#0E1114", fg="#777F84", insertbackground="#E8E5DF",
             font=("Courier New", 9), relief="flat", wrap="word", state="disabled")
         self._norm_txt_ocr.pack(fill="both", expand=True, padx=6, pady=6)
 
@@ -8823,7 +8897,7 @@ class BashkarApp(tk.Tk):
         self._dictar_session = None   # DictadoSession activa o None
 
         self._norm_txt_usuario = scrolledtext.ScrolledText(
-            v3, bg="#1C2128", fg="#CDD6F4", insertbackground="#CDD6F4",
+            v3, bg="#171C20", fg="#E8E5DF", insertbackground="#E8E5DF",
             font=("Courier New", 9), relief="flat", wrap="word")
         self._norm_txt_usuario.pack(fill="both", expand=True, padx=6, pady=6)
 
@@ -8833,7 +8907,7 @@ class BashkarApp(tk.Tk):
                             relief="solid", bd=1)
         v4.pack(side="left", fill="both", expand=True)
         self._norm_txt_ia = scrolledtext.ScrolledText(
-            v4, bg="#1C2128", fg="#CDD6F4", insertbackground="#CDD6F4",
+            v4, bg="#171C20", fg="#E8E5DF", insertbackground="#E8E5DF",
             font=("Courier New", 9), relief="flat", wrap="word")
         self._norm_txt_ia.pack(fill="both", expand=True, padx=6, pady=6)
 
@@ -8960,7 +9034,7 @@ class BashkarApp(tk.Tk):
         """
         self._norm_canvas_img.delete("all")
         self._norm_canvas_img.create_text(
-            150, 90, text="Cargando imagen…", fill="#484F58",
+            150, 90, text="Cargando imagen…", fill="#646D72",
             font=("Segoe UI", 9), anchor="center")
 
         # Token: si el usuario cambia de página antes de que termine el render,
@@ -9062,14 +9136,14 @@ class BashkarApp(tk.Tk):
         if error is not None:
             self._norm_canvas_img.create_text(
                 150, 90, text=f"Error: {error}",
-                fill="#F85149", font=("Segoe UI", 8), anchor="center")
+                fill="#D96B6B", font=("Segoe UI", 8), anchor="center")
             return
 
         if img_pil is None:
             self._norm_canvas_img.create_text(
                 150, 90,
                 text="Sin imagen\n(configura la carpeta de entrada en Configuración)",
-                fill="#484F58", font=("Segoe UI", 9), anchor="center")
+                fill="#646D72", font=("Segoe UI", 9), anchor="center")
             return
 
         try:
@@ -9094,7 +9168,7 @@ class BashkarApp(tk.Tk):
         except Exception as e:
             self._norm_canvas_img.create_text(
                 150, 90, text=f"Error: {e}",
-                fill="#F85149", font=("Segoe UI", 8), anchor="center")
+                fill="#D96B6B", font=("Segoe UI", 8), anchor="center")
 
     def _norm_guardar_bloque_actual(self):
         """Guarda el estado del bloque actualmente en pantalla."""
@@ -9168,10 +9242,10 @@ class BashkarApp(tk.Tk):
         cuerpo.pack(fill="both", expand=True, padx=16, pady=(0, 12))
         self._verif_cuerpo = cuerpo
 
-        img_frame = tk.Frame(cuerpo, bg="#0D1117", relief="solid", bd=1, height=180)
+        img_frame = tk.Frame(cuerpo, bg="#0E1114", relief="solid", bd=1, height=180)
         img_frame.pack(fill="x", pady=(0, 10))
         img_frame.pack_propagate(False)
-        self._verif_lbl_img = tk.Label(img_frame, bg="#0D1117")
+        self._verif_lbl_img = tk.Label(img_frame, bg="#0E1114")
         self._verif_lbl_img.pack(expand=True)
 
         fila_txt = tk.Frame(cuerpo, bg=CONTENT_BG)
@@ -9180,14 +9254,14 @@ class BashkarApp(tk.Tk):
                  font=("Segoe UI", 9, "bold")).pack(side="left")
         self._verif_var_texto = tk.StringVar()
         entry = tk.Entry(fila_txt, textvariable=self._verif_var_texto,
-                          font=("Consolas", 11), bg="#0D1117", fg="#CDD6F4",
-                          insertbackground="#CDD6F4", relief="solid", bd=1)
+                          font=("Consolas", 11), bg="#0E1114", fg="#E8E5DF",
+                          insertbackground="#E8E5DF", relief="solid", bd=1)
         entry.pack(side="left", fill="x", expand=True, padx=(8, 0))
         self._verif_entry = entry
 
         tk.Label(cuerpo, text="Sugerencias (doble clic para usar):",
                  bg=CONTENT_BG, fg=TXT_DIM, font=("Segoe UI", 8)).pack(anchor="w")
-        self._verif_lb_sug = tk.Listbox(cuerpo, height=4, bg="#0D1117", fg="#CDD6F4",
+        self._verif_lb_sug = tk.Listbox(cuerpo, height=4, bg="#0E1114", fg="#E8E5DF",
                                          relief="solid", bd=1, font=("Segoe UI", 9))
         self._verif_lb_sug.pack(fill="x", pady=(2, 10))
         self._verif_lb_sug.bind("<Double-Button-1>", lambda e: self._verif_usar_sugerencia())
@@ -9256,7 +9330,7 @@ class BashkarApp(tk.Tk):
 
         self._verif_lbl_info.pack_forget()
         if tipo == "error":
-            tk.Label(win, text=f"Error: {payload}", bg=CONTENT_BG, fg="#F85149",
+            tk.Label(win, text=f"Error: {payload}", bg=CONTENT_BG, fg="#D96B6B",
                      font=("Segoe UI", 9)).pack(pady=20)
             return
 
@@ -9423,7 +9497,7 @@ class BashkarApp(tk.Tk):
                 "Ejecuta primero la extracción OCR con Ruta 1.")
             return
 
-        self._lbl_norm_estado.config(text=f"⏳ Re-OCR Tesseract: {pagina}…", fg="#F59E0B")
+        self._lbl_norm_estado.config(text=f"⏳ Re-OCR Tesseract: {pagina}…", fg="#E6A64C")
         self.update_idletasks()
 
         def _run():
@@ -9481,7 +9555,7 @@ class BashkarApp(tk.Tk):
             return
 
         img_dir = Path(ST.out_dir) / "02_imagenes" / num
-        self._lbl_norm_estado.config(text="⏳ Regenerando imágenes…", fg="#F59E0B")
+        self._lbl_norm_estado.config(text="⏳ Regenerando imágenes…", fg="#E6A64C")
 
         def _run():
             try:
@@ -9517,7 +9591,7 @@ class BashkarApp(tk.Tk):
             "¿Continuar?"):
             return
 
-        self._lbl_norm_estado.config(text="⏳ Re-OCR Tesseract en curso…", fg="#F59E0B")
+        self._lbl_norm_estado.config(text="⏳ Re-OCR Tesseract en curso…", fg="#E6A64C")
 
         def _run():
             from core.layout_tesseract import ocr_pagina_con_zonas
@@ -9546,7 +9620,7 @@ class BashkarApp(tk.Tk):
 
                 n = i + 1
                 self.after(0, lambda n=n, total=total: self._lbl_norm_estado.config(
-                    text=f"⏳ Re-OCR {n}/{total}…", fg="#F59E0B"))
+                    text=f"⏳ Re-OCR {n}/{total}…", fg="#E6A64C"))
 
             self.after(0, lambda: (
                 self._norm_cargar_numero(),
@@ -9734,7 +9808,7 @@ class BashkarApp(tk.Tk):
                     f"Guardado en:\n{cache_path}"))
             except Exception as ex:
                 self.after(0, lambda err=str(ex): self._lbl_norm_estado.config(
-                    text=f"❌ Error: {err}", fg="#F85149"))
+                    text=f"❌ Error: {err}", fg="#D96B6B"))
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -9794,7 +9868,7 @@ class BashkarApp(tk.Tk):
         # Indicador visual del último fragmento reconocido
         preview = texto.strip()[:40] + ("…" if len(texto.strip()) > 40 else "")
         self._lbl_dictar_estado.config(
-            text=f"🔴 Escuchando · '{preview}'", fg="#F85149")
+            text=f"🔴 Escuchando · '{preview}'", fg="#D96B6B")
 
     def _norm_dictar_poll(self):
         """Polling de mensajes de estado del hilo de dictado (cada 200 ms)."""
@@ -9803,7 +9877,7 @@ class BashkarApp(tk.Tk):
         estado = self._dictar_session.estado()
         if estado:
             if estado == "escuchando":
-                self._lbl_dictar_estado.config(text="🔴 Escuchando…", fg="#F85149")
+                self._lbl_dictar_estado.config(text="🔴 Escuchando…", fg="#D96B6B")
             elif estado == "detenido":
                 self._btn_dictar.config(text="🎙 Dictar")
                 self._lbl_dictar_estado.config(text="", fg=TXT_DIM)
@@ -9812,7 +9886,7 @@ class BashkarApp(tk.Tk):
             elif estado.startswith("error:"):
                 msg = estado[6:]
                 self._btn_dictar.config(text="🎙 Dictar")
-                self._lbl_dictar_estado.config(text=f"⚠ {msg}", fg="#F59E0B")
+                self._lbl_dictar_estado.config(text=f"⚠ {msg}", fg="#E6A64C")
                 self._dictar_session = None
                 return
         # Continuar polling mientras la sesión esté activa
@@ -10034,9 +10108,9 @@ class BashkarApp(tk.Tk):
             self._tv_seg.heading(col, text=col, anchor="w",
                                   command=lambda c=col: self._sort_tv_seg(c))
             self._tv_seg.column(col, width=anchos[col], minwidth=50, stretch=False)
-        self._tv_seg.tag_configure("alta",    background="#1A3A2A", foreground="#3FB950")
-        self._tv_seg.tag_configure("media",   background="#2D2210", foreground="#F0883E")
-        self._tv_seg.tag_configure("anonimo", background="#1C2128", foreground="#8B949E")
+        self._tv_seg.tag_configure("alta",    background="#15251F", foreground="#6EC69A")
+        self._tv_seg.tag_configure("media",   background="#2A2116", foreground="#D58B45")
+        self._tv_seg.tag_configure("anonimo", background="#171C20", foreground="#777F84")
         sb_y.config(command=self._tv_seg.yview)
         sb_x.config(command=self._tv_seg.xview)
         sb_y.pack(side="right", fill="y")
@@ -10046,18 +10120,21 @@ class BashkarApp(tk.Tk):
         self._tv_seg_sort_rev = {c: False for c in cols}
 
         ley_f = tk.Frame(pad, bg=CONTENT_BG); ley_f.pack(anchor="w", pady=(4, 0))
-        for bg_, fg_, txt in [("#F0FDF4","#166534","  ✓ Autoría identificada  "),
-                               ("#FFFBEB","#92400E","  ≈ Confianza media  "),
-                               ("#F8FAFC","#64748B","  — Anónimo  ")]:
+        # Pastillas de estado: fondo tintado oscuro + texto del color de la
+        # señal. Antes eran chips claros con texto oscuro, herencia del tema
+        # claro original, y desentonaban con el resto de la interfaz.
+        for bg_, fg_, txt in [(READY_BG, VERDE,     "  ✓ Autoría identificada  "),
+                               (WARN_BG,  ACENT,    "  ≈ Confianza media  "),
+                               (CARD_BG,  TXT_DIM,  "  — Anónimo  ")]:
             tk.Label(ley_f, text=txt, bg=bg_, fg=fg_,
                      font=("Segoe UI",8), relief="solid", bd=1).pack(side="left", padx=3)
 
         det_outer = tk.Frame(pad, bg=CARD_BOR, relief="solid", bd=1)
         det_outer.pack(fill="x", pady=(10,0))
-        det_hdr = tk.Frame(det_outer, bg="#1C2128"); det_hdr.pack(fill="x")
+        det_hdr = tk.Frame(det_outer, bg="#171C20"); det_hdr.pack(fill="x")
         tk.Label(det_hdr, text="  📄  Texto del artículo seleccionado",
-                 bg="#1C2128", fg=TXT_PRI, font=("Segoe UI",8,"bold")).pack(side="left", pady=4)
-        self._txt_seg_art = scrolledtext.ScrolledText(det_outer, height=6, font=("Consolas",9), bg="#0D1117", fg="#CDD6F4", relief="flat", state="disabled", wrap="word")
+                 bg="#171C20", fg=TXT_PRI, font=("Segoe UI",8,"bold")).pack(side="left", pady=4)
+        self._txt_seg_art = scrolledtext.ScrolledText(det_outer, height=6, font=("Consolas",9), bg="#0E1114", fg="#E8E5DF", relief="flat", state="disabled", wrap="word")
         self._txt_seg_art.pack(fill="x", padx=1, pady=(0,1))
 
 
@@ -10187,23 +10264,23 @@ class BashkarApp(tk.Tk):
                    command=lambda: self._bitacora_nueva_nota("anal")).pack(side="right")
 
         self._lbl_fase_a = tk.Label(pad, text="Esperando…",
-                                     bg=CONTENT_BG, fg="#8B949E",
+                                     bg=CONTENT_BG, fg="#777F84",
                                      font=("Segoe UI",9,"italic"))
         self._lbl_fase_a.pack(anchor="w")
         self._prog_a = ttk.Progressbar(pad, mode="determinate", length=600)
         self._prog_a.pack(fill="x", pady=(6,4))
-        self._lbl_pct_a = tk.Label(pad, text="", bg=CONTENT_BG, fg="#8B949E",
+        self._lbl_pct_a = tk.Label(pad, text="", bg=CONTENT_BG, fg="#777F84",
                                     font=("Courier",8))
         self._lbl_pct_a.pack(anchor="w")
 
-        log_frame = tk.Frame(pad, bg="#0F1B2D", bd=1, relief="solid")
+        log_frame = tk.Frame(pad, bg="#12171B", bd=1, relief="solid")
         log_frame.pack(fill="both", expand=True, pady=(12,0))
-        log_hdr = tk.Frame(log_frame, bg="#1A2F4A"); log_hdr.pack(fill="x")
-        tk.Label(log_hdr, text="  📋  Registro", bg="#1A2F4A", fg="#94A3B8",
+        log_hdr = tk.Frame(log_frame, bg="#14202A"); log_hdr.pack(fill="x")
+        tk.Label(log_hdr, text="  📋  Registro", bg="#14202A", fg="#B5B6B3",
                  font=("Segoe UI",8,"bold")).pack(side="left", pady=4)
         self._log_a = scrolledtext.ScrolledText(log_frame, height=14,
-                                                 font=("Consolas",9), bg="#0F1B2D",
-                                                 fg="#86EFAC", relief="flat",
+                                                 font=("Consolas",9), bg="#12171B",
+                                                 fg="#6EC69A", relief="flat",
                                                  insertbackground="white")
         self._log_a.pack(fill="both", expand=True, padx=1, pady=(0,1))
         self._log_a.config(state="disabled")
@@ -10220,20 +10297,20 @@ class BashkarApp(tk.Tk):
             p2.pack(fill="x")
             # N-gramas
             row_ng = tk.Frame(p2, bg=CARD_BG); row_ng.pack(anchor="w", pady=3)
-            tk.Label(row_ng, text="N-gramas máx.:", bg=CARD_BG, fg="#CDD6F4",
+            tk.Label(row_ng, text="N-gramas máx.:", bg=CARD_BG, fg="#E8E5DF",
                      font=("Segoe UI",9,"bold"), width=16, anchor="w").pack(side="left")
             tk.Spinbox(row_ng, from_=1, to=4, textvariable=self._var_nt,
                        width=4, font=("Segoe UI",10), relief="solid", bd=1).pack(side="left", padx=6)
             tk.Label(row_ng, text="(1=unigramas, 2=bigramas, etc.)", bg=CARD_BG,
-                     fg="#6E7681", font=("Segoe UI",8)).pack(side="left", padx=4)
+                     fg="#646D72", font=("Segoe UI",8)).pack(side="left", padx=4)
             # Frecuencia mínima
             row_mf = tk.Frame(p2, bg=CARD_BG); row_mf.pack(anchor="w", pady=3)
-            tk.Label(row_mf, text="Frec. mínima:", bg=CARD_BG, fg="#CDD6F4",
+            tk.Label(row_mf, text="Frec. mínima:", bg=CARD_BG, fg="#E8E5DF",
                      font=("Segoe UI",9,"bold"), width=16, anchor="w").pack(side="left")
             tk.Spinbox(row_mf, from_=1, to=20, textvariable=self._var_mf,
                        width=4, font=("Segoe UI",10), relief="solid", bd=1).pack(side="left", padx=6)
             tk.Label(row_mf, text="apariciones mínimas para incluir en vocabulario", bg=CARD_BG,
-                     fg="#6E7681", font=("Segoe UI",8)).pack(side="left", padx=4)
+                     fg="#646D72", font=("Segoe UI",8)).pack(side="left", padx=4)
             # Word2Vec
             row_wv = tk.Frame(p2, bg=CARD_BG); row_wv.pack(anchor="w", pady=3)
             ttk.Checkbutton(row_wv, text="🧠  Entrenar Word2Vec (expansión semántica automática de campos)",
@@ -10243,7 +10320,7 @@ class BashkarApp(tk.Tk):
             exp_inner = tk.Frame(frame, bg=CARD_BG, padx=16, pady=10)
             exp_inner.pack(fill="x")
             exp_ctrl = tk.Frame(exp_inner, bg=CARD_BG); exp_ctrl.pack(anchor="w")
-            tk.Label(exp_ctrl, text="Campo:", bg=CARD_BG, fg="#CDD6F4",
+            tk.Label(exp_ctrl, text="Campo:", bg=CARD_BG, fg="#E8E5DF",
                      font=("Segoe UI",9,"bold")).pack(side="left")
             campo_cmb = ttk.Combobox(exp_ctrl, textvariable=self._var_campo_exp,
                                       values=list(CAMPOS_DEFAULT.keys()),
@@ -10253,7 +10330,7 @@ class BashkarApp(tk.Tk):
                        command=self._explorar_expansion).pack(side="left")
             self._txt_exp_res = scrolledtext.ScrolledText(
                 exp_inner, height=4, font=("Consolas",9),
-                bg="#0D1117", fg="#CDD6F4", relief="solid", bd=1, state="disabled")
+                bg="#0E1114", fg="#E8E5DF", relief="solid", bd=1, state="disabled")
             self._txt_exp_res.pack(fill="x", pady=(8,0))
 
         self._mk_avanzado(pad, "⚙  Parámetros del análisis", _build_anal_params)
@@ -10572,13 +10649,13 @@ class BashkarApp(tk.Tk):
             return
 
         self._imgd_btn_run.config(state="disabled")
-        self._imgd_lbl_estado.config(text="⏳ Describiendo…", fg="#F59E0B")
+        self._imgd_lbl_estado.config(text="⏳ Describiendo…", fg="#E6A64C")
 
         from core.image_captioner import describir_numero
 
         def cb(n, t, pag, desc):
             self.after(0, lambda: self._imgd_lbl_estado.config(
-                text=f"⏳ {n}/{t}: {pag} — {desc[:45]}…", fg="#F59E0B"))
+                text=f"⏳ {n}/{t}: {pag} — {desc[:45]}…", fg="#E6A64C"))
 
         def _run():
             db = Path(ST.ruta_db) if ST.ruta_db else None
@@ -10647,7 +10724,7 @@ class BashkarApp(tk.Tk):
                                            ("ele","📷 Imágenes"),
                                            ("diag","📐 Diagrama")]):
             btn = tk.Label(top, text=f"  {label}  ", bg=CARD_BOR if i > 0 else AZ3,
-                           fg="white" if i == 0 else "#64748B",
+                           fg="white" if i == 0 else "#646D72",
                            font=("Segoe UI",9,"bold"), cursor="hand2",
                            padx=10, pady=6, relief="flat")
             btn.pack(side="left", padx=(0,2))
@@ -10691,7 +10768,7 @@ class BashkarApp(tk.Tk):
             if t == tid:
                 btn.config(bg=AZ3, fg="white")
             else:
-                btn.config(bg=CARD_BOR, fg="#8B949E")
+                btn.config(bg=CARD_BOR, fg="#777F84")
 
     def _build_vis_tip(self):
         pad = self._tab_vis_tip
@@ -10710,9 +10787,9 @@ class BashkarApp(tk.Tk):
         sbv.pack(side="right", fill="y"); sbh.pack(side="bottom", fill="x")
         self._tv_tip.pack(fill="both", expand=True)
         # detalle de fuentes al hacer clic
-        det_f = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1); tk.Label(det_f, text="  Detalle de fuentes del número seleccionado", bg="#1C2128", fg=TXT_PRI, font=("Segoe UI",8,"bold")).pack(fill="x")
+        det_f = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1); tk.Label(det_f, text="  Detalle de fuentes del número seleccionado", bg="#171C20", fg=TXT_PRI, font=("Segoe UI",8,"bold")).pack(fill="x")
         det_f.pack(fill="x", padx=8, pady=(0,6))
-        self._txt_tip_det = scrolledtext.ScrolledText(det_f, height=5, font=("Courier",9), bg="#0D1117", fg="#CDD6F4", relief="flat", state="disabled")
+        self._txt_tip_det = scrolledtext.ScrolledText(det_f, height=5, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", relief="flat", state="disabled")
         self._txt_tip_det.pack(fill="x")
         self._tv_tip.bind("<<TreeviewSelect>>", self._on_tip_select)
 
@@ -10733,13 +10810,13 @@ class BashkarApp(tk.Tk):
         sbv.pack(side="right", fill="y"); sbh.pack(side="bottom", fill="x")
         self._tv_ele.pack(fill="both", expand=True)
         # Etiquetas de color por tipo
-        self._tv_ele.tag_configure("foto",        background="#0D2137", foreground="#58A6FF")
-        self._tv_ele.tag_configure("ilustracion", background="#0D2318", foreground="#3FB950")
-        self._tv_ele.tag_configure("publicidad",  background="#2D1A00", foreground="#F0883E")
-        self._tv_ele.tag_configure("mixto",       background="#1A1030", foreground="#BC8CFF")
+        self._tv_ele.tag_configure("foto",        background="#14202A", foreground="#6CA8E8")
+        self._tv_ele.tag_configure("ilustracion", background="#15251F", foreground="#6EC69A")
+        self._tv_ele.tag_configure("publicidad",  background="#2A2116", foreground="#D58B45")
+        self._tv_ele.tag_configure("mixto",       background="#221C2E", foreground="#B18AD6")
         # Contador
         cnt_f = tk.Frame(pad, bg=CONTENT_BG); cnt_f.pack(anchor="w", padx=8, pady=(0,4))
-        self._lbl_ele_cnt = ttk.Label(cnt_f, text="", foreground="#8B949E", font=("Segoe UI",9))
+        self._lbl_ele_cnt = ttk.Label(cnt_f, text="", foreground="#777F84", font=("Segoe UI",9))
         self._lbl_ele_cnt.pack(side="left")
         ttk.Button(cnt_f, text="📥 Exportar CSV", style="S.TButton",
                    command=self._exportar_csv_imagenes).pack(side="left", padx=12)
@@ -10923,13 +11000,13 @@ class BashkarApp(tk.Tk):
         url_inner.pack(fill="x")
         url_inner.columnconfigure(1, weight=1)
 
-        tk.Label(url_inner, text="URL del catálogo:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(url_inner, text="URL del catálogo:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=0,column=0,sticky="w",pady=4)
         self._var_meta_url = tk.StringVar()
         url_row = tk.Frame(url_inner, bg=CARD_BG)
         url_row.grid(row=0, column=1, columnspan=2, sticky="ew", padx=8)
         tk.Entry(url_row, textvariable=self._var_meta_url, width=60,
-                 font=("Segoe UI",9), relief="solid", bd=1, bg="#1C2128").pack(
+                 font=("Segoe UI",9), relief="solid", bd=1, bg="#171C20").pack(
                  side="left", fill="x", expand=True)
         ttk.Button(url_row, text="Extraer metadatos →", style="P.TButton",
                    command=self._extraer_meta).pack(side="left", padx=(8,0))
@@ -10938,18 +11015,18 @@ class BashkarApp(tk.Tk):
 
         tk.Label(url_inner,
                  text="Compatible con BNCO · Archive.org · Europeana · BNE · HathiTrust",
-                 bg=CARD_BG, fg="#6E7681", font=("Segoe UI",8)).grid(
+                 bg=CARD_BG, fg="#646D72", font=("Segoe UI",8)).grid(
                  row=1, column=0, columnspan=3, sticky="w", pady=(0,4))
 
         # Resultado
         res_f = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1)
         res_f.pack(fill="both", expand=True)
-        res_hdr = tk.Frame(res_f, bg="#1C2128"); res_hdr.pack(fill="x")
+        res_hdr = tk.Frame(res_f, bg="#171C20"); res_hdr.pack(fill="x")
         tk.Label(res_hdr, text="  📋  Metadatos extraídos",
-                 bg="#1C2128", fg=TXT_PRI, font=("Segoe UI",8,"bold")).pack(
+                 bg="#171C20", fg=TXT_PRI, font=("Segoe UI",8,"bold")).pack(
                  side="left", pady=4)
         self._txt_meta = scrolledtext.ScrolledText(res_f, height=22, font=("Consolas",10),
-                                                    bg="#1C2128", fg="#CDD6F4",
+                                                    bg="#171C20", fg="#E8E5DF",
                                                     relief="flat", state="disabled")
         self._txt_meta.pack(fill="both", expand=True, padx=1, pady=(0,1))
 
@@ -11057,7 +11134,7 @@ class BashkarApp(tk.Tk):
                                          ("cam","📊 Campos semánticos")]):
             btn = tk.Label(top, text=f"  {label}  ",
                            bg=AZ3 if i==0 else CARD_BOR,
-                           fg="white" if i==0 else "#64748B",
+                           fg="white" if i==0 else "#646D72",
                            font=("Segoe UI",9,"bold"), cursor="hand2",
                            padx=10, pady=6)
             btn.pack(side="left", padx=(0,2))
@@ -11096,18 +11173,18 @@ class BashkarApp(tk.Tk):
         self._comp_frames[tid].pack(fill="both", expand=True)
         for t, btn in self._comp_tabs_btns.items():
             btn.config(bg=AZ3 if t==tid else CARD_BOR,
-                       fg="white" if t==tid else "#64748B")
+                       fg="white" if t==tid else "#646D72")
 
     def _build_comp_sim(self):
         pad = self._tab_c_sim
         tk.Label(pad,text="Matriz de similaridad coseno (TF-IDF)",bg=CONTENT_BG,fg=TXT_PRI,font=("Segoe UI",10,"bold")).pack(anchor="w",padx=8,pady=6)
-        self._txt_sim = scrolledtext.ScrolledText(pad, height=12, font=("Consolas",9), bg=CARD_BG, fg="#CDD6F4", relief="flat")
+        self._txt_sim = scrolledtext.ScrolledText(pad, height=12, font=("Consolas",9), bg=CARD_BG, fg="#E8E5DF", relief="flat")
         self._txt_sim.pack(fill="both",expand=True,padx=8,pady=4)
 
     def _build_comp_dist(self):
         pad = self._tab_c_dist
         tk.Label(pad,text="Palabras más distintivas de la publicación analizada",bg=CONTENT_BG,fg=TXT_PRI,font=("Segoe UI",10,"bold")).pack(anchor="w",padx=8,pady=6)
-        self._txt_dist = scrolledtext.ScrolledText(pad, height=14, font=("Consolas",9), bg=CARD_BG, fg="#CDD6F4", relief="flat")
+        self._txt_dist = scrolledtext.ScrolledText(pad, height=14, font=("Consolas",9), bg=CARD_BG, fg="#E8E5DF", relief="flat")
         self._txt_dist.pack(fill="both",expand=True,padx=8,pady=4)
 
     def _build_comp_cam(self):
@@ -11185,11 +11262,11 @@ class BashkarApp(tk.Tk):
         lv = tk.Label(box, text=val, bg=bg, fg=TXT_PRI,
                       font=("Segoe UI",18,"bold"))
         lv.pack(expand=True)
-        tk.Label(box, text=label, bg=bg, fg="#8B949E",
+        tk.Label(box, text=label, bg=bg, fg="#777F84",
                  font=("Segoe UI",8)).pack(pady=(0,6))
         return lv
 
-    def _log(self, msg, color="#9DC3E6"):
+    def _log(self, msg, color="#6CA8E8"):
         cur    = getattr(self, "_current_page", "ocr")
         target = self._log_a if cur == "anal" else self._log_w
         target.config(state="normal")
@@ -11367,7 +11444,7 @@ class BashkarApp(tk.Tk):
                 chk = subprocess.run([_python_kraken(), "-c", "import kraken"],
                                      capture_output=True, timeout=10)
                 if chk.returncode == 0:
-                    self._lbl_kraken_ok.config(text="⚠ Sin modelo — descarga CATMuS-Print", fg="#D97706")
+                    self._lbl_kraken_ok.config(text="⚠ Sin modelo — descarga CATMuS-Print", fg="#E6A64C")
                 else:
                     self._lbl_kraken_ok.config(text="✗ Kraken no instalado en venv", fg=ROJO)
         except Exception as e:
@@ -11386,13 +11463,13 @@ class BashkarApp(tk.Tk):
 
     def _ocr_descargar_catmus(self):
         """Descarga el modelo CATMuS-Print Large en un thread."""
-        self._lbl_kraken_ok.config(text="⏳ Descargando (~300 MB)…", fg="#8B949E")
+        self._lbl_kraken_ok.config(text="⏳ Descargando (~300 MB)…", fg="#777F84")
 
         def _worker():
             try:
                 from core.ocr_kraken import descargar_modelo_catmus
                 def cb(msg):
-                    self.after(0, lambda m=msg: self._lbl_kraken_ok.config(text=m, fg="#8B949E"))
+                    self.after(0, lambda m=msg: self._lbl_kraken_ok.config(text=m, fg="#777F84"))
                 ruta = descargar_modelo_catmus(callback=cb)
                 self.after(0, lambda r=ruta: (
                     self._var_kraken_modelo.set(r),
@@ -11455,7 +11532,7 @@ class BashkarApp(tk.Tk):
         paginas = self._ocr_contar_paginas_corpus()
         if paginas == 0:
             self._lbl_kraken_est.config(
-                text="— (carga un proyecto para estimar)", fg="#8B949E")
+                text="— (carga un proyecto para estimar)", fg="#777F84")
             return
         seg_total = (paginas * self._KRAKEN_SEG_PAG) / workers
         horas  = int(seg_total // 3600)
@@ -11464,7 +11541,7 @@ class BashkarApp(tk.Tk):
             tiempo_txt = f"~{horas}h {minutos:02d}min"
         else:
             tiempo_txt = f"~{minutos} min"
-        color = "#22C55E" if seg_total < 3600 else ("#F59E0B" if seg_total < 7200 else "#EF4444")
+        color = "#6EC69A" if seg_total < 3600 else ("#E6A64C" if seg_total < 7200 else "#D96B6B")
         self._lbl_kraken_est.config(
             text=f"{tiempo_txt}  ({paginas} páginas, {workers} proceso{'s' if workers>1 else ''})",
             fg=color)
@@ -11489,7 +11566,7 @@ class BashkarApp(tk.Tk):
                 "No hay imágenes generadas.\nProcesa primero al menos 1 página con Ruta 1.")
             return
 
-        self._lbl_kraken_est.config(text="⏳ Calibrando (1 página)…", fg="#F59E0B")
+        self._lbl_kraken_est.config(text="⏳ Calibrando (1 página)…", fg="#E6A64C")
         self.update_idletasks()
 
         def _worker():
@@ -11505,11 +11582,11 @@ class BashkarApp(tk.Tk):
                 BashkarApp._KRAKEN_SEG_PAG = round(seg, 1)
                 self.after(0, lambda: self._lbl_kraken_est.config(
                     text=f"✅ Calibrado: {seg:.0f} seg/página — recalculando…",
-                    fg="#22C55E"))
+                    fg="#6EC69A"))
                 self.after(200, self._ocr_actualizar_estimacion)
             except Exception as e:
                 self.after(0, lambda err=str(e): self._lbl_kraken_est.config(
-                    text=f"✗ Error calibrando: {err}", fg="#EF4444"))
+                    text=f"✗ Error calibrando: {err}", fg="#D96B6B"))
 
         threading.Thread(target=_worker, daemon=True).start()
 
@@ -11530,7 +11607,7 @@ class BashkarApp(tk.Tk):
                             text=f"✅ {len(ms)} modelo(s)", fg=VERDE)
                     else:
                         self._lbl_ollama_ok.config(
-                            text="⚠ Ollama sin modelos de visión", fg="#D97706")
+                            text="⚠ Ollama sin modelos de visión", fg="#E6A64C")
                 self.after(0, _update)
             except Exception as e:
                 self.after(0, lambda err=e: self._lbl_ollama_ok.config(
@@ -13271,7 +13348,7 @@ class BashkarApp(tk.Tk):
         filt_f = tk.Frame(izq, bg=CARD_BG, relief="solid", bd=1)
         filt_f.pack(fill="x", pady=(0, 6))
         fi = tk.Frame(filt_f, bg=CARD_BG, padx=10, pady=6); fi.pack(fill="x")
-        tk.Label(fi, text="Categoría:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(fi, text="Categoría:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold")).pack(side="left")
         _cats = ["Todas", "personas", "lugares", "organizaciones",
                  "fechas", "obras_publicaciones", "eventos_historicos"]
@@ -13280,7 +13357,7 @@ class BashkarApp(tk.Tk):
                                           state="readonly", width=22, font=("Segoe UI", 9))
         self._cmb_ner_cat.pack(side="left", padx=8)
         self._cmb_ner_cat.bind("<<ComboboxSelected>>", lambda e: self._ner_refrescar_tv())
-        tk.Label(fi, text="Buscar:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(fi, text="Buscar:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold")).pack(side="left", padx=(12, 0))
         self._var_ner_buscar = tk.StringVar()
         self._var_ner_buscar.trace_add("write", lambda *_: self._ner_refrescar_tv())
@@ -13313,22 +13390,22 @@ class BashkarApp(tk.Tk):
         der.pack_propagate(False)
         det_card = tk.Frame(der, bg=CARD_BG, relief="solid", bd=1)
         det_card.pack(fill="both", expand=True)
-        det_hdr = tk.Frame(det_card, bg="#1C2128"); det_hdr.pack(fill="x")
-        tk.Label(det_hdr, text="  📋  Detalle", bg="#1C2128", fg=TXT_PRI,
+        det_hdr = tk.Frame(det_card, bg="#171C20"); det_hdr.pack(fill="x")
+        tk.Label(det_hdr, text="  📋  Detalle", bg="#171C20", fg=TXT_PRI,
                  font=("Segoe UI", 8, "bold")).pack(side="left", pady=4)
         self._txt_ner_det = scrolledtext.ScrolledText(det_card, font=("Consolas", 9),
-                                                       bg="#1C2128", fg="#CDD6F4",
+                                                       bg="#171C20", fg="#E8E5DF",
                                                        relief="flat", state="disabled")
         self._txt_ner_det.pack(fill="both", expand=True, padx=1, pady=(0, 1))
 
         # Log
-        log_f = tk.Frame(pad, bg="#0F1B2D", bd=1, relief="solid")
+        log_f = tk.Frame(pad, bg="#12171B", bd=1, relief="solid")
         log_f.pack(fill="x", pady=(8, 0))
-        log_hdr = tk.Frame(log_f, bg="#1A2F4A"); log_hdr.pack(fill="x")
-        tk.Label(log_hdr, text="  📋  Registro NER", bg="#1A2F4A", fg="#94A3B8",
+        log_hdr = tk.Frame(log_f, bg="#14202A"); log_hdr.pack(fill="x")
+        tk.Label(log_hdr, text="  📋  Registro NER", bg="#14202A", fg="#B5B6B3",
                  font=("Segoe UI", 8, "bold")).pack(side="left", pady=4)
         self._log_ner = scrolledtext.ScrolledText(log_f, height=5, font=("Consolas", 9),
-                                                   bg="#0F1B2D", fg="#86EFAC",
+                                                   bg="#12171B", fg="#6EC69A",
                                                    relief="flat", state="disabled")
         self._log_ner.pack(fill="x", padx=1, pady=(0, 1))
 
@@ -13543,11 +13620,16 @@ class BashkarApp(tk.Tk):
             wiki_cell = wiki_lbl if wiki_lbl else ""
             self._tv_ner.insert("", "end", values=(ent, cat, n, wiki_cell),
                                  tags=(cat,), iid=f"{cat}|{ent}")
-        paleta = {"personas": "#DBEAFE", "lugares": "#D1FAE5",
-                  "organizaciones": "#FEF3C7", "fechas": "#FCE7F3",
-                  "obras_publicaciones": "#EDE9FE", "eventos_historicos": "#FEE2E2"}
-        for cat, color in paleta.items():
-            self._tv_ner.tag_configure(cat, background=color, foreground="#0D1117")
+        # Cada categoría con su fondo tintado y su texto en el mismo tono: en
+        # una interfaz oscura, el chip claro con texto negro deslumbra.
+        paleta = {"personas":            (INFO_BG,  AZ_INFO),
+                  "lugares":             (READY_BG, VERDE),
+                  "organizaciones":      (WARN_BG,  ACENT),
+                  "fechas":              (TEAL_BG,  TEAL),
+                  "obras_publicaciones": (PURP_BG,  PURPURA),
+                  "eventos_historicos":  (ERR_BG,   ROJO)}
+        for cat, (fondo, tinta) in paleta.items():
+            self._tv_ner.tag_configure(cat, background=fondo, foreground=tinta)
 
     def _ner_abrir_wikidata(self, event=None):
         """Doble click en la tabla NER: abre el enlace Wikidata en el browser."""
@@ -13645,7 +13727,7 @@ class BashkarApp(tk.Tk):
         tk.Label(win, text="Enlazando entidades con Wikidata",
                  font=("Segoe UI", 11, "bold"), pady=12).pack()
         tk.Label(win, text=f"{total} entidades · puede tardar varios minutos",
-                 font=("Segoe UI", 9), fg="#8B949E").pack()
+                 font=("Segoe UI", 9), fg="#777F84").pack()
         var_prog = tk.StringVar(value="0 / 0")
         lbl_prog = tk.Label(win, textvariable=var_prog, font=("Consolas", 9), pady=6)
         lbl_prog.pack()
@@ -13726,18 +13808,18 @@ class BashkarApp(tk.Tk):
         # ── Card: Construir índice ────────────────────────────────────────────
         card_idx = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1)
         card_idx.pack(fill="x", pady=(0, 12))
-        hdr_idx = tk.Frame(card_idx, bg="#1C2128"); hdr_idx.pack(fill="x")
-        tk.Label(hdr_idx, text="  📦  Índice vectorial", bg="#1C2128", fg=TXT_PRI,
+        hdr_idx = tk.Frame(card_idx, bg="#171C20"); hdr_idx.pack(fill="x")
+        tk.Label(hdr_idx, text="  📦  Índice vectorial", bg="#171C20", fg=TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(side="left", pady=4)
-        self._lbl_bsem_estado = tk.Label(hdr_idx, text="Sin índice", bg="#1C2128",
-                                          fg="#EF4444", font=("Segoe UI", 8))
+        self._lbl_bsem_estado = tk.Label(hdr_idx, text="Sin índice", bg="#171C20",
+                                          fg="#D96B6B", font=("Segoe UI", 8))
         self._lbl_bsem_estado.pack(side="right", padx=10)
 
         body_idx = tk.Frame(card_idx, bg=CARD_BG, padx=12, pady=8)
         body_idx.pack(fill="x")
         tk.Label(body_idx,
                  text="Genera embeddings de todos los artículos del corpus y construye el índice FAISS.",
-                 bg=CARD_BG, fg="#CDD6F4", font=("Segoe UI", 9), wraplength=580, justify="left"
+                 bg=CARD_BG, fg="#E8E5DF", font=("Segoe UI", 9), wraplength=580, justify="left"
                  ).pack(anchor="w", pady=(0, 6))
         bf_idx = tk.Frame(body_idx, bg=CARD_BG); bf_idx.pack(fill="x")
         self._btn_bsem_construir = ttk.Button(bf_idx, text="▶  Construir índice",
@@ -13755,14 +13837,14 @@ class BashkarApp(tk.Tk):
         # ── Card: Consulta ────────────────────────────────────────────────────
         card_q = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1)
         card_q.pack(fill="x", pady=(0, 12))
-        hdr_q = tk.Frame(card_q, bg="#1C2128"); hdr_q.pack(fill="x")
-        tk.Label(hdr_q, text="  🔎  Consulta", bg="#1C2128", fg=TXT_PRI,
+        hdr_q = tk.Frame(card_q, bg="#171C20"); hdr_q.pack(fill="x")
+        tk.Label(hdr_q, text="  🔎  Consulta", bg="#171C20", fg=TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(side="left", pady=4)
 
         body_q = tk.Frame(card_q, bg=CARD_BG, padx=12, pady=8)
         body_q.pack(fill="x")
         row_q = tk.Frame(body_q, bg=CARD_BG); row_q.pack(fill="x")
-        tk.Label(row_q, text="Consulta:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(row_q, text="Consulta:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold"), width=9).pack(side="left")
         self._var_bsem_q = tk.StringVar()
         self._ent_bsem_q = tk.Entry(row_q, textvariable=self._var_bsem_q,
@@ -13770,7 +13852,7 @@ class BashkarApp(tk.Tk):
         self._ent_bsem_q.pack(side="left", fill="x", expand=True, padx=(6, 8))
         self._ent_bsem_q.bind("<Return>", lambda e: self._bsem_buscar())
 
-        tk.Label(row_q, text="K:", bg=CARD_BG, fg="#CDD6F4",
+        tk.Label(row_q, text="K:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold")).pack(side="left")
         self._var_bsem_k = tk.IntVar(value=10)
         ttk.Spinbox(row_q, from_=1, to=50, textvariable=self._var_bsem_k,
@@ -13809,14 +13891,14 @@ class BashkarApp(tk.Tk):
         self._bsem_resultados_raw = []  # lista de dicts con datos completos
 
         # Log
-        log_bsem = tk.Frame(pad, bg="#0F1B2D", bd=1, relief="solid")
+        log_bsem = tk.Frame(pad, bg="#12171B", bd=1, relief="solid")
         log_bsem.pack(fill="x", pady=(8, 0))
-        log_hdr = tk.Frame(log_bsem, bg="#1A2F4A"); log_hdr.pack(fill="x")
-        tk.Label(log_hdr, text="  📋  Registro", bg="#1A2F4A", fg="#94A3B8",
+        log_hdr = tk.Frame(log_bsem, bg="#14202A"); log_hdr.pack(fill="x")
+        tk.Label(log_hdr, text="  📋  Registro", bg="#14202A", fg="#B5B6B3",
                  font=("Segoe UI", 8, "bold")).pack(side="left", pady=4)
         self._log_bsem = scrolledtext.ScrolledText(log_bsem, height=4,
                                                     font=("Consolas", 8),
-                                                    bg="#0F1B2D", fg="#86EFAC",
+                                                    bg="#12171B", fg="#6EC69A",
                                                     relief="flat", state="disabled")
         self._log_bsem.pack(fill="x", padx=1, pady=(0, 1))
 
@@ -13853,13 +13935,13 @@ class BashkarApp(tk.Tk):
         win.configure(bg=CONTENT_BG)
 
         tk.Label(win, text="Síntesis de la búsqueda", bg=CONTENT_BG,
-                 fg="#CDD6F4", font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=16, pady=(12, 4))
-        lbl_res = tk.Label(win, text=resumen, bg=CONTENT_BG, fg="#94A3B8",
+                 fg="#E8E5DF", font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=16, pady=(12, 4))
+        lbl_res = tk.Label(win, text=resumen, bg=CONTENT_BG, fg="#B5B6B3",
                            font=("Segoe UI", 9), wraplength=740, justify="left")
         lbl_res.pack(anchor="w", padx=16, pady=(0, 10))
 
         txt = scrolledtext.ScrolledText(win, font=("Consolas", 9),
-                                         bg="#1E1E2E", fg="#CDD6F4",
+                                         bg="#171C20", fg="#E8E5DF",
                                          relief="flat", padx=10, pady=8)
         txt.pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
@@ -13875,7 +13957,7 @@ class BashkarApp(tk.Tk):
                 txt.insert("end", f"  Fragmento: «{e['fragmento_relevante'][:120]}»\n")
             txt.insert("end", "\n")
 
-        txt.tag_configure("titulo", foreground="#3B82F6", font=("Consolas", 9, "bold"))
+        txt.tag_configure("titulo", foreground="#6CA8E8", font=("Consolas", 9, "bold"))
         txt.config(state="disabled")
 
     def _bsem_log(self, msg: str):
@@ -14153,7 +14235,7 @@ class BashkarApp(tk.Tk):
         self._var_coloc_kw = tk.StringVar()
         tk.Entry(bf, textvariable=self._var_coloc_kw, width=20,
                  font=("Segoe UI", 10), relief="solid", bd=1,
-                 bg="#0D1B2A", fg="#CDD6F4").pack(side="left", padx=(0, 8))
+                 bg="#12171B", fg="#E8E5DF").pack(side="left", padx=(0, 8))
         tk.Label(bf, text="Ventana:", bg=CONTENT_BG, fg=GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_coloc_vent = tk.IntVar(value=5)
@@ -14199,7 +14281,7 @@ class BashkarApp(tk.Tk):
         self._var_kwic_kw = tk.StringVar()
         tk.Entry(bk, textvariable=self._var_kwic_kw, width=22,
                  font=("Segoe UI", 10), relief="solid", bd=1,
-                 bg="#0D1B2A", fg="#CDD6F4").pack(side="left", padx=(0, 8))
+                 bg="#12171B", fg="#E8E5DF").pack(side="left", padx=(0, 8))
         ttk.Button(bk, text="▶  Buscar concordancias", style="P.TButton",
                    command=self._coloc_kwic).pack(side="left")
         ttk.Button(bk, text="💾 Exportar CSV", style="S.TButton",
@@ -14207,10 +14289,10 @@ class BashkarApp(tk.Tk):
         self._kwic_resultados: list[dict] = []
 
         self._txt_kwic = scrolledtext.ScrolledText(pad_kwic, font=("Consolas", 9),
-                                                    bg="#0D1B2A", fg="#CDD6F4",
+                                                    bg="#12171B", fg="#E8E5DF",
                                                     height=20, relief="flat")
         self._txt_kwic.pack(fill="both", expand=True)
-        self._txt_kwic.tag_configure("kw", foreground="#F59E0B", font=("Consolas", 9, "bold"))
+        self._txt_kwic.tag_configure("kw", foreground="#E6A64C", font=("Consolas", 9, "bold"))
 
         # ── Sub-pestaña: Frecuencias ──
         frm_freq = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_freq, text="  Frecuencias  ")
@@ -14287,7 +14369,7 @@ class BashkarApp(tk.Tk):
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 6))
         self._var_disp_words = tk.StringVar()
         tk.Entry(bdisp, textvariable=self._var_disp_words, width=40,
-                 font=("Segoe UI", 9), bg="#0D1B2A", fg="#CDD6F4",
+                 font=("Segoe UI", 9), bg="#12171B", fg="#E8E5DF",
                  relief="solid", bd=1).pack(side="left", padx=(0, 8))
         ttk.Button(bdisp, text="▶  Graficar", style="P.TButton",
                    command=self._coloc_dispersion).pack(side="left")
@@ -14305,7 +14387,7 @@ class BashkarApp(tk.Tk):
                       "(una por línea, se suman a la lista base en español):",
                  bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 4))
         self._txt_stopwords = scrolledtext.ScrolledText(
-            pad_sw, height=10, bg="#1C2128", fg=TXT_PRI,
+            pad_sw, height=10, bg="#171C20", fg=TXT_PRI,
             insertbackground=TXT_PRI, font=("Courier New", 9),
             relief="solid", bd=1, wrap="word")
         self._txt_stopwords.pack(fill="both", expand=True)
@@ -14380,17 +14462,17 @@ class BashkarApp(tk.Tk):
         win = tk.Toplevel(self)
         win.title("Red léxica")
         win.geometry("700x560")
-        win.configure(bg="#1E1E2E")
+        win.configure(bg="#171C20")
 
         fig, ax = plt.subplots(figsize=(8, 6))
-        fig.patch.set_facecolor("#1E1E2E")
-        ax.set_facecolor("#1E1E2E")
+        fig.patch.set_facecolor("#171C20")
+        ax.set_facecolor("#171C20")
         pos = nx.spring_layout(G, seed=42, k=1.2)
         sizes = [G.nodes[n].get("size", 20) * 15 for n in G.nodes]
         nx.draw_networkx(G, pos=pos, ax=ax,
-                         node_color="#3B82F6", node_size=sizes,
-                         font_color="#CDD6F4", font_size=7,
-                         edge_color="#45475A", width=0.8, alpha=0.85)
+                         node_color="#6CA8E8", node_size=sizes,
+                         font_color="#E8E5DF", font_size=7,
+                         edge_color="#2A3238", width=0.8, alpha=0.85)
         ax.axis("off")
         plt.tight_layout()
         canvas = FigureCanvasTkAgg(fig, master=win)
@@ -14592,7 +14674,7 @@ class BashkarApp(tk.Tk):
         if n == 1:
             axes = [axes]
 
-        colores = ["#58A6FF","#F59E0B","#3FB950","#F85149","#D2A8FF","#FFA657"]
+        colores = ["#6CA8E8","#E6A64C","#6EC69A","#D96B6B","#B18AD6","#E6A64C"]
         for ax, palabra, color in zip(axes, palabras, colores * 10):
             posiciones = resultado.get(palabra, [])
             ax.vlines(posiciones, 0, 1, linewidth=0.8, alpha=0.7, color=color)
@@ -14601,7 +14683,7 @@ class BashkarApp(tk.Tk):
                           fontsize=9, color=_TEXTO, ha="right", va="center")
             ax.set_facecolor(_FONDO)
             for spine in ax.spines.values():
-                spine.set_edgecolor("#30363D")
+                spine.set_edgecolor("#2A3238")
 
         axes[-1].set_xlabel("Posición en el corpus (0 = inicio, 1 = final)",
                              color=_TEXTO, fontsize=8)
@@ -14648,7 +14730,7 @@ class BashkarApp(tk.Tk):
         win.geometry("720x480")
         win.configure(bg=CONTENT_BG)
         fig, ax = _fig(8, 5)
-        ax.barh(palabras[::-1], freqs[::-1], color="#3B82F6", alpha=0.85)
+        ax.barh(palabras[::-1], freqs[::-1], color="#6CA8E8", alpha=0.85)
         ax.set_xlabel("Frecuencia")
         ax.set_title("Palabras más frecuentes del corpus")
         plt.tight_layout()
@@ -14714,11 +14796,11 @@ class BashkarApp(tk.Tk):
         sv.pack(side="left", fill="y")
 
         # Tags de color por estado
-        self._tv_anot.tag_configure("confirmada", foreground="#22C55E")
-        self._tv_anot.tag_configure("corregida",  foreground="#3B82F6")
-        self._tv_anot.tag_configure("rechazada",  foreground="#EF4444")
-        self._tv_anot.tag_configure("pendiente",  foreground="#F59E0B")
-        self._tv_anot.tag_configure("auto",       foreground="#94A3B8")
+        self._tv_anot.tag_configure("confirmada", foreground="#6EC69A")
+        self._tv_anot.tag_configure("corregida",  foreground="#6CA8E8")
+        self._tv_anot.tag_configure("rechazada",  foreground="#D96B6B")
+        self._tv_anot.tag_configure("pendiente",  foreground="#E6A64C")
+        self._tv_anot.tag_configure("auto",       foreground="#B5B6B3")
 
         # Botones de acción sobre selección
         ab = tk.Frame(pad, bg=CONTENT_BG); ab.pack(fill="x", pady=(6, 0))
@@ -14827,7 +14909,7 @@ class BashkarApp(tk.Tk):
         win.geometry("580x300")
         win.configure(bg=CONTENT_BG)
         txt = scrolledtext.ScrolledText(win, font=("Consolas", 9),
-                                         bg="#1E1E2E", fg="#CDD6F4", relief="flat")
+                                         bg="#171C20", fg="#E8E5DF", relief="flat")
         txt.pack(fill="both", expand=True, padx=10, pady=10)
         if not hist:
             txt.insert("end", "Sin cambios registrados.")
@@ -14925,7 +15007,7 @@ class BashkarApp(tk.Tk):
                    command=self._nov_palabras_nuevas).pack(side="left")
 
         self._txt_nov_pn = scrolledtext.ScrolledText(pad_pn, font=("Consolas", 9),
-                                                      bg="#0D1B2A", fg="#CDD6F4",
+                                                      bg="#12171B", fg="#E8E5DF",
                                                       height=18, relief="flat")
         self._txt_nov_pn.pack(fill="both", expand=True)
 
@@ -14938,7 +15020,7 @@ class BashkarApp(tk.Tk):
         self._var_nov_terms = tk.StringVar(value="radio, cine, mujer, guerra, colombia")
         tk.Entry(pad_td, textvariable=self._var_nov_terms, width=60,
                  font=("Segoe UI", 9), relief="solid", bd=1,
-                 bg="#0D1B2A", fg="#CDD6F4").pack(anchor="w", pady=(4, 8))
+                 bg="#12171B", fg="#E8E5DF").pack(anchor="w", pady=(4, 8))
         bf_td = tk.Frame(pad_td, bg=CONTENT_BG); bf_td.pack(fill="x", pady=(0, 6))
         ttk.Button(bf_td, text="▶  Calcular tendencia", style="P.TButton",
                    command=self._nov_tendencia).pack(side="left", padx=(0, 8))
@@ -14949,7 +15031,7 @@ class BashkarApp(tk.Tk):
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_nov_td.pack(anchor="w", pady=(0, 4))
         self._txt_nov_td = scrolledtext.ScrolledText(pad_td, font=("Consolas", 9),
-                                                      bg="#0D1B2A", fg="#CDD6F4",
+                                                      bg="#12171B", fg="#E8E5DF",
                                                       height=14, relief="flat")
         self._txt_nov_td.pack(fill="both", expand=True)
 
@@ -15021,12 +15103,12 @@ class BashkarApp(tk.Tk):
         win.geometry("720x400")
         win.configure(bg=CONTENT_BG)
         fig, ax = _fig(8, 4)
-        colores = ["#EF4444" if d > 0.5 else "#3B82F6" for d in dists_ord]
+        colores = ["#D96B6B" if d > 0.5 else "#6CA8E8" for d in dists_ord]
         ax.bar(pares_ord, dists_ord, color=colores, alpha=0.85)
-        ax.axhline(0.5, color="#F59E0B", linestyle="--", linewidth=1, label="umbral alto")
+        ax.axhline(0.5, color="#E6A64C", linestyle="--", linewidth=1, label="umbral alto")
         ax.set_ylabel("Distancia coseno")
         ax.set_title("Cambio discursivo entre períodos consecutivos")
-        ax.legend(facecolor="#313244", labelcolor="#CDD6F4", fontsize=8)
+        ax.legend(facecolor="#1C2227", labelcolor="#E8E5DF", fontsize=8)
         plt.xticks(rotation=35, ha="right")
         plt.tight_layout()
         canvas = FigureCanvasTkAgg(fig, master=win)
@@ -15055,7 +15137,7 @@ class BashkarApp(tk.Tk):
                     else:
                         self._txt_nov_pn.insert("end", "  (ninguna)\n\n")
                 self._txt_nov_pn.tag_configure(
-                    "titulo", foreground="#3B82F6", font=("Consolas", 9, "bold"))
+                    "titulo", foreground="#6CA8E8", font=("Consolas", 9, "bold"))
                 self._txt_nov_pn.config(state="disabled")
             self.after(0, _show)
 
@@ -15087,7 +15169,7 @@ class BashkarApp(tk.Tk):
                         row += f"{v:<14.1f}"
                     self._txt_nov_td.insert("end", row + "\n")
                 self._txt_nov_td.tag_configure(
-                    "header", foreground="#F59E0B", font=("Consolas", 9, "bold"))
+                    "header", foreground="#E6A64C", font=("Consolas", 9, "bold"))
                 self._lbl_nov_td.config(text=f"✅ Tendencia de {len(palabras)} términos")
                 self._txt_nov_td.config(state="disabled")
             self.after(0, _show)
@@ -15118,7 +15200,7 @@ class BashkarApp(tk.Tk):
                     color=PALETA[i % len(PALETA)], linewidth=2)
         ax.set_ylabel("Frecuencia relativa (×10.000)")
         ax.set_title("Tendencia de términos a lo largo del corpus")
-        ax.legend(facecolor="#313244", labelcolor="#CDD6F4", fontsize=8)
+        ax.legend(facecolor="#1C2227", labelcolor="#E8E5DF", fontsize=8)
         plt.xticks(rotation=30, ha="right")
         plt.tight_layout()
         canvas = FigureCanvasTkAgg(fig, master=win)
@@ -15133,7 +15215,7 @@ class BashkarApp(tk.Tk):
         pad = tk.Frame(self._tab_red, bg=CONTENT_BG, padx=16, pady=12)
         pad.pack(fill="both", expand=True)
         tk.Label(pad, text="Redes de co-ocurrencia", bg=CONTENT_BG,
-                 fg="#FFFFFF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
+                 fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad, text="Construye un grafo de entidades que co-ocurren en los mismos artículos.",
                  bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
@@ -15415,7 +15497,7 @@ class BashkarApp(tk.Tk):
         # ── Log ───────────────────────────────────────────────────────────────
         self._txt_red_log = scrolledtext.ScrolledText(
             pad, height=4, font=("Consolas", 8),
-            bg="#0D1B2A", fg="#94A3B8", state="disabled", wrap="word")
+            bg="#12171B", fg="#B5B6B3", state="disabled", wrap="word")
         self._txt_red_log.pack(fill="x", pady=(6, 0))
 
         self._grafo_actual = None
@@ -15732,7 +15814,7 @@ class BashkarApp(tk.Tk):
         win.grab_set()
 
         tk.Label(win, text="Crear una aserción sujeto — predicado — objeto",
-                 bg=CONTENT_BG, fg="#FFFFFF",
+                 bg=CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 11, "bold")).grid(row=0, column=0, columnspan=2,
                                                      sticky="w", padx=12, pady=(12, 8))
 
@@ -16070,18 +16152,18 @@ class BashkarApp(tk.Tk):
                                         facecolor=_FONDO, sharex=True)
         x = range(len(numeros))
 
-        ax1.plot(x, nodos,   "o-", color="#58A6FF", label="Nodos",   linewidth=2)
-        ax1.plot(x, aristas, "s-", color="#F59E0B", label="Aristas",  linewidth=2)
+        ax1.plot(x, nodos,   "o-", color="#6CA8E8", label="Nodos",   linewidth=2)
+        ax1.plot(x, aristas, "s-", color="#E6A64C", label="Aristas",  linewidth=2)
         ax1.set_ylabel("Cantidad", color=_TEXTO); ax1.legend(fontsize=8)
         ax1.set_facecolor(_FONDO); ax1.tick_params(colors=_TEXTO)
-        for spine in ax1.spines.values(): spine.set_edgecolor("#30363D")
+        for spine in ax1.spines.values(): spine.set_edgecolor("#2A3238")
 
-        ax2.plot(x, densidad, "^-", color="#3FB950", linewidth=2)
+        ax2.plot(x, densidad, "^-", color="#6EC69A", linewidth=2)
         ax2.set_ylabel("Densidad", color=_TEXTO)
         ax2.set_xticks(list(x))
         ax2.set_xticklabels(numeros, rotation=30, ha="right", fontsize=7, color=_TEXTO)
         ax2.set_facecolor(_FONDO); ax2.tick_params(colors=_TEXTO)
-        for spine in ax2.spines.values(): spine.set_edgecolor("#30363D")
+        for spine in ax2.spines.values(): spine.set_edgecolor("#2A3238")
 
         plt.tight_layout()
         canvas = FigureCanvasTkAgg(fig, master=win)
@@ -16144,7 +16226,7 @@ class BashkarApp(tk.Tk):
         pad.pack(side="left", fill="both", expand=True)
 
         tk.Label(pad, text="Análisis semántico profundo", bg=CONTENT_BG,
-                 fg="#FFFFFF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
+                 fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad, text="Tono editorial, léxico histórico y estilometría del corpus Estampa.",
                  bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
@@ -16204,7 +16286,7 @@ class BashkarApp(tk.Tk):
         self._tono_chips = {}
         tonos_orden = ("celebratorio", "crítico", "neutro", "elegíaco", "polémico", "informativo")
         for tono in tonos_orden:
-            color = COLORES_TONO.get(tono, "#6B7280")
+            color = COLORES_TONO.get(tono, "#777F84")
             frm = tk.Frame(self._frm_tono_chips, bg=color, padx=6, pady=2)
             frm.pack(side="left", padx=(0, 4))
             lbl = tk.Label(frm, text=f"{tono}: —", bg=color, fg="white",
@@ -16471,8 +16553,8 @@ class BashkarApp(tk.Tk):
 
         periodos = sorted(evol.keys())
         fig, ax = plt.subplots(figsize=(9, 4.5))
-        fig.patch.set_facecolor("#1E1E2E")
-        ax.set_facecolor("#1E1E2E")
+        fig.patch.set_facecolor("#171C20")
+        ax.set_facecolor("#171C20")
 
         tonos_a_mostrar = ("celebratorio", "crítico", "elegíaco", "polémico")
         for tono in tonos_a_mostrar:
@@ -16482,16 +16564,16 @@ class BashkarApp(tk.Tk):
                 t_info["direccion"], "")
             ax.plot(periodos, vals,
                     marker="o", linewidth=2,
-                    color=COLORES_TONO.get(tono, "#888"),
+                    color=COLORES_TONO.get(tono, "#777F84"),
                     label=f"{tono}{dir_arrow}")
 
-        ax.set_xlabel("Número", color="#CDD6F4", fontsize=9)
-        ax.set_ylabel("% artículos", color="#CDD6F4", fontsize=9)
-        ax.set_title("Evolución del tono editorial por número", color="#CDD6F4", fontsize=10)
-        ax.tick_params(colors="#CDD6F4", labelsize=8)
-        ax.legend(facecolor="#313244", labelcolor="#CDD6F4", fontsize=8)
+        ax.set_xlabel("Número", color="#E8E5DF", fontsize=9)
+        ax.set_ylabel("% artículos", color="#E8E5DF", fontsize=9)
+        ax.set_title("Evolución del tono editorial por número", color="#E8E5DF", fontsize=10)
+        ax.tick_params(colors="#E8E5DF", labelsize=8)
+        ax.legend(facecolor="#1C2227", labelcolor="#E8E5DF", fontsize=8)
         for spine in ax.spines.values():
-            spine.set_edgecolor("#45475A")
+            spine.set_edgecolor("#2A3238")
         plt.xticks(rotation=30, ha="right")
         plt.tight_layout()
 
@@ -16504,7 +16586,7 @@ class BashkarApp(tk.Tk):
         tf.pack(fill="x", padx=10, pady=(0, 8))
         for tono in tonos_a_mostrar:
             t_info = tendencia_tono(evol, tono)
-            color = COLORES_TONO.get(tono, "#888")
+            color = COLORES_TONO.get(tono, "#777F84")
             icono = {"sube": "↑", "baja": "↓", "estable": "→"}.get(t_info["direccion"], "")
             tk.Label(tf, text=f"{icono} {tono}  (pend. {t_info['pendiente']:+.2f})",
                      bg=CONTENT_BG, fg=color,
@@ -16532,7 +16614,7 @@ class BashkarApp(tk.Tk):
         lbl = tk.Label(win, text="Generando síntesis…", bg=CONTENT_BG, fg=GRIS2,
                        font=("Segoe UI", 9))
         lbl.pack(anchor="w", padx=16, pady=(12, 4))
-        txt = tk.Text(win, bg="#1E1E2E", fg="#CDD6F4", font=("Segoe UI", 10),
+        txt = tk.Text(win, bg="#171C20", fg="#E8E5DF", font=("Segoe UI", 10),
                       wrap="word", padx=12, pady=10, relief="flat")
         txt.pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
@@ -16717,7 +16799,7 @@ class BashkarApp(tk.Tk):
         pad.pack(fill="both", expand=True)
 
         tk.Label(pad, text="Constructor de visualizaciones", bg=CONTENT_BG,
-                 fg="#FFFFFF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
+                 fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad,
                  text="Selecciona qué dato graficar y con qué tipo de gráfico. "
                       "Cada opción incluye una descripción de cuándo usarla.",
@@ -16778,7 +16860,7 @@ class BashkarApp(tk.Tk):
         self._var_viz_titulo = tk.StringVar()
         tk.Entry(sel_frm, textvariable=self._var_viz_titulo,
                  width=22, font=("Segoe UI", 9),
-                 relief="solid", bd=1, bg="#0D1B2A", fg="#CDD6F4"
+                 relief="solid", bd=1, bg="#12171B", fg="#E8E5DF"
                  ).grid(row=0, column=5, padx=(0, 8))
 
         self._btn_viz_gen = ttk.Button(sel_frm, text="▶  Generar",
@@ -16791,7 +16873,7 @@ class BashkarApp(tk.Tk):
 
         # ── Descripción del gráfico seleccionado ──
         self._lbl_viz_desc = tk.Label(pad, text="",
-                                       bg=CONTENT_BG, fg="#94A3B8",
+                                       bg=CONTENT_BG, fg="#B5B6B3",
                                        font=("Segoe UI", 8), wraplength=900,
                                        justify="left")
         self._lbl_viz_desc.pack(anchor="w", pady=(0, 4))
@@ -16980,7 +17062,7 @@ class BashkarApp(tk.Tk):
                  bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w")
         self._txt_heat_terms = scrolledtext.ScrolledText(
             pad, height=6, font=("Consolas", 9),
-            bg="#0D1B2A", fg="#94A3B8", wrap="word")
+            bg="#12171B", fg="#B5B6B3", wrap="word")
         self._txt_heat_terms.pack(fill="x", pady=(0, 6))
         default_terms = "colombia\nbogotá\nmedellín\nmujer\ncine\nradio\npolítica\ncultura"
         self._txt_heat_terms.insert("1.0", default_terms)
@@ -17332,8 +17414,8 @@ class BashkarApp(tk.Tk):
         self._tv_bench.pack(fill="both", expand=True, pady=(0, 6))
 
         self._txt_bench = scrolledtext.ScrolledText(
-            pad, height=9, bg="#0D1117", fg="#C9D1D9", font=("Consolas", 9),
-            insertbackground="#C9D1D9", wrap="word")
+            pad, height=9, bg="#0E1114", fg="#E8E5DF", font=("Consolas", 9),
+            insertbackground="#E8E5DF", wrap="word")
         self._txt_bench.pack(fill="both", expand=True)
         self._bench_resultados = []
 
@@ -17537,7 +17619,7 @@ class BashkarApp(tk.Tk):
             return
 
         self._btn_bench.config(state="disabled")
-        self._lbl_bench.config(text="Ejecutando…", fg="#D29922")
+        self._lbl_bench.config(text="Ejecutando…", fg="#E6A64C")
         self._txt_bench.delete("1.0", "end")
         # El número del corpus se lee AQUÍ (hilo principal): el worker lo
         # necesita para localizar las zonas etiquetadas y no puede tocar Tk.
@@ -17683,10 +17765,10 @@ class BashkarApp(tk.Tk):
                 f"{r.segundos_por_pagina:.1f}", r.calidad))
         self._btn_bench.config(state="normal")
         if resultados:
-            self._lbl_bench.config(text=f"✅ Mejor: {resultados[0].ruta}", fg="#3FB950")
+            self._lbl_bench.config(text=f"✅ Mejor: {resultados[0].ruta}", fg="#6EC69A")
             self.toast(f"Benchmark listo — mejor ruta: {resultados[0].ruta}", "ok")
         else:
-            self._lbl_bench.config(text="Sin resultados", fg="#F85149")
+            self._lbl_bench.config(text="Sin resultados", fg="#D96B6B")
 
     def _bench_exportar(self, formato: str = "csv"):
         if not self._bench_resultados:
@@ -17716,7 +17798,7 @@ class BashkarApp(tk.Tk):
         pad = tk.Frame(self._tab_rep, bg=CONTENT_BG, padx=16, pady=12)
         pad.pack(fill="both", expand=True)
         tk.Label(pad, text="Reporte narrativo del corpus", bg=CONTENT_BG,
-                 fg="#FFFFFF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
+                 fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad,
                  text="Genera narrativas académicas con IA y exporta el reporte completo del análisis.",
                  bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
@@ -17738,7 +17820,7 @@ class BashkarApp(tk.Tk):
 
         self._txt_rep_nar = scrolledtext.ScrolledText(
             nar_frame, height=8, font=("Georgia", 9),
-            bg="#0D1B2A", fg="#CBD5E1", wrap="word", state="disabled")
+            bg="#12171B", fg="#B5B6B3", wrap="word", state="disabled")
         self._txt_rep_nar.pack(fill="x", padx=8, pady=(0, 8))
 
         # ── Exportar HTML ─────────────────────────────────────────────────────
@@ -17901,11 +17983,124 @@ class BashkarApp(tk.Tk):
     # PESTAÑA: DASHBOARD (v16) — resumen ejecutivo + exportador ZIP
     # ══════════════════════════════════════════════════════════════════════════
 
+    # ══════════════════════════════════════════════════════════════════════════
+    # INICIO — panel de investigación (capa visual en ui_redesign.py)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    # Las claves que usa el tablero → páginas reales de esta ventana.
+    _INICIO_DESTINOS = {
+        "home": "inicio",   "projects": "cfg",  "ocr": "ocr",
+        "norm": "norm",     "seg": "seg",       "ner": "ner",
+        "anal": "anal",     "red": "red",       "res": "res",
+        "export": "res",
+    }
+
+    def _build_inicio(self):
+        """Monta el tablero de `ui_redesign` como página de arranque."""
+        from ui_redesign import (
+            BashkarCallbacks,
+            BashkarDesktopShell,
+            state_from_bashkar,
+        )
+
+        callbacks = BashkarCallbacks(
+            navigate=self._inicio_navegar,
+            save_project=self._guardar_proyecto,
+            edit_project=lambda: self._mostrar_pagina("cfg"),
+            open_projects=self._abrir_gestor_proyectos,
+            open_settings=lambda: self._mostrar_pagina("cfg"),
+            action_selected=self._inicio_navegar,
+        )
+        # chrome=False: la topbar, la activity bar y el sidebar los dibuja esta
+        # ventana, que es la que conoce los 30 paneles; el módulo solo aporta
+        # el tablero.
+        self._inicio_shell = BashkarDesktopShell(
+            self._tab_inicio,
+            state_from_bashkar(ST),
+            callbacks,
+            version=APP_VERSION,
+            chrome=False,
+        )
+        self._inicio_shell.pack(fill="both", expand=True)
+        self._inicio_refrescar()
+
+    def _inicio_navegar(self, clave: str):
+        destino = self._INICIO_DESTINOS.get(clave, clave)
+        if destino in self._frames_pagina:
+            self._mostrar_pagina(destino)
+
+    def _inicio_capacidades(self):
+        """
+        Qué motores hay en ESTE equipo. Se pregunta si el paquete está, sin
+        importarlo: importar spaCy en frío tarda del orden de diez segundos y
+        esto corre en el hilo de la interfaz (misma lección que el endpoint
+        /api/capacidades del servidor web, sesión 55).
+        """
+        if getattr(self, "_inicio_caps", None):
+            return self._inicio_caps
+
+        import importlib.util
+        import shutil
+
+        from ui_redesign import Capability
+
+        def _instalado(modulo: str) -> bool:
+            try:
+                return importlib.util.find_spec(modulo) is not None
+            except (ImportError, ValueError):
+                return False
+
+        hay_tesseract = bool(shutil.which("tesseract")) or \
+            (_APP_DIR / "tesseract_path.txt").exists()
+        hay_poppler = bool(shutil.which("pdftoppm")) or \
+            (_APP_DIR / "poppler_path.txt").exists()
+
+        self._inicio_caps = [
+            Capability("Tesseract OCR", "Reconocimiento óptico local",
+                       hay_tesseract),
+            Capability("Poppler", "Convierte el PDF en imágenes", hay_poppler),
+            Capability("PyMuPDF", "Lectura y render de documentos",
+                       _instalado("fitz")),
+            Capability("spaCy", "NER y análisis lingüístico local",
+                       _instalado("es_core_news_md") or _instalado("es_core_news_sm")),
+            Capability("Kraken / CATMuS", "HTR para prensa histórica",
+                       _instalado("kraken")),
+            Capability("LLM local", "Ollama o LM Studio en tu equipo",
+                       _instalado("requests")),
+        ]
+        return self._inicio_caps
+
+    def _inicio_refrescar(self):
+        """Vuelve a leer ST y repinta el tablero. Barato: no toca disco."""
+        shell = getattr(self, "_inicio_shell", None)
+        if shell is None:
+            return
+        from ui_redesign import state_from_bashkar
+
+        estado = state_from_bashkar(ST)
+        estado.capabilities = self._inicio_capacidades()
+        estado.current_year = getattr(ST, "periodo", "") or ""
+
+        # Último número cargado, si el corpus ya trae metadatos.
+        meta = getattr(ST, "corpus_meta", None)
+        try:
+            if meta is not None and hasattr(meta, "columns") and "numero" in meta.columns:
+                numeros = sorted(str(n) for n in meta["numero"].dropna().unique())
+                if numeros:
+                    estado.current_number = numeros[-1]
+        except Exception:
+            pass
+
+        try:
+            shell.set_state(estado)
+        except tk.TclError:
+            pass          # la ventana se está cerrando
+
     def _build_dash(self):
         pad = tk.Frame(self._tab_dash, bg=CONTENT_BG, padx=16, pady=12)
         pad.pack(fill="both", expand=True)
         tk.Label(pad, text="Dashboard ejecutivo", bg=CONTENT_BG,
-                 fg="#FFFFFF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
+                 fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad, text="Resumen del estado del proyecto y exportación del paquete completo.",
                  bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
@@ -17922,13 +18117,13 @@ class BashkarApp(tk.Tk):
             ("red_nodos", "Nodos en red",      "0"),
         ]
         for col, (key, lbl, val) in enumerate(indicadores):
-            frm = tk.Frame(grid, bg="#1a1a2e", padx=12, pady=8, relief="flat", bd=0)
+            frm = tk.Frame(grid, bg="#1C2227", padx=12, pady=8, relief="flat", bd=0)
             frm.grid(row=0, column=col, padx=4, pady=2, sticky="nsew")
             grid.columnconfigure(col, weight=1)
-            lbl_num = tk.Label(frm, text=val, bg="#1a1a2e", fg="#a78bfa",
+            lbl_num = tk.Label(frm, text=val, bg="#1C2227", fg="#B18AD6",
                                 font=("Segoe UI", 20, "bold"))
             lbl_num.pack()
-            tk.Label(frm, text=lbl, bg="#1a1a2e", fg="#94a3b8",
+            tk.Label(frm, text=lbl, bg="#1C2227", fg="#B5B6B3",
                      font=("Segoe UI", 8)).pack()
             self._dash_cards[key] = lbl_num
 
@@ -17978,7 +18173,7 @@ class BashkarApp(tk.Tk):
         # ── Log ───────────────────────────────────────────────────────────────
         self._txt_dash_log = scrolledtext.ScrolledText(
             pad, height=7, font=("Consolas", 8),
-            bg="#0D1B2A", fg="#94A3B8", state="disabled", wrap="word")
+            bg="#12171B", fg="#B5B6B3", state="disabled", wrap="word")
         self._txt_dash_log.pack(fill="x")
 
         # Actualizar al abrir
@@ -18094,7 +18289,7 @@ class BashkarApp(tk.Tk):
         pad.pack(side="left", fill="both", expand=True)
 
         tk.Label(pad, text="Topic modeling del corpus", bg=CONTENT_BG,
-                 fg="#FFFFFF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
+                 fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad, text="Detecta temas recurrentes y su distribución en el corpus.",
                  bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
@@ -18830,13 +19025,13 @@ class BashkarApp(tk.Tk):
             f"🔍 Cambios — {b.get('pagina', '')}", ancho=700, alto=500)
 
         txt = scrolledtext.ScrolledText(
-            diff_content, bg="#0D1117", fg=TXT_PRI, font=("Courier New", 9),
+            diff_content, bg="#0E1114", fg=TXT_PRI, font=("Courier New", 9),
             relief="flat", wrap="none")
         txt.pack(fill="both", expand=True, padx=8, pady=8)
-        txt.tag_configure("add", foreground="#3FB950", background="#0F2B1A")
-        txt.tag_configure("del", foreground="#F85149", background="#2B0F0F")
-        txt.tag_configure("hdr", foreground="#58A6FF")
-        txt.tag_configure("ctx", foreground="#8B949E")
+        txt.tag_configure("add", foreground="#6EC69A", background="#15251F")
+        txt.tag_configure("del", foreground="#D96B6B", background="#2A1719")
+        txt.tag_configure("hdr", foreground="#6CA8E8")
+        txt.tag_configure("ctx", foreground="#777F84")
 
         for line in diff:
             if line.startswith("+++") or line.startswith("---"):
@@ -18896,7 +19091,7 @@ class BashkarApp(tk.Tk):
                 ))
             except Exception as e:
                 self.after(0, lambda err=str(e): self._lbl_norm_estado.config(
-                    text=f"❌ {err}", fg="#F85149"))
+                    text=f"❌ {err}", fg="#D96B6B"))
         threading.Thread(target=_run, daemon=True).start()
 
 
@@ -18923,7 +19118,7 @@ class BashkarApp(tk.Tk):
         ttk.Label(cuerpo, text="Proyectos a comparar:").grid(row=0, column=0, sticky="w")
         self._comp2_lista_var = tk.Variable(value=[])
         self._comp2_listbox = tk.Listbox(cuerpo, listvariable=self._comp2_lista_var,
-                                          height=6, bg="#1e293b", fg="#e0e0e0",
+                                          height=6, bg="#1C2227", fg="#E8E5DF",
                                           selectmode=tk.MULTIPLE, font=("Consolas", 10))
         self._comp2_listbox.grid(row=1, column=0, sticky="ew", pady=4)
 
@@ -18939,7 +19134,7 @@ class BashkarApp(tk.Tk):
                    command=self._comp2_ver_html).pack(side="left", padx=2)
 
         self._comp2_log = tk.Text(cuerpo, height=14, state="disabled",
-                                   bg="#0f172a", fg="#94a3b8",
+                                   bg="#0E1114", fg="#B5B6B3",
                                    font=("Consolas", 9), wrap="word")
         self._comp2_log.grid(row=3, column=0, sticky="nsew", pady=8)
 
@@ -19047,7 +19242,7 @@ class BashkarApp(tk.Tk):
                    command=self._intxt_ver_grafo).pack(side="left", padx=4)
 
         self._intxt_log = tk.Text(cuerpo, height=16, state="disabled",
-                                   bg="#0f172a", fg="#94a3b8",
+                                   bg="#0E1114", fg="#B5B6B3",
                                    font=("Consolas", 9), wrap="word")
         self._intxt_log.grid(row=3, column=0, columnspan=2, sticky="nsew", pady=4)
 
@@ -19162,9 +19357,9 @@ class BashkarApp(tk.Tk):
         vsb.grid(row=0, column=1, sticky="ns")
 
         # Tag colors
-        self._valid_tree.tag_configure("green",  background="#052e16", foreground="#22c55e")
-        self._valid_tree.tag_configure("yellow", background="#431407", foreground="#f59e0b")
-        self._valid_tree.tag_configure("red",    background="#450a0a", foreground="#ef4444")
+        self._valid_tree.tag_configure("green",  background="#15251F", foreground="#6EC69A")
+        self._valid_tree.tag_configure("yellow", background="#2A2116", foreground="#E6A64C")
+        self._valid_tree.tag_configure("red",    background="#2A1719", foreground="#D96B6B")
 
         self._valid_stat_var = tk.StringVar(value="")
         ttk.Label(self._tab_valid, textvariable=self._valid_stat_var,
@@ -19336,7 +19531,7 @@ class BashkarApp(tk.Tk):
                    command=self._colab_html_trazabilidad).pack(side="left", padx=4)
 
         self._colab_log = tk.Text(self._tab_colab, height=18, state="disabled",
-                                   bg="#0f172a", fg="#94a3b8",
+                                   bg="#0E1114", fg="#B5B6B3",
                                    font=("Consolas", 9), wrap="word")
         self._colab_log.grid(row=3, column=0, sticky="nsew", padx=20, pady=8)
 
@@ -19507,7 +19702,7 @@ class BashkarApp(tk.Tk):
         pad = tk.Frame(self._frames_pagina["ling"], bg=CONTENT_BG, padx=16, pady=12)
         pad.pack(fill="both", expand=True)
         tk.Label(pad, text="Lingüística Computacional", bg=CONTENT_BG,
-                 fg="#FFFFFF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
+                 fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad,
                  text="Sintaxis, correferencia, morfología histórica, emociones, encuadre, "
                       "polaridad, revisión NER y validación metodológica (Kappa).",
@@ -19718,8 +19913,8 @@ class BashkarApp(tk.Tk):
             self._tv_ling_morf.heading(cid, text=txt)
             self._tv_ling_morf.column(cid, width=w, anchor="w" if w > 100 else "center")
         # Color por densidad
-        self._tv_ling_morf.tag_configure("alta",  background="#1A2F1A", foreground="#4EC9B0")
-        self._tv_ling_morf.tag_configure("media", background="#2D2210", foreground="#F59E0B")
+        self._tv_ling_morf.tag_configure("alta",  background="#15251F", foreground="#62C6B5")
+        self._tv_ling_morf.tag_configure("media", background="#2A2116", foreground="#E6A64C")
         self._tv_ling_morf.tag_configure("baja",  background=CONTENT_BG, foreground=TXT_PRI)
         sv_m = ttk.Scrollbar(frm_morf, orient="vertical",
                               command=self._tv_ling_morf.yview)
@@ -19792,9 +19987,9 @@ class BashkarApp(tk.Tk):
             self._tv_dep_tok.heading(cid, text=txt)
             self._tv_dep_tok.column(cid, width=w, anchor="w")
         # Tags POS
-        self._tv_dep_tok.tag_configure("VERB", foreground="#4EC9B0")
-        self._tv_dep_tok.tag_configure("NOUN", foreground="#4FC1FF")
-        self._tv_dep_tok.tag_configure("PROPN", foreground="#CE9178")
+        self._tv_dep_tok.tag_configure("VERB", foreground="#62C6B5")
+        self._tv_dep_tok.tag_configure("NOUN", foreground="#6CA8E8")
+        self._tv_dep_tok.tag_configure("PROPN", foreground="#D58B45")
         sv_dep_tok = ttk.Scrollbar(der_dep, orient="vertical",
                                     command=self._tv_dep_tok.yview)
         self._tv_dep_tok.configure(yscrollcommand=sv_dep_tok.set)
@@ -19928,7 +20123,7 @@ class BashkarApp(tk.Tk):
         ttk.Button(pol_ent, text="🎯  Calcular", style="S.TButton",
                    command=self._ling_pol_hacia).pack(side="left")
         self._lbl_pol_hacia = tk.Label(pol_ent, text="", bg=CONTENT_BG,
-                                       fg="#4FC1FF", font=("Segoe UI", 9, "bold"))
+                                       fg="#6CA8E8", font=("Segoe UI", 9, "bold"))
         self._lbl_pol_hacia.pack(side="left", padx=(10, 0))
 
         self._lbl_pol_resumen = tk.Label(frm_pol, text="",
@@ -19945,8 +20140,8 @@ class BashkarApp(tk.Tk):
                               ("n_neg","Neg.",60),("intensidad","Intensidad %",100)]:
             self._tv_ling_pol.heading(cid, text=txt)
             self._tv_ling_pol.column(cid, width=w, anchor="w")
-        self._tv_ling_pol.tag_configure("positivo", foreground="#4EC9B0")
-        self._tv_ling_pol.tag_configure("negativo", foreground="#F48771")
+        self._tv_ling_pol.tag_configure("positivo", foreground="#62C6B5")
+        self._tv_ling_pol.tag_configure("negativo", foreground="#D96B6B")
         self._tv_ling_pol.tag_configure("neutro",   foreground=TXT_DIM)
         sv_p = ttk.Scrollbar(frm_pol, orient="vertical",
                              command=self._tv_ling_pol.yview)
@@ -19989,8 +20184,8 @@ class BashkarApp(tk.Tk):
                               ("etiqueta","Estado",130)]:
             self._tv_ling_rev.heading(cid, text=txt)
             self._tv_ling_rev.column(cid, width=w, anchor="w")
-        self._tv_ling_rev.tag_configure("red",    foreground="#F48771")
-        self._tv_ling_rev.tag_configure("yellow", foreground="#F59E0B")
+        self._tv_ling_rev.tag_configure("red",    foreground="#D96B6B")
+        self._tv_ling_rev.tag_configure("yellow", foreground="#E6A64C")
         sv_r = ttk.Scrollbar(frm_rev, orient="vertical",
                              command=self._tv_ling_rev.yview)
         self._tv_ling_rev.configure(yscrollcommand=sv_r.set)
@@ -20002,7 +20197,7 @@ class BashkarApp(tk.Tk):
         nb_ling.add(frm_val, text="  ✔ Validación  ")
 
         tk.Label(frm_val, text="Validación metodológica (fiabilidad inter-codificador)",
-                 bg=CONTENT_BG, fg="#FFFFFF", font=("Segoe UI", 11, "bold")).pack(
+                 bg=CONTENT_BG, fg="#E8E5DF", font=("Segoe UI", 11, "bold")).pack(
                      anchor="w", padx=8, pady=(8, 2))
         tk.Label(frm_val,
                  text="1) Exporta una muestra aleatoria (semilla fija → reproducible) con la "
@@ -20050,7 +20245,7 @@ class BashkarApp(tk.Tk):
         # ── Log compartido ────────────────────────────────────────────────────
         self._txt_ling_log = scrolledtext.ScrolledText(
             pad, height=3, font=("Consolas", 8),
-            bg="#0D1B2A", fg="#94A3B8", state="disabled", wrap="word")
+            bg="#12171B", fg="#B5B6B3", state="disabled", wrap="word")
         self._txt_ling_log.pack(fill="x", pady=(6, 0))
 
     # ── Helpers internos de lingüística ──────────────────────────────────────
@@ -20270,7 +20465,7 @@ class BashkarApp(tk.Tk):
         win, content_agrup = self._mk_glass_toplevel(
             "🔗 Relaciones agrupadas por verbo", ancho=600, alto=500)
         txt = scrolledtext.ScrolledText(content_agrup, font=("Consolas", 9),
-                                         bg="#0D1B2A", fg="#E2E8F0", relief="flat")
+                                         bg="#12171B", fg="#E8E5DF", relief="flat")
         txt.pack(fill="both", expand=True, padx=8, pady=8)
         for verbo, info in agrup.items():
             txt.insert("end", f"\n{'─'*50}\n{verbo.upper()} ({info['n']} ocurrencias)\n")
@@ -20775,8 +20970,8 @@ class BashkarApp(tk.Tk):
 
         emociones = list(cnt.keys())
         valores = [cnt[e] for e in emociones]
-        colores = ["#22C55E","#3B82F6","#EF4444","#F59E0B",
-                   "#8B5CF6","#EC4899","#14B8A6","#F97316"]
+        colores = ["#6EC69A","#6CA8E8","#D96B6B","#E6A64C",
+                   "#B18AD6","#B18AD6","#62C6B5","#D58B45"]
 
         fig, ax = plt.subplots(figsize=(8, 4))
         ax.bar(emociones, valores,
@@ -20784,13 +20979,13 @@ class BashkarApp(tk.Tk):
         ax.set_title("Distribución de emociones dominantes en el corpus",
                      pad=12, fontsize=11)
         ax.set_ylabel("Artículos")
-        ax.set_facecolor("#0D1B2A")
-        fig.patch.set_facecolor("#0D1B2A")
-        ax.tick_params(colors="#94A3B8")
-        ax.yaxis.label.set_color("#94A3B8")
-        ax.title.set_color("#E2E8F0")
+        ax.set_facecolor("#12171B")
+        fig.patch.set_facecolor("#12171B")
+        ax.tick_params(colors="#B5B6B3")
+        ax.yaxis.label.set_color("#B5B6B3")
+        ax.title.set_color("#E8E5DF")
         for spine in ax.spines.values():
-            spine.set_edgecolor("#1E3A5F")
+            spine.set_edgecolor("#30291F")
         plt.tight_layout()
         plt.show()
 
@@ -20899,7 +21094,7 @@ class BashkarApp(tk.Tk):
         frames = list(dist.keys())
         valores = [dist[f] for f in frames]
         fig, ax = plt.subplots(figsize=(9, 4.5))
-        ax.barh(frames[::-1], valores[::-1], color="#4FC1FF", edgecolor="none")
+        ax.barh(frames[::-1], valores[::-1], color="#6CA8E8", edgecolor="none")
         ax.set_title("Encuadres dominantes en el corpus", pad=12, fontsize=11)
         ax.set_xlabel("Artículos")
         fig.tight_layout()

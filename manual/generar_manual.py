@@ -148,6 +148,9 @@ def _expandir_avisos(texto: str) -> str:
 # ── Referencia de paneles, generada desde el código ──────────────────────────
 
 GRUPOS = {
+    "inicio": ("El punto de partida",
+               "La pantalla con la que abre la aplicación: resume el estado "
+               "del proyecto y desde ahí se entra a todo lo demás."),
     "flujo": ("El flujo principal",
               "Los paneles que se recorren en orden para llevar un corpus "
               "desde las imágenes hasta el texto analizable."),

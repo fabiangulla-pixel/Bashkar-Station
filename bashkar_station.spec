@@ -1,6 +1,8 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec — Bashkar Station v11.7
-# Run: pyinstaller bashkar_station.spec --clean
+# PyInstaller spec — Bashkar Station v12.0
+# Compilar SIEMPRE a disco local, nunca al proyecto (que vive en Google Drive):
+#   python -m PyInstaller bashkar_station.spec --noconfirm ^
+#       --distpath C:/build_rf/bs_dist --workpath C:/build_rf/bs_work
 
 import sys
 from pathlib import Path
@@ -42,6 +44,10 @@ a = Analysis(
          'spylls/hunspell/data/es'),
     ],
     hiddenimports=[
+        # Capa visual: define la paleta (import en la cabecera de app.py) y el
+        # panel Inicio (import perezoso dentro de _build_inicio, que el
+        # análisis estático no alcanza).
+        'ui_redesign',
         # Core modules
         'core',
         # plataforma se importa al inicio de app.py: sin esta entrada el .exe

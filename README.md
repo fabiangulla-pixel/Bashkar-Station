@@ -176,6 +176,7 @@ se commitea).
 ```
 bashkar_station/
 ├── app.py              # Frontend escritorio (Tkinter, ~20.000 líneas)
+├── ui_redesign.py      # Identidad visual (tokens de color) + panel Inicio
 ├── servidor_web.py     # Frontend web (http.server stdlib, sin frameworks)
 ├── web/                # Frontend web: HTML/CSS/JS vanilla, sin build
 ├── cli.py              # Interfaz de línea de comandos
@@ -203,6 +204,7 @@ bashkar_station/
 
 **Decisiones de diseño:**
 - **Tkinter** — incluido con Python, cero dependencias de UI, funciona 100% offline
+- **Un solo lugar para el color** — la identidad (grafito, cobre, teal) vive en `ui_redesign.Theme`; las paletas de `app.py` y las variables de `web/styles.css` se derivan de ahí, así que escritorio y web no pueden divergir
 - **JSON + SQLite** — proyectos inspeccionables con cualquier editor o Excel
 - **Offline-first** — todas las funciones analíticas funcionan sin internet; Claude/GPT son opcionales
 - **Página como unidad atómica** — la sub-segmentación intra-página es imposible con el OCR de la BNC (columnas mezcladas); se documenta como decisión metodológica

@@ -359,7 +359,7 @@ tbody tr:last-child td { border-bottom: 1px solid var(--tinta); }
   <p class="portada-sub">Manual de uso y guía metodológica</p>
   <div class="portada-regla"></div>
   <p class="portada-meta">
-    Versión 11.9 · 05 de agosto de 2026<br>
+    Versión 12.0 · 13 de agosto de 2026<br>
     Fabián Gulla<br>
     Instituto Caro y Cuervo · Bogotá, Colombia
   </p>
@@ -863,6 +863,16 @@ programa, cambia aquí al regenerar el documento.</p>
 <p>Cada ficha responde a cuatro preguntas: qué es, para qué sirve, qué resultado
 produce y cómo interpretar ese resultado. La última es la más útil, porque
 incluye los umbrales y las trampas de cada método.</p>
+<h3 class="grupo">El punto de partida</h3>
+<p class="grupo-intro">La pantalla con la que abre la aplicación: resume el estado del proyecto y desde ahí se entra a todo lo demás.</p>
+<div class="panel" id="panel-inicio">
+<h4 class="panel-tit"><span class="panel-emoji">⌂</span>Inicio</h4>
+<p class="panel-sub">Panel de investigación</p>
+<p class="panel-campo"><span class="campo-et">Qué es</span> Tablero de investigación: la primera pantalla al abrir la aplicación. Resume en una sola vista el proyecto activo, cuánto corpus hay procesado y en qué etapa va el flujo.</p>
+<p class="panel-campo"><span class="campo-et">Para qué sirve</span> Retomar el trabajo sin tener que recorrer los paneles para averiguar qué quedó a medias, y comprobar de un vistazo qué motores locales están disponibles en este equipo antes de lanzar un proceso largo.</p>
+<p class="panel-campo"><span class="campo-et">Qué resultado da</span> Cuatro indicadores del corpus (páginas procesadas, confianza media del OCR, artículos segmentados y entidades reconocidas), el estado de las seis etapas del flujo, las acciones sugeridas y la lista de capacidades instaladas. No calcula nada nuevo: lee el estado del proyecto en memoria.</p>
+<p class="panel-campo"><span class="campo-et">Cómo interpretarlo</span> La confianza media del OCR es el número que decide si vale la pena seguir: por debajo de ~60 conviene revisar el etiquetado de zonas o cambiar de ruta de extracción antes de segmentar, porque todo el análisis textual hereda esos errores. Una etapa en ámbar («revisar») no significa que falle, sino que se completó y después cambió una etapa anterior: los resultados que muestre están calculados sobre material viejo. La pastilla «IA externa» de la barra superior dice si algún módulo puede enviar texto a un tercero; apagada, el procesamiento es íntegramente local.</p>
+</div>
 <h3 class="grupo">El flujo principal</h3>
 <p class="grupo-intro">Los paneles que se recorren en orden para llevar un corpus desde las imágenes hasta el texto analizable.</p>
 <div class="panel" id="panel-cfg">

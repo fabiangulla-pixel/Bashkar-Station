@@ -1,11 +1,16 @@
-/* Bashkar Station Web — paleta VS Code Dark+ (idéntica a app.py _PALETA_DARK) */
+/* Bashkar Station Web — identidad grafito/cobre/teal.
+   Los valores son los mismos tokens de `ui_redesign.Theme`, que es de donde
+   sale también `_PALETA_DARK` en app.py: escritorio y web comparten imagen.
+   Los nombres de las variables se conservan para no tocar el resto del CSS
+   (--azul es hoy el cobre de la identidad). */
 :root {
-  --ab-bg: #333333; --ab-sel: #FFFFFF; --ab-txt: #858585; --ab-ind: #0078D4;
-  --sb-bg: #252526; --sb-hov: #2A2D2E; --sb-sel: #094771; --sb-txt: #BBBBBB;
-  --content-bg: #1E1E1E; --card-bg: #252526; --card-bor: #474747;
-  --topbar-bg: #3C3C3C; --azul: #0078D4; --azul-claro: #4FC1FF;
-  --acento: #CE9178; --texto: #D4D4D4; --texto2: #9D9D9D;
-  --ok: #4EC9B0; --error: #F48771; --ambar: #DCDCAA;
+  --ab-bg: #101316; --ab-sel: #E6A64C; --ab-txt: #777F84; --ab-ind: #D58B45;
+  --sb-bg: #12171B; --sb-hov: #22292F; --sb-sel: #30291F; --sb-txt: #B5B6B3;
+  --content-bg: #0E1114; --card-bg: #171C20; --card-bor: #2A3238;
+  --topbar-bg: #101316; --azul: #D58B45; --azul-claro: #E6A64C;
+  --acento: #D58B45; --texto: #E8E5DF; --texto2: #777F84;
+  --ok: #6EC69A; --error: #D96B6B; --ambar: #E6A64C;
+  --info: #6CA8E8; --teal: #62C6B5;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }

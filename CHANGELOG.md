@@ -2,6 +2,125 @@
 
 ---
 
+## Sesión 56 — 2026-08-13 — v12.0, imagen propia: grafito, cobre y un panel de inicio
+
+Hasta hoy la interfaz era, declaradamente, una imitación de VS Code: la paleta
+estaba copiada del tema oficial («Colores tomados directamente del tema oficial
+de VS Code», decía el comentario) y la aplicación se abría en el formulario de
+configuración. Esta sesión le da identidad propia a partir del mockup aprobado.
+
+### 1. Una sola fuente de verdad para el color — `ui_redesign.py` (NUEVO)
+
+`ui_redesign.Theme` define la identidad: grafito de fondo, **cobre** para la
+acción y la navegación activa, **ámbar** para los realces, **teal** para lo que
+habla de privacidad, y una escala de texto cálida (`#E8E5DF`) en vez del gris
+azulado de antes.
+
+`_PALETA_DARK` y `_PALETA_LIGHT` de `app.py` **se derivan de esos tokens**, así
+que los 30 paneles heredan la imagen sin tocarlos uno por uno. El modo claro
+deja de ser «VS Code Light+» y pasa a ser el reverso cálido de la identidad
+(papel y tinta, mismo cobre).
+
+### 2. Los colores incrustados a mano — 691 literales remapeados
+
+La paleta solo alcanzaba a lo que usaba las variables globales. En `app.py`
+había **821 colores escritos a mano** —cinco generaciones superpuestas: VS Code,
+GitHub dark, Catppuccin, azules sueltos—, así que el interior de los paneles
+seguiría siendo de otra aplicación. Se remapearon **691** contra los tokens
+nuevos, incluidas las series de matplotlib, de modo que las figuras salgan en la
+misma gama que la interfaz.
+
+Los siete que quedan son negros de fondo para los lienzos de imagen, donde el
+negro es lo correcto.
+
+De paso se corrigieron dos herencias del tema claro que en fondo oscuro
+deslumbraban: la leyenda de autoría de Segmentar y las etiquetas de categoría de
+la tabla NER, que eran chips claros con texto negro. Ahora son fondos tintados
+con el texto del color de la señal.
+
+### 3. Panel «Inicio» — el tablero de investigación
+
+Nueva página, y ahora es la de arranque. Resume el proyecto activo: cuatro
+indicadores del corpus (páginas procesadas, confianza media del OCR, artículos,
+entidades), el estado de las seis etapas del flujo, la actividad reciente, las
+acciones siguientes y **las capacidades realmente instaladas en este equipo**
+(Tesseract, Poppler, PyMuPDF, spaCy, Kraken, LLM local).
+
+- `state_from_bashkar(ST)` traduce el `Estado` real al modelo del tablero.
+  Nunca evalúa un DataFrame como booleano: `corpus_meta` y `df_articulos` lo
+  son, y `bool(df)` lanza `ValueError` (el bug de la sesión 43).
+- Se monta con `chrome=False`: el tablero va dentro de la ventana existente y
+  el chrome —topbar, activity bar, sidebar— lo sigue dibujando `app.py`, que es
+  quien conoce los 30 paneles.
+- Las etapas en «revisar» (ámbar) son las `stale` del `Estado`: completadas,
+  pero con una etapa anterior cambiada después.
+
+### 4. El chrome
+
+- **Topbar** (40 → 56 px): la marca en serif con la B de cobre, el descriptor,
+  el nombre del proyecto, y dos pastillas de estado —«Procesamiento local» y el
+  estado real de la IA externa—. El grupo de botones de la derecha se empaqueta
+  primero: con un nombre de proyecto largo, `pack` los echaba fuera de la
+  ventana.
+- **Sidebar**: cabecera de contexto en cobre, elemento activo en ámbar con
+  barra de cobre a la izquierda.
+- **Barra de estado**: «Todo se procesa en tu equipo», en verde, siempre visible.
+
+### 5. Tres defectos que aparecieron al mirar la ventana de verdad
+
+Ninguno lo habría delatado la suite; salieron de abrir la aplicación y
+fotografiarla con `PrintWindow`.
+
+- **El nombre del proyecto nunca llegaba a la topbar.** `_build_sidebar` creaba
+  un segundo Label llamado igual (`_lbl_pub_hdr`) y lo pisaba, así que todas las
+  actualizaciones iban al del sidebar. Ahora hay `_set_pub_hdr`, que escribe en
+  los dos.
+- **El sidebar mostraba dos listas al arrancar** (el contexto activo y, debajo,
+  los 30 paneles) con el nombre del proyecto repetido. La lista completa la
+  borraba el primer cambio de contexto; sobraba desde que existe la activity
+  bar. Se eliminó `_poblar_nav_sidebar`.
+- **El sidebar no seguía a la navegación.** Al saltar de contexto desde una
+  acción del tablero, la columna seguía mostrando los paneles del contexto
+  anterior. Ahora se repuebla (diferido con `after(0)`: repoblar destruye el
+  botón que puede estar atendiendo el clic).
+
+### Verificación
+
+`tests/test_ui_redesign.py` (14 nuevos): el adaptador con DataFrames reales y
+etapas `stale`, que la paleta de `app.py` salga de los tokens, que no queden
+colores de VS Code incrustados, que el panel arranque y se remonte al volver,
+que las acciones naveguen a páginas reales, que la pastilla de IA siga al
+interruptor, y que el tablero **no** use `bind_all` para la rueda del ratón —un
+bind global dejaría sin scroll a los otros 30 paneles.
+
+Cuatro capturas de la ventana real (`PrintWindow`, no lectura de pantalla)
+sirvieron para corregir el recorte de las tarjetas: la fila 1 del shell se
+llevaba media ventana vacía, los cuatro indicadores no caben en fila a 1280 px
+—ahora van en rejilla 2×2— y los textos del hero se reajustan al ancho real.
+
+`web/styles.css` adopta los mismos tokens, para que escritorio y web no
+divergan. `ui_redesign` queda declarado en `bashkar_station.spec`.
+
+### El ejecutable
+
+Compilado a disco local (`--distpath C:/build_rf/bs_dist`, nunca sobre Google
+Drive: allí el bootloader se relanza en cadena y deja DLLs bloqueadas). 13 min,
+9 873 archivos, 1 742 MB, exe de 103 MB.
+
+Se comprobó que `ui_redesign` viajó **dentro del PYZ**, leyéndolo con
+`ZlibArchiveReader` en vez de buscar cadenas en el `.exe` —el PYZ va comprimido
+y esa búsqueda da falso negativo—. La prueba de humo vigila segundo a segundo y
+mata todo si aparecen más de cuatro procesos (la bomba de fork del 8-jul obligó
+a reiniciar la máquina): **un solo proceso** durante 40 s, ventana abierta y
+fotografiada con `PrintWindow`.
+
+Desplegado en `C:\Programas\BashkarStation\` (el v11.11 quedó apartado en
+`_BashkarStation_v11.11_anterior`), con el manual regenerado al lado —**31
+paneles**, el nuevo incluido—, acceso directo `Bashkar Station v12.0.lnk` en
+`Escritorio\Mis Apps` y copia en la USB `D:\Programas\BashkarStation`.
+
+---
+
 ## Sesión 55 — 2026-08-10 — Por qué se congelaba el equipo, y el camino al modelo propio
 
 El encargo empezó como «optimizar los modelos» y terminó siendo un diagnóstico:
