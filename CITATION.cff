@@ -11,8 +11,8 @@ authors:
   - given-names: Fabián
     family-names: Gulla
     email: fabian.gulla@gmail.com
-version: "11.9"
-date-released: "2026-08-04"
+version: "12.0"
+date-released: "2026-08-14"
 license: Apache-2.0
 repository-code: "https://github.com/fabiangulla-pixel/Bashkar-Station"
 keywords:
@@ -21,8 +21,11 @@ keywords:
   - prensa histórica
   - historical newspapers
   - OCR
+  - HTR
   - XML-TEI
   - reconocimiento de entidades nombradas
   - Wikidata
   - Colombia
   - español histórico
+  - estudios editoriales
+  - revista Estampa
