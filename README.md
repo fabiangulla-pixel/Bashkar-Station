@@ -342,8 +342,8 @@ de Metodología de papers en revistas de humanidades digitales.
 Si usas Bashkar Station en tu investigación, por favor cita:
 
 ```bibtex
-@software{gulla_bashkar_station_2026,
-  author    = {Gulla, Fabián},
+@software{gullavan_bashkar_station_2026,
+  author    = {Gullaván Vera, Fabián Andrés},
   title     = {Bashkar Station: Plataforma de Análisis Editorial Computacional
                para Publicaciones Periódicas Históricas},
   year      = {2026},
