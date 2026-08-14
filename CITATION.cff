@@ -15,6 +15,18 @@ authors:
 version: "12.0"
 date-released: "2026-08-14"
 license: Apache-2.0
+doi: "10.5281/zenodo.21939404"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.21939404"
+    description: >-
+      DOI de concepto: resuelve siempre a la versión más reciente. Úsalo para
+      citar el software como proyecto.
+  - type: doi
+    value: "10.5281/zenodo.21939405"
+    description: >-
+      DOI de la versión 12.0. Úsalo al publicar resultados, para que quien te
+      lea descargue exactamente el código que ejecutaste.
 repository-code: "https://github.com/fabiangulla-pixel/Bashkar-Station"
 keywords:
   - humanidades digitales

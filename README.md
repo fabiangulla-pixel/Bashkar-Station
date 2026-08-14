@@ -1,6 +1,7 @@
 # ⬡ Bashkar Station v12.0
 ### Plataforma de Análisis Editorial Computacional para Publicaciones Periódicas Históricas
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21939404.svg)](https://doi.org/10.5281/zenodo.21939404)
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/tests-1145%20passing-brightgreen.svg)](#tests)
@@ -339,7 +340,7 @@ de Metodología de papers en revistas de humanidades digitales.
 
 ## Citación
 
-Si usas Bashkar Station en tu investigación, por favor cita:
+Cada versión publicada queda archivada en Zenodo con su propio DOI.
 
 ```bibtex
 @software{gullavan_bashkar_station_2026,
@@ -348,12 +349,28 @@ Si usas Bashkar Station en tu investigación, por favor cita:
                para Publicaciones Periódicas Históricas},
   year      = {2026},
   version   = {12.0},
-  url       = {https://github.com/fabiangulla-pixel/Bashkar-Station}
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.21939405},
+  url       = {https://doi.org/10.5281/zenodo.21939405}
 }
 ```
 
+**Dos DOI, y no dan lo mismo:**
+
+| DOI | Resuelve a | Cuándo usarlo |
+|-----|-----------|---------------|
+| [`10.5281/zenodo.21939404`](https://doi.org/10.5281/zenodo.21939404) | siempre a la versión más reciente | citar el software como proyecto |
+| [`10.5281/zenodo.21939405`](https://doi.org/10.5281/zenodo.21939405) | fijo a la versión 12.0 | reproducibilidad: describir los resultados que produjo *esta* versión |
+
+Si publicas resultados obtenidos con la aplicación, cita el DOI de versión: es
+el único que garantiza que quien te lea pueda descargar exactamente el mismo
+código que ejecutaste.
+
 Los metadatos de citación legibles por máquina están en
-[`CITATION.cff`](CITATION.cff).
+[`CITATION.cff`](CITATION.cff), y los del depósito en
+[`.zenodo.json`](.zenodo.json). Cuando existe `.zenodo.json`, **Zenodo ignora
+`CITATION.cff`**: los dos hay que actualizarlos a la vez o el registro del DOI
+y la ficha de GitHub dirán versiones distintas.
 
 ---
 
