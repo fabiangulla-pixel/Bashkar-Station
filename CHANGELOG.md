@@ -2,6 +2,96 @@
 
 ---
 
+## Sesión 57 — 2026-08-14 — Primer DOI citable, en Zenodo
+
+Pendiente que arrastraba la sesión 55: «en la próxima sesión hacemos lo de
+Zenodo». Al revisar el estado real del repo aparecieron dos cosas que la
+memoria de sesión tenía mal: la v12.0 de la sesión 56 sí estaba commiteada
+(no «falta commitear») pero nunca se había subido — 5 commits solo en local
+— y los tags remotos llegaban solo a v11.9.
+
+### 1. Se subió lo pendiente y se creó `.zenodo.json`
+
+`git push` de los 5 commits de la v12.0. La pieza que de verdad faltaba para
+un DOI decente es **`.zenodo.json`** (nuevo, raíz del repo): sin él, Zenodo
+arma el registro con la descripción de una línea de GitHub y el usuario de
+GitHub como autor. Con él: título completo, descripción larga, tipo
+`software`, licencia `apache-2.0` (en minúscula: es el identificador SPDX
+que acepta el vocabulario real de Zenodo — `Apache-2.0` con mayúscula da
+404), idioma `spa`, 14 palabras clave.
+
+### 2. El autor no coincidía con el ORCID
+
+El repositorio citaba a «Gulla, Fabián». El ORCID del autor
+(`0000-0001-5897-4930`, verificado contra el registro público de orcid.org)
+está a nombre de «Gullaván Vera, Fabián Andrés» — apellido distinto, no una
+variante ortográfica. Confirmado que es el nombre legal: se corrigió en
+`.zenodo.json`, `CITATION.cff`, `LICENSE`, `NOTICE`, `README.md` (BibTeX) y
+`manual/generar_manual.py`.
+
+De paso, leyendo `NOTICE` para hacer el cambio salió la **financiación** que
+no estaba en ningún metadato de depósito: Beca a Nuevos Investigadores en
+Estudios Editoriales del Ministerio de las Culturas, las Artes y los Saberes
+de Colombia, y apoyo del Instituto Caro y Cuervo. Ahora consta en el campo
+`notes` de `.zenodo.json`.
+
+### 3. Integración, tag y release
+
+Repo activado en `zenodo.org/account/settings/github/` (toggle ON,
+**antes** de publicar la release — Zenodo solo archiva releases posteriores
+a la activación). Tag `v12.0` sobre el commit final con los metadatos.
+Release publicada por la API de GitHub (`gh` no está instalado en este
+entorno; se usó `urllib` con el token que ya vivía en el gestor de
+credenciales de Windows).
+
+Zenodo emitió el DOI en menos de un minuto:
+- **Concepto** (citar el proyecto, siempre la última versión):
+  `10.5281/zenodo.21939404`
+- **Versión 12.0** (citar en resultados publicados, fijo a este código):
+  `10.5281/zenodo.21939405`
+
+Verificado contra la API de Zenodo que el registro llegó completo: autor con
+ORCID, licencia, idioma, 14 keywords, nota de financiación, zip del código.
+Registro: https://zenodo.org/records/21939405
+
+### 4. Badge y ficha de citación
+
+`README.md`: badge DOI, tabla con los dos DOI y cuándo usar cada uno, BibTeX
+con `publisher = {Zenodo}`. `CITATION.cff`: ambos DOI en `identifiers:`.
+
+**Hallazgo para el mantenimiento:** cuando existe `.zenodo.json`, **Zenodo
+ignora `CITATION.cff`** por completo (confirmado en la documentación oficial:
+help.zenodo.org/docs/github/describe-software/). El `.cff` sigue haciendo
+falta porque es lo que lee el botón «Cite this repository» de GitHub, pero
+los dos archivos hay que actualizarlos juntos en cada versión o el DOI y la
+ficha de GitHub van a decir cosas distintas.
+
+### Archivos modificados
+
+| Archivo | Cambio |
+|---|---|
+| `.zenodo.json` | Nuevo. Metadatos completos del depósito. |
+| `CITATION.cff` | Autor→ORCID, versión 12.0, ambos DOI en `identifiers`. |
+| `README.md` | Versión 12.0, badge DOI, tabla de los dos DOI, BibTeX con DOI. |
+| `LICENSE` | Titular del copyright→nombre legal. |
+| `NOTICE` | Titular del copyright→nombre legal. |
+| `manual/generar_manual.py` | `AUTOR`→nombre legal. |
+
+### Verificación
+
+6 commits, todos con la suite completa en verde vía el hook pre-commit:
+**1393 passed, 22 skipped** en cada corrida. Sin cambios de código — solo
+metadatos —, así que no hubo motivo para recompilar el `.exe`.
+
+### Pendiente
+
+El toggle de la integración ya quedó en ON. De aquí en adelante, cada
+versión nueva solo necesita que alguien **cree la release en GitHub**
+(el tag solo, sin release, no dispara el webhook de Zenodo) y el DOI de esa
+versión sale automático.
+
+---
+
 ## Sesión 56 — 2026-08-13 — v12.0, imagen propia: grafito, cobre y un panel de inicio
 
 Hasta hoy la interfaz era, declaradamente, una imitación de VS Code: la paleta
