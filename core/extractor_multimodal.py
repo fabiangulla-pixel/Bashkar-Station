@@ -220,82 +220,17 @@ def extraer_pagina(
     prov = (proveedor or "gemini").strip().lower()
 
     try:
-        if prov == "gemini":
-            try:
-                import google.generativeai as genai
-            except ImportError as e:
-                raise ImportError(
-                    "Instala google-generativeai: pip install google-generativeai") from e
-            import io as _io
-
-            import PIL.Image
-            genai.configure(api_key=api_key)
-            # JSON mode nativo de Gemini: response_mime_type fuerza salida JSON.
-            m = genai.GenerativeModel(
-                modelo or "gemini-2.5-flash",
-                generation_config={"response_mime_type": "application/json",
-                                   "temperature": 0.0},
-            )
-            pil_img = PIL.Image.open(_io.BytesIO(img_bytes))
-            resp = m.generate_content([prompt, pil_img])
-            raw = resp.text or ""
-
-        elif prov == "claude":
-            client = ocr_llm._cliente_claude(api_key)
-            msg = client.messages.create(
-                model=modelo or "claude-sonnet-4-6",
-                max_tokens=4096,
-                messages=[{"role": "user", "content": [
-                    {"type": "image", "source": {"type": "base64",
-                                                 "media_type": media_type, "data": img_b64}},
-                    {"type": "text", "text": prompt},
-                ]}],
-            )
-            ocr_llm._registrar_usage(msg)
-            raw = msg.content[0].text
-
-        elif prov == "openai":
-            client = ocr_llm._cliente_openai(api_key)
-            resp = client.chat.completions.create(
-                model=modelo or "gpt-4o",
-                max_tokens=4096,
-                response_format={"type": "json_object"},
-                messages=[{"role": "user", "content": [
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:{media_type};base64,{img_b64}"}},
-                    {"type": "text", "text": prompt},
-                ]}],
-            )
-            ocr_llm._registrar_usage(resp)
-            raw = resp.choices[0].message.content
-
-        elif prov == "ollama":
-            import requests as _req
-            resp = _req.post(
-                "http://localhost:11434/api/generate",
-                json={"model": modelo or "llava", "prompt": prompt,
-                      "images": [img_b64], "format": "json", "stream": False},
-                timeout=180,
-            )
-            resp.raise_for_status()
-            raw = resp.json().get("response", "")
-
-        elif prov == "lmstudio":
-            host = api_key if api_key and api_key.startswith("http") else "http://localhost:1234"
-            client = ocr_llm._cliente_lmstudio(host)
-            resp = client.chat.completions.create(
-                model=modelo or "local-model",
-                max_tokens=4096,
-                messages=[{"role": "user", "content": [
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:{media_type};base64,{img_b64}"}},
-                    {"type": "text", "text": prompt},
-                ]}],
-            )
-            ocr_llm._registrar_usage(resp)
-            raw = resp.choices[0].message.content
-        else:
-            raise ValueError(f"Proveedor desconocido: {proveedor}")
+        from core import inference_provider as _ip
+        resp = _ip.generate_vision(
+            prov, prompt, img_b64, media_type,
+            api_key=api_key, modelo=modelo, json_mode=True, timeout_ollama=180,
+            cliente_claude=ocr_llm._cliente_claude,
+            cliente_openai=ocr_llm._cliente_openai,
+            cliente_lmstudio=ocr_llm._cliente_lmstudio,
+            modelo_default_gemini="gemini-2.5-flash",
+        )
+        ocr_llm._registrar_usage_valor(resp.usage)
+        raw = resp.texto
     finally:
         del img_bytes, img_b64
         gc.collect()

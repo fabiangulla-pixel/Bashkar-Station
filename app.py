@@ -3959,7 +3959,7 @@ class BashkarApp(tk.Tk):
         lb_frame = tk.Frame(arch_frame, bg=CARD_BOR, bd=1, relief="solid")
         lb_frame.pack(fill="x", pady=(4,0))
         sby_lb = ttk.Scrollbar(lb_frame, orient="vertical")
-        self._lb = tk.Listbox(lb_frame, selectmode="multiple", height=5,
+        self._lb = tk.Listbox(lb_frame, selectmode="multiple", height=10,
                               font=("Courier",9), bg="#171C20", relief="flat",
                               yscrollcommand=sby_lb.set, selectbackground=AZ3,
                               selectforeground="white", activestyle="none")
@@ -4106,7 +4106,7 @@ class BashkarApp(tk.Tk):
         tk.Label(c7, text="Un nombre por línea, exactamente como aparece en la revista:",
                  bg=CARD_BG, fg="#E8E5DF", font=("Segoe UI",9)).grid(
                  row=1, column=0, columnspan=3, sticky="w", pady=(0,6))
-        self._txt_col = scrolledtext.ScrolledText(c7, height=5, width=60, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", insertbackground="#E8E5DF", relief="solid", bd=1)
+        self._txt_col = scrolledtext.ScrolledText(c7, height=12, width=60, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", insertbackground="#E8E5DF", relief="solid", bd=1)
         self._txt_col.grid(row=2, column=0, columnspan=3, sticky="ew")
         self._txt_col.insert("1.0", COLABS_DEFAULT)
 
@@ -4115,7 +4115,7 @@ class BashkarApp(tk.Tk):
         campos_txt = _json.dumps(
             CAMPOS_DEFAULT, ensure_ascii=False, indent=2
         ).strip("{}\n").strip()
-        self._txt_sem = scrolledtext.ScrolledText(c8, height=8, width=70, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", insertbackground="#E8E5DF", relief="solid", bd=1)
+        self._txt_sem = scrolledtext.ScrolledText(c8, height=26, width=70, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", insertbackground="#E8E5DF", relief="solid", bd=1)
         self._txt_sem.grid(row=1, column=0, columnspan=3, sticky="ew")
         self._txt_sem.insert("1.0", campos_txt)
         # _mk_ayuda usa .pack() internamente — necesita frame propio (c8 usa grid)
@@ -4393,7 +4393,7 @@ class BashkarApp(tk.Tk):
                  side="left", fill="x", expand=True)
         ttk.Button(url_row, text="Extraer →", style="S.TButton",
                    command=self._extraer_metadatos_url).pack(side="left", padx=(6,0))
-        self._txt_meta_result = scrolledtext.ScrolledText(c10, height=5, width=70, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", relief="solid", bd=1, state="disabled")
+        self._txt_meta_result = scrolledtext.ScrolledText(c10, height=14, width=70, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", relief="solid", bd=1, state="disabled")
         self._txt_meta_result.grid(row=2, column=0, columnspan=3, sticky="ew", pady=(8,0))
 
         # ── Botón confirmar ────────────────────────────────────────────────────

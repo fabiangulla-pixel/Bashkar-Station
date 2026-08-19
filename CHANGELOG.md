@@ -2,6 +2,61 @@
 
 ---
 
+## Sesión 58 — 2026-08-19 — Cajas de texto de Configuración, auditoría de motores IA y capa InferenceProvider
+
+Arrancó con un reporte del usuario: el panel Configuración "se sentía recortado"
+pese a tener espacio de sobra. Causa real: cuatro cajas de texto (`ScrolledText`/
+`Listbox`) con altura fija en líneas muy por debajo de su propio contenido por
+defecto — la de colaboradores mostraba 8 nombres en una caja de 5 líneas, y la
+de campos semánticos generaba **67 líneas de JSON en una caja de 8**. Corregido
+en `_build_cfg()` (`app.py`): colaboradores 5→12, campos semánticos 8→26,
+resultado de extracción de metadatos por URL 5→14, lista de archivos 5→10. La
+página ya se desplaza entera con scroll de canvas, así que agrandar estas cajas
+no rompe el layout.
+
+### Auditoría de motores IA (`AUDITORIA_IA.md`, nuevo)
+
+A partir de un encargo externo (`-_actualizaciones generales_-/INSTRUCCIONES_
+CLAUDE_CODE_ACTUALIZACION_MOTORES_IA_2026-08-18.md`) que pedía evaluar NVIDIA
+Nemotron Parse 2.0, Agent Plugins 1.0, LFM2.5-VL-3B y Qwen3.8-27B. Las cuatro
+tecnologías se verificaron reales (todas de agosto 2026) antes de tocar nada.
+Hallazgo propio de la auditoría: el branching por proveedor LLM (claude/openai/
+gemini/ollama/lmstudio) estaba copiado por separado en `ocr_llm.py`,
+`ner_engine.py` y `extractor_multimodal.py`, y ya había divergido —
+`ner_engine.validar_con_llm` no soportaba openai/gemini mientras los otros dos
+sí. Detalle completo, matriz de puntuación y riesgos en `AUDITORIA_IA.md`.
+
+### Capa `InferenceProvider` (implementada, a petición del usuario)
+
+`core/inference_provider.py` (nuevo): `generate_text()` y `generate_vision()`
+despachan por proveedor en un solo sitio. Diseño deliberado — la capa NO posee
+las fábricas de cliente (`_cliente_claude`/`_cliente_openai`/`_cliente_lmstudio`
+siguen en `ocr_llm.py`, inyectadas por parámetro) para no romper los tests que
+hacen `monkeypatch.setattr(ocr_llm, "_cliente_lmstudio", stub)`
+(`tests/test_lmstudio_provider.py`); por el mismo motivo, el SDK de Gemini se
+sigue importando de forma perezosa dentro de cada rama, no a nivel de módulo,
+para que los tests que parchean `sys.modules["google.generativeai"]` no dejen
+de funcionar sin importar qué módulo hace el `import`.
+
+Migrados sin cambiar comportamiento externo: `ocr_llm.ocr_con_vision()`,
+`ocr_llm.corregir_texto()`, `ner_engine.validar_con_llm()` (conserva su lógica
+propia de resolver `api_key` como posible URL de Ollama, distinta de
+`ocr_llm.py`, y su `ConnectionError` con mensaje accionable),
+`extractor_multimodal.extraer_pagina()`. Los 61 tests de estos módulos pasan
+sin cambios, incluida la suite completa de `test_lmstudio_provider.py`.
+
+### Nemotron Parse 2.0 — descartado sin descargarlo
+
+Su ficha oficial en HuggingFace exige GPU CUDA en el snippet de uso canónico
+(`model.to("cuda:0")`) y no documenta ruta de CPU — a diferencia de CHURRO-3B,
+que sí corre en CPU en este mismo equipo (Ryzen 5 5500U, sin GPU dedicada).
+Decisión del usuario: descartar sin gastar ancho de banda en una descarga que
+la propia documentación del proveedor ya certifica como incompatible. Revisar
+si NVIDIA publica soporte CPU o el proyecto suma una GPU.
+
+**Suite:** 1393 passed, 22 skipped antes del refactor (línea base, confirmada
+igual a la memoria de sesión 57); igual después, sin regresiones.
+
 ## Sesión 57 — 2026-08-14 — Primer DOI citable, en Zenodo
 
 Pendiente que arrastraba la sesión 55: «en la próxima sesión hacemos lo de

@@ -150,53 +150,38 @@ def validar_con_llm(texto: str, api_key: str, modelo: str = None,
     fragmento = texto[:8000]
     prompt_final = _PROMPT.replace("{texto}", fragmento)
 
+    if proveedor not in ("claude", "ollama", "lmstudio"):
+        return {}
+
     try:
-        if proveedor == "claude":
-            try:
-                import anthropic
-            except ImportError:
-                return {}
-            _modelo = modelo or "claude-sonnet-4-6"
-            client = anthropic.Anthropic(api_key=api_key)
-            msg = client.messages.create(
-                model=_modelo,
-                max_tokens=1500,
-                system="Responde únicamente con JSON válido, sin markdown.",
-                messages=[{"role": "user", "content": prompt_final}]
+        import requests as _req
+
+        from core import inference_provider as _ip
+        from core import ocr_llm
+
+        def _cliente_claude(k):
+            import anthropic
+            return anthropic.Anthropic(api_key=k)
+
+        url_ollama = api_key if api_key and api_key.startswith("http") else "http://localhost:11434"
+        try:
+            resp = _ip.generate_text(
+                proveedor, prompt_final,
+                api_key=api_key, modelo=modelo, max_tokens=1500,
+                system=("Responde únicamente con JSON válido, sin markdown."
+                        if proveedor == "claude" else None),
+                cliente_claude=_cliente_claude,
+                cliente_lmstudio=ocr_llm._cliente_lmstudio,
+                modelo_default_claude="claude-sonnet-4-6",
+                modelo_default_ollama="latamgpt",
+                host_ollama=url_ollama,
             )
-            raw = msg.content[0].text.strip()
-
-        elif proveedor == "ollama":
-            import requests as _req
-            _modelo = modelo or "latamgpt"
-            url = api_key if api_key and api_key.startswith("http") else "http://localhost:11434"
-            try:
-                resp = _req.post(
-                    f"{url}/api/generate",
-                    json={"model": _modelo, "prompt": prompt_final, "stream": False},
-                    timeout=180,
-                )
-                resp.raise_for_status()
-            except _req.exceptions.ConnectionError:
-                raise ConnectionError(
-                    f"No se pudo conectar a Ollama en {url}.\n"
-                    "Asegúrate de que Ollama esté corriendo: ollama serve"
-                )
-            raw = resp.json().get("response", "")
-
-        elif proveedor == "lmstudio":
-            from core.ocr_llm import _cliente_lmstudio
-            host = api_key if api_key and api_key.startswith("http") else "http://localhost:1234"
-            client = _cliente_lmstudio(host)
-            resp = client.chat.completions.create(
-                model=modelo or "local-model",
-                max_tokens=1500,
-                messages=[{"role": "user", "content": prompt_final}],
+        except _req.exceptions.ConnectionError:
+            raise ConnectionError(
+                f"No se pudo conectar a Ollama en {url_ollama}.\n"
+                "Asegúrate de que Ollama esté corriendo: ollama serve"
             )
-            raw = resp.choices[0].message.content or ""
-
-        else:
-            return {}
+        raw = resp.texto
 
         raw = re.sub(r"^```json\s*", "", raw.strip())
         raw = re.sub(r"\s*```$", "", raw)

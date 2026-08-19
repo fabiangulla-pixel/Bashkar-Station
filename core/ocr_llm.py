@@ -32,7 +32,13 @@ _USAGES_LOCK = threading.Lock()
 
 def _registrar_usage(obj) -> None:
     """Acumula el `usage` de una respuesta de Claude/OpenAI (si lo trae)."""
-    usage = getattr(obj, "usage", None)
+    _registrar_usage_valor(getattr(obj, "usage", None))
+
+
+def _registrar_usage_valor(usage) -> None:
+    """Como `_registrar_usage`, pero recibe el `usage` ya extraído (p. ej.
+    desde `inference_provider.ProviderResponse.usage`) en vez del objeto
+    respuesta completo del SDK."""
     if usage is not None:
         with _USAGES_LOCK:
             _USAGES.append(usage)
@@ -202,76 +208,16 @@ def ocr_con_vision(
     img_b64 = base64.b64encode(img_bytes).decode()
 
     try:
-        if proveedor == "claude":
-            client = _cliente_claude(api_key)
-            msg = client.messages.create(
-                model=modelo or _MODELO_VISION,
-                max_tokens=4096,
-                messages=[{"role": "user", "content": [
-                    {"type": "image", "source": {
-                        "type": "base64", "media_type": media_type, "data": img_b64}},
-                    {"type": "text", "text": _PROMPT_VISION},
-                ]}],
-            )
-            _registrar_usage(msg)
-            return _filtrar_vision(msg.content[0].text.strip())
-
-        elif proveedor == "openai":
-            client = _cliente_openai(api_key)
-            resp = client.chat.completions.create(
-                model=modelo or "gpt-4o",
-                max_tokens=4096,
-                messages=[{"role": "user", "content": [
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:{media_type};base64,{img_b64}"}},
-                    {"type": "text", "text": _PROMPT_VISION},
-                ]}],
-            )
-            _registrar_usage(resp)
-            return _filtrar_vision(resp.choices[0].message.content.strip())
-
-        elif proveedor == "gemini":
-            try:
-                import google.generativeai as genai
-            except ImportError as e:
-                raise ImportError("Instala google-generativeai: pip install google-generativeai") from e
-            genai.configure(api_key=api_key)
-            m = genai.GenerativeModel(modelo or "gemini-1.5-flash")
-            import io as _io
-
-            import PIL.Image
-            pil_img = PIL.Image.open(_io.BytesIO(img_bytes))
-            resp = m.generate_content([_PROMPT_VISION, pil_img])
-            return _filtrar_vision(resp.text.strip())
-
-        elif proveedor == "ollama":
-            import requests as _req
-            resp = _req.post(
-                "http://localhost:11434/api/generate",
-                json={"model": modelo or "llava", "prompt": _PROMPT_VISION,
-                      "images": [img_b64], "stream": False},
-                timeout=120,
-            )
-            resp.raise_for_status()
-            return _filtrar_vision(resp.json().get("response", "").strip())
-
-        elif proveedor == "lmstudio":
-            host = api_key if api_key and api_key.startswith("http") else "http://localhost:1234"
-            client = _cliente_lmstudio(host)
-            resp = client.chat.completions.create(
-                model=modelo or "local-model",
-                max_tokens=4096,
-                messages=[{"role": "user", "content": [
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:{media_type};base64,{img_b64}"}},
-                    {"type": "text", "text": _PROMPT_VISION},
-                ]}],
-            )
-            _registrar_usage(resp)
-            return _filtrar_vision(resp.choices[0].message.content.strip())
-
-        else:
-            raise ValueError(f"Proveedor desconocido: {proveedor}")
+        from core import inference_provider as _ip
+        resp = _ip.generate_vision(
+            proveedor, _PROMPT_VISION, img_b64, media_type,
+            api_key=api_key, modelo=modelo,
+            cliente_claude=_cliente_claude, cliente_openai=_cliente_openai,
+            cliente_lmstudio=_cliente_lmstudio,
+            modelo_default_claude=_MODELO_VISION,
+        )
+        _registrar_usage_valor(resp.usage)
+        return _filtrar_vision(resp.texto)
 
     finally:
         del img_bytes, img_b64
@@ -338,58 +284,18 @@ def corregir_texto(
     resto = texto_ocr[MAX_CHARS_CORRECCION:] if len(texto_ocr) > MAX_CHARS_CORRECCION else ""
     prompt = _PROMPT_CORRECCION.replace("{texto}", fragmento)
 
-    if proveedor == "claude":
-        client = _cliente_claude(api_key)
-        msg = client.messages.create(
-            model=modelo or _MODELO_TEXTO,
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        _registrar_usage(msg)
-        corregido = msg.content[0].text.strip()
-
-    elif proveedor == "openai":
-        client = _cliente_openai(api_key)
-        resp = client.chat.completions.create(
-            model=modelo or "gpt-4o-mini",
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        _registrar_usage(resp)
-        corregido = resp.choices[0].message.content.strip()
-
-    elif proveedor == "gemini":
-        try:
-            import google.generativeai as genai
-        except ImportError as e:
-            raise ImportError("Instala google-generativeai: pip install google-generativeai") from e
-        genai.configure(api_key=api_key)
-        m = genai.GenerativeModel(modelo or "gemini-1.5-flash")
-        corregido = m.generate_content(prompt).text.strip()
-
-    elif proveedor == "ollama":
-        import requests as _req
-        resp = _req.post(
-            "http://localhost:11434/api/generate",
-            json={"model": modelo or "llama3.1", "prompt": prompt, "stream": False},
-            timeout=120,
-        )
-        resp.raise_for_status()
-        corregido = resp.json().get("response", "").strip()
-
-    elif proveedor == "lmstudio":
-        host = api_key if api_key and api_key.startswith("http") else "http://localhost:1234"
-        client = _cliente_lmstudio(host)
-        resp = client.chat.completions.create(
-            model=modelo or "local-model",
-            max_tokens=4096,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        _registrar_usage(resp)
-        corregido = resp.choices[0].message.content.strip()
-
-    else:
-        raise ValueError(f"Proveedor desconocido: {proveedor}")
+    from core import inference_provider as _ip
+    resp = _ip.generate_text(
+        proveedor, prompt,
+        api_key=api_key, modelo=modelo,
+        cliente_claude=_cliente_claude, cliente_openai=_cliente_openai,
+        cliente_lmstudio=_cliente_lmstudio,
+        modelo_default_claude=_MODELO_TEXTO,
+        modelo_default_openai="gpt-4o-mini",
+        timeout_ollama=120,
+    )
+    _registrar_usage_valor(resp.usage)
+    corregido = resp.texto
 
     # Si el LLM respondió con un rechazo o meta-comentario en lugar de la
     # corrección, conservar el texto original intacto.
