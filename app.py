@@ -4408,6 +4408,14 @@ class BashkarApp(tk.Tk):
     def _on_tipo(self):
         # _lf_ent is now a plain Frame; we update the label separately if needed
         self._lb.delete(0, "end"); self._archivos_disp = []
+        # Si ya había una carpeta de entrada elegida, volver a escanearla con el
+        # tipo nuevo. Antes la lista quedaba vacía en silencio hasta que el
+        # usuario pulsaba "Examinar…" de nuevo — el campo de carpeta seguía
+        # mostrando la ruta, así que parecía configurado y "Confirmar" fallaba
+        # una y otra vez con "Selecciona al menos un archivo".
+        ruta = self._var_ent.get().strip()
+        if ruta and Path(ruta).is_dir():
+            self._poblar_lista(Path(ruta))
 
     def _sel_todos(self, s):
         self._lb.select_set(0,"end") if s else self._lb.select_clear(0,"end")
