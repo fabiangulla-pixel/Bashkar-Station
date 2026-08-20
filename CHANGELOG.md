@@ -2,6 +2,75 @@
 
 ---
 
+## Sesión 59 — 2026-08-20 — Hueco vacío en Configuración + clasificador de sección mal calibrado
+
+Dos bugs reales, encontrados por dos vías distintas: el usuario señaló un
+hueco visual con un pantallazo resaltado; el segundo salió de auditar una
+prueba funcional real que el usuario corrió sobre el corpus Estampa.
+
+### 1. Doble canvas anidado en el panel Configuración (`app.py`)
+
+`_build_cfg()` era el único panel de toda la app que envolvía su contenido
+en un **segundo** Canvas+Scrollbar (`_hacer_scrollable`) dentro del Canvas
+que `_crear_pagina_scrollable()` ya arma para TODAS las páginas. El canvas
+interno se estiraba a la altura completa de la ventana sin importar cuán
+corto fuera el contenido real — de ahí el hueco negro enorme bajo "Archivos
+de entrada" que el usuario resaltó en el pantallazo. Ya se había evitado
+este mismo patrón para el panel "Inicio" (comentario explícito en el código
+sobre "dos barras de scroll y una altura que no se propaga"), pero nunca se
+aplicó a Configuración.
+
+**Fix:** se reemplazó el canvas anidado por un `Frame` simple con
+`pack(fill="x")`, igual que en el resto de paneles — su alto lo define el
+contenido, no la ventana. `_hacer_scrollable()` quedó sin ningún llamador
+tras el fix, así que se eliminó (dead code) en vez de dejarlo abandonado.
+Verificado midiendo los widgets directamente (headless, sin capturas ni
+clics simulados): 0 canvas anidados, panel navega sin crash.
+
+### 2. Clasificador de sección con subcadena sin límite de palabra (`core/article_segmenter.py`)
+
+Auditoría de una corrida real del usuario sobre *Estampa* marzo 1939 (138
+artículos segmentados) mostró que **41/138 (30%)** quedaron etiquetados
+"Poema/Verso" — moda, cine, sociedad y política mezclados ahí. Causa:
+`_detectar_seccion()` buscaba cada palabra clave como subcadena cruda
+(`p in texto`), y la clave `"verso"` (para Poema/Verso) es subcadena de
+palabras española comunísimas — "diversas", "conversación", "aniversario",
+"universo", "adverso". Como la función devuelve la **primera** sección que
+matchea y Poema/Verso está temprano en el diccionario `SECCIONES`, se comía
+la clasificación real de artículos de Cine/Teatro/Sociedad/Política que
+aparecen después en el mismo diccionario.
+
+**Fix:** coincidencia con límites de palabra (`\bpalabra\b` vía regex) en
+vez de subcadena cruda. Verificado con casos sintéticos antes/después
+("diversas prendas… conversación" ya no dispara Poema/Verso; "escribió un
+hermoso verso, una oda" sigue disparándolo correctamente) y con
+`tests/test_article_segmenter.py` (65/65 en verde).
+
+### Hallazgos de la misma auditoría, sin arreglar todavía (ver pendientes)
+
+- **`confianza` no mide calidad real de OCR** — solo toma dos valores fijos
+  (0.9/0.95) según el *método* de segmentación (`explicito`/`atomico`), no
+  la legibilidad del texto. Un título con basura OCR pura recibe la misma
+  confianza que uno limpio.
+- **`firmas.csv` mezcla autores reales con nombres de empresas de anuncios,
+  cargos institucionales y basura OCR** (ej. "Filmadora Kodak", "Secretario
+  de Estado", "corbeta Beau") — el extractor de firmas no filtra por tipo
+  de entidad.
+- **Dato de origen duplicado, no es bug de Bashkar:** la carpeta fuente del
+  usuario (`Corpus Estampa\Archivos descargados originales\`) tiene dos
+  PDFs del mismo número de marzo 1939 — `rev_estampa_mar_1939.pdf` (138
+  págs, bien nombrado) y `Páginas desderev_estampa_mar_1939.pdf` (export
+  parcial mal nombrado, probablemente de una prueba anterior). El usuario
+  seleccionó ambos, así que el mismo contenido se procesó dos veces bajo
+  dos "números" distintos. Vale la pena, a futuro, que Bashkar avise si dos
+  archivos seleccionados producen contenido casi idéntico.
+
+**Archivos modificados:** `app.py` (`_build_cfg` + eliminación de
+`_hacer_scrollable`), `core/article_segmenter.py` (`_detectar_seccion`).
+
+**Suite:** 1396 passed, 22 skipped, 0 failed tras el primer fix; pendiente
+confirmar el resultado final tras el segundo (ver informe de cierre).
+
 ## Sesión 58 — 2026-08-19 — Cajas de texto de Configuración, auditoría de motores IA y capa InferenceProvider
 
 Arrancó con un reporte del usuario: el panel Configuración "se sentía recortado"

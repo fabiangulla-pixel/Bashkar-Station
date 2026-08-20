@@ -609,70 +609,6 @@ def _estilos():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# WIDGET DE SCROLL CORRECTO
-# (sin bind_all que causa conflictos entre paneles)
-# ══════════════════════════════════════════════════════════════════════════════
-
-def _hacer_scrollable(frame_padre, bg=CONTENT_BG):
-    """
-    Crea un Canvas con Scrollbar vertical dentro de frame_padre.
-    El scroll con rueda solo se activa cuando el ratón está sobre el canvas.
-    Devuelve el Frame interior donde poner los widgets.
-    """
-    canvas = tk.Canvas(frame_padre, bg=bg, highlightthickness=0,
-                       borderwidth=0)
-    vsb    = ttk.Scrollbar(frame_padre, orient="vertical", command=canvas.yview)
-    canvas.configure(yscrollcommand=vsb.set)
-
-    vsb.pack(side="right", fill="y")
-    canvas.pack(side="left", fill="both", expand=True)
-
-    inner = tk.Frame(canvas, bg=bg)
-    wid   = canvas.create_window((0, 0), window=inner, anchor="nw")
-
-    def _on_inner_configure(e):
-        canvas.configure(scrollregion=canvas.bbox("all"))
-    inner.bind("<Configure>", _on_inner_configure)
-
-    def _on_canvas_configure(e):
-        canvas.itemconfig(wid, width=e.width)
-    canvas.bind("<Configure>", _on_canvas_configure)
-
-    # Rueda de ratón — activa en canvas E hijos (propagación completa)
-    def _scroll(e):
-        delta = -1 if (e.delta > 0 or e.num == 4) else 1
-        canvas.yview_scroll(delta, "units")
-
-    def _bind_scroll_widget(w):
-        """Propaga scroll a todos los widgets hijos del inner frame."""
-        try:
-            w.bind("<MouseWheel>", _scroll)
-            w.bind("<Button-4>",   _scroll)
-            w.bind("<Button-5>",   _scroll)
-        except Exception:
-            pass
-        for child in w.winfo_children():
-            _bind_scroll_widget(child)
-
-    # Bind inmediato al canvas
-    canvas.bind("<MouseWheel>", _scroll)
-    canvas.bind("<Button-4>",   _scroll)
-    canvas.bind("<Button-5>",   _scroll)
-    inner.bind("<MouseWheel>",  _scroll)
-    inner.bind("<Button-4>",    _scroll)
-    inner.bind("<Button-5>",    _scroll)
-
-    # Bind diferido a hijos (se crean después del return)
-    def _bind_hijos_diferido():
-        _bind_scroll_widget(inner)
-        # Repetir cada 2s para capturar widgets añadidos dinámicamente
-        canvas.after(2000, _bind_hijos_diferido)
-    canvas.after(500, _bind_hijos_diferido)
-
-    return inner, canvas
-
-
-# ══════════════════════════════════════════════════════════════════════════════
 # VENTANA PRINCIPAL
 # ══════════════════════════════════════════════════════════════════════════════
 # ── Prompts de asistente IA sugeridos por pestaña ────────────────────────────
@@ -3755,8 +3691,15 @@ class BashkarApp(tk.Tk):
                           "Define la publicación, los archivos y los parámetros del análisis",
                           "⚙")
 
-        # Área scrollable
-        pad, _canvas = _hacer_scrollable(f, bg=CONTENT_BG)
+        # `f` (= self._tab_cfg) YA es el frame interior de un Canvas+Scrollbar
+        # que arma `_crear_pagina_scrollable` para TODAS las páginas — no hay
+        # que envolverlo en OTRO canvas (ese doble canvas era el que dejaba un
+        # hueco enorme sin usar: el canvas interno se estiraba a toda la
+        # altura de la ventana aunque el contenido real fuera corto). Un
+        # frame simple con pack(fill="x") basta, igual que en el resto de
+        # páginas — su alto lo define el contenido, no la ventana.
+        pad = tk.Frame(f, bg=CONTENT_BG)
+        pad.pack(fill="x")
         pad.columnconfigure(0, weight=1)
         r = 0
 

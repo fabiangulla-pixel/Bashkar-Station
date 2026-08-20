@@ -175,7 +175,10 @@ def _es_nombre_personal(texto: str) -> bool:
 def _detectar_seccion(titulo: str, texto: str) -> str:
     tl = (titulo + " " + texto[:500]).lower()
     for sec, pats in SECCIONES.items():
-        if any(p in tl for p in pats):
+        # \b (límite de palabra): sin esto, "verso" (Poema/Verso) coincidía
+        # como subcadena de "diversas", "conversación", "aniversario"... y
+        # clasificaba mal ~30% del corpus real (medido 2026-08-20).
+        if any(re.search(rf'\b{re.escape(p)}\b', tl) for p in pats):
             return sec
     return "General"
 
