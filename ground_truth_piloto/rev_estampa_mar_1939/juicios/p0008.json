@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0008",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "Sir Henri Deterding.",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada, que trata de 'LOS INTELECTUALES ante el fascismo y ante la democracia'"
+    }
+  ],
+  "notes": "El texto OCR entregado es completamente distinto al contenido real de la imagen (que es sobre una encuesta a intelectuales colombianos, no sobre Sir Henri Deterding).",
+  "model": "claude-sonnet-5",
+  "input_tokens": 3916,
+  "output_tokens": 178,
+  "cost_usd": 0.009612
+}

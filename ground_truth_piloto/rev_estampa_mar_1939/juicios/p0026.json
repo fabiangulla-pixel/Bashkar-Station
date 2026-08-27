@@ -1,0 +1,19 @@
+{
+  "pagina_id": "p0026",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "Digitalizado Biblioteca Nacional de Colombia",
+      "issue": "texto no presente en la imagen real, corresponde a otra página"
+    },
+    {
+      "quote": "Sobre el hielo y sobre la arena",
+      "issue": "contenido completamente ajeno a la imagen mostrada, que trata de un reportaje sobre Jorge Rojas"
+    }
+  ],
+  "notes": "El texto OCR propuesto no corresponde en absoluto a la imagen proporcionada, que muestra un artículo titulado 'JORGE ROJAS, CAPITALISTA, NEGOCIANTE Y ABOGADO'.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 2815,
+  "output_tokens": 237,
+  "cost_usd": 0.008
+}

@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0037",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "Carlos Lleras Restrepo",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada; la imagen muestra un artículo sobre maquillaje del siglo XVIII y 'Bodas de Plata', no sobre catastro ni Carlos Lleras Restrepo"
+    }
+  ],
+  "notes": "El texto OCR entregado no coincide con el contenido visible en la imagen; parece pertenecer a otra página completamente distinta.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 6160,
+  "output_tokens": 190,
+  "cost_usd": 0.01422
+}

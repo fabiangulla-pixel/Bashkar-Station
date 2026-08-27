@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0041",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "LA RADIO CORPORACION DE AMERICA ES UN CONJUNTO DE CONSTRUCTORES\nQUE, CON EL SONIDO, ESCRIBEN HISTORIA EN EL CIELO. LOS PRINCIPALES FABRI-\nCANTES EN RADIODIFUSION; EN EQUIPOS DE RADIO Y DE SONIDO DE TODOS LOS\nTIPOS; EN RADIO-COMUNICACIONES; EN RADIO-INVESTIGACION, EN TELEVI-\n\nSIÓN.\nRCA, SIMBOLO DE LA EDAD DEL RADIO, AL SERVICIO DE LA HUMANIDAD.\n\nRadlomarine Corporation of America\n\nJ. GLOTTMANN Y CIA., S. A.\nLA CASA DEL RADIO\n\nGarrera 7a. Nos. 18-40 a 18-44 Teléfono_17-37\nImpreso en los talleres de Rotograbado de la Editorial Bolívar — Calle 40—613. Bogotá Colombia S. A.",
+      "issue": "El texto propuesto no corresponde en absoluto al contenido de la imagen, que es un artículo titulado 'La Lotería de Tunja' con texto completamente diferente"
+    }
+  ],
+  "notes": "El OCR parece haber sido generado a partir de una página distinta (un anuncio de RCA), no de la imagen mostrada.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 2805,
+  "output_tokens": 544,
+  "cost_usd": 0.01105
+}

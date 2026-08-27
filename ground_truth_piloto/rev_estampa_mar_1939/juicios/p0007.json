@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0007",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "EL ATENTADO ANTI - NAZI",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada, que trata de 'Las Mujeres Quieren Votar'"
+    }
+  ],
+  "notes": "El texto OCR entregado es completamente ajeno al contenido visible en la imagen; parece corresponder a otra página del documento.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 3399,
+  "output_tokens": 153,
+  "cost_usd": 0.008328
+}

@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0035",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "PRIMERA CARRERA:\nSEGUNDA CARRERA:\nTERCERA CARRERA:\nCUARTA CARRERA:\nQUINTA CARRERA:",
+      "issue": "texto completamente ajeno a la imagen proporcionada; no corresponde al contenido visible en la página"
+    }
+  ],
+  "notes": "El texto OCR propuesto describe una crónica hípica y de cross-country, mientras que la imagen muestra un artículo sobre cine ('En primer plano' de J. Roldán Castello) y anuncios publicitarios de Max Factor y Contax; no coinciden en absoluto.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4889,
+  "output_tokens": 241,
+  "cost_usd": 0.012188000000000001
+}

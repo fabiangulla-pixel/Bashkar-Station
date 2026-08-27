@@ -1,0 +1,19 @@
+{
+  "pagina_id": "p0002",
+  "accuracy_estimate": 0.05,
+  "errors": [
+    {
+      "quote": "Antonio José Cadavid. Luis Zea Uribe.. If Antonio José Restrepo. Duane! Mantoe:",
+      "issue": "texto no corresponde a la imagen mostrada"
+    },
+    {
+      "quote": "La recepción en la Legoción\n\nde Santo Domingo, en el\n\naniversario de la indepen\ndéncio dominicana",
+      "issue": "contenido no corresponde a esta página"
+    }
+  ],
+  "notes": "El texto OCR propuesto no coincide en absoluto con la imagen proporcionada, que muestra un anuncio de la Rifa Anual de ESTAMPA de 1939.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 2947,
+  "output_tokens": 240,
+  "cost_usd": 0.008294
+}

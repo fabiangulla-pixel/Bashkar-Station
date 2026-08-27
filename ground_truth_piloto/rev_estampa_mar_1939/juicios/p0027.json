@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0027",
+  "accuracy_estimate": 0.05,
+  "errors": [
+    {
+      "quote": "Por Carlos Ariel Gutiérrez\n\nExclusivo para ESTAMPA",
+      "issue": "Este texto no corresponde en absoluto a la imagen proporcionada, que trata de una entrevista con el poeta Jorge Rojas y un anuncio de Laboratorios Hagelstein"
+    }
+  ],
+  "notes": "El texto propuesto por OCR parece pertenecer a otra página completamente distinta; no coincide con el contenido real de la imagen (entrevista a Jorge Rojas y publicidad de Pertussin/Hagelstein).",
+  "model": "claude-sonnet-5",
+  "input_tokens": 3810,
+  "output_tokens": 222,
+  "cost_usd": 0.00984
+}

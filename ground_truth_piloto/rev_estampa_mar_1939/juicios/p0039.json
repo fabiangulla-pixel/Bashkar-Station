@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0039",
+  "accuracy_estimate": 0.4,
+  "errors": [
+    {
+      "quote": "barlos Lleras Reslrepo",
+      "issue": "no corresponde a la imagen provista (esta página es de Deportes, no de este artículo)"
+    }
+  ],
+  "notes": "El texto propuesto no corresponde a la imagen mostrada, que trata de deportes hípicos y polo, no del artículo sobre Carlos Lleras Restrepo ni la portada del Papa Pío XII.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4061,
+  "output_tokens": 160,
+  "cost_usd": 0.009722000000000001
+}

@@ -1,0 +1,19 @@
+{
+  "pagina_id": "p0032",
+  "accuracy_estimate": 0.05,
+  "errors": [
+    {
+      "quote": "Laboratorio. de Dfagnóstico Clínico",
+      "issue": "El texto propuesto no corresponde a la imagen proporcionada; parece ser de otra página distinta"
+    },
+    {
+      "quote": "No me cansaré de insistir",
+      "issue": "contenido no coincide con lo visible en la página mostrada"
+    }
+  ],
+  "notes": "El texto OCR corresponde a un artículo sobre peinados y maquillaje, mientras que la imagen muestra un artículo sobre 'El Correo y su mundo de Emoción'; son completamente diferentes, por lo que no se puede verificar coincidencia.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4657,
+  "output_tokens": 228,
+  "cost_usd": 0.011594
+}

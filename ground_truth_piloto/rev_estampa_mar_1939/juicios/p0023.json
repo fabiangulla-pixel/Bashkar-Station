@@ -1,0 +1,19 @@
+{
+  "pagina_id": "p0023",
+  "accuracy_estimate": 0.2,
+  "errors": [
+    {
+      "quote": "En el ambiente de estas calles, a\ntestadas de gentes comunes",
+      "issue": "texto no corresponde a la imagen mostrada, que es sobre Cali"
+    },
+    {
+      "quote": "Ya para llegar a Cali se nos en\nreda en el alma una vaga ansiedad",
+      "issue": "el texto real del artículo sobre Cali no está incluido en el OCR propuesto, que en su lugar da otro artículo distinto"
+    }
+  ],
+  "notes": "El texto propuesto corresponde a un artículo completamente diferente (sobre Luis Antonio Chivas) al que se ve en la imagen (artículo sobre Cali por Eduardo Carranza), por lo que no se puede verificar la mayor parte del contenido contra la imagen dada.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 6298,
+  "output_tokens": 285,
+  "cost_usd": 0.015446
+}

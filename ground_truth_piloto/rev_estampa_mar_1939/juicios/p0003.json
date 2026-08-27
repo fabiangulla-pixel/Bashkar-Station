@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0003",
+  "accuracy_estimate": 0.1,
+  "errors": [
+    {
+      "quote": "Premios para la mujer—Esta magnífica batería",
+      "issue": "Este texto no corresponde a la imagen mostrada, que es una página de fotografías de noticias internacionales (Rumania, Franco, Londres, etc.), no un anuncio de rifa de ESTAMPA"
+    }
+  ],
+  "notes": "El texto propuesto por el OCR parece pertenecer a otra página completamente distinta; no coincide con el contenido visible de la imagen proporcionada (fotos y pies de foto sobre noticias internacionales de 1939).",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4098,
+  "output_tokens": 211,
+  "cost_usd": 0.010306
+}

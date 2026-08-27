@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0013",
+  "accuracy_estimate": 0.1,
+  "errors": [
+    {
+      "quote": "Carlos H. Pareja: —El fascismo es una campana\npneumática para la inteligencia.",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada; es contenido de otra página distinta"
+    }
+  ],
+  "notes": "El texto OCR entregado corresponde a un artículo totalmente diferente (encuesta sobre democracia/fascismo) al que aparece en la imagen (artículo sobre Pío XII), por lo que no se puede verificar ninguna coincidencia; la precisión es prácticamente nula.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 6566,
+  "output_tokens": 215,
+  "cost_usd": 0.015282
+}

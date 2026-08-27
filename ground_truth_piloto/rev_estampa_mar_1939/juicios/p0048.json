@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0048",
+  "accuracy_estimate": 0.1,
+  "errors": [
+    {
+      "quote": "N/A",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada, que muestra un anuncio publicitario de 'Primera Gran Rifa Anual de ESTAMPA' con listado de premios, no un artículo sobre voto femenino."
+    }
+  ],
+  "notes": "El OCR entregado es completamente ajeno al contenido visible en la imagen; no es posible verificar errores puntuales porque todo el texto no coincide con la página mostrada.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4798,
+  "output_tokens": 192,
+  "cost_usd": 0.011516
+}

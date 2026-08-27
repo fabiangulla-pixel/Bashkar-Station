@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0011",
+  "accuracy_estimate": 0.5,
+  "errors": [
+    {
+      "quote": "no puedo verificar este texto con la imagen proporcionada",
+      "issue": "La imagen mostrada corresponde a un artículo sobre el 'Gimnasio Moderno' (Agustín Nieto Caballero, Bogotá), no al texto propuesto sobre Mompós y Candelario Obeso, que es completamente distinto"
+    }
+  ],
+  "notes": "El texto OCR proporcionado no corresponde en absoluto al contenido de la imagen entregada, por lo que no es posible verificar errores específicos; parecen ser de páginas diferentes de la revista.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 6990,
+  "output_tokens": 220,
+  "cost_usd": 0.01618
+}

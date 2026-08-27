@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0030",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "todo el texto propuesto no corresponde a la imagen",
+      "issue": "El texto OCR describe un artículo de moda (colecciones parisinas, vestidos, faldas, diseñadores como Chanel, Lanvin, etc.) que no tiene relación alguna con la imagen proporcionada, la cual muestra un artículo titulado '100.000 PERSONAS VIVEN EN' sobre inquilinatos en Bogotá, con anuncios de la Lotería de Manizales y Dynamol."
+    }
+  ],
+  "notes": "El texto OCR entregado no corresponde en absoluto a la página mostrada en la imagen; parece ser de otra página de la revista.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 5654,
+  "output_tokens": 254,
+  "cost_usd": 0.013848
+}

@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0036",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "EL CHIVAS",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada, que trata de un artículo sobre maquillaje en el siglo XVIII"
+    }
+  ],
+  "notes": "El texto OCR pertenece a una página completamente distinta a la mostrada en la imagen; no es posible verificar ninguna coincidencia.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 6329,
+  "output_tokens": 153,
+  "cost_usd": 0.014188000000000001
+}

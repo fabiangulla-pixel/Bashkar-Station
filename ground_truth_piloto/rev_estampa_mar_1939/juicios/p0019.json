@@ -1,0 +1,19 @@
+{
+  "pagina_id": "p0019",
+  "accuracy_estimate": 0.05,
+  "errors": [
+    {
+      "quote": "Secundando a Hitler, Mussolini militariza su pueblo hasta extremos grotescos. He aquí un regimiento italiano, desfilando ante el Duce al paso",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada, que trata sobre la Sierra Nevada de Santa Marta"
+    },
+    {
+      "quote": "de parada de los alemanes, que en Roma ha sido rebautizado con el nombre de \"paso romano\".",
+      "issue": "Contenido inventado, no coincide con la imagen"
+    }
+  ],
+  "notes": "El texto OCR propuesto es completamente ajeno al contenido real de la imagen, que es un artículo titulado 'El diálogo de las cumbres' sobre la Sierra Nevada de Santa Marta, firmado por Rafael Caneva; no es posible verificar coincidencias porque el texto no corresponde a la página.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4456,
+  "output_tokens": 334,
+  "cost_usd": 0.012251999999999999
+}

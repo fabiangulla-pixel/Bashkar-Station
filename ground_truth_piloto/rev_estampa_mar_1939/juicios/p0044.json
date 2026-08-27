@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0044",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "EL NUEVO PREMIER de Rumania, Armand LA PRIMERA FOTOGRAFIA de Franco en Barcelona.",
+      "issue": "Este texto no corresponde a la imagen proporcionada, que muestra artículos distintos (Las elecciones de ayer, Mujeres que trabajan, etc.) y un anuncio de Mercury"
+    }
+  ],
+  "notes": "El texto OCR propuesto no coincide en absoluto con el contenido visible en la imagen; parece corresponder a otra página distinta.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 2988,
+  "output_tokens": 208,
+  "cost_usd": 0.008056
+}

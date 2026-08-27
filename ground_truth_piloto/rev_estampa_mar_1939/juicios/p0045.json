@@ -1,0 +1,23 @@
+{
+  "pagina_id": "p0045",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "Dos instantáneos de doña Cándida Rojas García, Reina de los estudiantes de Cartagena.",
+      "issue": "Texto inventado, no corresponde a la imagen (es un anuncio de KLIM y un crucigrama)"
+    },
+    {
+      "quote": "En lá ceremonia que se efectuó en el Palacio de la Carrera, durante la cual presentó sus credenciales al\nExcelentísimo señor Presidente. de la República el nuevo Embajador del Brasil.",
+      "issue": "Texto inventado, no aparece en la imagen"
+    },
+    {
+      "quote": "Dos aspectos del almuerzo ofrecido por el Director General de la Policía Nacional, en los\ncuarteles de Muzú, a los miembros del gabinete",
+      "issue": "Texto inventado, no aparece en la imagen"
+    }
+  ],
+  "notes": "El OCR propuesto no corresponde en absoluto al contenido real de la página, que muestra un anuncio de leche KLIM y un crucigrama (Crucigrama Núm. 15).",
+  "model": "claude-sonnet-5",
+  "input_tokens": 2651,
+  "output_tokens": 380,
+  "cost_usd": 0.009102
+}

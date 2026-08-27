@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0025",
+  "accuracy_estimate": 0.1,
+  "errors": [
+    {
+      "quote": "EL CHIVAS...",
+      "issue": "El texto propuesto no corresponde a la imagen mostrada; la imagen es un anuncio de 'Gran concurso deportivo de Estampa', no un artículo sobre 'Chivas'"
+    }
+  ],
+  "notes": "El texto OCR entero no coincide con el contenido de la imagen proporcionada, que trata sobre un concurso deportivo infantil, no sobre un personaje llamado Chivas.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 5232,
+  "output_tokens": 181,
+  "cost_usd": 0.012274
+}

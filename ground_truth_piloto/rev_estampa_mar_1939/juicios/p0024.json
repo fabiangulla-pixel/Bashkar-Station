@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0024",
+  "accuracy_estimate": 0.05,
+  "errors": [
+    {
+      "quote": "Doña Gabriela Vieira de Arciniegas y su pequeña hija.",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada, que es un artículo sobre Cali con paisajes y fotos de río y jinete"
+    }
+  ],
+  "notes": "El texto propuesto es completamente distinto de la imagen proporcionada, que muestra un artículo poético sobre Cali firmado por Eduardo Carranza, no una entrevista a Germán Arciniegas.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 6719,
+  "output_tokens": 198,
+  "cost_usd": 0.015418000000000001
+}

@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0006",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "Toda nuestro vido tendrá entonces armonía",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada, que trata de elecciones y política electoral"
+    }
+  ],
+  "notes": "El texto OCR proporcionado es completamente diferente al contenido de la imagen (que trata sobre 'Las elecciones de ayer y las de hoy'), por lo que no se puede verificar ninguna coincidencia.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 6057,
+  "output_tokens": 178,
+  "cost_usd": 0.013894
+}

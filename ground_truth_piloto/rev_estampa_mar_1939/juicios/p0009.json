@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0009",
+  "accuracy_estimate": 0.1,
+  "errors": [
+    {
+      "quote": "tragos entre un revuelto océano de\nguarismos.",
+      "issue": "texto no corresponde a la imagen proporcionada"
+    }
+  ],
+  "notes": "El texto OCR propuesto no corresponde a la imagen mostrada (que trata sobre el Gimnasio Moderno); parece pertenecer a otra página completamente distinta, por lo que no puede verificarse contra la imagen dada.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 3196,
+  "output_tokens": 162,
+  "cost_usd": 0.008012
+}

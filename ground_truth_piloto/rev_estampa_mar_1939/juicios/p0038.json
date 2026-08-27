@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0038",
+  "accuracy_estimate": 0.05,
+  "errors": [
+    {
+      "quote": "RAFAEL\n\nMAYA",
+      "issue": "Este texto no corresponde a la imagen proporcionada, que es un artículo de moda 'LA MODA EN PARIS'"
+    }
+  ],
+  "notes": "El texto propuesto por OCR no coincide con la imagen, que muestra un artículo de moda de la revista Estampa con fotografías de trajes y sombreros, no una entrevista con Rafael Maya.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 8134,
+  "output_tokens": 171,
+  "cost_usd": 0.017978
+}

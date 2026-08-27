@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0022",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "RENDO",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada"
+    }
+  ],
+  "notes": "El texto OCR entregado trata sobre la Guerra Civil Española y refugiados cruzando a Francia, mientras que la imagen muestra un artículo sobre fantasmas en una casona inglesa; son completamente distintos, no se puede verificar coincidencia alguna.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 3639,
+  "output_tokens": 169,
+  "cost_usd": 0.008968
+}

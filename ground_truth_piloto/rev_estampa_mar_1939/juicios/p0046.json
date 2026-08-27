@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0046",
+  "accuracy_estimate": 0.05,
+  "errors": [
+    {
+      "quote": "Estampa\n\nANO 2VOL2NUM17 BO(OTA,MAR7O18/930",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada"
+    }
+  ],
+  "notes": "El texto OCR propuesto describe un artículo largo sobre el Gimnasio Moderno de Bogotá, pero la imagen es un anuncio publicitario de RCA sobre el cine parlante; no coinciden en ningún punto verificable.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 5599,
+  "output_tokens": 190,
+  "cost_usd": 0.013098
+}

@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0028",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "El texto propuesto no corresponde a la imagen",
+      "issue": "El texto propuesto describe reseñas de cine y un concurso fotográfico, contenido completamente distinto al de la imagen, que trata sobre 'Mujeres que trabajan: En la Normal de la Picota' y un anuncio de automóviles OPEL"
+    }
+  ],
+  "notes": "El texto OCR proporcionado no coincide en absoluto con el contenido visible en la imagen adjunta.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4479,
+  "output_tokens": 186,
+  "cost_usd": 0.010818000000000001
+}

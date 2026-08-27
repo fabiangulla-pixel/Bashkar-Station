@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0014",
+  "accuracy_estimate": 0.1,
+  "errors": [
+    {
+      "quote": "Por Alfonso Fuenmayor.",
+      "issue": "Este texto no corresponde a la imagen mostrada, que es una página de fotos sobre el Cónclave y elección papal"
+    }
+  ],
+  "notes": "El texto propuesto completo no coincide con el contenido de la imagen (fotos del Vaticano/Cónclave), parece ser de otra página del documento.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 3747,
+  "output_tokens": 152,
+  "cost_usd": 0.009014
+}

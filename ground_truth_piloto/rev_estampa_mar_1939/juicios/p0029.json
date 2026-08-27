@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0029",
+  "accuracy_estimate": 0.0,
+  "errors": [
+    {
+      "quote": "todo el texto propuesto",
+      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada; la imagen muestra un artículo sobre una escuela y anuncios publicitarios, no un artículo de moda parisina"
+    }
+  ],
+  "notes": "El texto OCR parece pertenecer a otra página completamente distinta de la revista, no a la imagen mostrada.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 3683,
+  "output_tokens": 160,
+  "cost_usd": 0.008966
+}

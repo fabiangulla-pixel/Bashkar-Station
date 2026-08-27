@@ -1,0 +1,31 @@
+{
+  "pagina_id": "p0033",
+  "accuracy_estimate": 0.15,
+  "errors": [
+    {
+      "quote": "A cargo de COLETTE.",
+      "issue": "no corresponde a esta imagen, texto de otra página"
+    },
+    {
+      "quote": "_Bata de nena de dos y medio a 3\naños.",
+      "issue": "contenido no coincide con la imagen mostrada"
+    },
+    {
+      "quote": "SECCION DE TEJIDOS",
+      "issue": "texto inventado, no aparece en la imagen"
+    },
+    {
+      "quote": "ALMACEN\n\nSAÑITAS",
+      "issue": "no corresponde, la imagen muestra 'Almacén California' y artículo sobre epistolario/cartero"
+    },
+    {
+      "quote": "Licores de las Rentas del Atlántico",
+      "issue": "aunque este texto sí aparece en la imagen, el OCR completo entregado no lo refleja como corresponde, mezclado con contenido ajeno"
+    }
+  ],
+  "notes": "El texto propuesto por el OCR corresponde a una página completamente distinta (patrón de tejido y publicidad de Almacén Sanitas), no coincide con el contenido real de la imagen, que trata sobre cartas/epistolario y publicidad de licores de las Rentas del Atlántico.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4099,
+  "output_tokens": 415,
+  "cost_usd": 0.012348000000000001
+}

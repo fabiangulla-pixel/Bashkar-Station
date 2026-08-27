@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0043",
+  "accuracy_estimate": 0.1,
+  "errors": [
+    {
+      "quote": "Primera kran Rifa Anual de ESTAMPA",
+      "issue": "no corresponde a la imagen proporcionada"
+    }
+  ],
+  "notes": "El texto propuesto no coincide en absoluto con el contenido de la imagen mostrada; la imagen contiene un artículo distinto sobre mujeres, entrevistas y un anuncio de perfumes Worth, no una lista de premios de rifa.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4168,
+  "output_tokens": 164,
+  "cost_usd": 0.009975999999999999
+}

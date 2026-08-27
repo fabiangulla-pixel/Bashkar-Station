@@ -1,0 +1,19 @@
+{
+  "pagina_id": "p0018",
+  "accuracy_estimate": 0.1,
+  "errors": [
+    {
+      "quote": "Con el presente artículo iniciamos\nla publicación en ESTAMPA de la\nserie que está escribiendo el ilustre\nhombre de Estado, miembro del Consejo Privado de Su Majestad Británica, y miembro de la Cámara de los\nComunes.",
+      "issue": "Este texto no corresponde a la imagen mostrada, que trata sobre 'El Archivo Histórico' y una entrevista al doctor Enrique Ortega Ricaurte"
+    },
+    {
+      "quote": "Estos artículos de Winston\nChurchill",
+      "issue": "No aparece en la imagen proporcionada"
+    }
+  ],
+  "notes": "El texto propuesto por el OCR corresponde a un artículo completamente distinto (sobre Churchill, Hitler, Yugoeslavia, Stoyadinovitch, etc.) que no coincide con la imagen mostrada, la cual trata sobre el Archivo Histórico Nacional y una entrevista al doctor Enrique Ortega Ricaurte. No es posible verificar errores puntuales porque el contenido completo no corresponde a la página.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4679,
+  "output_tokens": 400,
+  "cost_usd": 0.013358
+}

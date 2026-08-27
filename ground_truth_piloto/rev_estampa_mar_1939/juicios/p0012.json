@@ -1,0 +1,23 @@
+{
+  "pagina_id": "p0012",
+  "accuracy_estimate": 0.1,
+  "errors": [
+    {
+      "quote": "Kamon Manrique, jefe supremo de la organización, exclemo ante los periodistas que,lo asedion",
+      "issue": "texto no corresponde a la imagen mostrada (páginas de Barranquilla)"
+    },
+    {
+      "quote": "DE COMO SE HA COORDINADO UN MOVIMIENTO PRO-EMPLEOS",
+      "issue": "contenido no coincide con la imagen"
+    },
+    {
+      "quote": "El conocimiento del mar, su cotidiana admiración",
+      "issue": "texto real presente en la imagen pero no incluido en el OCR propuesto"
+    }
+  ],
+  "notes": "El texto propuesto describe un artículo completamente distinto (sobre desempleados y burocracia) que no corresponde a la imagen proporcionada, la cual muestra un artículo sobre Barranquilla.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 5477,
+  "output_tokens": 303,
+  "cost_usd": 0.013984
+}

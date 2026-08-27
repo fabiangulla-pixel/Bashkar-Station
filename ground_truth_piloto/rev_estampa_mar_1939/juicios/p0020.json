@@ -1,0 +1,15 @@
+{
+  "pagina_id": "p0020",
+  "accuracy_estimate": 0.05,
+  "errors": [
+    {
+      "quote": "El 8 de marzo de 1941 es asesinado en Varsovia el Nozi Número 2, Mariscal Herman Wilhelm",
+      "issue": "Este texto no corresponde a la imagen proporcionada; la imagen muestra un artículo sobre la Sierra Nevada de Santa Marta y cultivos de caña y café"
+    }
+  ],
+  "notes": "El texto OCR propuesto es completamente distinto al contenido real de la imagen, que trata sobre la Sierra Nevada de Santa Marta, la administración departamental y fotografías de cultivos de caña y café; no se puede verificar ningún fragmento porque no corresponde a la imagen.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4332,
+  "output_tokens": 252,
+  "cost_usd": 0.011184
+}
