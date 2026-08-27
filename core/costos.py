@@ -46,9 +46,11 @@ class PrecioModelo:
 # Tabla por familia de modelo (lookup empareja por prefijo: los ids traen sufijo
 # de fecha, p. ej. claude-haiku-4-5-20251001).
 PRECIOS: dict[str, PrecioModelo] = {
-    # Claude (skill claude-api, cache 2026-06-04)
+    # Claude (skill claude-api, cache 2026-06-24; sonnet-5/opus-5 añadidos 2026-08-27)
+    "claude-opus-5": PrecioModelo(5.00, 25.00),
     "claude-opus-4-8": PrecioModelo(5.00, 25.00),
     "claude-opus-4-7": PrecioModelo(5.00, 25.00),
+    "claude-sonnet-5": PrecioModelo(2.00, 10.00),
     "claude-sonnet-4-6": PrecioModelo(3.00, 15.00),
     "claude-haiku-4-5": PrecioModelo(1.00, 5.00),
     "claude-fable-5": PrecioModelo(10.00, 50.00),

@@ -1,0 +1,81 @@
+name: Juez de Ground Truth (Estampa)
+
+# Corre el juez de IA (scripts/juez_ground_truth.py) sobre el subconjunto
+# piloto de ground_truth_piloto/, sin necesitar el resto de la pila pesada
+# de Bashkar (torch/transformers/spacy) — solo el paquete `anthropic`.
+# Diseñado para lanzarse antes de quedar sin conexión (ej. un vuelo) y
+# encontrar los juicios ya listos, commiteados a esta rama, al reconectar.
+#
+# Requiere el secret de repo ANTHROPIC_API_KEY (Settings > Secrets and
+# variables > Actions > New repository secret).
+
+on:
+  workflow_dispatch:
+    inputs:
+      piloto_dir:
+        description: "Carpeta del piloto"
+        required: false
+        default: "ground_truth_piloto/rev_estampa_mar_1939"
+      concurrencia:
+        description: "Llamadas simultáneas a la API"
+        required: false
+        default: "4"
+      limite:
+        description: "Tope de páginas a juzgar (vacío = todas las pendientes)"
+        required: false
+        default: ""
+      forzar:
+        description: "Rejuzgar páginas que ya tienen juicio"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  juzgar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencia mínima (solo anthropic)
+        run: pip install anthropic
+
+      - name: Estimar costo antes de gastar un centavo
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python scripts/juez_ground_truth.py \
+            --piloto-dir "${{ github.event.inputs.piloto_dir }}" \
+            --concurrencia "${{ github.event.inputs.concurrencia }}" \
+            ${{ github.event.inputs.limite && format('--limite {0}', github.event.inputs.limite) || '' }} \
+            ${{ github.event.inputs.forzar == 'true' && '--forzar' || '' }} \
+            --dry-run
+
+      - name: Correr el juez
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python scripts/juez_ground_truth.py \
+            --piloto-dir "${{ github.event.inputs.piloto_dir }}" \
+            --concurrencia "${{ github.event.inputs.concurrencia }}" \
+            ${{ github.event.inputs.limite && format('--limite {0}', github.event.inputs.limite) || '' }} \
+            ${{ github.event.inputs.forzar == 'true' && '--forzar' || '' }}
+
+      - name: Commitear los juicios generados
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "${{ github.event.inputs.piloto_dir }}/juicios"
+          if git diff --cached --quiet; then
+            echo "Sin juicios nuevos que commitear."
+          else
+            git commit -m "chore(ground-truth): juicios de IA generados por Actions ($(date -u +%Y-%m-%d))"
+            git push
+          fi
