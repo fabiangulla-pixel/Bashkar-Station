@@ -11,12 +11,33 @@ Instalación:
   pip install sentence-transformers
 """
 
+import os
 from functools import lru_cache
 
 import numpy as np
 
 MODELO_EMBEDDINGS = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 DIMENSIONES = 384
+
+
+def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
+    """Si el modelo ya está en la caché local de HuggingFace, fuerza
+    HF_HUB_OFFLINE=1 antes de cargarlo — evita que cada arranque golpee el
+    Hub para revalidar el ETag aunque el modelo ya esté descargado (mismo
+    patrón que ner_roberta_local.py y ocr_churro.py; ver "Bashkar instala
+    algo cada vez que lo abro" reportado en sesión). Si no está cacheado,
+    se QUITA la variable en vez de dejarla intacta: si otro modelo ya
+    cacheado la puso en "1" antes en el mismo proceso, este modelo
+    necesita red para su primera descarga real."""
+    try:
+        from huggingface_hub import try_to_load_from_cache
+        cacheado = isinstance(try_to_load_from_cache(modelo_id, "config.json"), str)
+    except Exception:
+        return
+    if cacheado:
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    else:
+        os.environ.pop("HF_HUB_OFFLINE", None)
 
 
 def sentence_transformers_disponible() -> bool:
@@ -39,6 +60,7 @@ def _modelo_embeddings():
             "Ejecuta: pip install sentence-transformers"
         ) from e
 
+    _forzar_offline_si_ya_cacheado(MODELO_EMBEDDINGS)
     return SentenceTransformer(MODELO_EMBEDDINGS)
 
 

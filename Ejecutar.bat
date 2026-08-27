@@ -17,10 +17,25 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-:: Primera vez: instalar dependencias
+:: Primera vez (o instalacion anterior incompleta): instalar dependencias.
+:: El marcador .installed SOLO se escribe si instalar.py termina con exito
+:: (codigo 0) -- antes se escribia siempre, asi que una instalacion a medias
+:: (paquete sin wheel para esta version de Python, red caida a mitad de
+:: descarga...) quedaba marcada como "lista" para siempre y la app fallaba
+:: en cada lanzamiento sin que el instalador volviera a intentarlo.
 if not exist ".installed" (
     echo  Primer inicio - instalando dependencias...
     python instalar.py
+    if errorlevel 1 (
+        echo.
+        echo  ============================================================
+        echo   La instalacion no termino completa ^(ver mensajes arriba^).
+        echo   Se volvera a intentar la proxima vez que abras Bashkar Station.
+        echo  ============================================================
+        echo.
+        pause
+        exit /b 1
+    )
     echo. > .installed
 )
 

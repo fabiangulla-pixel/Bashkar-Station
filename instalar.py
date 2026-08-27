@@ -453,7 +453,8 @@ def precargar_modelos():
 
 # ── Verificación final ────────────────────────────────────────────────────────
 
-def verificar():
+def verificar() -> bool:
+    """Retorna True si todos los componentes REQUERIDOS están listos."""
     print("=" * 60)
     print("  VERIFICACIÓN FINAL")
     print("=" * 60)
@@ -556,12 +557,24 @@ def verificar():
         print("  Todo listo. Ejecuta:  python app.py")
     else:
         print("  Algunos componentes requieren atención (ver arriba).")
+        print("  Este intento NO se marcará como instalación completa —")
+        print("  vuelve a ejecutar instalar.py después de resolverlo.")
     print()
+    return todo_ok
+
+
+def _es_interactivo() -> bool:
+    """True si hay una consola real esperando input (evita colgarse en
+    ENTER cuando se invoca sin tty, ej. desde otro proceso o test)."""
+    try:
+        return sys.stdin.isatty()
+    except Exception:
+        return False
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
 
-def main():
+def main() -> int:
     print()
     print("╔══════════════════════════════════════════════════════════════╗")
     print("║   BASHKAR STATION v11 — Instalacion inicial                  ║")
@@ -580,8 +593,17 @@ def main():
 
     precargar_modelos()        # Paso 5: descarga modelos HuggingFace
 
-    verificar()
-    input("Presiona ENTER para cerrar…")
+    todo_ok = verificar()
+    if _es_interactivo():
+        input("Presiona ENTER para cerrar…")
+    # Código de salida real: Ejecutar.bat lo usa para decidir si marca
+    # .installed. Antes siempre retornaba 0 (éxito) aunque faltaran
+    # componentes requeridos, así que una instalación a medias en
+    # Python 3.14 (torch/faiss/kraken sin wheel, red caída a mitad de
+    # descarga…) quedaba marcada como "lista" para siempre y el .bat
+    # nunca volvía a reintentar. Ver hallazgo de sesión reportado por
+    # el usuario ("las últimas veces no ha servido").
+    return 0 if todo_ok else 1
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

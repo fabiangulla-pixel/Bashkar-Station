@@ -16,10 +16,33 @@ Ventajas sobre spaCy para este corpus:
   - No requiere modelo separado (se descarga automáticamente de HuggingFace)
 """
 
+import os
 from functools import lru_cache
 
 # Modelo BERT fine-tuned para NER en español (acceso público)
 _MODELO_NER = "mrm8488/bert-spanish-cased-finetuned-ner"
+
+
+def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
+    """Si el modelo ya está en la caché local de HuggingFace, fuerza
+    HF_HUB_OFFLINE=1 antes de cargarlo.
+
+    Sin esto, from_pretrained() consulta el Hub para revalidar el ETag en
+    CADA arranque aunque el modelo ya esté descargado — eso es lo que el
+    usuario percibe como "Bashkar instala algo cada vez que lo abro"
+    (reportado en sesión; mismo patrón ya aplicado en ocr_churro.py para
+    CHURRO). Si no está cacheado, se QUITA la variable en vez de dejarla
+    intacta: si otro modelo ya cacheado la puso en "1" antes en el mismo
+    proceso, este modelo necesita red para su primera descarga real."""
+    try:
+        from huggingface_hub import try_to_load_from_cache
+        cacheado = isinstance(try_to_load_from_cache(modelo_id, "config.json"), str)
+    except Exception:
+        return
+    if cacheado:
+        os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    else:
+        os.environ.pop("HF_HUB_OFFLINE", None)
 
 # Ventana deslizante: procesar texto largo en fragmentos de 450 palabras
 # con solapamiento de 50 para no perder entidades en los límites
@@ -55,6 +78,7 @@ def _pipeline_ner():
             "transformers no está instalado. Ejecuta: pip install transformers torch"
         ) from e
 
+    _forzar_offline_si_ya_cacheado(_MODELO_NER)
     return pipeline(
         "ner",
         model=_MODELO_NER,
