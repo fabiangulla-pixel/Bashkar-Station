@@ -1,6 +1,7 @@
 """core/ocr_engine.py — OCR inteligente: extrae texto directo si ya existe, aplica OCR si no."""
 
 import gc
+import re
 import sys
 from pathlib import Path
 
@@ -106,6 +107,61 @@ def analizar_pdf(pdf_path: Path) -> dict:
     except Exception:
         return {"tiene_texto": False, "palabras_promedio": 0,
                 "n_paginas": 0, "confianza_estimada": 0}
+
+
+def _palabras_significativas(texto: str) -> set:
+    """Palabras alfabéticas de ≥4 letras, en minúscula — huella de contenido
+    que ignora números de página, coordenadas OCR y ruido corto."""
+    return {w.lower() for w in re.findall(r"[A-Za-zÁÉÍÓÚÑáéíóúñ]{4,}", texto)}
+
+
+def detectar_posibles_duplicados(
+    pdfs: "list[Path]", n_paginas_muestra: int = 3, umbral: float = 0.5
+) -> "list[tuple[Path, Path, float]]":
+    """
+    Compara el contenido de las primeras `n_paginas_muestra` páginas de cada
+    PDF seleccionado y señala pares que probablemente son el mismo material
+    (ej. el mismo número exportado dos veces con nombres distintos).
+
+    No usa nombre de archivo ni número de páginas —un export parcial puede
+    llamarse distinto y tener menos páginas— sino solapamiento real de
+    vocabulario: |A∩B| / min(|A|,|B|) sobre el conjunto de palabras
+    significativas de cada muestra.
+
+    Retorna [(pdf_a, pdf_b, overlap), …] ordenado de mayor a menor overlap,
+    solo los pares que superan `umbral`. Un PDF ilegible/vacío (huella
+    vacía) nunca se compara (evita falsos positivos por división por cero).
+
+    Ver hallazgo de auditoría s.59 de [[project_bashkar_station]]: el
+    usuario seleccionó "rev_estampa_mar_1939.pdf" y "Páginas desde
+    rev_estampa_mar_1939.pdf" (export parcial mal nombrado del mismo
+    número) y Bashkar los procesó como dos números distintos sin avisar.
+    """
+    import fitz
+
+    huellas: list[tuple[Path, set]] = []
+    for p in pdfs:
+        try:
+            doc = fitz.open(str(p))
+            texto = "".join(doc[i].get_text("text") for i in range(min(doc.page_count, n_paginas_muestra)))
+            doc.close()
+        except Exception:
+            continue
+        palabras = _palabras_significativas(texto)
+        if palabras:
+            huellas.append((p, palabras))
+
+    pares = []
+    for i in range(len(huellas)):
+        pa, wa = huellas[i]
+        for j in range(i + 1, len(huellas)):
+            pb, wb = huellas[j]
+            overlap = len(wa & wb) / min(len(wa), len(wb))
+            if overlap >= umbral:
+                pares.append((pa, pb, round(overlap, 3)))
+
+    pares.sort(key=lambda t: t[2], reverse=True)
+    return pares
 
 
 def extraer_texto_pdf(pdf_path: Path, txt_dir: Path) -> list[dict]:

@@ -4521,6 +4521,25 @@ class BashkarApp(tk.Tk):
             messagebox.showwarning("Sin selección","Selecciona al menos un archivo."); return
         if not str(sal).strip():
             messagebox.showerror("Error","Define la carpeta de resultados."); return
+        if self._var_tipo.get() == "pdf" and len(sel) > 1:
+            from core.ocr_engine import detectar_posibles_duplicados
+            try:
+                dups = detectar_posibles_duplicados(sel)
+            except Exception:
+                dups = []
+            if dups:
+                detalle = "\n".join(
+                    f"  • {a.name}  ↔  {b.name}  ({ov:.0%} de solapamiento)"
+                    for a, b, ov in dups)
+                if not messagebox.askyesno(
+                    "Posible contenido duplicado",
+                    "Algunos de los PDF seleccionados comparten buena parte "
+                    "del vocabulario de sus primeras páginas — podrían ser "
+                    "el mismo número exportado dos veces con nombres "
+                    "distintos:\n\n" + detalle +
+                    "\n\n¿Continuar de todas formas y procesarlos como "
+                    "números distintos?"):
+                    return
         sal.mkdir(parents=True, exist_ok=True)
         ST.publicacion = self._var_pub.get().strip() or "Publicación"
         ST.periodo     = self._var_per.get().strip()
