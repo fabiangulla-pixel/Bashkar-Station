@@ -29,6 +29,12 @@ modelos/
 # Marcador local de "dependencias ya instaladas" que usa Ejecutar.bat
 .installed
 
+# Imágenes de entrada del pase de OCR Vision a escala completa — viven como
+# asset del release "vision-ocr-entrada-v1" (280MB, no en el historial de
+# git). vision_ocr/salida/ SÍ se versiona: es el texto transcrito, el
+# resultado real que vale la pena conservar.
+vision_ocr/entrada/
+
 # SO / editor
 Thumbs.db
 .DS_Store

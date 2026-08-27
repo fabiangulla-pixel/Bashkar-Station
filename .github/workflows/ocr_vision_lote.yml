@@ -1,0 +1,108 @@
+name: OCR Vision — Corpus completo (Estampa)
+
+# Transcribe con Vision LLM (Claude Sonnet 5) las 792 páginas del corpus real
+# (5 números) — un job en paralelo por número de revista (matrix), cada uno
+# independiente y resumible. No necesita la pila pesada de Bashkar: solo el
+# paquete `anthropic`.
+#
+# Las imágenes de entrada NO viven en el repo (280MB, habría inflado el
+# historial de git para siempre) -- se descargan como asset binario del
+# release "vision-ocr-entrada-v1" (ver RELEASE_TAG abajo), pensado justo
+# para esto y borrable sin dejar rastro en git.
+#
+# Requiere el secret de repo ANTHROPIC_API_KEY.
+
+env:
+  RELEASE_TAG: vision-ocr-entrada-v1
+
+on:
+  workflow_dispatch:
+    inputs:
+      concurrencia:
+        description: "Llamadas simultáneas a la API por job"
+        required: false
+        default: "6"
+      limite:
+        description: "Tope de páginas por número (vacío = todas las pendientes)"
+        required: false
+        default: ""
+      forzar:
+        description: "Retranscribir páginas que ya tienen resultado"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  transcribir:
+    strategy:
+      fail-fast: false
+      matrix:
+        numero:
+          - rev_estampa_ene_1939
+          - rev_estampa_feb_1939
+          - rev_estampa_mar_1939
+          - rev_estampa_abr_1939
+          - rev_estampa_may_1939
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencia mínima (solo anthropic)
+        run: pip install anthropic
+
+      - name: Descargar y descomprimir las imágenes de entrada (release asset)
+        run: |
+          curl -fL -o entrada.zip \
+            "https://github.com/${{ github.repository }}/releases/download/${{ env.RELEASE_TAG }}/${{ matrix.numero }}.zip"
+          mkdir -p "vision_ocr/entrada/${{ matrix.numero }}"
+          unzip -q entrada.zip -d "vision_ocr/entrada/${{ matrix.numero }}"
+          rm entrada.zip
+          echo "$(ls "vision_ocr/entrada/${{ matrix.numero }}" | wc -l) imágenes listas"
+
+      - name: Estimar costo antes de gastar un centavo
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python scripts/ocr_vision_lote.py \
+            --imagenes-dir "vision_ocr/entrada/${{ matrix.numero }}" \
+            --salida-dir "vision_ocr/salida/${{ matrix.numero }}" \
+            --concurrencia "${{ github.event.inputs.concurrencia }}" \
+            ${{ github.event.inputs.limite && format('--limite {0}', github.event.inputs.limite) || '' }} \
+            ${{ github.event.inputs.forzar == 'true' && '--forzar' || '' }} \
+            --dry-run
+
+      - name: Transcribir de verdad
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          python scripts/ocr_vision_lote.py \
+            --imagenes-dir "vision_ocr/entrada/${{ matrix.numero }}" \
+            --salida-dir "vision_ocr/salida/${{ matrix.numero }}" \
+            --concurrencia "${{ github.event.inputs.concurrencia }}" \
+            ${{ github.event.inputs.limite && format('--limite {0}', github.event.inputs.limite) || '' }} \
+            ${{ github.event.inputs.forzar == 'true' && '--forzar' || '' }}
+
+      - name: Commitear resultados (con reintento — 5 jobs push a la vez)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "vision_ocr/salida/${{ matrix.numero }}"
+          if git diff --cached --quiet; then
+            echo "Sin resultados nuevos que commitear."
+            exit 0
+          fi
+          git commit -m "chore(vision-ocr): transcripción de ${{ matrix.numero }} generada por Actions"
+          for intento in 1 2 3 4 5; do
+            git fetch origin main
+            git rebase origin/main && git push origin HEAD:main && break
+            git rebase --abort || true
+            sleep $((RANDOM % 15 + 5))
+          done
