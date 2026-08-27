@@ -1,15 +1,47 @@
 {
   "pagina_id": "p0003",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "Premios para la mujer—Esta magnífica batería",
-      "issue": "Este texto no corresponde a la imagen mostrada, que es una página de fotografías de noticias internacionales (Rumania, Franco, Londres, etc.), no un anuncio de rifa de ESTAMPA"
+      "quote": "retordó",
+      "issue": "debe ser 'retardó'"
+    },
+    {
+      "quote": "soldado italianos",
+      "issue": "debe ser 'soldados italianos'"
+    },
+    {
+      "quote": "seguromente",
+      "issue": "debe ser 'seguramente'"
+    },
+    {
+      "quote": "morzo",
+      "issue": "debe ser 'marzo'"
+    },
+    {
+      "quote": "estrotégicos que hocen po",
+      "issue": "debe ser 'estratégicas que hacen po[sible]'"
+    },
+    {
+      "quote": "mazi",
+      "issue": "debe ser 'nazi'"
+    },
+    {
+      "quote": "Blonca",
+      "issue": "debe ser 'Blanca'"
+    },
+    {
+      "quote": "DT e\nA IA",
+      "issue": "texto sin sentido, no corresponde a contenido legible de la imagen"
+    },
+    {
+      "quote": "r\nE",
+      "issue": "texto sin sentido, no corresponde a contenido legible"
     }
   ],
-  "notes": "El texto propuesto por el OCR parece pertenecer a otra página completamente distinta; no coincide con el contenido visible de la imagen proporcionada (fotos y pies de foto sobre noticias internacionales de 1939).",
+  "notes": "",
   "model": "claude-sonnet-5",
-  "input_tokens": 4098,
-  "output_tokens": 211,
-  "cost_usd": 0.010306
+  "input_tokens": 3042,
+  "output_tokens": 334,
+  "cost_usd": 0.009424
 }

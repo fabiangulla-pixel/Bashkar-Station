@@ -1,15 +1,43 @@
 {
   "pagina_id": "p0048",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "N/A",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada, que muestra un anuncio publicitario de 'Primera Gran Rifa Anual de ESTAMPA' con listado de premios, no un artículo sobre voto femenino."
+      "quote": "Ter. Premio",
+      "issue": "debería ser '1er. Premio'"
+    },
+    {
+      "quote": "Glottmamn",
+      "issue": "error de transcripción, debe ser 'Glottmann'"
+    },
+    {
+      "quote": "do. Premio",
+      "issue": "debería ser '4o. Premio'"
+    },
+    {
+      "quote": "texto desordenado y fragmentado, con columnas mezcladas",
+      "issue": "el OCR mezcló el orden de columnas y párrafos"
+    },
+    {
+      "quote": "PP., - 20",
+      "issue": "texto sin sentido, error de OCR"
+    },
+    {
+      "quote": "s 1.480,00.",
+      "issue": "uso de coma en vez de punto, inconsistente con el resto"
+    },
+    {
+      "quote": "hidraúlicos",
+      "issue": "posible error, debería revisarse pero podría ser arcaísmo válido"
+    },
+    {
+      "quote": "JN CRITICO MUSICAL",
+      "issue": "debería ser 'UN CRITICO MUSICAL'"
     }
   ],
-  "notes": "El OCR entregado es completamente ajeno al contenido visible en la imagen; no es posible verificar errores puntuales porque todo el texto no coincide con la página mostrada.",
+  "notes": "El texto está muy desordenado respecto a la disposición visual original, con columnas mezcladas y fragmentos fuera de contexto; difícil verificar con exactitud algunas partes por la complejidad del layout.",
   "model": "claude-sonnet-5",
-  "input_tokens": 4798,
-  "output_tokens": 192,
-  "cost_usd": 0.011516
+  "input_tokens": 4173,
+  "output_tokens": 435,
+  "cost_usd": 0.012695999999999999
 }

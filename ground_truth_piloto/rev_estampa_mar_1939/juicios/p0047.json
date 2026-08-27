@@ -1,15 +1,39 @@
 {
   "pagina_id": "p0047",
-  "accuracy_estimate": 0.4,
+  "accuracy_estimate": 0.85,
   "errors": [
     {
-      "quote": "Un parlamento reelegido, me",
-      "issue": "no corresponde a la imagen proporcionada (página de fotos)"
+      "quote": "Colombiama",
+      "issue": "debería ser 'Colombiana'"
+    },
+    {
+      "quote": "fébrica",
+      "issue": "debería ser 'fábrica'"
+    },
+    {
+      "quote": "luégo",
+      "issue": "posible transcripción de 'luego', verificar tilde"
+    },
+    {
+      "quote": "É. Concha Y.",
+      "issue": "debería ser 'E. Concha V.'"
+    },
+    {
+      "quote": "Tombién",
+      "issue": "debería ser 'También'"
+    },
+    {
+      "quote": "Scadto",
+      "issue": "debería ser 'Scadta'"
+    },
+    {
+      "quote": "bonquete",
+      "issue": "debería ser 'banquete'"
     }
   ],
-  "notes": "El texto propuesto no coincide con la imagen mostrada, que es una página de fotografías tituladas '7 DIAS DE IMAGENES COLOMBIANAS' con pies de foto breves; el OCR presenta un artículo largo sobre elecciones que no corresponde a esta página.",
+  "notes": "El resto del texto coincide razonablemente con la imagen visible.",
   "model": "claude-sonnet-5",
-  "input_tokens": 5449,
-  "output_tokens": 177,
-  "cost_usd": 0.012667999999999999
+  "input_tokens": 2840,
+  "output_tokens": 272,
+  "cost_usd": 0.008400000000000001
 }

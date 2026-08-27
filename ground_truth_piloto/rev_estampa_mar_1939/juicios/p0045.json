@@ -1,23 +1,75 @@
 {
   "pagina_id": "p0045",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "Dos instantáneos de doña Cándida Rojas García, Reina de los estudiantes de Cartagena.",
-      "issue": "Texto inventado, no corresponde a la imagen (es un anuncio de KLIM y un crucigrama)"
+      "quote": "Llérale a remolque. Inv.",
+      "issue": "probable error, difícil verificar"
     },
     {
-      "quote": "En lá ceremonia que se efectuó en el Palacio de la Carrera, durante la cual presentó sus credenciales al\nExcelentísimo señor Presidente. de la República el nuevo Embajador del Brasil.",
-      "issue": "Texto inventado, no aparece en la imagen"
+      "quote": "6l—Hermana.",
+      "issue": "debería ser 61"
     },
     {
-      "quote": "Dos aspectos del almuerzo ofrecido por el Director General de la Policía Nacional, en los\ncuarteles de Muzú, a los miembros del gabinete",
-      "issue": "Texto inventado, no aparece en la imagen"
+      "quote": "Mrnicipio del Tolima.",
+      "issue": "error de transcripción, debería ser Municipio"
+    },
+    {
+      "quote": "S—Ant. Do.",
+      "issue": "debería ser 6—Ant. Do."
+    },
+    {
+      "quote": "Pedoro de tela desechado.",
+      "issue": "error, debería decir Pedazo"
+    },
+    {
+      "quote": "Monifestaré con palabras.",
+      "issue": "error, debería decir Manifestaré"
+    },
+    {
+      "quote": "Labrod la tierra.",
+      "issue": "error, debería decir Labrad"
+    },
+    {
+      "quote": "huido a producen ciertos. movimientos a-",
+      "issue": "texto incoherente, probablemente mal OCR de línea 3"
+    },
+    {
+      "quote": "lomo de de algún colegio militar.",
+      "issue": "texto incoherente, probablemente 'Alumno de algún colegio militar'"
+    },
+    {
+      "quote": "rinde juice",
+      "issue": "texto sin sentido, error OCR"
+    },
+    {
+      "quote": "BEemo que domina un Mano. PL",
+      "issue": "texto incoherente, probablemente 'Cerro que domina un llano'"
+    },
+    {
+      "quote": "lr y modo de Baco.",
+      "issue": "texto incoherente, probablemente 'Esposa de Júpiter y madre de Baco'"
+    },
+    {
+      "quote": "31—Presumido,",
+      "issue": "falta 'sospechado' al final"
+    },
+    {
+      "quote": "jumento para inmolar la víctima.",
+      "issue": "error, debería decir 'Monumento'"
+    },
+    {
+      "quote": "38—A—En los dados.",
+      "issue": "debería ser 58—A"
+    },
+    {
+      "quote": "57—Interjección fomliar.",
+      "issue": "error de transcripción, 'familiar' mal escrito"
     }
   ],
-  "notes": "El OCR propuesto no corresponde en absoluto al contenido real de la página, que muestra un anuncio de leche KLIM y un crucigrama (Crucigrama Núm. 15).",
+  "notes": "La sección del crucigrama gráfico (sopa de letras) es prácticamente ilegible y no se puede verificar con precisión.",
   "model": "claude-sonnet-5",
-  "input_tokens": 2651,
-  "output_tokens": 380,
-  "cost_usd": 0.009102
+  "input_tokens": 4478,
+  "output_tokens": 695,
+  "cost_usd": 0.015906
 }

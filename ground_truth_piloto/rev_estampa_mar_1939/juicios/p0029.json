@@ -1,15 +1,51 @@
 {
   "pagina_id": "p0029",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.6,
   "errors": [
     {
-      "quote": "todo el texto propuesto",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada; la imagen muestra un artículo sobre una escuela y anuncios publicitarios, no un artículo de moda parisina"
+      "quote": "liegar",
+      "issue": "debería ser 'llegar'"
+    },
+    {
+      "quote": "camaraderia",
+      "issue": "falta tilde, 'camaradería'"
+    },
+    {
+      "quote": "Estos muchachos soben estamos siempre contentas sin 1 que",
+      "issue": "texto muy corrupto, ilegible correctamente, debería ser 'Estas muchachas saben... estamos siempre contentas sin que'"
+    },
+    {
+      "quote": "á sus ofimentos.",
+      "issue": "texto corrupto, debería ser 'sus alimentos'"
+    },
+    {
+      "quote": "CIA IAMARO, BUG E y PS",
+      "issue": "texto sin sentido, probablemente ruido de OCR de la imagen del caballo"
+    },
+    {
+      "quote": "monvales al aire' libre. POFtivos y se muestra satisfecha de",
+      "issue": "texto corrupto, debería ser 'manuales al aire libre' y 'deportivos'"
+    },
+    {
+      "quote": "(Pase a la Pós. 45)",
+      "issue": "debería ser 'Pág.'"
+    },
+    {
+      "quote": "lo e de ol Dojos, que l\n¿Epa bianol",
+      "issue": "texto sin sentido, ruido OCR del anuncio 'Mirad'"
+    },
+    {
+      "quote": "Oficinas: Bogotá, Carrera 8a. No. 15-94,",
+      "issue": "debería ser 'Oficinas' con e, en original dice 'Oficinas' revisar; y coma final debería ser punto"
+    },
+    {
+      "quote": "casa BELGa",
+      "issue": "mal capitalización, debería ser 'CASA BELGA'"
     }
   ],
-  "notes": "El texto OCR parece pertenecer a otra página completamente distinta de la revista, no a la imagen mostrada.",
+  "notes": "",
   "model": "claude-sonnet-5",
-  "input_tokens": 3683,
-  "output_tokens": 160,
-  "cost_usd": 0.008966
+  "input_tokens": 3234,
+  "output_tokens": 573,
+  "cost_usd": 0.012198
 }

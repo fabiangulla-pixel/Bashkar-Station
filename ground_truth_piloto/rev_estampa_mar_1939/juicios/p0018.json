@@ -1,19 +1,47 @@
 {
   "pagina_id": "p0018",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.45,
   "errors": [
     {
-      "quote": "Con el presente artículo iniciamos\nla publicación en ESTAMPA de la\nserie que está escribiendo el ilustre\nhombre de Estado, miembro del Consejo Privado de Su Majestad Británica, y miembro de la Cámara de los\nComunes.",
-      "issue": "Este texto no corresponde a la imagen mostrada, que trata sobre 'El Archivo Histórico' y una entrevista al doctor Enrique Ortega Ricaurte"
+      "quote": "El minúsculo y «austero ho",
+      "issue": "texto corrupto/mal reconocido"
     },
     {
-      "quote": "Estos artículos de Winston\nChurchill",
-      "issue": "No aparece en la imagen proporcionada"
+      "quote": "No se- oye ren Sto de las",
+      "issue": "texto ilegible/corrupto, debería ser 'No se oye sino el tecleo de las'"
+    },
+    {
+      "quote": "ONZA!",
+      "issue": "texto extraño insertado, no coincide con imagen"
+    },
+    {
+      "quote": "sd con una hermana de su mare.",
+      "issue": "corrupción de 'está casado con una hermana de su madre'"
+    },
+    {
+      "quote": "los manifestó; sí, que Í\ngraduado de archivedión paolo,",
+      "issue": "texto corrupto, debería ser 'Nos manifestó, sí, que se había graduado de archivera en España'"
+    },
+    {
+      "quote": "franmqueza netamente españolas.",
+      "issue": "error de reconocimiento, debería ser 'franqueza'"
+    },
+    {
+      "quote": "Es autor de varias obras muy a-\nplaudidas en Colombia: y-en: las re-",
+      "issue": "puntuación errónea añadida"
+    },
+    {
+      "quote": "Cúbildo.",
+      "issue": "error de transcripción, debería ser 'Cabildo'"
+    },
+    {
+      "quote": "continuoción",
+      "issue": "error de transcripción, debería ser 'continuación'"
     }
   ],
-  "notes": "El texto propuesto por el OCR corresponde a un artículo completamente distinto (sobre Churchill, Hitler, Yugoeslavia, Stoyadinovitch, etc.) que no coincide con la imagen mostrada, la cual trata sobre el Archivo Histórico Nacional y una entrevista al doctor Enrique Ortega Ricaurte. No es posible verificar errores puntuales porque el contenido completo no corresponde a la página.",
+  "notes": "El OCR tiene numerosas secciones ilegibles o corruptas marcadas con símbolos extraños; se preservaron errores tipográficos originales del OCR como comillas mal cerradas.",
   "model": "claude-sonnet-5",
-  "input_tokens": 4679,
-  "output_tokens": 400,
-  "cost_usd": 0.013358
+  "input_tokens": 4782,
+  "output_tokens": 539,
+  "cost_usd": 0.014953999999999999
 }

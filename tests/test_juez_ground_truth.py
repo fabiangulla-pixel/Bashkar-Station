@@ -101,6 +101,44 @@ def test_judge_page_parsea_respuesta_valida(tmp_path):
     assert resultado.cost_usd == pytest.approx(1000 / 1_000_000 * 2.00 + 200 / 1_000_000 * 10.00)
 
 
+def test_judge_page_tolera_cercas_markdown(tmp_path):
+    """El prompt exige JSON puro, pero el modelo a veces lo envuelve en
+    ```json ... ``` de todas formas (visto en la corrida real sobre el
+    piloto de Estampa, sesión 27-ago)."""
+    imagen = tmp_path / "p0002.jpg"
+    imagen.write_bytes(b"\xff\xd8\xff")
+    envuelto = "```json\n" + _respuesta_json() + "\n```"
+    fake = _FakeMessages(create_response=_FakeMessage(
+        content=[_FakeTextBlock(envuelto)],
+        usage=_FakeUsage(input_tokens=100, output_tokens=50),
+    ))
+    client = _FakeClient(fake)
+
+    resultado = juez.judge_page(client, "p0002", imagen, "texto", model="claude-sonnet-5")
+    assert resultado.accuracy_estimate == 0.85
+
+
+def test_judge_page_ignora_errores_que_no_son_dict(tmp_path):
+    """Si el modelo devuelve 'errors' como lista de strings en vez de dicts
+    (visto en la corrida real), no debe reventar con TypeError -- se
+    ignoran esos items en vez de tumbar toda la página."""
+    imagen = tmp_path / "p0002.jpg"
+    imagen.write_bytes(b"\xff\xd8\xff")
+    payload = json.dumps({
+        "accuracy_estimate": 0.5,
+        "errors": ["esto no es un dict", {"quote": "x", "issue": "y"}],
+        "notes": "",
+    })
+    fake = _FakeMessages(create_response=_FakeMessage(
+        content=[_FakeTextBlock(payload)],
+        usage=_FakeUsage(input_tokens=10, output_tokens=5),
+    ))
+    client = _FakeClient(fake)
+
+    resultado = juez.judge_page(client, "p0002", imagen, "texto", model="claude-sonnet-5")
+    assert resultado.errors == [{"quote": "x", "issue": "y"}]
+
+
 def test_judge_page_json_invalido_lanza_error(tmp_path):
     imagen = tmp_path / "p0002.jpg"
     imagen.write_bytes(b"\xff\xd8\xff")

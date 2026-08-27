@@ -1,15 +1,79 @@
 {
   "pagina_id": "p0007",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "EL ATENTADO ANTI - NAZI",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada, que trata de 'Las Mujeres Quieren Votar'"
+      "quote": "La",
+      "issue": "texto truncado/incompleto, corresponde a 'Las Mujeres Quieren Votar' título no capturado"
+    },
+    {
+      "quote": "Ombiente entre nosotros. Mire us-",
+      "issue": "OCR corrompido, debería ser 'ambiente entre nosotros. Mire usted'"
+    },
+    {
+      "quote": "_Que abordar a una señora o se-",
+      "issue": "texto corrupto, debería decir algo como 'que abordar a una señora'"
+    },
+    {
+      "quote": "'Orita en la calle para preguntar-",
+      "issue": "fragmento corrupto, debería ser 'señorita'"
+    },
+    {
+      "quote": "E hi siquiera le creen cuando",
+      "issue": "corrupción OCR, debería ser 'Y ni siquiera le creen cuando'"
+    },
+    {
+      "quote": "Voto femenino, eh?",
+      "issue": "posible falta de guion inicial de diálogo"
+    },
+    {
+      "quote": "sobr iUn escóndalo, con su cone la \"'chufla....'*",
+      "issue": "texto muy corrupto, ilegible reconstrucción"
+    },
+    {
+      "quote": "al llaman esto una embosca-",
+      "issue": "corrupción, debería ser 'los listos llaman esto una emboscada'"
+    },
+    {
+      "quote": "Epi Por-la calle real, a las once",
+      "issue": "texto corrupto, debería ser 'A la calle real, a las once'"
+    },
+    {
+      "quote": "Einla y a las cinco de la tarde,",
+      "issue": "corrupción OCR, probablemente 'del día'"
+    },
+    {
+      "quote": "Sería usted partidaria del volo femenino?",
+      "issue": "error 'volo' por 'voto'"
+    },
+    {
+      "quote": "es echo, pero que no sabe qué",
+      "issue": "corrupción, texto ilegible reconstruido"
+    },
+    {
+      "quote": "Los señoras se muestran reacias..",
+      "issue": "debería ser 'Las señoras'"
+    },
+    {
+      "quote": "No, que no nos dejen. Somos muy conservadora:",
+      "issue": "falta 's' final en 'conservadoras'"
+    },
+    {
+      "quote": "—_Que nos dejen votar. Nosotras",
+      "issue": "guion mal formado, debería ser '—Que nos dejen votar'"
+    },
+    {
+      "quote": "Una: vendedora de lotería:",
+      "issue": "carácter extra ':' tras 'Una'"
+    },
+    {
+      "quote": "aceptariían encantadas...",
+      "issue": "error tipográfico 'aceptariían' por 'aceptarían'"
     }
   ],
-  "notes": "El texto OCR entregado es completamente ajeno al contenido visible en la imagen; parece corresponder a otra página del documento.",
+  "notes": "El texto contiene numerosas líneas con corrupción severa de caracteres (posiblemente por columnas mal segmentadas) que hacen imposible verificar palabra por palabra contra la imagen; se reportan los errores más evidentes.",
   "model": "claude-sonnet-5",
-  "input_tokens": 3399,
-  "output_tokens": 153,
-  "cost_usd": 0.008328
+  "input_tokens": 4852,
+  "output_tokens": 956,
+  "cost_usd": 0.019264000000000003
 }

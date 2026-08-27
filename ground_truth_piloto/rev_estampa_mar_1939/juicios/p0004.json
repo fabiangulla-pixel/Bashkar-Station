@@ -1,15 +1,23 @@
 {
   "pagina_id": "p0004",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.9,
   "errors": [
     {
-      "quote": "Estampa\n\nANO 2VOL1.NUM15.BO(OTA, MARZO 4.19\n\nSobre los campos de España ha\ncaído una gran deshonra...",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen. La imagen muestra una página de fotografías tituladas '7 DIAS DE IMAGENES COLOMBIANAS' con pies de foto breves sobre personas colombianas (Cándida Rojas García, un embajador de Brasil, un almuerzo de la Policía Nacional), mientras que el OCR transcribe un largo artículo sobre la Guerra Civil Española y el Papa Pío XII que no aparece en esta página."
+      "quote": "Dos instantáneos",
+      "issue": "debería ser 'Dos instantáneas'"
+    },
+    {
+      "quote": "En lá ceremonia",
+      "issue": "typo, debería ser 'En la ceremonia'"
+    },
+    {
+      "quote": "Presidente. de la República",
+      "issue": "punto sobrante"
     }
   ],
-  "notes": "El texto propuesto es completamente ajeno a la página mostrada; no hay coincidencia alguna entre el contenido visible y el texto entregado.",
+  "notes": "",
   "model": "claude-sonnet-5",
-  "input_tokens": 7031,
-  "output_tokens": 328,
-  "cost_usd": 0.017342
+  "input_tokens": 2597,
+  "output_tokens": 131,
+  "cost_usd": 0.006504
 }

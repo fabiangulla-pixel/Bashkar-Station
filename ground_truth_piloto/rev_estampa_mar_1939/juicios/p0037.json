@@ -1,15 +1,47 @@
 {
   "pagina_id": "p0037",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.72,
   "errors": [
     {
-      "quote": "Carlos Lleras Restrepo",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada; la imagen muestra un artículo sobre maquillaje del siglo XVIII y 'Bodas de Plata', no sobre catastro ni Carlos Lleras Restrepo"
+      "quote": "No podemos juir la evolución",
+      "issue": "probablemente 'seguir' en vez de 'juir'"
+    },
+    {
+      "quote": "los mejillas de una princesa de",
+      "issue": "debería ser 'las mejillas'"
+    },
+    {
+      "quote": "Frascos y \"quemo-perfumos\" o incensarios del Siglo XVII.",
+      "issue": "debería ser 'quema-perfumes' y 'Siglo XVIII'"
+    },
+    {
+      "quote": "Ce 25 años...",
+      "issue": "typo, probablemente 'ce' es parte de 'hace'"
+    },
+    {
+      "quote": "Todos los 9:125 días, Y la voluntad",
+      "issue": "número mal transcrito, debería ser 9.125"
+    },
+    {
+      "quote": "que la de la mujer de la\ncalle, y el de la burguesa era un tinpe rosado que apenas se sospecha-",
+      "issue": "'tinpe' debería ser 'tinte'"
+    },
+    {
+      "quote": "posición social de unc\nmujer",
+      "issue": "debería ser 'una'"
+    },
+    {
+      "quote": "La rectoría de la Universidad Nacional le embargo mucho tiempo.",
+      "issue": "debería ser 'embarga'"
+    },
+    {
+      "quote": "sívale la pena vivir cincuenta años,",
+      "issue": "debería ser 'si vale'"
     }
   ],
-  "notes": "El texto OCR entregado no coincide con el contenido visible en la imagen; parece pertenecer a otra página completamente distinta.",
+  "notes": "Algunas secciones con ruido OCR evidente (símbolos sueltos, mayúsculas erráticas) no se listan individualmente por ser ilegibles o de difícil verificación exacta.",
   "model": "claude-sonnet-5",
-  "input_tokens": 6160,
-  "output_tokens": 190,
-  "cost_usd": 0.01422
+  "input_tokens": 4377,
+  "output_tokens": 542,
+  "cost_usd": 0.014173999999999999
 }

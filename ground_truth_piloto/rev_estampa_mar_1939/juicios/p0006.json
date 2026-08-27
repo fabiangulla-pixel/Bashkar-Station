@@ -1,15 +1,55 @@
 {
   "pagina_id": "p0006",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.62,
   "errors": [
     {
-      "quote": "Toda nuestro vido tendrá entonces armonía",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada, que trata de elecciones y política electoral"
+      "quote": "chiguito",
+      "issue": "debería ser 'chiquito'"
+    },
+    {
+      "quote": "Jorge Véler.",
+      "issue": "error de OCR, debería ser 'Vélez'"
+    },
+    {
+      "quote": "En lo Dirección Liberal...",
+      "issue": "debería ser 'En la Dirección Liberal...'"
+    },
+    {
+      "quote": "piusvalía",
+      "issue": "debería ser 'plusvalía'"
+    },
+    {
+      "quote": "ocaloradadamente",
+      "issue": "debería ser 'acaloradamente'"
+    },
+    {
+      "quote": "Somos Católice",
+      "issue": "texto de anuncio publicitario mal transcrito, prácticamente ilegible en la imagen"
+    },
+    {
+      "quote": "IS",
+      "issue": "fragmento sin sentido, error de OCR en anuncio"
+    },
+    {
+      "quote": "pos",
+      "issue": "fragmento sin sentido"
+    },
+    {
+      "quote": "SEC",
+      "issue": "fragmento sin sentido"
+    },
+    {
+      "quote": "PE",
+      "issue": "fragmento sin sentido"
+    },
+    {
+      "quote": "AUGL RAMIREZ MORE",
+      "issue": "texto de anuncio mal transcrito"
     }
   ],
-  "notes": "El texto OCR proporcionado es completamente diferente al contenido de la imagen (que trata sobre 'Las elecciones de ayer y las de hoy'), por lo que no se puede verificar ninguna coincidencia.",
+  "notes": "El texto principal parece razonablemente fiel, pero los recuadros publicitarios y pies de foto están muy desordenados y con caracteres extraños, difíciles de verificar con precisión contra la imagen.",
   "model": "claude-sonnet-5",
-  "input_tokens": 6057,
-  "output_tokens": 178,
-  "cost_usd": 0.013894
+  "input_tokens": 5449,
+  "output_tokens": 493,
+  "cost_usd": 0.015828
 }

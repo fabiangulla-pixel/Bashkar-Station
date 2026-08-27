@@ -1,15 +1,63 @@
 {
   "pagina_id": "p0008",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.75,
   "errors": [
     {
-      "quote": "Sir Henri Deterding.",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada, que trata de 'LOS INTELECTUALES ante el fascismo y ante la democracia'"
+      "quote": "Rafael Corrillo",
+      "issue": "nombre mal transcrito, debe ser Rafael Carrillo"
+    },
+    {
+      "quote": "de\n\nRafael Corrillo",
+      "issue": "texto suelto 'de' no corresponde"
+    },
+    {
+      "quote": "amárquica",
+      "issue": "debería ser 'anárquica'"
+    },
+    {
+      "quote": "no 4 ser ciudadano",
+      "issue": "carácter erróneo, debe ser 'no a ser ciudadano'"
+    },
+    {
+      "quote": "Á este maestro",
+      "issue": "acento mal puesto, debe ser 'A este maestro'"
+    },
+    {
+      "quote": "—AÁpenos me atrevo",
+      "issue": "error OCR, debe ser 'Apenas me atrevo'"
+    },
+    {
+      "quote": "ozhar bien sus lecciones",
+      "issue": "error OCR, debe ser 'aprovechar bien sus lecciones'"
+    },
+    {
+      "quote": "guerra somo medio",
+      "issue": "error OCR, debe ser 'guerra como medio'"
+    },
+    {
+      "quote": "siemple palpitantes",
+      "issue": "error OCR, debe ser 'siempre palpitantes'"
+    },
+    {
+      "quote": "exactmaente",
+      "issue": "error tipográfico, debe ser 'exactamente'"
+    },
+    {
+      "quote": "quiere resolver todos los problemas",
+      "issue": "debería ser 'quieren resolver'"
+    },
+    {
+      "quote": "LOS INTELECTUALES Quito",
+      "issue": "texto añadido/erróneo que no aparece en la imagen"
+    },
+    {
+      "quote": "es retutable",
+      "issue": "error OCR, debe ser 'es refutable'"
     }
   ],
-  "notes": "El texto OCR entregado es completamente distinto al contenido real de la imagen (que es sobre una encuesta a intelectuales colombianos, no sobre Sir Henri Deterding).",
+  "notes": "Hay varias palabras con caracteres OCR corruptos (Á, 4, z) que probablemente representan errores de reconocimiento de letras específicas.",
   "model": "claude-sonnet-5",
-  "input_tokens": 3916,
-  "output_tokens": 178,
-  "cost_usd": 0.009612
+  "input_tokens": 5915,
+  "output_tokens": 636,
+  "cost_usd": 0.018189999999999998
 }

@@ -1,31 +1,103 @@
 {
   "pagina_id": "p0040",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "POWDERED\n\nWHoL\n\nedo\n\npia AJUOÑas\n\ndid",
-      "issue": "texto irrelevante/no corresponde a la página mostrada (parece ser de un anuncio de otra página, no visible en la imagen)"
+      "quote": "añora que:",
+      "issue": "debería ser 'ahora que:'"
     },
     {
-      "quote": "MOMPOS\n\n(Viene de la Págain 43)",
-      "issue": "todo este bloque no aparece en la imagen proporcionada, que solo muestra el artículo de Manuel Merizalde"
+      "quote": "Ahoro, me dice Merizalde",
+      "issue": "error, debe ser 'Ahora'"
     },
     {
-      "quote": "Los sin trabajo",
-      "issue": "sección no presente en la imagen"
+      "quote": "residencia, estoy absolutamente entregado a lo organización de esta\nEmpreso.",
+      "issue": "errores: 'lo organización' debe ser 'la organización', 'Empreso' debe ser 'Empresa'"
     },
     {
-      "quote": "lacional de Colombia",
-      "issue": "fragmento sin sentido, no corresponde a la imagen"
+      "quote": "de grandes iniciatiwr-",
+      "issue": "palabra corrupta, debería ser algo como 'iniciativa'"
     },
     {
-      "quote": "Marcel",
-      "issue": "palabra final sin contexto, no verificable en la imagen"
+      "quote": "San Bartolomé.... 1y16.",
+      "issue": "fecha mal leída, probablemente '1916'"
+    },
+    {
+      "quote": "buhardillos,",
+      "issue": "debería ser 'buhardillas'"
+    },
+    {
+      "quote": "annumerable pedrería, especialmente de esmexaldas.",
+      "issue": "errores tipográficos, debería ser 'innumerable pedrería... esmeraldas'"
+    },
+    {
+      "quote": "cosas que no se pt por más",
+      "issue": "texto incompleto/corrupto, falta contenido"
+    },
+    {
+      "quote": "entre E cColgaduras inmensas",
+      "issue": "texto corrupto, debería ser 'entre colgaduras inmensas'"
+    },
+    {
+      "quote": "medollos",
+      "issue": "debería ser 'medallas'"
+    },
+    {
+      "quote": "señor Suárez",
+      "issue": "no se puede verificar el nombre con certeza"
+    },
+    {
+      "quote": "en Derecho Notural, en Físico.",
+      "issue": "debería ser 'Natural... Física'"
+    },
+    {
+      "quote": "uno de tos\npocos que solía temer dinero",
+      "issue": "errores: 'tos' debe ser 'los', 'temer' debe ser 'tener'"
+    },
+    {
+      "quote": "Memizalde mos prestaba con un 10 por ciento de",
+      "issue": "debería ser 'Merizalde nos prestaba'"
+    },
+    {
+      "quote": "mo había sino una institución bancaria, de pin.\ngiles rendimientos.",
+      "issue": "debería ser 'no había... pingües rendimientos'"
+    },
+    {
+      "quote": "megocio como Sub-agente",
+      "issue": "debería ser 'negocio'"
+    },
+    {
+      "quote": "vendía los tes al público",
+      "issue": "debería ser 'vendía los billetes al público'"
+    },
+    {
+      "quote": "lanzó a la calle los primeros pregoneros de loñ Bogotá despertó con ese",
+      "issue": "texto muy corrupto/incompleto, no coincide con imagen"
+    },
+    {
+      "quote": "triplicar haciéndola subir hasta doscientos ochenta",
+      "issue": "no se puede verificar completamente, posible alteración"
+    },
+    {
+      "quote": "hombre de empresos y de vastos megocios",
+      "issue": "debería ser 'empresas... negocios'"
+    },
+    {
+      "quote": "vencer porque una vez vió derrumbarse su forl fruto de varios años de labores tesoque volvió con redoblados esfuerzos\n< lechas basto. recosetrallo de añevo.",
+      "issue": "texto muy corrupto, no legible/reconstruible fielmente"
+    },
+    {
+      "quote": "ha realizado plenamente los sueños de\n\nmente un diario",
+      "issue": "texto incompleto, falta contenido intermedio"
+    },
+    {
+      "quote": "para realizarse plemamente en la vida hoy que obrar de",
+      "issue": "texto corrupto, probablemente 'plenamente... hay que obrar de acuerdo'"
     }
   ],
-  "notes": "El texto OCR propuesto corresponde a páginas distintas (43-44 con anuncio Klim y artículos sobre Mompós y Los sin trabajo), no a la imagen mostrada que contiene el artículo sobre Manuel Merizalde y la Lotería de Tunja.",
+  "notes": "Varias secciones del OCR están muy corruptas o incompletas respecto a lo que aparentemente dice la imagen, especialmente hacia el final de las columnas.",
   "model": "claude-sonnet-5",
-  "input_tokens": 5553,
-  "output_tokens": 415,
-  "cost_usd": 0.015255999999999999
+  "input_tokens": 5290,
+  "output_tokens": 1279,
+  "cost_usd": 0.023370000000000002
 }

@@ -1,15 +1,143 @@
 {
   "pagina_id": "p0041",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.6,
   "errors": [
     {
-      "quote": "LA RADIO CORPORACION DE AMERICA ES UN CONJUNTO DE CONSTRUCTORES\nQUE, CON EL SONIDO, ESCRIBEN HISTORIA EN EL CIELO. LOS PRINCIPALES FABRI-\nCANTES EN RADIODIFUSION; EN EQUIPOS DE RADIO Y DE SONIDO DE TODOS LOS\nTIPOS; EN RADIO-COMUNICACIONES; EN RADIO-INVESTIGACION, EN TELEVI-\n\nSIÓN.\nRCA, SIMBOLO DE LA EDAD DEL RADIO, AL SERVICIO DE LA HUMANIDAD.\n\nRadlomarine Corporation of America\n\nJ. GLOTTMANN Y CIA., S. A.\nLA CASA DEL RADIO\n\nGarrera 7a. Nos. 18-40 a 18-44 Teléfono_17-37\nImpreso en los talleres de Rotograbado de la Editorial Bolívar — Calle 40—613. Bogotá Colombia S. A.",
-      "issue": "El texto propuesto no corresponde en absoluto al contenido de la imagen, que es un artículo titulado 'La Lotería de Tunja' con texto completamente diferente"
+      "quote": "uno\npersona con sólo un billete",
+      "issue": "debería ser 'una persona'"
+    },
+    {
+      "quote": "5os pueda entrar",
+      "issue": "error OCR, probablemente 'pesos pueda entrar'"
+    },
+    {
+      "quote": "Los premios que puede Bess",
+      "issue": "texto sin sentido, error OCR grave"
+    },
+    {
+      "quote": "extroordinario del",
+      "issue": "error OCR, debería ser 'extraordinario'"
+    },
+    {
+      "quote": "ton enorme",
+      "issue": "error OCR, debería ser 'tan enorme'"
+    },
+    {
+      "quote": "poís se",
+      "issue": "error OCR, debería ser 'país'"
+    },
+    {
+      "quote": "insuceso",
+      "issue": "posible error, debería ser 'insuceso' o 'fracaso', dudoso"
+    },
+    {
+      "quote": "sensocionales",
+      "issue": "error OCR, debería ser 'sensacionales'"
+    },
+    {
+      "quote": "todo el pass",
+      "issue": "error OCR, debería ser 'país'"
+    },
+    {
+      "quote": "Primero un error Il, una base fal",
+      "issue": "texto incompleto/corrupto por OCR"
+    },
+    {
+      "quote": "cier il billetes",
+      "issue": "error OCR, probablemente 'cien mil billetes'"
+    },
+    {
+      "quote": "Con rápido examen",
+      "issue": "falta palabra, debería ser 'Con un rápido examen'"
+    },
+    {
+      "quote": "ero perfectomente",
+      "issue": "error OCR, debería ser 'era perfectamente'"
+    },
+    {
+      "quote": "Mones de pesos. Otres causas",
+      "issue": "errores OCR, debería ser 'millones' y 'Otras causas'"
+    },
+    {
+      "quote": "moso gruesa",
+      "issue": "error OCR, debería ser 'masa gruesa'"
+    },
+    {
+      "quote": "achacas",
+      "issue": "error OCR, debería ser 'achacar'"
+    },
+    {
+      "quote": "honoral\ndad",
+      "issue": "error OCR, debería ser 'honorabilidad'"
+    },
+    {
+      "quote": "gran y dina.\nmismo",
+      "issue": "texto corrupto, falta 'capacidad' y 'dinamismo'"
+    },
+    {
+      "quote": "—uéles fueron esos factores?",
+      "issue": "error OCR, debería ser '—Cuáles fueron esos factores?'"
+    },
+    {
+      "quote": "cutorizó",
+      "issue": "error OCR, debería ser 'autorizó'"
+    },
+    {
+      "quote": "osos agentes transitorios",
+      "issue": "error OCR, debería ser 'muchos casos agentes transitorios'"
+    },
+    {
+      "quote": "yo hoyo podido",
+      "issue": "error OCR, debería ser 'yo haya podido'"
+    },
+    {
+      "quote": "loteras",
+      "issue": "error OCR, debería ser 'loteras' o 'loterías'"
+    },
+    {
+      "quote": "mumicipios",
+      "issue": "error OCR, debería ser 'municipios'"
+    },
+    {
+      "quote": "quedarón",
+      "issue": "error OCR, debería ser 'quedarán'"
+    },
+    {
+      "quote": "Boyocó",
+      "issue": "error OCR, debería ser 'Boyacá'"
+    },
+    {
+      "quote": "riquezas que contemplaron los.\naventureros",
+      "issue": "punto sobrante"
+    },
+    {
+      "quote": "espectáculo de um\nmagnífico tesoro",
+      "issue": "error OCR, 'um' debería ser 'un'"
+    },
+    {
+      "quote": "mi para cubrir sepulcros de jefes de estado bárbaros, mi",
+      "issue": "error OCR, 'mi' debería ser 'ni'"
+    },
+    {
+      "quote": "le yo a permitir",
+      "issue": "error OCR, debería ser 'le va a permitir'"
+    },
+    {
+      "quote": "sólido fóbrica",
+      "issue": "error OCR, debería ser 'sólida fábrica'"
+    },
+    {
+      "quote": "TUNJA\", que ha ideado lo\npecrled: de, Manaal Mertraldo os PN\nhombre de hoy",
+      "issue": "texto muy corrupto, ilegible en parte"
+    },
+    {
+      "quote": "\"CIUDAD BE",
+      "issue": "error OCR, debería ser 'CIUDAD DE'"
     }
   ],
-  "notes": "El OCR parece haber sido generado a partir de una página distinta (un anuncio de RCA), no de la imagen mostrada.",
+  "notes": "Varias secciones del OCR están muy corruptas y no se pueden verificar con precisión por baja calidad de imagen/columnas mezcladas.",
   "model": "claude-sonnet-5",
-  "input_tokens": 2805,
-  "output_tokens": 544,
-  "cost_usd": 0.01105
+  "input_tokens": 3976,
+  "output_tokens": 1478,
+  "cost_usd": 0.022732000000000002
 }

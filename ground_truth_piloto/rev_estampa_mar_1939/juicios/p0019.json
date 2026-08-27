@@ -1,19 +1,55 @@
 {
   "pagina_id": "p0019",
-  "accuracy_estimate": 0.05,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "Secundando a Hitler, Mussolini militariza su pueblo hasta extremos grotescos. He aquí un regimiento italiano, desfilando ante el Duce al paso",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada, que trata sobre la Sierra Nevada de Santa Marta"
+      "quote": "A estela de silen Aquí",
+      "issue": "texto corrupto/incompleto, no corresponde al original"
     },
     {
-      "quote": "de parada de los alemanes, que en Roma ha sido rebautizado con el nombre de \"paso romano\".",
-      "issue": "Contenido inventado, no coincide con la imagen"
+      "quote": "el Ni perenne de San Pedro",
+      "issue": "debería ser 'el altar perenne'"
+    },
+    {
+      "quote": "carretera barrido por el viento, a-\ncaricioda por el tacto del rocío, repor un sol estival y fecun-\n16: - subiendo, subiendo",
+      "issue": "texto muy corrupto y fragmentado, no corresponde al original"
+    },
+    {
+      "quote": "ción de los boscajes, el aromado a-\nz cerros, el perfil de olalas nevadas crestos.",
+      "issue": "texto corrupto, debería ser algo como 'la verde vegetación de los boscajes, el aromado azul de los cerros, el perfil de alabastro de las nevadas crestas'"
+    },
+    {
+      "quote": "Vamos a diez kilómetros de Sana o de mor\nrtanavíos",
+      "issue": "texto corrupto, debería ser 'Vamos a diez kilómetros de Santa Marta, a quince minutos del mar portanavíos'"
+    },
+    {
+      "quote": "escope faldas.",
+      "issue": "error OCR, debería ser 'escalamos faldas'"
+    },
+    {
+      "quote": "Patimamos",
+      "issue": "error OCR, debería ser 'Patinamos'"
+    },
+    {
+      "quote": "Pa retrotroe el pasado selvático\nesta protuberancia y cosi llega",
+      "issue": "error OCR, debería ser 'Se retrotrae el pasado selvático de esta protuberancia y casi llega'"
+    },
+    {
+      "quote": "coloño con el rugido",
+      "issue": "error OCR, debería ser 'colono'"
+    },
+    {
+      "quote": "muleto andón",
+      "issue": "error OCR, debería ser 'muleto andón' probablemente 'mulero andón' - incierto"
+    },
+    {
+      "quote": "sis divinidad",
+      "issue": "error OCR, debería ser 'su divinidad'"
     }
   ],
-  "notes": "El texto OCR propuesto es completamente ajeno al contenido real de la imagen, que es un artículo titulado 'El diálogo de las cumbres' sobre la Sierra Nevada de Santa Marta, firmado por Rafael Caneva; no es posible verificar coincidencias porque el texto no corresponde a la página.",
+  "notes": "El inicio del texto está muy corrupto y difícil de verificar completamente con la imagen; se preservan arcaísmos legítimos.",
   "model": "claude-sonnet-5",
-  "input_tokens": 4456,
-  "output_tokens": 334,
-  "cost_usd": 0.012251999999999999
+  "input_tokens": 3690,
+  "output_tokens": 747,
+  "cost_usd": 0.014850000000000002
 }

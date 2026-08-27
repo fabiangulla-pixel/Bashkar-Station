@@ -1,19 +1,43 @@
 {
   "pagina_id": "p0023",
-  "accuracy_estimate": 0.2,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "En el ambiente de estas calles, a\ntestadas de gentes comunes",
-      "issue": "texto no corresponde a la imagen mostrada, que es sobre Cali"
+      "quote": "Us LA Can DEL DOMINGO,",
+      "issue": "debería ser 'CALI LA CIUDAD DEL DOMINGO'"
     },
     {
-      "quote": "Ya para llegar a Cali se nos en\nreda en el alma una vaga ansiedad",
-      "issue": "el texto real del artículo sobre Cali no está incluido en el OCR propuesto, que en su lugar da otro artículo distinto"
+      "quote": "Pez",
+      "issue": "texto ilegible/inventado, no corresponde a imagen visible"
+    },
+    {
+      "quote": "Iglesia de Son Francisco,",
+      "issue": "debería decir 'Iglesia de San Francisco'"
+    },
+    {
+      "quote": "El paisaje del Valle se la tan",
+      "issue": "texto corrupto, probablemente 'se alarga tan'"
+    },
+    {
+      "quote": "ca y olvido, que nos olvidaríamos",
+      "issue": "falta inicio de palabra, probablemente 'hamaca'"
+    },
+    {
+      "quote": "Hi en el aire",
+      "issue": "texto corrupto, falta contenido, probablemente 'Hay algo embriagador en el aire'"
+    },
+    {
+      "quote": "de e ad a criaturas de moreno cuerpo flexible.",
+      "issue": "texto corrupto/ilegible, falta contenido original"
+    },
+    {
+      "quote": "CARRANZA",
+      "issue": "nombre completo debería ser 'C.ARRANZA' o similar según imagen, verificar espaciado"
     }
   ],
-  "notes": "El texto propuesto corresponde a un artículo completamente diferente (sobre Luis Antonio Chivas) al que se ve en la imagen (artículo sobre Cali por Eduardo Carranza), por lo que no se puede verificar la mayor parte del contenido contra la imagen dada.",
+  "notes": "Gran parte del texto original está fragmentado o ausente en el OCR (columnas derechas de la página), lo que dificulta una comparación completa; no se puede verificar con certeza el contenido faltante.",
   "model": "claude-sonnet-5",
-  "input_tokens": 6298,
-  "output_tokens": 285,
-  "cost_usd": 0.015446
+  "input_tokens": 3137,
+  "output_tokens": 508,
+  "cost_usd": 0.011354
 }

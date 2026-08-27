@@ -1,15 +1,79 @@
 {
   "pagina_id": "p0009",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.85,
   "errors": [
     {
-      "quote": "tragos entre un revuelto océano de\nguarismos.",
-      "issue": "texto no corresponde a la imagen proporcionada"
+      "quote": "— llertos",
+      "issue": "error OCR, debería ser 'llenos'"
+    },
+    {
+      "quote": "venciendo indiferencia, - frialdad,",
+      "issue": "guion espurio insertado"
+    },
+    {
+      "quote": "Plantar en Colombia",
+      "issue": "mayúscula inicial errónea, debería ser 'implantar'"
+    },
+    {
+      "quote": "cultura macional",
+      "issue": "error OCR, debería ser 'nacional'"
+    },
+    {
+      "quote": "imagihación alocada",
+      "issue": "error OCR, debería ser 'imaginación'"
+    },
+    {
+      "quote": "desprovisto",
+      "issue": "debería ser 'desprovisto' revisar coincide, ok no error"
+    },
+    {
+      "quote": "parece fuesen indisol para hacer obra perdura-\n\ne.",
+      "issue": "texto corrupto, debería decir algo como 'indispensables para hacer obra perdurable'"
+    },
+    {
+      "quote": "El director y fundador del Gimhasio",
+      "issue": "error OCR, debería ser 'Gimnasio'"
+    },
+    {
+      "quote": "Universidad Nasional",
+      "issue": "error OCR, debería ser 'Nacional'"
+    },
+    {
+      "quote": "no ha quer:-\ndo",
+      "issue": "error OCR, debería ser 'querido'"
+    },
+    {
+      "quote": "si yo les tengo pánico",
+      "issue": "error OCR, debería ser 'yo le tengo pánico'"
+    },
+    {
+      "quote": "no alcanzan a desvirtuar",
+      "issue": "posible error, podría ser 'desvirtuar' correcto, revisar"
+    },
+    {
+      "quote": "Así lo he hecho. Don Agustín (u-\nno de los pocos hombres",
+      "issue": "error OCR, probablemente 'uno'"
+    },
+    {
+      "quote": "una. tarjeta",
+      "issue": "punto espurio"
+    },
+    {
+      "quote": "os fundadores, el doctor Ricardo Lleras Codazzi",
+      "issue": "falta 'Otro de l' al inicio, texto cortado"
+    },
+    {
+      "quote": "2 Vargas,",
+      "issue": "error OCR, debería ser 'da Vargas'"
+    },
+    {
+      "quote": "primaros edificios",
+      "issue": "error OCR, debería ser 'primeros'"
     }
   ],
-  "notes": "El texto OCR propuesto no corresponde a la imagen mostrada (que trata sobre el Gimnasio Moderno); parece pertenecer a otra página completamente distinta, por lo que no puede verificarse contra la imagen dada.",
+  "notes": "Algunas partes del texto original parecen tener errores de composición/impresión propios, difícil distinguir del OCR sin ver zoom detallado.",
   "model": "claude-sonnet-5",
-  "input_tokens": 3196,
-  "output_tokens": 162,
-  "cost_usd": 0.008012
+  "input_tokens": 4154,
+  "output_tokens": 792,
+  "cost_usd": 0.016228
 }

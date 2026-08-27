@@ -1,15 +1,63 @@
 {
   "pagina_id": "p0011",
-  "accuracy_estimate": 0.5,
+  "accuracy_estimate": 0.75,
   "errors": [
     {
-      "quote": "no puedo verificar este texto con la imagen proporcionada",
-      "issue": "La imagen mostrada corresponde a un artículo sobre el 'Gimnasio Moderno' (Agustín Nieto Caballero, Bogotá), no al texto propuesto sobre Mompós y Candelario Obeso, que es completamente distinto"
+      "quote": "tunas cortinas",
+      "issue": "debe ser 'unas cortinas'"
+    },
+    {
+      "quote": "regentado Hor religiosos",
+      "issue": "debe ser 'regentado por religiosos'"
+    },
+    {
+      "quote": "Ibitos, y en cuyos rincones obscu-",
+      "issue": "debe ser 'hábitos, y en cuyos rincones obscu-'"
+    },
+    {
+      "quote": "CAJAS ESCOJARES",
+      "issue": "debe ser 'CAJAS ESCOLARES'"
+    },
+    {
+      "quote": "La primero -obra social: los desoyunos escolares.",
+      "issue": "debe ser 'La primera obra social: los desayunos escolares.'"
+    },
+    {
+      "quote": "pedegógicos",
+      "issue": "debe ser 'pedagógicos'"
+    },
+    {
+      "quote": "dedicadas integramente",
+      "issue": "debe ser 'íntegramente'"
+    },
+    {
+      "quote": "Se ennumera",
+      "issue": "debe ser 'Se enumera'"
+    },
+    {
+      "quote": "s 90.\n107.17",
+      "issue": "debe ser '$ 90.107.17'"
+    },
+    {
+      "quote": "s 16.742.00",
+      "issue": "debe ser '$ 16.742.00'"
+    },
+    {
+      "quote": "hasta ahora mo\nestamos terminando",
+      "issue": "debe ser 'no estamos terminando'"
+    },
+    {
+      "quote": "REE",
+      "issue": "texto sin sentido, no corresponde a ninguna parte legible"
+    },
+    {
+      "quote": "Martinez A-\nparicio",
+      "issue": "falta tilde, debe ser 'Martínez'"
     }
   ],
-  "notes": "El texto OCR proporcionado no corresponde en absoluto al contenido de la imagen entregada, por lo que no es posible verificar errores específicos; parecen ser de páginas diferentes de la revista.",
+  "notes": "Algunas partes con guiones de corte de columna y errores tipográficos menores no verificables con certeza total.",
   "model": "claude-sonnet-5",
-  "input_tokens": 6990,
-  "output_tokens": 220,
-  "cost_usd": 0.01618
+  "input_tokens": 4131,
+  "output_tokens": 604,
+  "cost_usd": 0.014302
 }

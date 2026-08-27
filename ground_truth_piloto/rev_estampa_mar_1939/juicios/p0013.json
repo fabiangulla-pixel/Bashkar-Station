@@ -1,15 +1,71 @@
 {
   "pagina_id": "p0013",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.85,
   "errors": [
     {
-      "quote": "Carlos H. Pareja: —El fascismo es una campana\npneumática para la inteligencia.",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada; es contenido de otra página distinta"
+      "quote": "PONTIFICADO DE PIO",
+      "issue": "falta 'XII' en el título"
+    },
+    {
+      "quote": "esta po fiesta",
+      "issue": "debería ser 'soberbia fiesta'"
+    },
+    {
+      "quote": "la normalidad.",
+      "issue": "número '3' suelto sin sentido en el texto original, verificar"
+    },
+    {
+      "quote": "Pío XI!",
+      "issue": "debería ser 'Pío XII'"
+    },
+    {
+      "quote": "Pío XiI",
+      "issue": "debería ser 'Pío XII'"
+    },
+    {
+      "quote": "E me",
+      "issue": "texto sin sentido, posible error OCR de pie de foto"
+    },
+    {
+      "quote": "Pio XUL",
+      "issue": "debería ser 'Pio XII'"
+    },
+    {
+      "quote": "del Cónclove",
+      "issue": "debería ser 'del Cónclave'"
+    },
+    {
+      "quote": "j ja es innegable",
+      "issue": "texto corrupto, debería decir algo como 'la justicia es innegable'"
+    },
+    {
+      "quote": "poz",
+      "issue": "debería ser 'paz'"
+    },
+    {
+      "quote": "*Paz romana\"",
+      "issue": "símbolo extraño, debería ser comilla normal"
+    },
+    {
+      "quote": "se:internacionalizaba",
+      "issue": "carácter extraño ':' insertado"
+    },
+    {
+      "quote": "tóntos",
+      "issue": "debería ser 'tantos'"
+    },
+    {
+      "quote": "unanimidod",
+      "issue": "debería ser 'unanimidad'"
+    },
+    {
+      "quote": "no.se doblega",
+      "issue": "falta espacio, debería ser 'no se doblega'"
     }
   ],
-  "notes": "El texto OCR entregado corresponde a un artículo totalmente diferente (encuesta sobre democracia/fascismo) al que aparece en la imagen (artículo sobre Pío XII), por lo que no se puede verificar ninguna coincidencia; la precisión es prácticamente nula.",
+  "notes": "Algunas partes del texto original (pies de foto y símbolos) son difíciles de verificar con certeza por la calidad de la imagen.",
   "model": "claude-sonnet-5",
-  "input_tokens": 6566,
-  "output_tokens": 215,
-  "cost_usd": 0.015282
+  "input_tokens": 3949,
+  "output_tokens": 619,
+  "cost_usd": 0.014088
 }

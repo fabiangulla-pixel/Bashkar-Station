@@ -1,15 +1,31 @@
 {
   "pagina_id": "p0043",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.75,
   "errors": [
     {
-      "quote": "Primera kran Rifa Anual de ESTAMPA",
-      "issue": "no corresponde a la imagen proporcionada"
+      "quote": "ñE\n\nG sacar",
+      "issue": "texto basura OCR no presente en imagen"
+    },
+    {
+      "quote": "—Per ono cree usted",
+      "issue": "probable error de OCR, debería ser 'Pero no cree usted'"
+    },
+    {
+      "quote": "ala a-\ncostumbrada",
+      "issue": "error de espaciado OCR, debería ser 'a la acostumbrada'"
+    },
+    {
+      "quote": "novecodad...:",
+      "issue": "texto corrupto, debería ser 'novedad...'"
+    },
+    {
+      "quote": "Osociados de la ADATRA",
+      "issue": "error OCR, debería ser 'asociados'"
     }
   ],
-  "notes": "El texto propuesto no coincide en absoluto con el contenido de la imagen mostrada; la imagen contiene un artículo distinto sobre mujeres, entrevistas y un anuncio de perfumes Worth, no una lista de premios de rifa.",
+  "notes": "Algunas palabras con mayúsculas erráticas (Ce, Puerta, etc.) parecen ser artefactos de OCR por capitalización aleatoria.",
   "model": "claude-sonnet-5",
-  "input_tokens": 4168,
-  "output_tokens": 164,
-  "cost_usd": 0.009975999999999999
+  "input_tokens": 4691,
+  "output_tokens": 304,
+  "cost_usd": 0.012421999999999999
 }

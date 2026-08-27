@@ -1,15 +1,67 @@
 {
   "pagina_id": "p0036",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.85,
   "errors": [
     {
-      "quote": "EL CHIVAS",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada, que trata de un artículo sobre maquillaje en el siglo XVIII"
+      "quote": "El sialo XVI!",
+      "issue": "debe ser 'El siglo XVIII'"
+    },
+    {
+      "quote": "un rojo\"",
+      "issue": "comilla espuria"
+    },
+    {
+      "quote": "cambiárselo diez",
+      "issue": "debería ser 'cambiárselo diez' - probablemente 'cambiárselo diez veces' está bien pero verificar 'cambiárselo'"
+    },
+    {
+      "quote": "S\n\nEn esta época",
+      "issue": "caracter suelto 'S' espurio"
+    },
+    {
+      "quote": "mujer mo maquillada",
+      "issue": "debe ser 'no maquillada'"
+    },
+    {
+      "quote": "diesollados",
+      "issue": "debe ser 'desollados'"
+    },
+    {
+      "quote": "Epoca de Luis XVÍ.",
+      "issue": "debe ser 'Luis XVI'"
+    },
+    {
+      "quote": "ÍA Tournelles.",
+      "issue": "texto de pie de foto mal reconocido, probablemente 'de Secq-Tournelles'"
+    },
+    {
+      "quote": "Luis XVL",
+      "issue": "debe ser 'Luis XVI'"
+    },
+    {
+      "quote": "nos da-indicaciones",
+      "issue": "guion espurio, debe ser 'nos da indicaciones'"
+    },
+    {
+      "quote": "todo esté de \"acuerdo",
+      "issue": "comillas espurias"
+    },
+    {
+      "quote": "la manera de variar los \"matices",
+      "issue": "comilla espuria"
+    },
+    {
+      "quote": "poniendo. más",
+      "issue": "punto espurio, debe ser 'poniendo - más' o similar"
+    },
+    {
+      "quote": "como: si",
+      "issue": "puntuación espuria"
     }
   ],
-  "notes": "El texto OCR pertenece a una página completamente distinta a la mostrada en la imagen; no es posible verificar ninguna coincidencia.",
+  "notes": "No se puede verificar con certeza cada detalle de puntuación por calidad de imagen, pero el texto general coincide bien.",
   "model": "claude-sonnet-5",
-  "input_tokens": 6329,
-  "output_tokens": 153,
-  "cost_usd": 0.014188000000000001
+  "input_tokens": 3579,
+  "output_tokens": 596,
+  "cost_usd": 0.013118000000000001
 }

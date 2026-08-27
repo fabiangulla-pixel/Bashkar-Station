@@ -1,15 +1,39 @@
 {
   "pagina_id": "p0035",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.75,
   "errors": [
     {
-      "quote": "PRIMERA CARRERA:\nSEGUNDA CARRERA:\nTERCERA CARRERA:\nCUARTA CARRERA:\nQUINTA CARRERA:",
-      "issue": "texto completamente ajeno a la imagen proporcionada; no corresponde al contenido visible en la página"
+      "quote": "Con los brozos abiertos:",
+      "issue": "debe ser 'brazos', no 'brozos'"
+    },
+    {
+      "quote": "Máx Facto",
+      "issue": "texto ilegible/fragmentado no verificable"
+    },
+    {
+      "quote": "cen mayor sabiduría",
+      "issue": "debería ser 'con mayor sabiduría'"
+    },
+    {
+      "quote": "alumnno discolo",
+      "issue": "error de doble 'n', debería ser 'alumno díscolo'"
+    },
+    {
+      "quote": "más a nuestro alcance—de un especie",
+      "issue": "debería decir 'una especie'"
+    },
+    {
+      "quote": "mos encontramos",
+      "issue": "debería ser 'nos encontramos'"
+    },
+    {
+      "quote": "1) —Lentes ultra-luminosos",
+      "issue": "sección de anuncio con texto muy fragmentado, no verificable con certeza"
     }
   ],
-  "notes": "El texto OCR propuesto describe una crónica hípica y de cross-country, mientras que la imagen muestra un artículo sobre cine ('En primer plano' de J. Roldán Castello) y anuncios publicitarios de Max Factor y Contax; no coinciden en absoluto.",
+  "notes": "Gran parte del texto de los anuncios laterales (Max Factor, Contax) está muy fragmentado y es difícil verificar con exactitud debido a la calidad del escaneo.",
   "model": "claude-sonnet-5",
-  "input_tokens": 4889,
-  "output_tokens": 241,
-  "cost_usd": 0.012188000000000001
+  "input_tokens": 5533,
+  "output_tokens": 385,
+  "cost_usd": 0.014915999999999999
 }

@@ -1,15 +1,39 @@
 {
   "pagina_id": "p0010",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.83,
   "errors": [
     {
-      "quote": "zamos a explicar la demora a que",
-      "issue": "Este texto no corresponde a la imagen proporcionada; la imagen muestra un artículo distinto sobre el Gimnasio Moderno"
+      "quote": "escompa",
+      "issue": "posible error, debería ser 'escampó'"
+    },
+    {
+      "quote": "los scarros",
+      "issue": "OCR erróneo 'lo scarros' repetido, probablemente 'los carros'"
+    },
+    {
+      "quote": "barrazos",
+      "issue": "posible error, debería ser 'barrenos' o similar, no verificable con certeza"
+    },
+    {
+      "quote": "Guillermo 1",
+      "issue": "debería ser 'Guillermo II'"
+    },
+    {
+      "quote": "va a\n\ninco años después",
+      "issue": "texto fragmentado y con error, debería ser 'Veinticinco años después'"
+    },
+    {
+      "quote": "compo del Gimnasio",
+      "issue": "error OCR, debería ser 'campo del Gimnasio'"
+    },
+    {
+      "quote": "Adelaido de Nieto",
+      "issue": "error OCR, debería ser 'Adelaida de Nieto'"
     }
   ],
-  "notes": "El texto propuesto por el OCR es completamente diferente al contenido visible en la imagen (que trata sobre el aniversario del Gimnasio Moderno de Bogotá), por lo que no se puede verificar ninguna coincidencia; parece corresponder a otra página del mismo número de la revista.",
+  "notes": "",
   "model": "claude-sonnet-5",
-  "input_tokens": 6595,
-  "output_tokens": 205,
-  "cost_usd": 0.01524
+  "input_tokens": 4337,
+  "output_tokens": 328,
+  "cost_usd": 0.011954
 }

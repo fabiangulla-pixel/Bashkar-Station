@@ -1,19 +1,95 @@
 {
   "pagina_id": "p0026",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "Digitalizado Biblioteca Nacional de Colombia",
-      "issue": "texto no presente en la imagen real, corresponde a otra página"
+      "quote": "comienzo",
+      "issue": "debería ser 'comienza'"
     },
     {
-      "quote": "Sobre el hielo y sobre la arena",
-      "issue": "contenido completamente ajeno a la imagen mostrada, que trata de un reportaje sobre Jorge Rojas"
+      "quote": "publicade",
+      "issue": "debería ser 'publicado'"
+    },
+    {
+      "quote": "puleros",
+      "issue": "debería ser 'pulcros'"
+    },
+    {
+      "quote": "saguían unas mormas estrafalarias",
+      "issue": "debería ser 'seguían unas normas estrafalarias'"
+    },
+    {
+      "quote": "tibertado",
+      "issue": "debería ser 'libertado'"
+    },
+    {
+      "quote": "liridas",
+      "issue": "debería ser 'líricos' o similar"
+    },
+    {
+      "quote": "id de hijos predilectos de Apo-\nO.",
+      "issue": "texto corrupto, probablemente 'calidad de hijos predilectos de Apolo'"
+    },
+    {
+      "quote": "casos de nero renombre",
+      "issue": "debería ser 'casos de universal renombre'"
+    },
+    {
+      "quote": "pauacogotado por la ne-\n\nstr y la miseria",
+      "issue": "texto corrupto, ilegible en parte, probablemente 'paupérrimo, acogotado por la necesidad y la miseria'"
+    },
+    {
+      "quote": "Rojos",
+      "issue": "debería ser 'Rojas'"
+    },
+    {
+      "quote": "habitidad",
+      "issue": "debería ser 'habilidad'"
+    },
+    {
+      "quote": "tampozo",
+      "issue": "debería ser 'tampoco'"
+    },
+    {
+      "quote": "pri aro RE producción",
+      "issue": "texto corrupto, ilegible, probablemente 'publiqué mi primera producción'"
+    },
+    {
+      "quote": "letín bartolino",
+      "issue": "debería ser 'boletín bartolino'"
+    },
+    {
+      "quote": "Sam Bartolomé",
+      "issue": "debería ser 'San Bartolomé'"
+    },
+    {
+      "quote": "tema 4 fa mujer desconocida y cuya de conocimiento se iniciabg en mi adolescencia",
+      "issue": "texto muy corrupto/ilegible"
+    },
+    {
+      "quote": "quel proverbio",
+      "issue": "debería ser 'aquel proverbio'"
+    },
+    {
+      "quote": "curría, agrega Rojas",
+      "issue": "debería ser 'Ocurría, agrega Rojas'"
+    },
+    {
+      "quote": "Catranza",
+      "issue": "debería ser 'Carranza'"
+    },
+    {
+      "quote": "trobajos",
+      "issue": "debería ser 'trabajos'"
+    },
+    {
+      "quote": "JORSE ROJAS",
+      "issue": "debería ser 'JORGE ROJAS'"
     }
   ],
-  "notes": "El texto OCR propuesto no corresponde en absoluto a la imagen proporcionada, que muestra un artículo titulado 'JORGE ROJAS, CAPITALISTA, NEGOCIANTE Y ABOGADO'.",
+  "notes": "Hay fragmentos con manchas/tachones en la imagen original que corresponden a partes ilegibles del OCR, difíciles de verificar con certeza.",
   "model": "claude-sonnet-5",
-  "input_tokens": 2815,
-  "output_tokens": 237,
-  "cost_usd": 0.008
+  "input_tokens": 5399,
+  "output_tokens": 920,
+  "cost_usd": 0.019998000000000002
 }

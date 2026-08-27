@@ -1,0 +1,55 @@
+{
+  "pagina_id": "p0017",
+  "accuracy_estimate": 0.75,
+  "errors": [
+    {
+      "quote": "diosa lírica sometida al.cepo partidista",
+      "issue": "punto extraño 'al.cepo'"
+    },
+    {
+      "quote": "Dígome, de qué manera",
+      "issue": "debe ser 'Dígame'"
+    },
+    {
+      "quote": "A mi modo de ver—me - ressí lo demuestra la historia, la exponde— la labor del intelectual, a-\nperiencia, opera de la siguiente manera",
+      "issue": "texto corrupto/incoherente, probablemente mal transcrito"
+    },
+    {
+      "quote": "Donte refleja",
+      "issue": "debe ser 'Dante'"
+    },
+    {
+      "quote": "quedo oislado",
+      "issue": "debe ser 'quedó aislado'"
+    },
+    {
+      "quote": "'conmociones la. posición",
+      "issue": "puntuación errónea"
+    },
+    {
+      "quote": "—+£s siempre igual?",
+      "issue": "caracteres OCR corruptos, debe ser '¿Es siempre igual?'"
+    },
+    {
+      "quote": "burguesia manufacturera",
+      "issue": "falta tilde, 'burguesía'"
+    },
+    {
+      "quote": "el que hace obra partidista",
+      "issue": "posible error, revisar"
+    },
+    {
+      "quote": "Luís Vidales",
+      "issue": "tilde incorrecta, debe ser 'Luis'"
+    },
+    {
+      "quote": "rencia. dijo",
+      "issue": "punto mal colocado"
+    }
+  ],
+  "notes": "Varios fragmentos parecen corruptos por el proceso OCR y no se pueden verificar con certeza contra la imagen en baja resolución del texto columnar.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4258,
+  "output_tokens": 546,
+  "cost_usd": 0.013975999999999999
+}

@@ -1,15 +1,79 @@
 {
   "pagina_id": "p0022",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "RENDO",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen proporcionada"
+      "quote": "desprinde",
+      "issue": "debería ser 'desprende'"
+    },
+    {
+      "quote": "desvaneciya",
+      "issue": "debería ser 'desvaneciéndose ya'"
+    },
+    {
+      "quote": "mumerosos",
+      "issue": "debería ser 'numerosos'"
+    },
+    {
+      "quote": "crugido",
+      "issue": "debería ser 'crujido'"
+    },
+    {
+      "quote": "— ne\n\nMus KAVSER sa?\nTRABES TRATA CH\n\ne",
+      "issue": "texto de imagen de caja/etiqueta mal reconocido, ilegible/basura OCR"
+    },
+    {
+      "quote": "Cómo percibí: todo eso y. añadi de\nmi Emo detalles que con E\n6 'o estoy a prueba\nridad Heaniquecido la leyenda de",
+      "issue": "bloque muy corrupto por columna adyacente superpuesta, ilegible en gran parte"
+    },
+    {
+      "quote": "CcuP\nLABORATORIO\n\nCESAR UASB PUEDA - BOGOTA.",
+      "issue": "texto de anuncio mal reconocido"
+    },
+    {
+      "quote": "mos harian.",
+      "issue": "debería ser 'no harán' según contexto, posible error"
+    },
+    {
+      "quote": "iQué extraño tranquilidad",
+      "issue": "debería ser '¿Qué extraña tranquilidad'"
+    },
+    {
+      "quote": "mo hay dudo—<rujir la viga?",
+      "issue": "debería ser 'no hay duda—crujir la viga?'"
+    },
+    {
+      "quote": "crujide de la vida",
+      "issue": "debería ser 'crujido de la viga'"
+    },
+    {
+      "quote": "fantesma",
+      "issue": "debería ser 'fantasma'"
+    },
+    {
+      "quote": "registradcres",
+      "issue": "debería ser 'registradores'"
+    },
+    {
+      "quote": "sudo alguno",
+      "issue": "debería ser 'ruido alguno'"
+    },
+    {
+      "quote": "opuraban",
+      "issue": "debería ser 'apuraban'"
+    },
+    {
+      "quote": "leyendos",
+      "issue": "debería ser 'leyendas'"
+    },
+    {
+      "quote": "El desván de la viejo casona",
+      "issue": "no aparece exactamente así, verificar pie de foto"
     }
   ],
-  "notes": "El texto OCR entregado trata sobre la Guerra Civil Española y refugiados cruzando a Francia, mientras que la imagen muestra un artículo sobre fantasmas en una casona inglesa; son completamente distintos, no se puede verificar coincidencia alguna.",
+  "notes": "Varias secciones (pies de foto de cajas, anuncios) están muy corruptas por superposición de columnas y son difíciles de verificar con certeza total.",
   "model": "claude-sonnet-5",
-  "input_tokens": 3639,
-  "output_tokens": 169,
-  "cost_usd": 0.008968
+  "input_tokens": 5101,
+  "output_tokens": 829,
+  "cost_usd": 0.018492
 }

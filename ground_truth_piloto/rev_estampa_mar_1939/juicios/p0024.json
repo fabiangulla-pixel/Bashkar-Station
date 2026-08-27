@@ -1,15 +1,39 @@
 {
   "pagina_id": "p0024",
-  "accuracy_estimate": 0.05,
+  "accuracy_estimate": 0.9,
   "errors": [
     {
-      "quote": "Doña Gabriela Vieira de Arciniegas y su pequeña hija.",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada, que es un artículo sobre Cali con paisajes y fotos de río y jinete"
+      "quote": "2n donde",
+      "issue": "debería ser 'En donde'"
+    },
+    {
+      "quote": "desílecado",
+      "issue": "error OCR, probablemente 'desflecado'"
+    },
+    {
+      "quote": "distrazada",
+      "issue": "error OCR, debería ser 'disfrazada'"
+    },
+    {
+      "quote": "azúleas",
+      "issue": "posible error OCR, debería ser 'azuladas' o similar"
+    },
+    {
+      "quote": "nocturn:",
+      "issue": "error OCR, debería ser 'nocturno'"
+    },
+    {
+      "quote": "-Digitali ado Bibli eca Nacional de Colombia",
+      "issue": "texto de marca de agua/pie de página irrelevante, no parte del artículo original"
+    },
+    {
+      "quote": "A\nPO",
+      "issue": "fragmento sin sentido, posible ruido OCR"
     }
   ],
-  "notes": "El texto propuesto es completamente distinto de la imagen proporcionada, que muestra un artículo poético sobre Cali firmado por Eduardo Carranza, no una entrevista a Germán Arciniegas.",
+  "notes": "No pude verificar con certeza algunas palabras por baja resolución en ciertas zonas de la imagen.",
   "model": "claude-sonnet-5",
-  "input_tokens": 6719,
-  "output_tokens": 198,
-  "cost_usd": 0.015418000000000001
+  "input_tokens": 3516,
+  "output_tokens": 344,
+  "cost_usd": 0.010472
 }

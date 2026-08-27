@@ -1,15 +1,39 @@
 {
   "pagina_id": "p0015",
-  "accuracy_estimate": 0.5,
+  "accuracy_estimate": 0.9,
   "errors": [
     {
-      "quote": "El texto propuesto corresponde a un artículo distinto (Joe Petterson) del que aparece en la imagen",
-      "issue": "El texto OCR no coincide en absoluto con el contenido visible en la imagen, que trata sobre 'Porque se ha perdido Cataluña' de Marcelino Domingo y una tira cómica de Michelin"
+      "quote": "franqueor el Guadarrama",
+      "issue": "debería ser 'franquear el Guadarrama'"
+    },
+    {
+      "quote": "Henaba",
+      "issue": "OCR erróneo, debería ser 'llenaba'"
+    },
+    {
+      "quote": "Temuel",
+      "issue": "debería ser 'Teruel'"
+    },
+    {
+      "quote": "mumantino",
+      "issue": "palabra corrupta, posible error OCR, no se puede confirmar lectura exacta"
+    },
+    {
+      "quote": "Chomberlain",
+      "issue": "debería ser 'Chamberlain'"
+    },
+    {
+      "quote": "irrectificablemente",
+      "issue": "posible error, revisar ortografía original"
+    },
+    {
+      "quote": "Manta «loca!",
+      "issue": "no corresponde al texto de la imagen (viñeta dice 'No soy una llanta loca!')"
     }
   ],
-  "notes": "No puedo verificar el texto propuesto porque no corresponde al contenido de la imagen proporcionada; la imagen muestra un artículo político sobre la pérdida de Cataluña y una historieta publicitaria de neumáticos Michelin, mientras que el texto trata sobre un promotor de boxeo llamado Joe Petterson.",
+  "notes": "Algunas palabras con manchas o baja resolución no se pueden verificar con certeza absoluta.",
   "model": "claude-sonnet-5",
-  "input_tokens": 5788,
-  "output_tokens": 270,
-  "cost_usd": 0.014276
+  "input_tokens": 4298,
+  "output_tokens": 345,
+  "cost_usd": 0.012046
 }

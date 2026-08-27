@@ -1,15 +1,55 @@
 {
   "pagina_id": "p0039",
-  "accuracy_estimate": 0.4,
+  "accuracy_estimate": 0.7,
   "errors": [
     {
-      "quote": "barlos Lleras Reslrepo",
-      "issue": "no corresponde a la imagen provista (esta página es de Deportes, no de este artículo)"
+      "quote": "doño Leo",
+      "issue": "debería ser 'doña Leonor'"
+    },
+    {
+      "quote": "jpDoña Helena Corri",
+      "issue": "texto corrupto, debería ser 'Doña Helena Carrizosa de Muñoz, doña Lo-'"
+    },
+    {
+      "quote": "yea Londoño de Santamaría",
+      "issue": "debería ser 'lita Londoño de Santamaría'"
+    },
+    {
+      "quote": "Compo de Be",
+      "issue": "debería ser 'Campo de Be-'"
+    },
+    {
+      "quote": "1l5",
+      "issue": "debería ser '1|5'"
+    },
+    {
+      "quote": "maña-\nA",
+      "issue": "debería ser 'mañana....'"
+    },
+    {
+      "quote": "TOA SP",
+      "issue": "texto corrupto, debería ser 'TOTAL...17'"
+    },
+    {
+      "quote": "TORAL a e",
+      "issue": "texto corrupto, debería ser 'TOTAL...18'"
+    },
+    {
+      "quote": "Doña Amparito Vallejo de Jaramillo en fa",
+      "issue": "debería ser 'en la'"
+    },
+    {
+      "quote": "deña",
+      "issue": "debería ser 'doña'"
+    },
+    {
+      "quote": "Salozar",
+      "issue": "debería ser 'Salazar'"
     }
   ],
-  "notes": "El texto propuesto no corresponde a la imagen mostrada, que trata de deportes hípicos y polo, no del artículo sobre Carlos Lleras Restrepo ni la portada del Papa Pío XII.",
+  "notes": "Varios pies de foto con nombres cortados por el margen son difíciles de verificar completamente.",
   "model": "claude-sonnet-5",
-  "input_tokens": 4061,
-  "output_tokens": 160,
-  "cost_usd": 0.009722000000000001
+  "input_tokens": 4397,
+  "output_tokens": 484,
+  "cost_usd": 0.013634
 }

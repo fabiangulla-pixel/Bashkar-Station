@@ -1,19 +1,47 @@
 {
   "pagina_id": "p0032",
-  "accuracy_estimate": 0.05,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "Laboratorio. de Dfagnóstico Clínico",
-      "issue": "El texto propuesto no corresponde a la imagen proporcionada; parece ser de otra página distinta"
+      "quote": "PMA",
+      "issue": "texto sin sentido, no corresponde a nada legible"
     },
     {
-      "quote": "No me cansaré de insistir",
-      "issue": "contenido no coincide con lo visible en la página mostrada"
+      "quote": "—Pero tiene o ds de",
+      "issue": "texto ilegible/corrupto, no corresponde a lectura real"
+    },
+    {
+      "quote": "maeS va a 5 oficina de lista",
+      "issue": "texto corrupto, ilegible"
+    },
+    {
+      "quote": "sobrecito pe:.",
+      "issue": "texto corrupto, probablemente 'sobrecito perfumado'"
+    },
+    {
+      "quote": "una persona que con la espera.",
+      "issue": "texto incompleto, falta 'ansiedad'"
+    },
+    {
+      "quote": "A lleva el lacre del dl",
+      "issue": "texto corrupto, debería decir algo como 'porque lleva el lacre del silencio'"
+    },
+    {
+      "quote": "o he pasado í, en Santo Domingo, horas os examinando",
+      "issue": "texto corrupto, debería ser 'Yo he pasado aquí, en Santo Domingo, horas enteras, examinando'"
+    },
+    {
+      "quote": "corresponsallas concisas",
+      "issue": "error de transcripción, probablemente 'correspondencias concisas'"
+    },
+    {
+      "quote": "Rayos X. Laboratorio",
+      "issue": "posible omisión de 'Rayos' truncada en OCR"
     }
   ],
-  "notes": "El texto OCR corresponde a un artículo sobre peinados y maquillaje, mientras que la imagen muestra un artículo sobre 'El Correo y su mundo de Emoción'; son completamente diferentes, por lo que no se puede verificar coincidencia.",
+  "notes": "Hay varios fragmentos claramente corruptos o ilegibles en el OCR que no se pueden verificar con certeza contra la imagen en baja resolución.",
   "model": "claude-sonnet-5",
-  "input_tokens": 4657,
-  "output_tokens": 228,
-  "cost_usd": 0.011594
+  "input_tokens": 5177,
+  "output_tokens": 524,
+  "cost_usd": 0.015594
 }

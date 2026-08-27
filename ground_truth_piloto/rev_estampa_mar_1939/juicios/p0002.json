@@ -1,19 +1,59 @@
 {
   "pagina_id": "p0002",
-  "accuracy_estimate": 0.05,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "Antonio José Cadavid. Luis Zea Uribe.. If Antonio José Restrepo. Duane! Mantoe:",
-      "issue": "texto no corresponde a la imagen mostrada"
+      "quote": "kran",
+      "issue": "debe ser 'Gran'"
     },
     {
-      "quote": "La recepción en la Legoción\n\nde Santo Domingo, en el\n\naniversario de la indepen\ndéncio dominicana",
-      "issue": "contenido no corresponde a esta página"
+      "quote": "Ver. Premio",
+      "issue": "debe ser '1er. Premio'"
+    },
+    {
+      "quote": "do. Premio",
+      "issue": "debe ser '4o. Premio'"
+    },
+    {
+      "quote": "Glottmomn",
+      "issue": "error de transcripción, debe ser 'Glottmann'"
+    },
+    {
+      "quote": "Vo. Premio",
+      "issue": "debe ser '11o. Premio'"
+    },
+    {
+      "quote": "hidraúlicos",
+      "issue": "debe ser 'hidráulicos'"
+    },
+    {
+      "quote": "FILMADORA KODAÉ",
+      "issue": "debe ser 'KODAK'"
+    },
+    {
+      "quote": "vacaciones podrá revivil los",
+      "issue": "error de OCR en 'revivirlos'"
+    },
+    {
+      "quote": "diarió ez Suscríbase",
+      "issue": "texto corrupto, ilegible con certeza"
+    },
+    {
+      "quote": "obse' tendá",
+      "issue": "texto corrupto/mal segmentado"
+    },
+    {
+      "quote": "un Í céntrico",
+      "issue": "debe ser 'un local céntrico'"
+    },
+    {
+      "quote": "rodillos mecánicas",
+      "issue": "posible error, debería ser 'mecánicos'"
     }
   ],
-  "notes": "El texto OCR propuesto no coincide en absoluto con la imagen proporcionada, que muestra un anuncio de la Rifa Anual de ESTAMPA de 1939.",
+  "notes": "Varias secciones del OCR mezclan columnas y producen texto incoherente que no se puede verificar con certeza contra la imagen.",
   "model": "claude-sonnet-5",
-  "input_tokens": 2947,
-  "output_tokens": 240,
-  "cost_usd": 0.008294
+  "input_tokens": 4168,
+  "output_tokens": 505,
+  "cost_usd": 0.013386
 }

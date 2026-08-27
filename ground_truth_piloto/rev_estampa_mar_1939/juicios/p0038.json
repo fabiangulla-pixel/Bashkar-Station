@@ -1,15 +1,51 @@
 {
   "pagina_id": "p0038",
-  "accuracy_estimate": 0.05,
+  "accuracy_estimate": 0.85,
   "errors": [
     {
-      "quote": "RAFAEL\n\nMAYA",
-      "issue": "Este texto no corresponde a la imagen proporcionada, que es un artículo de moda 'LA MODA EN PARIS'"
+      "quote": "LA_MODA ENPARIS",
+      "issue": "espaciado incorrecto, debería ser 'LA MODA EN PARIS'"
+    },
+    {
+      "quote": "suaye",
+      "issue": "error OCR, debería ser 'suave'"
+    },
+    {
+      "quote": "Uno dé los",
+      "issue": "error OCR, debería ser 'Uno de los'"
+    },
+    {
+      "quote": "ha lonzado",
+      "issue": "error OCR, debería ser 'ha lanzado'"
+    },
+    {
+      "quote": "inie\n\nna\n\noo Y\n\n51.",
+      "issue": "texto sin sentido generado por OCR, no corresponde a contenido real"
+    },
+    {
+      "quote": "axul",
+      "issue": "error OCR, debería ser 'azul'"
+    },
+    {
+      "quote": "patisiense",
+      "issue": "error OCR, debería ser 'parisiense'"
+    },
+    {
+      "quote": "sobre €\nastracán",
+      "issue": "error OCR, debería ser 'sobre el astracán'"
+    },
+    {
+      "quote": "pli8-\ngues",
+      "issue": "error OCR, debería ser 'plie-gues'"
+    },
+    {
+      "quote": "nuca O",
+      "issue": "error OCR, debería ser 'nuca o'"
     }
   ],
-  "notes": "El texto propuesto por OCR no coincide con la imagen, que muestra un artículo de moda de la revista Estampa con fotografías de trajes y sombreros, no una entrevista con Rafael Maya.",
+  "notes": "El resto del texto coincide razonablemente bien con la imagen.",
   "model": "claude-sonnet-5",
-  "input_tokens": 8134,
-  "output_tokens": 171,
-  "cost_usd": 0.017978
+  "input_tokens": 3279,
+  "output_tokens": 458,
+  "cost_usd": 0.011137999999999999
 }

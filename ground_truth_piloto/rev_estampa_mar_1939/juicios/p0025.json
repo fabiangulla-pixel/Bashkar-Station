@@ -1,15 +1,131 @@
 {
   "pagina_id": "p0025",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "EL CHIVAS...",
-      "issue": "El texto propuesto no corresponde a la imagen mostrada; la imagen es un anuncio de 'Gran concurso deportivo de Estampa', no un artículo sobre 'Chivas'"
+      "quote": "denciloc\nde stampa\n\nNOS\n\nN2\n\nIFIVO DE \"ESTAMPA\"",
+      "issue": "texto sin sentido, no corresponde al título ni cupón real (debería ser 'Gran concurso deportivo de estampa PARA NIÑOS Y NIÑAS' y 'CUPON No. 2 GRAN CONCURSO DEPORTIVO DE ESTAMPA')"
+    },
+    {
+      "quote": "hacerlo: llegar",
+      "issue": "puntuación incorrecta introducida por OCR"
+    },
+    {
+      "quote": "podrári participar",
+      "issue": "error OCR, debería ser 'podrán participar'"
+    },
+    {
+      "quote": "que así lo deseen y",
+      "issue": "posible error, en texto aparece '«que así lo deseen'"
+    },
+    {
+      "quote": "halaglieño",
+      "issue": "error OCR, debería ser 'halagüeño'"
+    },
+    {
+      "quote": "contribuír",
+      "issue": "posible error de tilde, verificar"
+    },
+    {
+      "quote": "casi por: completo",
+      "issue": "puntuación errónea"
+    },
+    {
+      "quote": "adorábles",
+      "issue": "tilde mal puesta, debería ser 'adorables'"
+    },
+    {
+      "quote": "letros claras y en tinta, el nombre del niño concursonte",
+      "issue": "errores de transcripción de letras (letros/concursonte)"
+    },
+    {
+      "quote": "hibro especial en que se irón anotando",
+      "issue": "errores OCR (libro/irán)"
+    },
+    {
+      "quote": "el lean\ncupones le por consiguiente ya tengan derecl tomor parte en él.",
+      "issue": "texto ilegible/corrupto, no coincide con estructura normal"
+    },
+    {
+      "quote": "tds fro que ya hayan enviado",
+      "issue": "texto corrupto, debería decir algo como 'Aquellos niños que ya hayan enviado'"
+    },
+    {
+      "quote": "seo publicada",
+      "issue": "error OCR, debería ser 'sea publicada'"
+    },
+    {
+      "quote": "acompoñarlos",
+      "issue": "error OCR, debería ser 'acompañarlos'"
+    },
+    {
+      "quote": "cotegoríos,\na sober:",
+      "issue": "errores OCR (categorías/saber)"
+    },
+    {
+      "quote": "uma distancia",
+      "issue": "error OCR, debería ser 'una distancia'"
+    },
+    {
+      "quote": "distoncia de 70 metros",
+      "issue": "error OCR, debería ser 'distancia'"
+    },
+    {
+      "quote": "biciclete",
+      "issue": "error OCR, debería ser 'bicicleta'"
+    },
+    {
+      "quote": "distancio de",
+      "issue": "error OCR, debería ser 'distancia de'"
+    },
+    {
+      "quote": "cotegoría más baja",
+      "issue": "error OCR reiterado"
+    },
+    {
+      "quote": "reolidad deba ocupor",
+      "issue": "errores OCR (realidad/ocupar)"
+    },
+    {
+      "quote": "cotegorías, éste será retirado",
+      "issue": "error OCR"
+    },
+    {
+      "quote": "otre pora el",
+      "issue": "errores OCR (otro/para)"
+    },
+    {
+      "quote": "ele",
+      "issue": "posible error no verificable"
+    },
+    {
+      "quote": "fic\nnes del mes",
+      "issue": "texto cortado/corrupto, debería ser 'fines del mes'"
+    },
+    {
+      "quote": "coda pruebo haste 8",
+      "issue": "errores OCR (cada prueba hasta)"
+    },
+    {
+      "quote": "coso de empotes",
+      "issue": "errores OCR (caso de empates)"
+    },
+    {
+      "quote": "muy mu=\nmeroso, clasificarór los empatodos",
+      "issue": "texto corrupto con símbolos extraños"
+    },
+    {
+      "quote": "dorón més amplios",
+      "issue": "errores OCR (darán más)"
+    },
+    {
+      "quote": "poís, esté segura",
+      "issue": "errores OCR (país, está)"
     }
   ],
-  "notes": "El texto OCR entero no coincide con el contenido de la imagen proporcionada, que trata sobre un concurso deportivo infantil, no sobre un personaje llamado Chivas.",
+  "notes": "El bloque del título/cupón está muy corrupto en el OCR y no refleja el contenido visible en la imagen; hay numerosos errores tipográficos menores adicionales que ya están marcados con comillas en el propio texto OCR.",
   "model": "claude-sonnet-5",
-  "input_tokens": 5232,
-  "output_tokens": 181,
-  "cost_usd": 0.012274
+  "input_tokens": 4635,
+  "output_tokens": 1401,
+  "cost_usd": 0.02328
 }

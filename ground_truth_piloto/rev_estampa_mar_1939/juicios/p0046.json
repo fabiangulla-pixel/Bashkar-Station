@@ -1,15 +1,31 @@
 {
   "pagina_id": "p0046",
-  "accuracy_estimate": 0.05,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "Estampa\n\nANO 2VOL2NUM17 BO(OTA,MAR7O18/930",
-      "issue": "El texto propuesto no corresponde en absoluto a la imagen mostrada"
+      "quote": "UN\n\nSa\n\nSERVICIO",
+      "issue": "texto de titular mal segmentado, falta 'Cinema Parlante'"
+    },
+    {
+      "quote": "vezgmás",
+      "issue": "debería ser 'vez más' con guion, error OCR"
+    },
+    {
+      "quote": "servicio mundial de radio-c:\nmunicaciones: RCA Commu\ncations",
+      "issue": "palabras cortadas mal, debería ser 'radio-comunicaciones: RCA Communications'"
+    },
+    {
+      "quote": "a\nSonido\nCQuipos * Mega, l\n/ e i\ndue Están «eroductora ito / l\nes peto ado soy, RCA Proporta lo\nhn Pag \"50dos qn Photos\nhace ue Duro Ms de oe,\n'",
+      "issue": "texto ilegible/inventado, no corresponde a nada real del recuadro de imagen adyacente"
+    },
+    {
+      "quote": "J. GLOTTMANN, S. A.\nLA CASA DEL RADIO\nCarrera 7a. Nos. 15-40 a 15-44   Teléfono 17-37",
+      "issue": "falta esta sección completa presente en la imagen"
     }
   ],
-  "notes": "El texto OCR propuesto describe un artículo largo sobre el Gimnasio Moderno de Bogotá, pero la imagen es un anuncio publicitario de RCA sobre el cine parlante; no coinciden en ningún punto verificable.",
+  "notes": "Faltan varios bloques de texto legibles (recuadro de rayos ultravioleta y anuncio de Glottmann) y hay fragmentos inventados/ilegibles.",
   "model": "claude-sonnet-5",
-  "input_tokens": 5599,
-  "output_tokens": 190,
-  "cost_usd": 0.013098
+  "input_tokens": 3584,
+  "output_tokens": 500,
+  "cost_usd": 0.012168
 }

@@ -2,18 +2,15 @@
   "numero": "rev_estampa_mar_1939",
   "origen_imagenes": "C:\\build_rf\\estampa_paginas\\rev_estampa_mar_1939",
   "origen_candidatos": "I:\\Mi unidad\\00_Programas y macros\\Bashkar Station\\bashkar_station\\_prueba5\\03_ocr\\rev_estampa_mar_1939",
-  "total_paginas": 45,
+  "total_paginas": 47,
   "saltadas_sin_texto_candidato": [],
-  "saltadas_muy_pocas_palabras": [
-    "p0031",
-    "p0042"
-  ],
+  "saltadas_muy_pocas_palabras": [],
   "paginas": [
     {
       "pagina_id": "p0002",
       "imagen": "imagenes/p0002.jpg",
       "candidato": "candidatos/p0002.txt",
-      "palabras_candidato": 198,
+      "palabras_candidato": 605,
       "bytes_imagen_original": 1028300,
       "bytes_imagen_reducida": 341548
     },
@@ -21,7 +18,7 @@
       "pagina_id": "p0003",
       "imagen": "imagenes/p0003.jpg",
       "candidato": "candidatos/p0003.txt",
-      "palabras_candidato": 561,
+      "palabras_candidato": 212,
       "bytes_imagen_original": 851734,
       "bytes_imagen_reducida": 285359
     },
@@ -29,7 +26,7 @@
       "pagina_id": "p0004",
       "imagen": "imagenes/p0004.jpg",
       "candidato": "candidatos/p0004.txt",
-      "palabras_candidato": 1828,
+      "palabras_candidato": 66,
       "bytes_imagen_original": 860047,
       "bytes_imagen_reducida": 265477
     },
@@ -37,7 +34,7 @@
       "pagina_id": "p0005",
       "imagen": "imagenes/p0005.jpg",
       "candidato": "candidatos/p0005.txt",
-      "palabras_candidato": 558,
+      "palabras_candidato": 1195,
       "bytes_imagen_original": 1193871,
       "bytes_imagen_reducida": 423293
     },
@@ -45,7 +42,7 @@
       "pagina_id": "p0006",
       "imagen": "imagenes/p0006.jpg",
       "candidato": "candidatos/p0006.txt",
-      "palabras_candidato": 1352,
+      "palabras_candidato": 1085,
       "bytes_imagen_original": 1218055,
       "bytes_imagen_reducida": 426727
     },
@@ -53,7 +50,7 @@
       "pagina_id": "p0007",
       "imagen": "imagenes/p0007.jpg",
       "candidato": "candidatos/p0007.txt",
-      "palabras_candidato": 362,
+      "palabras_candidato": 886,
       "bytes_imagen_original": 1080145,
       "bytes_imagen_reducida": 375079
     },
@@ -61,7 +58,7 @@
       "pagina_id": "p0008",
       "imagen": "imagenes/p0008.jpg",
       "candidato": "candidatos/p0008.txt",
-      "palabras_candidato": 555,
+      "palabras_candidato": 1369,
       "bytes_imagen_original": 1197793,
       "bytes_imagen_reducida": 420345
     },
@@ -69,7 +66,7 @@
       "pagina_id": "p0009",
       "imagen": "imagenes/p0009.jpg",
       "candidato": "candidatos/p0009.txt",
-      "palabras_candidato": 255,
+      "palabras_candidato": 594,
       "bytes_imagen_original": 1062679,
       "bytes_imagen_reducida": 344750
     },
@@ -77,7 +74,7 @@
       "pagina_id": "p0010",
       "imagen": "imagenes/p0010.jpg",
       "candidato": "candidatos/p0010.txt",
-      "palabras_candidato": 1597,
+      "palabras_candidato": 646,
       "bytes_imagen_original": 1076315,
       "bytes_imagen_reducida": 375437
     },
@@ -85,7 +82,7 @@
       "pagina_id": "p0011",
       "imagen": "imagenes/p0011.jpg",
       "candidato": "candidatos/p0011.txt",
-      "palabras_candidato": 1699,
+      "palabras_candidato": 568,
       "bytes_imagen_original": 1051999,
       "bytes_imagen_reducida": 363795
     },
@@ -93,7 +90,7 @@
       "pagina_id": "p0012",
       "imagen": "imagenes/p0012.jpg",
       "candidato": "candidatos/p0012.txt",
-      "palabras_candidato": 1137,
+      "palabras_candidato": 1280,
       "bytes_imagen_original": 2281147,
       "bytes_imagen_reducida": 394940
     },
@@ -101,7 +98,7 @@
       "pagina_id": "p0013",
       "imagen": "imagenes/p0013.jpg",
       "candidato": "candidatos/p0013.txt",
-      "palabras_candidato": 1560,
+      "palabras_candidato": 570,
       "bytes_imagen_original": 1042642,
       "bytes_imagen_reducida": 347865
     },
@@ -109,7 +106,7 @@
       "pagina_id": "p0014",
       "imagen": "imagenes/p0014.jpg",
       "candidato": "candidatos/p0014.txt",
-      "palabras_candidato": 467,
+      "palabras_candidato": 172,
       "bytes_imagen_original": 941799,
       "bytes_imagen_reducida": 327472
     },
@@ -117,7 +114,7 @@
       "pagina_id": "p0015",
       "imagen": "imagenes/p0015.jpg",
       "candidato": "candidatos/p0015.txt",
-      "palabras_candidato": 1290,
+      "palabras_candidato": 742,
       "bytes_imagen_original": 1262570,
       "bytes_imagen_reducida": 417162
     },
@@ -125,7 +122,7 @@
       "pagina_id": "p0016",
       "imagen": "imagenes/p0016.jpg",
       "candidato": "candidatos/p0016.txt",
-      "palabras_candidato": 1004,
+      "palabras_candidato": 856,
       "bytes_imagen_original": 1117824,
       "bytes_imagen_reducida": 385701
     },
@@ -133,7 +130,7 @@
       "pagina_id": "p0017",
       "imagen": "imagenes/p0017.jpg",
       "candidato": "candidatos/p0017.txt",
-      "palabras_candidato": 1228,
+      "palabras_candidato": 701,
       "bytes_imagen_original": 1057753,
       "bytes_imagen_reducida": 367611
     },
@@ -141,7 +138,7 @@
       "pagina_id": "p0018",
       "imagen": "imagenes/p0018.jpg",
       "candidato": "candidatos/p0018.txt",
-      "palabras_candidato": 872,
+      "palabras_candidato": 842,
       "bytes_imagen_original": 1071470,
       "bytes_imagen_reducida": 367117
     },
@@ -149,7 +146,7 @@
       "pagina_id": "p0019",
       "imagen": "imagenes/p0019.jpg",
       "candidato": "candidatos/p0019.txt",
-      "palabras_candidato": 823,
+      "palabras_candidato": 493,
       "bytes_imagen_original": 1060613,
       "bytes_imagen_reducida": 359071
     },
@@ -157,7 +154,7 @@
       "pagina_id": "p0020",
       "imagen": "imagenes/p0020.jpg",
       "candidato": "candidatos/p0020.txt",
-      "palabras_candidato": 710,
+      "palabras_candidato": 443,
       "bytes_imagen_original": 1015325,
       "bytes_imagen_reducida": 358022
     },
@@ -165,7 +162,7 @@
       "pagina_id": "p0021",
       "imagen": "imagenes/p0021.jpg",
       "candidato": "candidatos/p0021.txt",
-      "palabras_candidato": 566,
+      "palabras_candidato": 762,
       "bytes_imagen_original": 1056066,
       "bytes_imagen_reducida": 363288
     },
@@ -173,7 +170,7 @@
       "pagina_id": "p0022",
       "imagen": "imagenes/p0022.jpg",
       "candidato": "candidatos/p0022.txt",
-      "palabras_candidato": 454,
+      "palabras_candidato": 992,
       "bytes_imagen_original": 1098902,
       "bytes_imagen_reducida": 387850
     },
@@ -181,7 +178,7 @@
       "pagina_id": "p0023",
       "imagen": "imagenes/p0023.jpg",
       "candidato": "candidatos/p0023.txt",
-      "palabras_candidato": 1401,
+      "palabras_candidato": 272,
       "bytes_imagen_original": 1784889,
       "bytes_imagen_reducida": 307486
     },
@@ -189,7 +186,7 @@
       "pagina_id": "p0024",
       "imagen": "imagenes/p0024.jpg",
       "candidato": "candidatos/p0024.txt",
-      "palabras_candidato": 1660,
+      "palabras_candidato": 412,
       "bytes_imagen_original": 1070890,
       "bytes_imagen_reducida": 362523
     },
@@ -197,7 +194,7 @@
       "pagina_id": "p0025",
       "imagen": "imagenes/p0025.jpg",
       "candidato": "candidatos/p0025.txt",
-      "palabras_candidato": 1068,
+      "palabras_candidato": 838,
       "bytes_imagen_original": 1032509,
       "bytes_imagen_reducida": 366000
     },
@@ -205,7 +202,7 @@
       "pagina_id": "p0026",
       "imagen": "imagenes/p0026.jpg",
       "candidato": "candidatos/p0026.txt",
-      "palabras_candidato": 129,
+      "palabras_candidato": 1088,
       "bytes_imagen_original": 1150082,
       "bytes_imagen_reducida": 416050
     },
@@ -213,7 +210,7 @@
       "pagina_id": "p0027",
       "imagen": "imagenes/p0027.jpg",
       "candidato": "candidatos/p0027.txt",
-      "palabras_candidato": 526,
+      "palabras_candidato": 674,
       "bytes_imagen_original": 1009881,
       "bytes_imagen_reducida": 351881
     },
@@ -221,7 +218,7 @@
       "pagina_id": "p0028",
       "imagen": "imagenes/p0028.jpg",
       "candidato": "candidatos/p0028.txt",
-      "palabras_candidato": 723,
+      "palabras_candidato": 584,
       "bytes_imagen_original": 1034330,
       "bytes_imagen_reducida": 365018
     },
@@ -229,7 +226,7 @@
       "pagina_id": "p0029",
       "imagen": "imagenes/p0029.jpg",
       "candidato": "candidatos/p0029.txt",
-      "palabras_candidato": 493,
+      "palabras_candidato": 251,
       "bytes_imagen_original": 1028793,
       "bytes_imagen_reducida": 336523
     },
@@ -237,15 +234,23 @@
       "pagina_id": "p0030",
       "imagen": "imagenes/p0030.jpg",
       "candidato": "candidatos/p0030.txt",
-      "palabras_candidato": 1274,
+      "palabras_candidato": 364,
       "bytes_imagen_original": 1014129,
       "bytes_imagen_reducida": 344483
+    },
+    {
+      "pagina_id": "p0031",
+      "imagen": "imagenes/p0031.jpg",
+      "candidato": "candidatos/p0031.txt",
+      "palabras_candidato": 518,
+      "bytes_imagen_original": 1051411,
+      "bytes_imagen_reducida": 347809
     },
     {
       "pagina_id": "p0032",
       "imagen": "imagenes/p0032.jpg",
       "candidato": "candidatos/p0032.txt",
-      "palabras_candidato": 830,
+      "palabras_candidato": 977,
       "bytes_imagen_original": 1205662,
       "bytes_imagen_reducida": 406309
     },
@@ -253,7 +258,7 @@
       "pagina_id": "p0033",
       "imagen": "imagenes/p0033.jpg",
       "candidato": "candidatos/p0033.txt",
-      "palabras_candidato": 583,
+      "palabras_candidato": 557,
       "bytes_imagen_original": 1053797,
       "bytes_imagen_reducida": 367646
     },
@@ -261,7 +266,7 @@
       "pagina_id": "p0034",
       "imagen": "imagenes/p0034.jpg",
       "candidato": "candidatos/p0034.txt",
-      "palabras_candidato": 211,
+      "palabras_candidato": 734,
       "bytes_imagen_original": 1095962,
       "bytes_imagen_reducida": 367087
     },
@@ -269,7 +274,7 @@
       "pagina_id": "p0035",
       "imagen": "imagenes/p0035.jpg",
       "candidato": "candidatos/p0035.txt",
-      "palabras_candidato": 876,
+      "palabras_candidato": 1168,
       "bytes_imagen_original": 1247791,
       "bytes_imagen_reducida": 440620
     },
@@ -277,7 +282,7 @@
       "pagina_id": "p0036",
       "imagen": "imagenes/p0036.jpg",
       "candidato": "candidatos/p0036.txt",
-      "palabras_candidato": 1464,
+      "palabras_candidato": 438,
       "bytes_imagen_original": 1047110,
       "bytes_imagen_reducida": 342884
     },
@@ -285,7 +290,7 @@
       "pagina_id": "p0037",
       "imagen": "imagenes/p0037.jpg",
       "candidato": "candidatos/p0037.txt",
-      "palabras_candidato": 1360,
+      "palabras_candidato": 691,
       "bytes_imagen_original": 1102669,
       "bytes_imagen_reducida": 378257
     },
@@ -293,7 +298,7 @@
       "pagina_id": "p0038",
       "imagen": "imagenes/p0038.jpg",
       "candidato": "candidatos/p0038.txt",
-      "palabras_candidato": 2197,
+      "palabras_candidato": 334,
       "bytes_imagen_original": 982453,
       "bytes_imagen_reducida": 304483
     },
@@ -301,7 +306,7 @@
       "pagina_id": "p0039",
       "imagen": "imagenes/p0039.jpg",
       "candidato": "candidatos/p0039.txt",
-      "palabras_candidato": 533,
+      "palabras_candidato": 669,
       "bytes_imagen_original": 1079745,
       "bytes_imagen_reducida": 370721
     },
@@ -309,7 +314,7 @@
       "pagina_id": "p0040",
       "imagen": "imagenes/p0040.jpg",
       "candidato": "candidatos/p0040.txt",
-      "palabras_candidato": 1159,
+      "palabras_candidato": 1029,
       "bytes_imagen_original": 1072066,
       "bytes_imagen_reducida": 361052
     },
@@ -317,15 +322,23 @@
       "pagina_id": "p0041",
       "imagen": "imagenes/p0041.jpg",
       "candidato": "candidatos/p0041.txt",
-      "palabras_candidato": 93,
+      "palabras_candidato": 613,
       "bytes_imagen_original": 1040851,
       "bytes_imagen_reducida": 337184
+    },
+    {
+      "pagina_id": "p0042",
+      "imagen": "imagenes/p0042.jpg",
+      "candidato": "candidatos/p0042.txt",
+      "palabras_candidato": 2040,
+      "bytes_imagen_original": 1409683,
+      "bytes_imagen_reducida": 505945
     },
     {
       "pagina_id": "p0043",
       "imagen": "imagenes/p0043.jpg",
       "candidato": "candidatos/p0043.txt",
-      "palabras_candidato": 605,
+      "palabras_candidato": 901,
       "bytes_imagen_original": 1143373,
       "bytes_imagen_reducida": 385944
     },
@@ -333,7 +346,7 @@
       "pagina_id": "p0044",
       "imagen": "imagenes/p0044.jpg",
       "candidato": "candidatos/p0044.txt",
-      "palabras_candidato": 212,
+      "palabras_candidato": 950,
       "bytes_imagen_original": 1270432,
       "bytes_imagen_reducida": 424748
     },
@@ -341,7 +354,7 @@
       "pagina_id": "p0045",
       "imagen": "imagenes/p0045.jpg",
       "candidato": "candidatos/p0045.txt",
-      "palabras_candidato": 66,
+      "palabras_candidato": 592,
       "bytes_imagen_original": 904558,
       "bytes_imagen_reducida": 314906
     },
@@ -349,7 +362,7 @@
       "pagina_id": "p0046",
       "imagen": "imagenes/p0046.jpg",
       "candidato": "candidatos/p0046.txt",
-      "palabras_candidato": 1195,
+      "palabras_candidato": 432,
       "bytes_imagen_original": 1080587,
       "bytes_imagen_reducida": 352731
     },
@@ -357,7 +370,7 @@
       "pagina_id": "p0047",
       "imagen": "imagenes/p0047.jpg",
       "candidato": "candidatos/p0047.txt",
-      "palabras_candidato": 1085,
+      "palabras_candidato": 132,
       "bytes_imagen_original": 1250044,
       "bytes_imagen_reducida": 367855
     },
@@ -365,7 +378,7 @@
       "pagina_id": "p0048",
       "imagen": "imagenes/p0048.jpg",
       "candidato": "candidatos/p0048.txt",
-      "palabras_candidato": 886,
+      "palabras_candidato": 602,
       "bytes_imagen_original": 1219865,
       "bytes_imagen_reducida": 368765
     }

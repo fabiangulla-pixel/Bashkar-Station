@@ -1,15 +1,59 @@
 {
   "pagina_id": "p0020",
-  "accuracy_estimate": 0.05,
+  "accuracy_estimate": 0.68,
   "errors": [
     {
-      "quote": "El 8 de marzo de 1941 es asesinado en Varsovia el Nozi Número 2, Mariscal Herman Wilhelm",
-      "issue": "Este texto no corresponde a la imagen proporcionada; la imagen muestra un artículo sobre la Sierra Nevada de Santa Marta y cultivos de caña y café"
+      "quote": "PS e presidida por la re-\n'exiva inteligencia",
+      "issue": "OCR garbling, debería ser 'presidida por la reflexiva inteligencia'"
+    },
+    {
+      "quote": "C lena; para ello",
+      "issue": "error de OCR, debería ser 'dalena; para ello'"
+    },
+    {
+      "quote": "Que úna la región bananera",
+      "issue": "debería ser minúscula 'que úna'"
+    },
+    {
+      "quote": "rocutaca), con Riohacha, - transmontando el nudo de montaños de",
+      "issue": "debería ser 'Aracataca), con Riohacha, transmontando el nudo de montañas de'"
+    },
+    {
+      "quote": "a;\n\ndr Damcaado aa da aia cds Áluóiloca,",
+      "issue": "texto sin sentido, error grave de OCR (posible ruido de la imagen)"
+    },
+    {
+      "quote": "compo para que dialoguen",
+      "issue": "debería ser 'campo'"
+    },
+    {
+      "quote": "53148",
+      "issue": "número sin sentido insertado por error de OCR"
+    },
+    {
+      "quote": "irá el eco de los picachos que, desde los cumbres del Mamón",
+      "issue": "debería ser 'desde las cumbres'"
+    },
+    {
+      "quote": "sobre los valles de: Ja Enea y del Dibuya",
+      "issue": "error de OCR, debería ser 'sobre los valles de la Enea y del Dibuya'"
+    },
+    {
+      "quote": "LA SIERRA NEVADA SANTA MART,",
+      "issue": "falta 'de' y la palabra está incompleta, debería ser 'LA SIERRA NEVADA de SANTA MARTA'"
+    },
+    {
+      "quote": "vagos las perspectivas de la colonización.",
+      "issue": "debería ser 'todas las perspectivas'"
+    },
+    {
+      "quote": "sobre el macondo y.el aguacate",
+      "issue": "espacio faltante, debería ser 'y el aguacate'"
     }
   ],
-  "notes": "El texto OCR propuesto es completamente distinto al contenido real de la imagen, que trata sobre la Sierra Nevada de Santa Marta, la administración departamental y fotografías de cultivos de caña y café; no se puede verificar ningún fragmento porque no corresponde a la imagen.",
+  "notes": "Hay fragmentos claramente corruptos por ruido en el escaneo que no se pueden reconstruir con certeza.",
   "model": "claude-sonnet-5",
-  "input_tokens": 4332,
-  "output_tokens": 252,
-  "cost_usd": 0.011184
+  "input_tokens": 3622,
+  "output_tokens": 718,
+  "cost_usd": 0.014424
 }

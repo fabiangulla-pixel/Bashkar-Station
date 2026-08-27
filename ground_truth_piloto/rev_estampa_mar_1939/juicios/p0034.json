@@ -1,0 +1,51 @@
+{
+  "pagina_id": "p0034",
+  "accuracy_estimate": 0.9,
+  "errors": [
+    {
+      "quote": "ES EL. HOMBRE MAS BESADO DEL MUNDO",
+      "issue": "punto erróneo después de EL"
+    },
+    {
+      "quote": "aspirantes,",
+      "issue": "debería terminar en punto, no coma"
+    },
+    {
+      "quote": "cineratógrafo",
+      "issue": "error de OCR, debería ser 'cinematógrafo'"
+    },
+    {
+      "quote": "Le parece esto caballeroso?—Suelta la",
+      "issue": "falta signo de apertura de interrogación '¿'"
+    },
+    {
+      "quote": "así no correspondería a las exige-\n\nBe]\n\ncias",
+      "issue": "texto corrupto/insertado 'Be]' que no corresponde a la imagen"
+    },
+    {
+      "quote": "Holywood",
+      "issue": "error de OCR, debería ser 'Hollywood'"
+    },
+    {
+      "quote": "había recobrado todavía ni su forma ni su volumen normales.",
+      "issue": "debería ser 'habían recobrado' concordando con 'labios'"
+    },
+    {
+      "quote": "; Bienen en los labios un maquillaje",
+      "issue": "texto corrupto de OCR, debería ser 'tienen en los labios un maquillaje'"
+    },
+    {
+      "quote": "escenó",
+      "issue": "error de OCR, debería ser 'escena'"
+    },
+    {
+      "quote": "contínuará",
+      "issue": "acentuación errónea, debería ser 'continuará'"
+    }
+  ],
+  "notes": "",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4243,
+  "output_tokens": 493,
+  "cost_usd": 0.013416
+}

@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -113,9 +114,21 @@ def build_messages(image_path: Path, candidate_text: str) -> list[dict]:
     }]
 
 
+def _quitar_cercas_markdown(text: str) -> str:
+    """El prompt exige JSON puro, pero el modelo a veces lo envuelve en
+    ```json ... ``` de todas formas (visto en la corrida real sobre el
+    piloto de Estampa) — tolerarlo es más barato que rejuzgar la página."""
+    t = text.strip()
+    if t.startswith("```"):
+        t = re.sub(r"^```[a-zA-Z]*\n", "", t)
+        t = re.sub(r"\n?```$", "", t)
+    return t.strip()
+
+
 def _parse_response_text(text: str, pagina_id: str) -> dict:
+    limpio = _quitar_cercas_markdown(text)
     try:
-        return json.loads(text)
+        return json.loads(limpio)
     except json.JSONDecodeError as error:
         raise JudgeResponseError(
             f"{pagina_id}: el juez no devolvió JSON válido: {text[:300]!r}"
@@ -144,7 +157,11 @@ def judge_page(client, pagina_id: str, image_path: Path, candidate_text: str,
     return JudgeResult(
         pagina_id=pagina_id,
         accuracy_estimate=float(payload["accuracy_estimate"]),
-        errors=[{"quote": e["quote"], "issue": e["issue"]} for e in payload.get("errors", [])],
+        errors=[
+            {"quote": e.get("quote", ""), "issue": e.get("issue", "")}
+            for e in payload.get("errors", [])
+            if isinstance(e, dict)
+        ],
         notes=payload.get("notes", ""),
         model=model,
         input_tokens=response.usage.input_tokens,
@@ -238,13 +255,13 @@ def main() -> int:
                 resultado = futuro.result()
             except Exception as error:  # noqa: BLE001 — se reporta, no se detiene el lote
                 errores.append(f"{pagina_id}: {error}")
-                print(f"  ✗ {pagina_id}: ERROR — {error}")
+                print(f"  [ERROR] {pagina_id}: {error}")
                 continue
             (juicios_dir / f"{resultado.pagina_id}.json").write_text(
                 json.dumps(asdict(resultado), ensure_ascii=False, indent=2), encoding="utf-8"
             )
             resultados.append(resultado)
-            print(f"  ✓ {resultado.pagina_id}: accuracy={resultado.accuracy_estimate:.2f} "
+            print(f"  [OK] {resultado.pagina_id}: accuracy={resultado.accuracy_estimate:.2f} "
                   f"errores={len(resultado.errors)} costo=${resultado.cost_usd:.4f}")
 
     duracion = time.monotonic() - inicio

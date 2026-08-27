@@ -1,15 +1,35 @@
 {
   "pagina_id": "p0014",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.55,
   "errors": [
     {
-      "quote": "Por Alfonso Fuenmayor.",
-      "issue": "Este texto no corresponde a la imagen mostrada, que es una página de fotos sobre el Cónclave y elección papal"
+      "quote": "Pío XI!",
+      "issue": "debería ser 'Pío XII'"
+    },
+    {
+      "quote": "Eligo in Sammum Pontificem 7.° D.",
+      "issue": "texto del sello no transcrito por OCR, falta"
+    },
+    {
+      "quote": "LS RS",
+      "issue": "texto sin sentido, no corresponde a nada legible en la imagen"
+    },
+    {
+      "quote": "¿MNomeén.",
+      "issue": "transcripción corrupta de 'Nomen.'"
+    },
+    {
+      "quote": "reoeocos",
+      "issue": "texto sin sentido, no corresponde a la imagen"
+    },
+    {
+      "quote": "Signa.",
+      "issue": "falta la palabra 'Signa.' presente en la imagen"
     }
   ],
-  "notes": "El texto propuesto completo no coincide con el contenido de la imagen (fotos del Vaticano/Cónclave), parece ser de otra página del documento.",
+  "notes": "",
   "model": "claude-sonnet-5",
-  "input_tokens": 3747,
-  "output_tokens": 152,
-  "cost_usd": 0.009014
+  "input_tokens": 2892,
+  "output_tokens": 268,
+  "cost_usd": 0.008464
 }

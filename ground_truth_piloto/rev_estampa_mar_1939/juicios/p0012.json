@@ -1,23 +1,55 @@
 {
   "pagina_id": "p0012",
-  "accuracy_estimate": 0.1,
+  "accuracy_estimate": 0.75,
   "errors": [
     {
-      "quote": "Kamon Manrique, jefe supremo de la organización, exclemo ante los periodistas que,lo asedion",
-      "issue": "texto no corresponde a la imagen mostrada (páginas de Barranquilla)"
+      "quote": "fondines' de",
+      "issue": "OCR artifact, apostrophe error"
     },
     {
-      "quote": "DE COMO SE HA COORDINADO UN MOVIMIENTO PRO-EMPLEOS",
-      "issue": "contenido no coincide con la imagen"
+      "quote": "tnman forma",
+      "issue": "debería ser 'toman forma'"
     },
     {
-      "quote": "El conocimiento del mar, su cotidiana admiración",
-      "issue": "texto real presente en la imagen pero no incluido en el OCR propuesto"
+      "quote": "yumeca",
+      "issue": "posible error de OCR, palabra dudosa"
+    },
+    {
+      "quote": "El gobernador, señór Donado, ha sabido ro-",
+      "issue": "texto de pie de foto desordenado y con error 'señór' por 'señor'"
+    },
+    {
+      "quote": "Su secretario de gobierno, el doct'\nco Vizcaíno, ha realizado una labo\ntrativa ejemplar en todos sen!",
+      "issue": "texto de pie de foto corrupto y fragmentado"
+    },
+    {
+      "quote": "Pal Scrataro de hociendo, don Enrique de lo",
+      "issue": "texto ilegible/corrupto, mezcla de caracteres sin sentido"
+    },
+    {
+      "quote": "Don Julio Enrique Blanco de la Rosa ha",
+      "issue": "pie de foto desordenado, fuera de contexto"
+    },
+    {
+      "quote": "nido a su cargo la dirección de la educaci\nen el Atlántico, como secretario de ese ramo.",
+      "issue": "pie de foto cortado y mal ubicado"
+    },
+    {
+      "quote": "nte de imágenes ciui",
+      "issue": "no existe, posible confusión"
+    },
+    {
+      "quote": "ciui\ndades",
+      "issue": "palabra cortada 'ciudades' mal representada como 'ciui'"
+    },
+    {
+      "quote": "no ha\npodido ser dominada ni tan siquiera por la potencia de los aviones.",
+      "issue": "no se puede verificar completamente por baja resolución de imagen en esa zona"
     }
   ],
-  "notes": "El texto propuesto describe un artículo completamente distinto (sobre desempleados y burocracia) que no corresponde a la imagen proporcionada, la cual muestra un artículo sobre Barranquilla.",
+  "notes": "Las secciones de pies de foto están muy fragmentadas y desordenadas en el OCR, dificultando verificación exacta; algunas partes de la imagen son ilegibles.",
   "model": "claude-sonnet-5",
-  "input_tokens": 5477,
-  "output_tokens": 303,
-  "cost_usd": 0.013984
+  "input_tokens": 5616,
+  "output_tokens": 666,
+  "cost_usd": 0.017892
 }

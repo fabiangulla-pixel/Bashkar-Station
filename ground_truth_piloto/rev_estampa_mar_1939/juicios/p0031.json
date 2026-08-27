@@ -1,0 +1,39 @@
+{
+  "pagina_id": "p0031",
+  "accuracy_estimate": 0.85,
+  "errors": [
+    {
+      "quote": "imquilinato",
+      "issue": "error OCR, debería ser 'inquilinato'"
+    },
+    {
+      "quote": "imquilinos",
+      "issue": "error OCR, debería ser 'inquilinos'"
+    },
+    {
+      "quote": "e\" las de cien pesos",
+      "issue": "carácter erróneo, debería ser 'en las de cien pesos'"
+    },
+    {
+      "quote": "higiénicos deplorables",
+      "issue": "debería decir 'higiénicas deplorables' según la imagen"
+    },
+    {
+      "quote": "cutor del artículo",
+      "issue": "error OCR, debería ser 'autor del artículo'"
+    },
+    {
+      "quote": "El. Estado",
+      "issue": "punto mal colocado, debería ser 'el Estado'"
+    },
+    {
+      "quote": "resoiución",
+      "issue": "error OCR, debería ser 'resolución'"
+    }
+  ],
+  "notes": "",
+  "model": "claude-sonnet-5",
+  "input_tokens": 3791,
+  "output_tokens": 317,
+  "cost_usd": 0.010752000000000001
+}

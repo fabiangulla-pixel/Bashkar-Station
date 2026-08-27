@@ -1,15 +1,123 @@
 {
   "pagina_id": "p0005",
-  "accuracy_estimate": 0.05,
+  "accuracy_estimate": 0.85,
   "errors": [
     {
-      "quote": "Si se repasa la historia de Colombia para establecer la nómina de los\nhombres que mejor sirvieron a la república con su inteligencia, su lealtad y su honradez, se verá con na-",
-      "issue": "Este texto no corresponde en absoluto a la imagen proporcionada; la imagen muestra la portada de Estampa Año 2, Vol.2, Núm.17, con artículo 'Esta semana...' sobre el Gimnasio Moderno"
+      "quote": "ANO 2VOL2NUM17 BO(OTA,MAR7O18/930",
+      "issue": "debería leerse 'AÑO 2.VOL.2 NUM.17. BOGOTA, MARZO 18.1939'"
+    },
+    {
+      "quote": "sera",
+      "issue": "falta tilde, debería ser 'será'"
+    },
+    {
+      "quote": "Justros",
+      "issue": "debería ser 'lustros'"
+    },
+    {
+      "quote": "las que tesoneramente se alimenta",
+      "issue": "debería ser 'en las que tesoneramente se alimentaba'"
+    },
+    {
+      "quote": "Techo, de la Universidad Libre, del",
+      "issue": "error de OCR, palabra fragmentada 'Derecho'"
+    },
+    {
+      "quote": "€ra preciso",
+      "issue": "carácter erróneo, debería ser 'era'"
+    },
+    {
+      "quote": "Virtudes: generosidad, continuidad,",
+      "issue": "mayúscula incorrecta, debería ser 'virtudes'"
+    },
+    {
+      "quote": "Considera la época",
+      "issue": "mayúscula incorrecta, debería ser 'considera'"
+    },
+    {
+      "quote": "podetes coaligados",
+      "issue": "error de OCR, debería ser 'poderes'"
+    },
+    {
+      "quote": "Una escuela nueva no significaba",
+      "issue": "mayúscula incorrecta"
+    },
+    {
+      "quote": "Simplemente un experimento peda-",
+      "issue": "mayúscula incorrecta"
+    },
+    {
+      "quote": "Yógico de mejores o peores resultados",
+      "issue": "error de OCR, debería ser 'pedagógico'"
+    },
+    {
+      "quote": "€n que se veían comprometidos por",
+      "issue": "carácter erróneo, debería ser 'en'"
+    },
+    {
+      "quote": "Tación de un régimen político, la",
+      "issue": "error de OCR, fragmento de 'perduración'"
+    },
+    {
+      "quote": "Continuidad de una manera de ser",
+      "issue": "mayúscula incorrecta"
+    },
+    {
+      "quote": "Y de pensar.",
+      "issue": "mayúscula incorrecta, debería ser 'y'"
+    },
+    {
+      "quote": "Siasmo de Agustín Nieto Caballero",
+      "issue": "mayúscula incorrecta, fragmento de 'entusiasmo'"
+    },
+    {
+      "quote": "ubo logrado poner al servicio de",
+      "issue": "error de OCR, debería ser 'hubo'"
+    },
+    {
+      "quote": "'2 escuela nueva aquellas virtudes",
+      "issue": "error de OCR, debería ser 'la'"
+    },
+    {
+      "quote": "ueda Vargas; apenas tomó forma",
+      "issue": "fragmento de 'Rueda'"
+    },
+    {
+      "quote": "una vida más sosegado",
+      "issue": "posible error, revisar concordancia 'sosegada'"
+    },
+    {
+      "quote": "cu.«gio",
+      "issue": "error de OCR ilegible, debería ser 'colegio'"
+    },
+    {
+      "quote": "cuerpo infantil\npodrá resistir los rigores de las brisas monserratinas y del aire delgado la Sabana?",
+      "issue": "falta 'de' antes de 'la Sabana'"
+    },
+    {
+      "quote": "reo\nlización cumplida",
+      "issue": "error de OCR, debería ser 'realización'"
+    },
+    {
+      "quote": "el corresponde el\námbito nacional",
+      "issue": "posible error, revisar 'le corresponde'"
+    },
+    {
+      "quote": "celebración de su victoria.",
+      "issue": "debería ser 'su victoria' vs texto original que podría decir distinto, verificar"
+    },
+    {
+      "quote": "ha quetido contribuir",
+      "issue": "error de OCR, debería ser 'querido'"
+    },
+    {
+      "quote": "Don Tomás y don Miguel\nSamper",
+      "issue": "posible error de transcripción, verificar comillas"
     }
   ],
-  "notes": "El texto propuesto pertenece a un artículo completamente diferente (sobre la familia Lleras) y no coincide con el contenido real de la imagen mostrada, que trata sobre la historia del Gimnasio Moderno de Bogotá.",
+  "notes": "Algunas palabras con acentos y mayúsculas parecen ser artefactos de OCR más que erratas reales del texto original; la imagen es parcialmente legible en zonas de baja calidad.",
   "model": "claude-sonnet-5",
-  "input_tokens": 3944,
-  "output_tokens": 276,
-  "cost_usd": 0.010648
+  "input_tokens": 5653,
+  "output_tokens": 1365,
+  "cost_usd": 0.024956
 }

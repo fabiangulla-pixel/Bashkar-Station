@@ -1,15 +1,71 @@
 {
   "pagina_id": "p0044",
-  "accuracy_estimate": 0.0,
+  "accuracy_estimate": 0.85,
   "errors": [
     {
-      "quote": "EL NUEVO PREMIER de Rumania, Armand LA PRIMERA FOTOGRAFIA de Franco en Barcelona.",
-      "issue": "Este texto no corresponde a la imagen proporcionada, que muestra artículos distintos (Las elecciones de ayer, Mujeres que trabajan, etc.) y un anuncio de Mercury"
+      "quote": "LAS ELECCIONES Dg AYER.",
+      "issue": "debería ser 'DE AYER'"
+    },
+    {
+      "quote": "(Viene de la 6?. Página)",
+      "issue": "debería leerse '6ª Página'"
+    },
+    {
+      "quote": "unglientos",
+      "issue": "error de OCR, debería ser 'ungüentos'"
+    },
+    {
+      "quote": "hálsamo",
+      "issue": "error de OCR, debería ser 'bálsamo'"
+    },
+    {
+      "quote": "vivarán",
+      "issue": "posible error, contexto sugiere 'vitorearán' o similar, no verificable con certeza"
+    },
+    {
+      "quote": "AI salir",
+      "issue": "debería ser 'Al salir'"
+    },
+    {
+      "quote": "los sugestiones",
+      "issue": "debería ser 'las sugestiones'"
+    },
+    {
+      "quote": "Él verdadero sentido del...",
+      "issue": "debería ser 'El verdadero sentido del...'"
+    },
+    {
+      "quote": "Pácelli",
+      "issue": "inconsistencia de acentuación, en el resto del texto aparece como 'Pacelli'"
+    },
+    {
+      "quote": "liamaba",
+      "issue": "error de OCR, debería ser 'llamaba'"
+    },
+    {
+      "quote": "iFuera",
+      "issue": "error de OCR, debería ser '¡Fuera'"
+    },
+    {
+      "quote": "cristiano, católica",
+      "issue": "debería ser 'cristiana, católica'"
+    },
+    {
+      "quote": "l-\ndolos",
+      "issue": "error de OCR, debería ser 'Ídolos'"
+    },
+    {
+      "quote": "Vierie de lo Pág. 21",
+      "issue": "error de OCR, debería ser 'Viene de la Pág. 21'"
+    },
+    {
+      "quote": "doña\nMargarita' afirma",
+      "issue": "comilla extraña después de Margarita"
     }
   ],
-  "notes": "El texto OCR propuesto no coincide en absoluto con el contenido visible en la imagen; parece corresponder a otra página distinta.",
+  "notes": "",
   "model": "claude-sonnet-5",
-  "input_tokens": 2988,
-  "output_tokens": 208,
-  "cost_usd": 0.008056
+  "input_tokens": 4971,
+  "output_tokens": 631,
+  "cost_usd": 0.016252
 }

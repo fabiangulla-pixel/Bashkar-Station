@@ -1,31 +1,91 @@
 {
   "pagina_id": "p0033",
-  "accuracy_estimate": 0.15,
+  "accuracy_estimate": 0.4,
   "errors": [
     {
-      "quote": "A cargo de COLETTE.",
-      "issue": "no corresponde a esta imagen, texto de otra página"
+      "quote": "hutos de epistolario, a\nELA",
+      "issue": "texto corrupto, debería decir 'nutos de epistolario, a la provincia'"
     },
     {
-      "quote": "_Bata de nena de dos y medio a 3\naños.",
-      "issue": "contenido no coincide con la imagen mostrada"
+      "quote": "Uertas que se abren, que se. cie-\nFran",
+      "issue": "debería ser 'Puertas que se abren, que se cierran'"
     },
     {
-      "quote": "SECCION DE TEJIDOS",
-      "issue": "texto inventado, no aparece en la imagen"
+      "quote": "estampilas.",
+      "issue": "debería ser 'estampillas'"
     },
     {
-      "quote": "ALMACEN\n\nSAÑITAS",
-      "issue": "no corresponde, la imagen muestra 'Almacén California' y artículo sobre epistolario/cartero"
+      "quote": "S abrirlos",
+      "issue": "debería ser 'a abrirlos'"
     },
     {
-      "quote": "Licores de las Rentas del Atlántico",
-      "issue": "aunque este texto sí aparece en la imagen, el OCR completo entregado no lo refleja como corresponde, mezclado con contenido ajeno"
+      "quote": "<a del mercado",
+      "issue": "debería ser 'ca del mercado'"
+    },
+    {
+      "quote": "secretafio",
+      "issue": "debería ser 'secretario'"
+    },
+    {
+      "quote": "Ogentes",
+      "issue": "debería ser 'agentes'"
+    },
+    {
+      "quote": "pendientes...",
+      "issue": "debería ser 'dependientes...'"
+    },
+    {
+      "quote": "estandard",
+      "issue": "debería ser 'estandar' o 'standard', posible error"
+    },
+    {
+      "quote": "05 tomos",
+      "issue": "debería ser 'los tonos'"
+    },
+    {
+      "quote": "copaz de conmover a u-\nMa piedra",
+      "issue": "debería ser 'capaz de conmover a una piedra'"
+    },
+    {
+      "quote": "- Licores",
+      "issue": "texto extraño fuera de contexto, posible error de OCR"
+    },
+    {
+      "quote": "Loa modernidad",
+      "issue": "debería ser 'La modernidad'"
+    },
+    {
+      "quote": "llomaba misiva",
+      "issue": "debería ser 'llamaba misiva'"
+    },
+    {
+      "quote": "melancólicos plumas",
+      "issue": "debería ser 'melancólicas plumas'"
+    },
+    {
+      "quote": "El cartera\nes hoy el amo",
+      "issue": "debería ser 'El cartero es hoy el amo'"
+    },
+    {
+      "quote": "desarropada",
+      "issue": "posiblemente debería ser 'desagropada' o similar, dudoso"
+    },
+    {
+      "quote": "él Openos",
+      "issue": "debería ser 'él apenas'"
+    },
+    {
+      "quote": "Lleva una cana",
+      "issue": "debería ser 'Lleva una capa'"
+    },
+    {
+      "quote": "Marcel,",
+      "issue": "debería terminar con punto, no coma"
     }
   ],
-  "notes": "El texto propuesto por el OCR corresponde a una página completamente distinta (patrón de tejido y publicidad de Almacén Sanitas), no coincide con el contenido real de la imagen, que trata sobre cartas/epistolario y publicidad de licores de las Rentas del Atlántico.",
+  "notes": "El bloque central de la primera columna aparece muy corrupto y desordenado respecto al texto real de la imagen.",
   "model": "claude-sonnet-5",
-  "input_tokens": 4099,
-  "output_tokens": 415,
-  "cost_usd": 0.012348000000000001
+  "input_tokens": 3965,
+  "output_tokens": 822,
+  "cost_usd": 0.016149999999999998
 }

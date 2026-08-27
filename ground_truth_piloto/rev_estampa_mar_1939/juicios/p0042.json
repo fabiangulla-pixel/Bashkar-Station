@@ -1,0 +1,43 @@
+{
+  "pagina_id": "p0042",
+  "accuracy_estimate": 0.75,
+  "errors": [
+    {
+      "quote": "duhamel ha llamado",
+      "issue": "posible error de OCR en nombre propio, no verificable con certeza"
+    },
+    {
+      "quote": "pinglie",
+      "issue": "OCR corrupto, probablemente 'pingüe'"
+    },
+    {
+      "quote": "veinte O treinto",
+      "issue": "error OCR, debería ser 'treinta'"
+    },
+    {
+      "quote": "afrentar",
+      "issue": "posible error, podría ser 'afrontar'"
+    },
+    {
+      "quote": "remembrenzas",
+      "issue": "error OCR, debería ser 'remembranzas'"
+    },
+    {
+      "quote": "armopotente",
+      "issue": "posible error OCR de palabra ilegible"
+    },
+    {
+      "quote": "HU x€xRIEAEAXXXX4mPm<xXxX XX",
+      "issue": "texto basura de OCR sin sentido, no corresponde a contenido real"
+    },
+    {
+      "quote": "O SS E E l : J : A O",
+      "issue": "texto basura de OCR al inicio, ruido de escaneo"
+    }
+  ],
+  "notes": "No se puede verificar con certeza varias palabras por posible ilegibilidad de la imagen; se mantienen arcaísmos ortográficos como 'tánto', 'aunque' propios de la época.",
+  "model": "claude-sonnet-5",
+  "input_tokens": 7487,
+  "output_tokens": 434,
+  "cost_usd": 0.019313999999999998
+}

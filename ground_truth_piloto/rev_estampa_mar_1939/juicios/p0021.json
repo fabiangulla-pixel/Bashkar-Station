@@ -1,0 +1,63 @@
+{
+  "pagina_id": "p0021",
+  "accuracy_estimate": 0.82,
+  "errors": [
+    {
+      "quote": "O ANABRA 21777",
+      "issue": "texto inventado/ruido OCR sin correspondencia clara en imagen"
+    },
+    {
+      "quote": "Tónto",
+      "issue": "debería ser 'Tanto'"
+    },
+    {
+      "quote": "dietiséis",
+      "issue": "debería ser 'dieciséis'"
+    },
+    {
+      "quote": "tabarna",
+      "issue": "debería ser 'taberna'"
+    },
+    {
+      "quote": "Martin",
+      "issue": "falta tilde, debería ser 'Martín'"
+    },
+    {
+      "quote": "companadas",
+      "issue": "debería ser 'campanadas'"
+    },
+    {
+      "quote": "amgio",
+      "issue": "debería ser 'amigo'"
+    },
+    {
+      "quote": "losemberger Goals Limiled London",
+      "issue": "debería ser 'Rosemberger Coats Limited London'"
+    },
+    {
+      "quote": "compo——construcción",
+      "issue": "debería ser 'campo—construcción'"
+    },
+    {
+      "quote": "temo es el fantasma",
+      "issue": "debería ser 'tema es el fantasma'"
+    },
+    {
+      "quote": "cosas",
+      "issue": "debería ser 'casas'"
+    },
+    {
+      "quote": "Sl DÍA",
+      "issue": "texto sin sentido, error de OCR"
+    },
+    {
+      "quote": "puertos..",
+      "issue": "debería ser 'puertas'"
+    }
+  ],
+  "notes": "",
+  "model": "claude-sonnet-5",
+  "input_tokens": 4458,
+  "output_tokens": 465,
+  "cost_usd": 0.013566000000000002
+}

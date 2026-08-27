@@ -1,15 +1,75 @@
 {
   "pagina_id": "p0027",
-  "accuracy_estimate": 0.05,
+  "accuracy_estimate": 0.4,
   "errors": [
     {
-      "quote": "Por Carlos Ariel Gutiérrez\n\nExclusivo para ESTAMPA",
-      "issue": "Este texto no corresponde en absoluto a la imagen proporcionada, que trata de una entrevista con el poeta Jorge Rojas y un anuncio de Laboratorios Hagelstein"
+      "quote": "Í 7 EAT OU! > 408 7",
+      "issue": "texto sin sentido, ruido OCR"
+    },
+    {
+      "quote": "tica en \"La",
+      "issue": "debería ser 'publica en \"La'"
+    },
+    {
+      "quote": "Forma, de su huido\"",
+      "issue": "debería decir 'huída'"
+    },
+    {
+      "quote": "sio eS E",
+      "issue": "texto sin sentido, ruido OCR"
+    },
+    {
+      "quote": "companillo teléfono suena:",
+      "issue": "debería ser 'La companilla del teléfono suena.'"
+    },
+    {
+      "quote": "natoa-",
+      "issue": "debería ser 'natación'"
+    },
+    {
+      "quote": "Viojoré......Quiero",
+      "issue": "error de transcripción, debería ser 'Viajaré... Quiero'"
+    },
+    {
+      "quote": "d0s... d",
+      "issue": "ruido OCR sin sentido"
+    },
+    {
+      "quote": "*, » j ES",
+      "issue": "ruido OCR sin sentido"
+    },
+    {
+      "quote": "Fo sra sn O cua:",
+      "issue": "ruido OCR sin sentido"
+    },
+    {
+      "quote": "A bad br o eo 0 esl-",
+      "issue": "ruido OCR sin sentido"
+    },
+    {
+      "quote": "arca",
+      "issue": "fragmento inconexo, ruido OCR"
+    },
+    {
+      "quote": "detaleso 0 ajena Leo com-",
+      "issue": "ruido OCR sin sentido"
+    },
+    {
+      "quote": "Te riussin",
+      "issue": "debería ser 'Pertussin'"
+    },
+    {
+      "quote": "Es »Taeschner",
+      "issue": "debería ser '\"Taeschner\"'"
+    },
+    {
+      "quote": "Dr. HAGELSTEIN s: Cia. Barranquilla",
+      "issue": "debería ser 'Dr. HAGELSTEIN & Cia. Barranquilla'"
     }
   ],
-  "notes": "El texto propuesto por OCR parece pertenecer a otra página completamente distinta; no coincide con el contenido real de la imagen (entrevista a Jorge Rojas y publicidad de Pertussin/Hagelstein).",
+  "notes": "Hay múltiples pasajes ilegibles o con ruido OCR que no se pueden verificar con certeza contra la imagen.",
   "model": "claude-sonnet-5",
-  "input_tokens": 3810,
-  "output_tokens": 222,
-  "cost_usd": 0.00984
+  "input_tokens": 4350,
+  "output_tokens": 694,
+  "cost_usd": 0.01564
 }
