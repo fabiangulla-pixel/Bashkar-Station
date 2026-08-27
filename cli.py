@@ -164,11 +164,12 @@ def _etapa_seg(cfg: dict, verbose: bool) -> list[dict]:
     try:
         from core.article_segmenter import segmentar_numero
         articulos = []
-        for num_dir in sorted((out_dir / "03_ocr").iterdir()):
+        ocr_dir = out_dir / "03_ocr"
+        for num_dir in sorted(ocr_dir.iterdir()):
             if not num_dir.is_dir():
                 continue
             _log(f"  Segmentando: {num_dir.name}", verbose)
-            arts = segmentar_numero(num_dir)
+            arts = segmentar_numero(ocr_dir, num_dir.name)
             articulos.extend(arts)
         _log(f"Segmentación completada: {len(articulos)} artículos", verbose)
         # Guardar CSV

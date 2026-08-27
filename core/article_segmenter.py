@@ -112,6 +112,13 @@ _NO_NOMBRES = {
     "señor", "señora", "señorita", "don", "doña",
     "teatro", "cine", "salon", "salón", "hotel",
     "estamos", "venimos", "llegamos", "ofrecemos", "garantizamos",
+    # Cargos/instituciones que el NER y la regex de mayúsculas confunden con
+    "secretario", "secretaria", "ministerio", "ministro", "ministra",
+    "gerente", "gerencia", "presidente", "presidenta", "director",
+    "directora", "embajada", "embajador", "consulado", "banco",
+    "hacienda", "estado", "republica", "república", "filmadora",
+    # nombres de firmas/naves detectados en el corpus real (ver s.59/60)
+    "corbeta", "buque", "vapor", "fabrica", "fábrica",
 }
 
 ARTICULOS_ESP = {"el", "la", "los", "las", "un", "una", "unos", "unas", "lo"}

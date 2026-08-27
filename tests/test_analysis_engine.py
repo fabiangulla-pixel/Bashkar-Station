@@ -317,3 +317,117 @@ class TestAnalizarNumeroTexto:
             "n", texto, [], nlp, set()
         )
         assert campos.get("Nación", 0) > 0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Filtro de firmas / word-boundary de secciones — regresión hallazgo s.59/60
+# (firmas.csv mezclaba autores reales con empresas/cargos/basura OCR porque el
+# NER y la regex de mayúsculas no filtraban por forma de nombre de persona;
+# SECCIONES repetía el mismo bug de subcadena sin \b ya corregido en
+# article_segmenter). Ver [[project_bashkar_station]].
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TestFirmasFiltradasYSeccionesConLimiteDePalabra:
+    def _nlp_mock(self):
+        token_mock = MagicMock()
+        token_mock.is_stop = True
+        token_mock.is_punct = False
+        token_mock.lemma_ = "palabra"
+
+        doc_mock = MagicMock()
+        doc_mock.ents = []
+        doc_mock.__iter__ = MagicMock(return_value=iter([token_mock]))
+
+        nlp = MagicMock()
+        nlp.return_value = doc_mock
+        return nlp
+
+    def _entidad_mock(self, texto, label="PER"):
+        ent = MagicMock()
+        ent.text = texto
+        ent.label_ = label
+        return ent
+
+    def _nlp_mock_con_entidades(self, entidades):
+        token_mock = MagicMock()
+        token_mock.is_stop = True
+        token_mock.is_punct = False
+        token_mock.lemma_ = "palabra"
+
+        doc_mock = MagicMock()
+        doc_mock.ents = entidades
+        doc_mock.__iter__ = MagicMock(return_value=iter([token_mock]))
+
+        nlp = MagicMock()
+        nlp.return_value = doc_mock
+        return nlp
+
+    def test_firmas_excluye_entidad_ner_institucional(self):
+        """Una entidad PER de spaCy que en realidad es una empresa/cargo
+        ("Filmadora Kodak", "Secretario de Estado") no debe colarse como
+        firma de autor."""
+        from core.analysis_engine import analizar_numero_texto
+        nlp = self._nlp_mock_con_entidades([
+            self._entidad_mock("Filmadora Kodak"),
+            self._entidad_mock("Secretario de Estado"),
+        ])
+        firmas, _, _, _ = analizar_numero_texto(
+            "n", "texto de prueba " * 20, [], nlp, set()
+        )
+        assert "Filmadora Kodak" not in firmas
+        assert "Secretario de Estado" not in firmas
+
+    def test_firmas_conserva_entidad_ner_nombre_real(self):
+        from core.analysis_engine import analizar_numero_texto
+        nlp = self._nlp_mock_con_entidades([
+            self._entidad_mock("Juan Gómez Salazar"),
+        ])
+        firmas, _, _, _ = analizar_numero_texto(
+            "n", "texto de prueba " * 20, [], nlp, set()
+        )
+        assert "Juan Gómez Salazar" in firmas
+
+    def test_firmas_excluye_mayusculas_cargo_institucional(self):
+        """La regex de línea ALL-CAPS (firma final tipográfica) también debe
+        pasar por el filtro de nombre de persona, no solo el NER."""
+        from core.analysis_engine import analizar_numero_texto
+        nlp = self._nlp_mock()
+        texto = "Cuerpo del artículo.\nSECRETARIO DE ESTADO\nMás texto de relleno " * 5
+        firmas, _, _, _ = analizar_numero_texto("n", texto, [], nlp, set())
+        assert "Secretario De Estado" not in firmas
+
+    def test_firmas_conserva_mayusculas_nombre_real(self):
+        from core.analysis_engine import analizar_numero_texto
+        nlp = self._nlp_mock()
+        texto = "Cuerpo del artículo.\nJUAN PEREZ GOMEZ\nMás texto de relleno " * 5
+        firmas, _, _, _ = analizar_numero_texto("n", texto, [], nlp, set())
+        assert "Juan Perez Gomez" in firmas
+
+    def test_secciones_no_matchea_subcadena_sin_limite_de_palabra(self):
+        """'verso' (Poema/Verso) no debe dispararse dentro de 'diversas' /
+        'conversación' — mismo bug corregido en article_segmenter s.59,
+        replicado aquí porque analysis_engine tiene su propio SECCIONES."""
+        from core.analysis_engine import analizar_numero_texto
+        nlp = self._nlp_mock()
+        texto = "Se presentaron diversas prendas en la conversación social. " * 10
+        _, secciones, _, _ = analizar_numero_texto("n", texto, [], nlp, set())
+        assert "Poema/Verso" not in secciones
+
+    def test_secciones_conserva_verso_real(self):
+        from core.analysis_engine import analizar_numero_texto
+        nlp = self._nlp_mock()
+        texto = "El poeta escribió un hermoso poema con versos a la primavera. " * 10
+        _, secciones, _, _ = analizar_numero_texto("n", texto, [], nlp, set())
+        assert secciones.get("Poema/Verso", 0) > 0
+
+    def test_secciones_extendidas_tambien_usa_limite_de_palabra(self):
+        """analizar_numero_con_campos_expandidos comparte el mismo bug de
+        SECCIONES sin \\b — verificado por separado porque es una función
+        distinta con su propia copia del bucle de conteo."""
+        from core.analysis_engine import analizar_numero_con_campos_expandidos
+        nlp = self._nlp_mock()
+        texto = "Se presentaron diversas prendas en la conversación social. " * 10
+        _, secciones, _, _ = analizar_numero_con_campos_expandidos(
+            "n", texto, [], nlp, set()
+        )
+        assert "Poema/Verso" not in secciones

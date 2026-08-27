@@ -135,6 +135,23 @@ class TestArticleSegmenterV2:
         assert all(hasattr(a, "texto") for a in arts)
         assert all(0.0 <= a.confianza <= 1.0 for a in arts)
 
+    def test_confianza_penaliza_texto_ilegible(self):
+        """Dos páginas atómicas con el mismo método de consolidación deben
+        recibir confianza distinta según la legibilidad real del OCR — antes
+        `confianza` solo dependía del método (0.9/0.95 fijos), sin importar
+        si el texto era basura pura (hallazgo de auditoría s.59/60 de
+        [[project_bashkar_station]])."""
+        from core.article_segmenter_v2 import segmentar_avanzado
+        limpia = "TÍTULO CLARO\nEste es un artículo con texto perfectamente legible sobre la vida en Bogotá. " * 8
+        basura = "T~[T]|O #@%\n~[]<>{}^$%@&*|~[]<>{}^$%@&*|~[]<>{}^$%@&*|~[]<>{}^$%@&*| " * 8
+        arts = segmentar_avanzado([limpia], numero="n1")
+        arts_basura = segmentar_avanzado([basura], numero="n2")
+        assert arts and arts_basura
+        assert arts[0].metodo == "atomico" == arts_basura[0].metodo
+        assert arts_basura[0].confianza < arts[0].confianza
+        assert "baja_legibilidad_ocr" in arts_basura[0].indicadores
+        assert "baja_legibilidad_ocr" not in arts[0].indicadores
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # collocation_engine

@@ -38,6 +38,15 @@ RE_BYLINE = re.compile(
 RE_INICIO_MINUSCULA = re.compile(r'^[a-záéíóúñü]')
 
 
+def _ratio_alfabetico(texto: str) -> float:
+    """Fracción de caracteres alfabéticos/espacio — proxy de legibilidad OCR.
+    0.0 = basura pura, 1.0 = texto limpio."""
+    if not texto:
+        return 0.0
+    alfa = sum(1 for c in texto if c.isalpha() or c == ' ')
+    return alfa / len(texto)
+
+
 @dataclass
 class NodoPagina:
     idx: int
@@ -293,6 +302,17 @@ def segmentar_avanzado(
             confianza = 0.55
             metodo = "heuristico"
             indicadores = ["heurística_longitud"]
+
+        # `confianza` hasta aquí solo mide qué tan segura fue la CONSOLIDACIÓN
+        # de páginas (método), nunca la legibilidad real del OCR — un título
+        # de basura pura recibía la misma confianza que uno limpio (hallazgo
+        # de auditoría s.59/60 de [[project_bashkar_station]]). Se atenúa con
+        # un factor de legibilidad: texto limpio (ratio~0.9+) apenas cambia,
+        # texto casi ilegible (ratio~0.1) recorta la confianza a la mitad.
+        legibilidad = _ratio_alfabetico(texto_consolidado)
+        confianza = round(confianza * (0.5 + 0.5 * legibilidad), 3)
+        if legibilidad < 0.5:
+            indicadores.append("baja_legibilidad_ocr")
 
         articulos.append(ArticuloSegmentado(
             paginas=comp,

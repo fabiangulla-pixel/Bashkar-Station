@@ -8,6 +8,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from core.article_segmenter import _es_nombre_personal
+
 SECCIONES = {
     "Editorial":     ["editorial"],
     "Crónica":       ["crónica", "cronica"],
@@ -65,24 +67,27 @@ def analizar_numero_texto(nombre: str, texto: str, colaboradores: list, nlp, sto
     tl = texto.lower()
     nw = max(len(texto.split()), 1)
 
-    # Firmas
+    # Firmas — solo cadenas con forma de nombre de persona (descarta empresas,
+    # cargos y basura OCR que el NER y la regex de mayúsculas también capturan;
+    # ver hallazgo de auditoría sesión 59 de [[project_bashkar_station]])
     firmas = [c for c in colaboradores if c.strip() and c.lower() in tl]
     CHUNK = 80_000
     for i in range(0, min(len(texto), 400_000), CHUNK):
         doc = nlp(texto[i:i + CHUNK])
         for ent in doc.ents:
-            if ent.label_ == "PER" and len(ent.text.split()) >= 2:
+            if ent.label_ == "PER" and len(ent.text.split()) >= 2 and _es_nombre_personal(ent.text.strip()):
                 firmas.append(ent.text.strip())
         del doc
     for m in re.finditer(r"^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s\.]{3,40})$", texto, re.M):
         c = m.group(1).strip()
-        if 2 <= len(c.split()) <= 5:
+        if 2 <= len(c.split()) <= 5 and _es_nombre_personal(c):
             firmas.append(c.title())
 
-    # Secciones
+    # Secciones (\b: sin límite de palabra, "verso" matcheaba dentro de
+    # "diversas"/"conversación" — mismo bug corregido en article_segmenter s.59)
     secciones = {}
     for sec, pats in SECCIONES.items():
-        cnt = sum(tl.count(p) for p in pats)
+        cnt = sum(len(re.findall(rf'\b{re.escape(p)}\b', tl)) for p in pats)
         if cnt:
             secciones[sec] = cnt
 
@@ -208,26 +213,26 @@ def analizar_numero_con_campos_expandidos(
     tl  = texto.lower()
     nw  = max(len(texto.split()), 1)
 
-    # Firmas (igual que antes)
+    # Firmas — filtradas por forma de nombre de persona (ver s.59)
     firmas = [c for c in colaboradores if c.strip() and c.lower() in tl]
     CHUNK  = 80_000
     for i in range(0, min(len(texto), 400_000), CHUNK):
         doc = nlp(texto[i:i + CHUNK])
         for ent in doc.ents:
-            if ent.label_ == "PER" and len(ent.text.split()) >= 2:
+            if ent.label_ == "PER" and len(ent.text.split()) >= 2 and _es_nombre_personal(ent.text.strip()):
                 firmas.append(ent.text.strip())
         del doc
 
     import re as _re
     for m in _re.finditer(r"^([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑ\s\\.]{3,40})$", texto, _re.M):
         c = m.group(1).strip()
-        if 2 <= len(c.split()) <= 5:
+        if 2 <= len(c.split()) <= 5 and _es_nombre_personal(c):
             firmas.append(c.title())
 
-    # Secciones
+    # Secciones (\b límite de palabra — mismo fix que article_segmenter s.59)
     secciones = {}
     for sec, pats in SECCIONES.items():
-        cnt = sum(tl.count(p) for p in pats)
+        cnt = sum(len(_re.findall(rf'\b{_re.escape(p)}\b', tl)) for p in pats)
         if cnt:
             secciones[sec] = cnt
 
