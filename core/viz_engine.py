@@ -199,7 +199,9 @@ def _depurar_vocabulario_ia(lemas: list[str], api_key: str) -> list[str]:
         )
         import json as _json
         import re as _re2
-        raw = msg.content[0].text
+
+        from core import inference_provider as _ip
+        raw = _ip.texto_de_respuesta_claude(msg)
         m = _re2.search(r"\{.*\}", raw, _re2.DOTALL)
         if m:
             ruido = set(w.lower() for w in _json.loads(m.group()).get("ruido", []))

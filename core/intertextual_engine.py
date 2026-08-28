@@ -175,7 +175,9 @@ Responde SOLO con JSON:
             messages=[{"role": "user", "content": prompt}],
         )
         import json
-        texto = rsp.content[0].text.strip()
+
+        from core import inference_provider as _ip
+        texto = _ip.texto_de_respuesta_claude(rsp)
         m = re.search(r"\{.*\}", texto, re.DOTALL)
         if m:
             return json.loads(m.group())

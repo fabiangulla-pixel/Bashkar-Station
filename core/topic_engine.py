@@ -229,6 +229,8 @@ def etiquetar_topicos_llm(resultado: dict, api_key: str) -> dict:
         for tid, info in topicos.items()
     )
 
+    from core import inference_provider as _ip
+
     client = anthropic.Anthropic(api_key=api_key)
     try:
         msg = client.messages.create(
@@ -237,7 +239,7 @@ def etiquetar_topicos_llm(resultado: dict, api_key: str) -> dict:
             messages=[{"role": "user",
                         "content": _PROMPT_ETIQUETAR.replace("{topicos}", topicos_str)}],
         )
-        raw = msg.content[0].text.strip()
+        raw = _ip.texto_de_respuesta_claude(msg)
         raw = re.sub(r"^```json\s*", "", raw)
         raw = re.sub(r"\s*```$", "", raw)
         etiquetas = json.loads(raw)

@@ -50,7 +50,7 @@ class TestGutterDeteccion:
 class TestGutterReconstruccion:
     def _mock_claude(self, palabra: str):
         msg = MagicMock()
-        msg.content = [MagicMock(text=palabra)]
+        msg.content = [MagicMock(type="text", text=palabra)]
         client = MagicMock()
         client.messages.create.return_value = msg
         return client

@@ -241,10 +241,12 @@ def clasificar_frame_llm(texto: str, api_key: str,
         "(responde solo la clave, p. ej. 'modernidad'):\n"
         f"{etiquetas}\n\nARTÍCULO:\n{texto[:4000]}\n\nClave:")
     try:
+        from core import inference_provider as _ip
+
         cli = anthropic.Anthropic(api_key=api_key)
         msg = cli.messages.create(model=modelo, max_tokens=20,
                                   messages=[{"role": "user", "content": prompt}])
-        clave = msg.content[0].text.strip().lower()
+        clave = _ip.texto_de_respuesta_claude(msg).lower()
         clave = re.sub(r"[^a-z_]", "", clave)
         if clave in FRAMES:
             return {"frame_dominante": clave, "etiqueta": FRAMES[clave]["etiqueta"],

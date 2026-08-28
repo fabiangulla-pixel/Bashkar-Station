@@ -140,13 +140,15 @@ def reconstruir_fragmento(
     """Reconstruye una palabra cortada usando LLM."""
     try:
         import anthropic
+
+        from core import inference_provider as _ip
         client = anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model=modelo,
             max_tokens=32,
             messages=[{"role": "user", "content": _prompt_reconstruir(frag)}],
         )
-        palabra = msg.content[0].text.strip().split()[0]  # solo primera palabra
+        palabra = _ip.texto_de_respuesta_claude(msg).split()[0]  # solo primera palabra
         # Limpiar puntuación final
         palabra = re.sub(r'[.,:;!?»"\']$', '', palabra)
         frag.reconstruida = palabra

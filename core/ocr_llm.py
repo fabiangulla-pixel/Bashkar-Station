@@ -316,6 +316,8 @@ def evaluar_calidad(
     Pide a Claude que evalúe la calidad del texto OCR y recomiende acción.
     Retorna dict con: calidad, problemas_detectados, confianza_estimada, recomendacion.
     """
+    from core import inference_provider as _ip
+
     muestra = texto_ocr[:2000]
     client = _cliente(api_key)
     try:
@@ -327,7 +329,7 @@ def evaluar_calidad(
                 "content": _PROMPT_EVALUAR.replace("{texto}", muestra),
             }],
         )
-        raw = msg.content[0].text.strip()
+        raw = _ip.texto_de_respuesta_claude(msg)
         raw = re.sub(r"^```json\s*", "", raw)
         raw = re.sub(r"\s*```$", "", raw)
         return json.loads(raw)

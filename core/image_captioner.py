@@ -438,7 +438,8 @@ def _llamar_vision(img_path: Path, proveedor: str, api_key: str,
                                                   "media_type": mt, "data": b64}},
                     {"type": "text", "text": prompt},
                 ]}])
-            return resp.content[0].text
+            from core import inference_provider as _ip
+            return _ip.texto_de_respuesta_claude(resp)
 
         elif proveedor == "openai":
             import openai

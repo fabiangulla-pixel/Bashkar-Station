@@ -48,6 +48,8 @@ def generar_narrativa(
     except ImportError:
         raise ImportError("Instala anthropic: pip install anthropic>=0.25.0")
 
+    from core import inference_provider as _ip
+
     datos_str = json.dumps(datos, ensure_ascii=False, indent=2)[:3000]
     client = anthropic.Anthropic(api_key=api_key)
     try:
@@ -57,7 +59,7 @@ def generar_narrativa(
             messages=[{"role": "user",
                         "content": _PROMPT_NARRATIVA.replace("{datos}", datos_str)}],
         )
-        return msg.content[0].text.strip()
+        return _ip.texto_de_respuesta_claude(msg)
     except Exception as e:
         return f"[Error al generar narrativa: {e}]"
 

@@ -32,7 +32,7 @@ RESULTADO_MOCK = {
 
 def _mock_claude(respuesta: dict):
     msg = MagicMock()
-    msg.content = [MagicMock(text=json.dumps(respuesta))]
+    msg.content = [MagicMock(type="text", text=json.dumps(respuesta))]
     client = MagicMock()
     client.messages.create.return_value = msg
     return client
@@ -116,7 +116,7 @@ class TestAnalizarTono:
     def test_json_con_markdown_se_parsea(self):
         respuesta_md = f"```json\n{json.dumps(RESULTADO_MOCK)}\n```"
         msg = MagicMock()
-        msg.content = [MagicMock(text=respuesta_md)]
+        msg.content = [MagicMock(type="text", text=respuesta_md)]
         client = MagicMock()
         client.messages.create.return_value = msg
         with patch("anthropic.Anthropic", return_value=client):

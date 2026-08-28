@@ -360,7 +360,8 @@ def detectar_zonas_claude(
                 ],
             }],
         )
-        raw = resp.content[0].text.strip()
+        from core import inference_provider as _ip
+        raw = _ip.texto_de_respuesta_claude(resp)
         # Extraer JSON aunque haya texto extra
         import re
         m = re.search(r'\{.*\}', raw, re.DOTALL)
@@ -502,7 +503,8 @@ def _vision_claude(img_path: Path, api_key: str, modelo: str, prompt: str) -> li
                 {"type": "text", "text": prompt},
             ]}],
         )
-        return _parsear_zonas_json(resp.content[0].text)
+        from core import inference_provider as _ip
+        return _parsear_zonas_json(_ip.texto_de_respuesta_claude(resp))
     except Exception:
         return []
 

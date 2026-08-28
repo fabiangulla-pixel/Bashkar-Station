@@ -113,6 +113,8 @@ def analizar_tono(
     except ImportError:
         raise ImportError("Instala anthropic: pip install anthropic>=0.25.0")
 
+    from core import inference_provider as _ip
+
     client = anthropic.Anthropic(api_key=api_key)
     try:
         msg = client.messages.create(
@@ -121,7 +123,7 @@ def analizar_tono(
             messages=[{"role": "user",
                         "content": _PROMPT.replace("{texto}", fragmento)}],
         )
-        raw = msg.content[0].text.strip()
+        raw = _ip.texto_de_respuesta_claude(msg)
         raw = re.sub(r"^```json\s*", "", raw)
         raw = re.sub(r"\s*```$", "", raw)
         resultado = json.loads(raw)
@@ -397,13 +399,15 @@ qué implica el índice de polarización y qué significan las tendencias tempor
 Escribe en español, sin markdown."""
 
     try:
+        from core import inference_provider as _ip
+
         client = anthropic.Anthropic(api_key=api_key)
         msg = client.messages.create(
             model=modelo,
             max_tokens=400,
             messages=[{"role": "user", "content": prompt}],
         )
-        return msg.content[0].text.strip()
+        return _ip.texto_de_respuesta_claude(msg)
     except Exception:
         return ""
 

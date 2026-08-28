@@ -39,7 +39,7 @@ class ProviderResponse:
         self.usage = usage
 
 
-def _texto_de_respuesta_claude(msg) -> str:
+def texto_de_respuesta_claude(msg) -> str:
     """Extrae el texto de una respuesta de Claude buscando el primer bloque
     de tipo "text", en vez de asumir que content[0] lo es.
 
@@ -49,13 +49,17 @@ def _texto_de_respuesta_claude(msg) -> str:
     AttributeError. Encontrado en la primera corrida real a escala completa
     del pase de OCR Vision (792 páginas, 27-ago-2026): 194/214 páginas de
     un número fallaron con "'ThinkingBlock' object has no attribute 'text'"
-    en vez de transcribirse."""
+    en vez de transcribirse. Punto único: usado por todos los módulos de
+    core/ que llaman a `client.messages.create` de Anthropic directamente."""
     for bloque in msg.content:
         if getattr(bloque, "type", None) == "text":
             return bloque.text.strip()
     raise ValueError(
         f"Respuesta de Claude sin bloque de texto (stop_reason={getattr(msg, 'stop_reason', None)!r})"
     )
+
+
+_texto_de_respuesta_claude = texto_de_respuesta_claude
 
 
 def _mensajes(prompt: str, system: str | None) -> list[dict]:

@@ -58,6 +58,8 @@ def extraer_lexico(
     except ImportError:
         raise ImportError("Instala anthropic: pip install anthropic>=0.25.0")
 
+    from core import inference_provider as _ip
+
     client = anthropic.Anthropic(api_key=api_key)
     try:
         msg = client.messages.create(
@@ -66,7 +68,7 @@ def extraer_lexico(
             messages=[{"role": "user",
                         "content": _PROMPT.replace("{texto}", fragmento)}],
         )
-        raw = msg.content[0].text.strip()
+        raw = _ip.texto_de_respuesta_claude(msg)
         raw = re.sub(r"^```json\s*", "", raw)
         raw = re.sub(r"\s*```$", "", raw)
         return json.loads(raw)
