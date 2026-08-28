@@ -187,3 +187,29 @@ class TestFiltroRuidoNER:
         personas = {p.lower() for p in indice["personas"]}
         assert "así" not in personas
         assert "sólo" not in personas
+
+
+class TestGuiNerEvitaSegfault:
+    """Regresión: app.py TAMBIÉN llama recursos.aplicar_limites_cpu() al
+    arrancar (línea ~26, igual que cli.py) y sus dos sitios que invocan
+    pipeline_ner (_worker_ner_articulo, _worker_ner_corpus) no pasaban
+    usar_roberta=False — el botón "Analizar NER" de la app de escritorio
+    (la forma PRINCIPAL en que se usa Bashkar Station) segfaulteaba
+    reproduciblemente, no solo el CLI. Reproducido y confirmado con el mismo
+    camino de llamada exacto de la GUI, sesión 62 (28-ago-2026). Verificación
+    a nivel de fuente (no instancia Tk real) porque el segfault en sí no es
+    capturable por pytest — lo que se puede probar es que el kwarg sigue ahí."""
+
+    def test_ambos_sitios_de_gui_pasan_usar_roberta_false(self):
+        raiz = __import__("pathlib").Path(__file__).resolve().parent.parent
+        app_src = (raiz / "app.py").read_text(encoding="utf-8")
+        llamadas = [
+            app_src[m.start():m.start() + 400]
+            for m in __import__("re").finditer(r"pipeline_ner\(", app_src)
+        ]
+        assert len(llamadas) >= 2, "se esperaban al menos 2 llamadas a pipeline_ner en app.py"
+        for bloque in llamadas:
+            assert "usar_roberta=False" in bloque, (
+                "una llamada a pipeline_ner en app.py no fuerza usar_roberta=False "
+                "— con aplicar_limites_cpu() activo esto segfaultea"
+            )
