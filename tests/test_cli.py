@@ -4,8 +4,9 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from cli import _etapa_seg
+from cli import _etapa_ner, _etapa_seg
 
 
 def test_etapa_seg_segmenta_sin_typeerror(tmp_path: Path):
@@ -48,3 +49,25 @@ def test_info_no_revienta_en_consola_cp1252(tmp_path: Path):
     )
     assert r.returncode == 0, f"stderr: {r.stderr}"
     assert "UnicodeEncodeError" not in r.stderr
+
+
+def test_etapa_ner_usa_spacy_no_roberta():
+    """Regresión: _etapa_ner llamaba pipeline_ner(texto, nlp) con
+    usar_roberta=True por defecto. Combinado con recursos.aplicar_limites_cpu()
+    (que cli.py corre al arrancar, fijando OMP_NUM_THREADS/MKL_NUM_THREADS),
+    cargar el modelo BERT segfaultea de forma reproducible — conflicto nativo
+    de threading entre torch y la librería Rust `tokenizers`, verificado en
+    corrida real sobre el corpus completo de Estampa (792 páginas, 28-ago-2026).
+    _etapa_ner debe pasar usar_roberta=False explícitamente."""
+    articulos = [{"id": "a1", "texto": "Texto de prueba con alguna entidad."}]
+
+    with patch("spacy.load", return_value=MagicMock()), \
+         patch("core.ner_engine.pipeline_ner") as mock_pipeline_ner, \
+         patch("core.ner_engine.actualizar_indice_global"), \
+         patch("core.ner_engine.indice_global_vacio", return_value={}):
+        mock_pipeline_ner.return_value = {}
+        _etapa_ner(articulos, verbose=False)
+
+    assert mock_pipeline_ner.called
+    _, kwargs = mock_pipeline_ner.call_args
+    assert kwargs.get("usar_roberta") is False

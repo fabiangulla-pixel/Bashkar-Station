@@ -221,7 +221,17 @@ def _etapa_ner(articulos: list[dict], verbose: bool) -> dict:
         if not texto:
             continue
         try:
-            ner = pipeline_ner(texto, nlp)
+            # usar_roberta=False: el CLI llama recursos.aplicar_limites_cpu()
+            # al arrancar (fija OMP_NUM_THREADS/MKL_NUM_THREADS por eficiencia).
+            # Con ese límite activo, cargar el modelo BERT de pipeline_ner
+            # (mrm8488/bert-spanish-cased-finetuned-ner vía transformers)
+            # SEGFAULTEA de forma reproducible — conflicto nativo de threading
+            # entre el runtime OpenMP de torch y el pool de la librería Rust
+            # `tokenizers`, no un bug de lógica Python. Reproducido con
+            # cualquier valor de hilos, tanto vía env var como
+            # torch.set_num_threads(); solo desaparece sin límite de hilos
+            # (28-ago-2026, corrida real sobre el corpus completo de 792 pág.).
+            ner = pipeline_ner(texto, nlp, usar_roberta=False)
             actualizar_indice_global(indice, art.get("id", str(i)), ner)
         except Exception:
             pass
@@ -241,8 +251,8 @@ def _etapa_exportar(out_dir: Path, articulos: list, indice_ner: dict,
             arts_tei = [{"id": a.get("id", str(i)), "texto": a.get("texto", "")}
                         for i, a in enumerate(articulos)]
             exportar_corpus_tei(arts_tei, ruta,
-                                titulo=cfg.get("publicacion", ""),
-                                fecha=cfg.get("periodo", ""))
+                                proyecto_nombre=cfg.get("publicacion", "Corpus"),
+                                fuente=f"{cfg.get('publicacion', '')} ({cfg.get('periodo', '')})")
             _log(f"  TEI: {ruta}", verbose)
         except Exception as e:
             _log(f"  ERROR TEI: {e}", verbose)
