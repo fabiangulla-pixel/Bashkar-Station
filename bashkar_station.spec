@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec — Bashkar Station v12.0
+# PyInstaller spec — Bashkar Station v12.1
 # Compilar SIEMPRE a disco local, nunca al proyecto (que vive en Google Drive):
 #   python -m PyInstaller bashkar_station.spec --noconfirm ^
 #       --distpath C:/build_rf/bs_dist --workpath C:/build_rf/bs_work

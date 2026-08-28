@@ -78,6 +78,25 @@ CATEGORIAS = ("personas", "lugares", "organizaciones", "fechas",
 _SPACY_MAP = {"PER": "personas", "LOC": "lugares", "ORG": "organizaciones",
               "DATE": "fechas", "TIME": "fechas"}
 
+# Marcadores estructurales que el propio prompt de Vision OCR le pide al
+# modelo insertar como texto literal (core/ocr_llm.py::_PROMPT_VISION) —
+# NO son contenido del artículo. Sin filtrarlos, "--- COLUMNA ---" se cuela
+# en el NER como si fuera texto real (visto en producción: 561 apariciones
+# detectadas como organización sobre el corpus completo de Estampa,
+# 28-ago-2026).
+_MARCADORES_ESTRUCTURALES = re.compile(r"---\s*COLUMNA\s*---|\[ilegible\]", re.IGNORECASE)
+
+# Palabras función del español que spaCy (modelo pequeño, es_core_news_sm)
+# etiqueta como PER por estar en mayúscula inicial de oración — nunca son
+# nombres de persona. Filtro conservador: solo aplica a candidatos de UNA
+# sola palabra, para no arriesgar nombres reales de 2+ palabras.
+_PER_FALSOS_POSITIVOS = {
+    "así", "sólo", "solo", "aquí", "también", "además", "entonces",
+    "ahora", "luego", "pero", "aunque", "mientras", "cuando", "donde",
+    "porque", "pues", "aún", "todavía", "aquel", "aquella", "aquello",
+    "aca", "acá",
+}
+
 # Prompt para Claude
 _PROMPT = """Eres un experto en historia colombiana del siglo XX especializado en \
 publicaciones periódicas de los años 1930-1940.
@@ -116,9 +135,16 @@ _CHUNK = 60_000  # caracteres por chunk de spaCy
 
 def _limpiar(texto: str) -> str:
     """Normalización mínima de OCR ruidoso sin perder contenido."""
+    texto = _MARCADORES_ESTRUCTURALES.sub(" ", texto)
     texto = re.sub(r"[ \t]{3,}", " ", texto)
     texto = re.sub(r"\n{4,}", "\n\n", texto)
     return texto.strip()
+
+
+def _es_falso_positivo_persona(tok: str) -> bool:
+    """True si `tok` es una entidad PER de una sola palabra que en realidad
+    es una palabra función común mal capitalizada al inicio de oración."""
+    return " " not in tok and tok.lower() in _PER_FALSOS_POSITIVOS
 
 
 def _indice_vacio() -> dict:
@@ -134,7 +160,7 @@ def extraer_spacy(texto: str, nlp) -> dict:
             cat = _SPACY_MAP.get(ent.label_)
             if cat:
                 tok = ent.text.strip()
-                if len(tok) > 2:
+                if len(tok) > 2 and not (cat == "personas" and _es_falso_positivo_persona(tok)):
                     indice[cat].add(tok)
         del doc
     gc.collect()
@@ -204,8 +230,9 @@ def extraer_roberta(texto: str) -> dict:
     indice = _indice_vacio()
     for ent in entidades:
         cat = ent.get("categoria")
-        if cat in indice:
-            indice[cat].add(ent["texto"])
+        tok = ent.get("texto", "")
+        if cat in indice and not (cat == "personas" and _es_falso_positivo_persona(tok)):
+            indice[cat].add(tok)
     return indice
 
 

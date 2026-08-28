@@ -2,6 +2,167 @@
 
 ---
 
+## Sesión 62 — 2026-08-28 — v12.1: pipeline completo validado sobre el corpus real (792 páginas) + 6 bugs de producción reales
+
+Primera vez que el pipeline completo (Segmentar → NER → exportar TEI/BibTeX/CSV)
+corre de punta a punta sobre el corpus real completo, no un piloto. Cerró el
+pase de Vision OCR (792/792 páginas) y usó la corrida real como caza de bugs:
+6 bugs de producción reales encontrados y arreglados, cada uno con test de
+regresión y commit propio.
+
+1. **`core/inference_provider.py`** — cerrado el fix de `ThinkingBlock` que
+   quedó a medio commitear en sesión 61 (`content[0].text` revienta con
+   thinking adaptativo). `_texto_de_respuesta_claude` verificada contra la
+   API real.
+2. **13 sitios más de `core/`** — el mismo bug portado a `ocr_llm.py`,
+   `sentiment_engine.py` (x2), `lexicon_engine.py`, `viz_engine.py`,
+   `storytelling_engine.py`, `topic_engine.py`, `intertextual_engine.py`,
+   `zone_labeler.py` (x2), `gutter_completion.py`, `image_captioner.py`,
+   `frame_engine.py`. La función pasó a pública:
+   `inference_provider.texto_de_respuesta_claude()`.
+3. **`core/ocr_llm.py`** — `max_tokens=4096` insuficiente en
+   `ocr_con_vision`: con thinking adaptativo, una página densa agotaba el
+   presupuesto pensando antes de emitir texto (`stop_reason='max_tokens'`,
+   hallado en `rev_estampa_feb_1939/p0057` real). Subido a 8192 solo para
+   transcripción (no afecta al captioner).
+4. **`core/project_manager.py`** — `cargar_proyecto()` reconstruía
+   `corpus_txt` leyendo SOLO la última página (`txts[-1]`) de cada número
+   en vez de todas. Con el proyecto real de 792 páginas quedaban solo 5
+   documentos en `corpus_txt` — cualquier módulo que lo lea directo (Word2Vec,
+   nube de palabras) antes de correr Segmentar habría trabajado sobre casi
+   nada. Test de regresión nuevo.
+5. **`cli.py`** — `--info`/`--version` reventaban con `UnicodeEncodeError`
+   en consola Windows real (cp1252, no UTF-8) al imprimir ✅/⬜. Fix:
+   reconfigurar stdout/stderr a UTF-8 con `errors="replace"` al arrancar.
+   Test de regresión que fuerza `PYTHONIOENCODING=cp1252` en un subproceso
+   real (monkeypatchear `sys.stdout` no reproduce el bug).
+6. **`cli.py` — SEGFAULT real y reproducible.** `_etapa_ner` llamaba
+   `pipeline_ner()` con `usar_roberta=True` (el default), que carga un
+   modelo BERT vía `transformers`. Combinado con el límite de hilos que el
+   CLI aplica al arrancar (`recursos.aplicar_limites_cpu()`, fija
+   `OMP_NUM_THREADS`/`MKL_NUM_THREADS` por eficiencia), cargar el modelo
+   **segfaultea de forma reproducible** — conflicto nativo de threading
+   entre el runtime OpenMP de torch y el pool de la librería Rust
+   `tokenizers`. Aislado con un script mínimo de una sola frase: reproduce
+   con CUALQUIER valor de hilos (env var o `torch.set_num_threads()`), solo
+   desaparece sin límite de hilos. Fix pragmático (no resuelve el conflicto
+   nativo de fondo): `_etapa_ner` pasa `usar_roberta=False` explícito, cae
+   a spaCy (sin torch). Test de regresión que verifica el kwarg.
+7. **Bug menor de paso** — `exportar_corpus_tei()` llamada desde `cli.py`
+   con kwargs `titulo=`/`fecha=` que ya no existen en la firma real
+   (`proyecto_nombre=`/`fuente=`); cada export TEI vía CLI fallaba en
+   silencio (capturado por el `except` genérico).
+
+**Resultado real:** pipeline completo sobre las 792 páginas → 636 artículos
+segmentados, 11688 entidades NER, TEI válido (636 elementos), BibTeX y CSV
+exportados, sin crashear, ~5.5 min. Proyecto real en
+`Documents\BashkarStation\proyectos\Estampa_1939__Vision_OCR_completo.bashkar`.
+
+**Verificado también:** la deuda documentada al cierre de sesión 59
+(`confianza` sin legibilidad real, `firmas.csv` sin filtrar) ya estaba
+pagada desde el commit `bcec93f` de sesión 60 — no había nada que atacar.
+
+**Hallazgos de calidad sin arreglar (no bloqueantes, backlog):** el
+marcador de layout `--- COLUMNA ---` de la segmentación se cuela como texto
+real y spaCy lo detecta como organización (561 veces); palabras comunes
+("Así", "Sólo") salen como falsos positivos de persona; `fechas`/
+`obras_publicaciones`/`eventos_historicos` quedan en 0 porque
+`es_core_news_sm` no tiene esas categorías (RoBERTa sí, pero segfaultea).
+
+**Suite final: 1453 passed, 23 skipped, 0 failed.** `APP_VERSION` y
+`_APP_VERSION_SPLASH`: `"12.0"` → `"12.1"`.
+
+---
+
+## Sesión 60-61 — 2026-08-27 — Ground truth portado de Medallo + pase de Vision OCR a escala + bug real de ThinkingBlock
+
+Sesión larga con tres frentes. Cierra los pendientes de la auditoría de la
+sesión 59, porta un patrón nuevo del proyecto hermano Medallo, y arranca
+(sin terminar) el pase de OCR de mejor calidad sobre el corpus completo.
+
+### 1. Cierre de pendientes de sesión 59 (6 bugs reales)
+
+- **`core/analysis_engine.py`** — `firmas.csv` mezclaba autores reales con
+  empresas/cargos/basura OCR; ahora filtra por forma de nombre de persona
+  (reusa `_es_nombre_personal` de `article_segmenter.py`). Mismo bug de
+  sección-por-subcadena-sin-`\b` de la sesión 59, pero en este archivo
+  también (tenía su propia copia de `SECCIONES`).
+- **`core/article_segmenter_v2.py`** — `confianza` en articulos.csv solo
+  dependía del método de consolidación, nunca de la legibilidad real del
+  OCR; ahora se atenúa con un factor de legibilidad real del texto.
+- **`cli.py`** — `_etapa_seg` llamaba `segmentar_numero()` con argumentos
+  equivocados, silenciado por un `except` genérico: el CLI segmentaba 0
+  artículos siempre. `tests/test_cli.py` nuevo (el CLI no tenía tests).
+- **`core/ocr_engine.py`** — `detectar_posibles_duplicados()` nuevo: avisa
+  si dos PDFs seleccionados comparten >50% de vocabulario en sus primeras
+  páginas (el caso real de sesión 59: el mismo número seleccionado dos
+  veces con nombres de archivo distintos).
+- **`instalar.py` / `Ejecutar.bat`** — `.installed` se marcaba sin mirar si
+  la instalación había fallado a medias; el instalador nunca reintentaba.
+  Reportado por el usuario: "las últimas veces no ha servido".
+- **`core/ner_roberta_local.py` / `core/embeddings_local.py`** — no forzaban
+  `HF_HUB_OFFLINE=1` con el modelo ya cacheado, así que cada arranque
+  golpeaba el Hub innecesariamente. Reportado por el usuario: "por qué
+  siempre instala cosas cada que abro Bashkar".
+
+Modo-Ingeniero corrido de paso: la infraestructura (git, ruff, `check.bat`,
+hook de pre-commit) ya estaba sana desde sesión 43; único hueco real,
+documentación desactualizada (badge de tests, versión en requirements.txt).
+
+### 2. Ground truth con juez de IA — patrón portado de Medallo/GullaBench
+
+`scripts/juez_ground_truth.py` + `scripts/preparar_ground_truth.py` +
+`.github/workflows/juez_ground_truth.yml` — un modelo de visión evalúa el
+texto candidato de OCR contra la imagen real y cita errores concretos, sin
+decidir por su cuenta. Piloto: 47 páginas de `rev_estampa_mar_1939`.
+Primera corrida dio accuracy 0.09 (casi todo 0.0) — el juez detectó un BUG
+REAL de datos (desalineación de +41 páginas entre imagen y candidato, no un
+fallo del juez). Corregido en `scripts/preparar_ground_truth.py`. Segunda
+corrida: **46/47 páginas, accuracy real 0.69.**
+
+### 3. Pase de Vision OCR a escala completa — INCOMPLETO, ver pendientes
+
+Objetivo: transcribir con Vision LLM las 792 páginas reales del corpus (5
+números, enero-mayo 1939) para tener la mejor versión posible del OCR,
+como base confiable para el resto de módulos de Bashkar.
+
+- `scripts/ocr_vision_lote.py` + `.github/workflows/ocr_vision_lote.yml`
+  (matrix de 5 jobs paralelos) + `scripts/importar_vision_ocr_a_proyecto.py`.
+- Imágenes de entrada (280MB) NO viven en git — suben como asset del
+  release público `vision-ocr-entrada-v1`.
+- **Primera corrida: solo 72/792 páginas transcritas**, aunque los 5 jobs
+  cerraron "en verde" en Actions. Causa real (leyendo el log crudo del
+  job, no adivinada): `'ThinkingBlock' object has no attribute 'text'` —
+  `core/inference_provider.py` leía `msg.content[0].text` asumiendo que el
+  primer bloque de la respuesta es siempre texto; con thinking adaptativo
+  (encendido por defecto en Claude Sonnet 5), `content[0]` suele ser un
+  `ThinkingBlock`. Bug preexistente en el código de producción, no
+  introducido esta sesión — nunca se había disparado porque el default
+  viejo del módulo (`claude-sonnet-4-6`) no tenía thinking adaptativo por
+  defecto.
+- **Fix aplicado y verificado contra la API real** (3 páginas,
+  `_texto_de_respuesta_claude()` busca el primer bloque `type=="text"`).
+  6 tests nuevos. **⚠️ SIN COMMITEAR al cierre de esta sesión** — el
+  usuario pidió cerrar para reiniciar el PC.
+- **Hallazgo sistémico sin arreglar:** el mismo patrón aparece en otros 13
+  sitios de `core/` (`ocr_llm.py`, `sentiment_engine.py` x2,
+  `lexicon_engine.py`, `viz_engine.py`, `storytelling_engine.py`,
+  `topic_engine.py`, `intertextual_engine.py`, `zone_labeler.py` x2,
+  `gutter_completion.py`, `image_captioner.py`, `frame_engine.py`).
+
+**Archivos modificados:** ver detalle completo en
+[[project_estampa_ocr_completo_270826]] (memoria dedicada de Claude).
+
+**Próxima sesión — orden exacto:**
+1. `git status` — commitear el fix de `inference_provider.py` si sigue
+   pendiente (correr la suite completa sin interrupciones esta vez).
+2. Push a `origin main`.
+3. Relanzar `.github/workflows/ocr_vision_lote.yml` — resumible, solo
+   procesa las páginas sin `.txt` (no regasta en las 72 ya hechas).
+4. Confirmar 792/792 reales (no solo el check verde de Actions).
+5. Correr `scripts/importar_vision_ocr_a_proyecto.py`.
+6. Evaluar si arreglar los otros 13 sitios del bug `content[0].text`.
+
 ## Sesión 59 — 2026-08-20 — Hueco vacío en Configuración + clasificador de sección mal calibrado
 
 Dos bugs reales, encontrados por dos vías distintas: el usuario señaló un

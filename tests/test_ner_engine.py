@@ -141,3 +141,49 @@ class TestNERRoberta:
         assert set(resultado.keys()) == set(CATEGORIAS)
         for cat, items in resultado.items():
             assert isinstance(items, list)
+
+
+class TestFiltroRuidoNER:
+    """Regresión: al correr el pipeline completo sobre el corpus real de
+    Estampa (792 páginas, 28-ago-2026), el índice NER real salió contaminado
+    con dos tipos de ruido — ver sesión 62 de [[project_bashkar_station]]."""
+
+    def test_limpia_marcador_columna_del_prompt_vision(self):
+        """core/ocr_llm.py le pide al modelo de Vision marcar cambios de
+        columna con "--- COLUMNA ---" literal. Sin filtrarlo, spaCy lo
+        detectaba como organización (561 apariciones sobre el corpus real)."""
+        from core.ner_engine import _limpiar
+        texto = "Un articulo real.\n\n--- COLUMNA ---\n\nSigue el texto aqui."
+        limpio = _limpiar(texto)
+        assert "COLUMNA" not in limpio
+        assert "articulo real" in limpio
+        assert "Sigue el texto" in limpio
+
+    def test_limpia_marcador_ilegible(self):
+        from core.ner_engine import _limpiar
+        texto = "Palabra [ilegible] siguiente."
+        assert "ilegible" not in _limpiar(texto)
+
+    def test_filtra_palabras_funcion_como_persona(self):
+        """"Así"/"Sólo" al inicio de oración salían como falsos positivos
+        de persona en spaCy (modelo pequeño, capitalización de oración)."""
+        from core.ner_engine import _es_falso_positivo_persona
+        assert _es_falso_positivo_persona("Así")
+        assert _es_falso_positivo_persona("sólo")
+        assert not _es_falso_positivo_persona("Alfonso López")
+        assert not _es_falso_positivo_persona("Hitler")
+
+    def test_extraer_spacy_no_incluye_falsos_positivos(self):
+        import spacy
+
+        from core.ner_engine import extraer_spacy
+        try:
+            nlp = spacy.load("es_core_news_sm")
+        except OSError:
+            pytest.skip("es_core_news_sm no instalado")
+        texto = ("Así llegó Hitler a Berlin. Sólo quedaban rumores. "
+                 "El presidente Alfonso Lopez viajo a Bogota.")
+        indice = extraer_spacy(texto, nlp)
+        personas = {p.lower() for p in indice["personas"]}
+        assert "así" not in personas
+        assert "sólo" not in personas

@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 # ── Rutas de binarios externos (Tesseract/Poppler) ───────────────────────────
 _APP_DIR = Path(__file__).parent
-_APP_VERSION_SPLASH = "12.0"   # sincronizar con APP_VERSION abajo
+_APP_VERSION_SPLASH = "12.1"   # sincronizar con APP_VERSION abajo
 
 
 def _configurar_rutas_binarios():
@@ -199,7 +199,7 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-APP_VERSION = "12.0"
+APP_VERSION = "12.1"
 APP_NAME    = "Bashkar Station"
 
 # ── Identidad visual — grafito, cobre y teal ──────────────────────────────────
