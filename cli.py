@@ -50,6 +50,16 @@ from core import recursos
 # nada más, que es justo lo contrario de lo que se espera de un modo desatendido.
 recursos.aplicar_limites_cpu()
 
+# La consola de Windows por defecto usa cp1252 (no UTF-8): imprimir ✅/⬜/⚠/─
+# revienta con UnicodeEncodeError a mitad de la salida. reconfigure() no existe
+# en streams ya redirigidos a un objeto que no lo soporta (algunos entornos CI),
+# de ahí el guard.
+for _stream in (sys.stdout, sys.stderr):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, ValueError):
+        pass
+
 
 def _log(msg: str, verbose: bool = True):
     if verbose:
