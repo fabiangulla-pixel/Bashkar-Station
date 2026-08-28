@@ -1,0 +1,163 @@
+SECCIÓN de AJEDREZ
+a cargo del Campeón Bolivariano.
+Luis Alberto Sánchez
+
+--- COLUMNA ---
+
+El señor Boris Eliacheff, agregado comercial de la Legación Francesa, a quien se le debe en primer término el resurgimiento del Ajedrez en Colombia. Fue quien promovió la traída a Bogotá del super-campeón, doctor Alejandro Alekhine, hallando para ello eficaz apoyo en un ministro comprensivo, el doctor Lleras Restrepo. El destacado diplomático francés descendiente de familia originaria de Rusia, la tierra que produce las más brillantes estrellas del tablero. Es también muy hábil jugador de Ajedrez, juego que cultiva con vivo apasionamiento de artista, y lo estimula y propaga con desinteresado entusiasmo.
+
+Daremos comienzo a la partida jugada entre el doctor Alfonso Gaitán Nieto y el campeón del mundo en las simultáneas que dió éste en el foyer del Teatro de Colón:
+
+BLANCAS                    NEGRAS
+Dr. Alekhine.              Dr. Gaitán.
+1. P4R                     P3R.
+2. P4D                     P4D.
+3. C3AD                    A5CD.
+4. P3R.                    CR2R.
+
+Otra línea de juego es aquí 4....P4AD. 5. P3TD, P x P; 6. P x A, P x C; 7. P x P, etc., o también las blancas pueden jugar en lugar de su jugada 5a. P3TD, 5. A2D, a lo que seguirán 5....P x P, 6. C5C, A1A; y no 6.......A2R; a causa de 7. D4C, P3CR; 8. P4AR seguido de C3AD), 7. D4CR, C3AD; 8. P4AR, P3TD; y las blancas están mejor, ya que las negras no pueden capturar el caballo con el alfil a causa de D x D.
+
+5. D4C.                    O—O.
+6. P4TR.                   P4AD.
+
+Este ataque debió de seguir rápidamente el juego.
+
+7. P3TD.
+8. P x A.                  A x C.
+9. P5TR.                   P5AD.
+10. A6TR.                  C3AD.
+
+Aquí las blancas habían podido ganar rápidamente, jugando 10. A5C y si 10.....D5T; 11. C2R y las negras no pueden impedir la jugada A6A, viniendo la catástrofe.
+
+10. C4AR                   P3AR
+11. A2D                    D x P
+12. P x P                  P4AR
+
+Las negras amenazaban capturar el PD con el CR.
+
+13. ....                   A2D
+14. C3AR                   C3TR
+15. D3C.                   CD2R.
+
+Las negras cometen aquí un error, después de haber contrarrestado el ataque blanco. La jugada era 15....C4A; 16. D3T, C3D, 17. C5R, TD1D; 18. P4CR, C5R; 19. P5C, D4A; y la posición d elas negras es mejor por la colocación de su CR.
+
+16. CR5R.                  DT1D.
+17. A2R.                   A5TD.
+
+Buscando aire.
+
+18. TD1A.                  T3D.
+19. D2A.                   D4AR.
+20. A3A.                   T1A.
+
+--- COLUMNA ---
+
+Dr. Gaitán
+
+35. TD1A.                  D2A.
+36. TR1R.                  D4AR
+37. A6D.                   T x P.
+38. D1TR.                  Declinan.
+
+Partida jugada en el torneo de Margate en 1937. Cuando ambos contendores se atacan vivamente desde el principio, en pos del triunfo, las partidas son de poca duración. En ésta, el Campeón Mundial tuvo que entregarse a las 23 jugadas:
+
+BLANCAS                    NEGRAS
+P. Keres:                  A. Alekhine:
+1. P4R                     1. P4R
+2. CR3A                    2. CD3A
+3. A5C                     3. P3TD
+4. A4T                     4. P3D
+5. P4A                     5. A2D
+6. C3A                     6. P3CR
+7. P4D                     7. A2C
+8. A3R                     8. C3A
+9. PxP                     9. PxP
+
+Posiblemente CxP es mejor, porque 10. CxC, PxC; 11. A5A, no es tan fuerte como en la actual posición.
+
+10. A5A                    10. CR4T
+11. C5D                    11. C5A
+12. CxC                    12. C5A
+13. P5R                    12. PxC
+
+Un importante movimiento que proviene D3A. Si 13.... CxP; 14. CxC, AxC; 15. D2R. Si 15.... P3AR; 16. O—O TD. Y ganan. Si 15. AxA; 16. DxA jaque, R2D; 17. O—O TR, con ventaja.
+
+13. ....                   13. P4CR
+14. D5D                    14. A1AR
+15. AxA                    15. TxA
+16. O—O TD                 16. D2R
+17. AxC                    17. AxA
+18. D3D                    18. A2D
+19. CxP                    19. O—O—O
+20. C3A                    20. P3AR
+21. PxP                    21. TxP
+22. TR1R                   22. D5T?
+23. DxA jaque              23. Abandonan.
+
+FE DE ERRATAS.—La partida publicada en la edición anterior, salió con errores, debe reconregirse así:
+14. P4TD, A2D; 15, está bien; 16. A3T, AxA;
+17. TxA, P3TD.
+
+El Ajedrez en Barranquilla.—La capital del Atlántico tiene un magnífico Club de Ajedrez, que funciona en amplia y suntuoso local, cedido por la Sociedad de Mejoras Públicas, y dispone de artísticas mesas con tableros incrustados de finas maderas, talladas por hábil ebanista. Los principales jugadores allí son Torrenegra, Jiménez, Márquez y otros caballeros distinguidos.
+
+Mate en dos jugadas.—Juegan blancas.
+Negras (5 piezas). Blancas (7 piezas)
+
+--- COLUMNA ---
+
+PARA LOS PRINCIPIANTES
+
+LEYES DEL JUEGO.—Cuando dos personas se enfrentan con una partida de ajedrez, tácitamente han consentido en sometarse a las siguientes leyes que rigen el juego.
+
+Primera: Colocadas las piezas en la situación inicial, corresponde abrir el juego al que tiene las blancas, no al de las negras.
+
+Segunda: Los peones en su posición inicial, pueden avanzar dos casillas o una sola, a voluntad del jugador; pero después sólo pueden avanzar una casilla.
+
+Tercera: La pieza que toma a otra se coloca en la casilla ocupada por ésta última, excepto cuando un peón toma "al paso" o en passant.
+
+Cuarta: Qué es tomar el paso.—Si al avanzar un peón dos casillas, conforme a la regla segunda, pasa junto a un peón contrario, el cual podría haberlo tomado si hubiera avanzado sólo una casilla, entonces se deja en libertad a dicho peón de tomar el que avance dos casillas, de la misma manera que si sólo hubiese caminado una. Esto únicamente se le permite en la jugada inmediata y no en las subsecuentes.
+
+Quinta: Todo peón que llega al borde del tablero, por delante, ha de convertirse en pieza de la octava casilla, CORONA, y puede ser transformado en CUALQUIER pieza, a opción del respectivo jugador, aun cuando existan sobre el tablero piezas de esa misma categoría. Puede haber, pues, dos o más damas de un mismo color, tres caballos, etc. Hemos presenciado agrias discusiones al respecto entre jugadores ignorantes de esta regla.
+
+Sexta: EL ENROQUE.—Es el único caso en que es permitido mover simultáneamente dos piezas. El enroque consiste en el doble movimiento del Rey, que salta una casilla, acercándose a la Torre con que va a enrocarse, y de la Torre que pasa por encima del Rey para colocarse junto a él. Esta operación sólo se permite siempre que concurran los siguientes requisitos:
+
+1o. Que ni el Rey ni la Torre respectiva hayan sido movidos antes.
+
+2o. Que estén libres todas las casillas entre la Torre y el Rey.
+
+3o. Que el Rey no esté en jaque.
+
+4o. Que al ejecutar el movimiento, el Rey no tenga que pasar por ninguna casilla atacada por una pieza contraria.
+
+Séptima: Pieza que se toque debe jugarse. Devolver jugadas es una corruptela vituperable e inadmisible. Cuando se quiera arreglar una pieza que no está debidamente colocada debe advertirse antes de tocarla: "compongo".
+
+Las blancas han jugado muy bien, si 20. P4C, D5R; 21. T3T, A x P. 22. T3R, D8T jaque, etc., en cambio, ahora los negros no podrán capturar el PA, a causa de P4C, capturando el alfil.
+
+21. P4C                    D1AR
+22. D2CR                   T—1A—1D
+23. P5A                    D2TR
+
+Una combinación que decide rápidamente la partida.
+
+23 ...                     D2TR
+24. P5C.                   C5C.
+
+Si C2A; 25. P6C, etc.
+
+25. A x C                  P x A.
+26. T1A.                   C4A.
+27. D x P.                 P4CR.
+28. P x P.                 P x P.
+29. C x P.                 T x C.
+30. P x C.                 D2CR.
+
+Si 30....T1D jaque; 31. R1D, D3T; 32. D3A y ganan.
+
+31. T5R.                   D2TR.
+32. A4AR.                  A2D.
+33. D2CR.                  A3A.
+34. R2D.                   T1AR.
+
+40
+
+Digitalizado Biblioteca Nacional de Colombia
