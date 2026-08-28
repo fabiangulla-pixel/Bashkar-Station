@@ -209,9 +209,14 @@ def ocr_con_vision(
 
     try:
         from core import inference_provider as _ip
+        # max_tokens=8192 (default de generate_vision es 4096): con thinking
+        # adaptativo, una página densa multi-columna puede agotar el
+        # presupuesto pensando antes de emitir el bloque de texto
+        # (stop_reason="max_tokens" sin transcripción). Visto en producción
+        # con rev_estampa_feb_1939/p0057, 28-ago-2026.
         resp = _ip.generate_vision(
             proveedor, _PROMPT_VISION, img_b64, media_type,
-            api_key=api_key, modelo=modelo,
+            api_key=api_key, modelo=modelo, max_tokens=8192,
             cliente_claude=_cliente_claude, cliente_openai=_cliente_openai,
             cliente_lmstudio=_cliente_lmstudio,
             modelo_default_claude=_MODELO_VISION,
