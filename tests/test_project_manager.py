@@ -276,3 +276,48 @@ class TestMigracionAutomatica:
             datos_post = json.load(f)
         assert datos_post.get("version") == "11"
         assert res.get("migrado") is True
+
+
+class TestReconstruirCorpusTxtDesdeOcr:
+    """Regresión: cargar_proyecto() reconstruía corpus_txt leyendo solo la
+    ÚLTIMA página de cada número (bug real encontrado importando el corpus
+    completo de Vision OCR, 792 páginas — solo 5 quedaban en corpus_txt,
+    una por número). Debe leer TODAS las páginas de cada carpeta 03_ocr/<numero>/.
+    """
+
+    def test_reconstruye_todas_las_paginas_no_solo_la_ultima(self, dir_proyectos, tmp_path):
+        from core.project_manager import cargar_proyecto, nuevo_proyecto
+
+        ruta = nuevo_proyecto("Test Reconstruccion", "Estampa")
+        datos_dir = tmp_path / "datos_proyecto"
+        for numero, n_paginas in (("rev_ene_1939", 3), ("rev_feb_1939", 2)):
+            num_dir = datos_dir / "03_ocr" / numero
+            num_dir.mkdir(parents=True)
+            for i in range(1, n_paginas + 1):
+                (num_dir / f"p{i:04d}.txt").write_text(f"texto de {numero} pagina {i}",
+                                                          encoding="utf-8")
+
+        with open(ruta, encoding="utf-8") as f:
+            datos = json.load(f)
+        datos["config"]["out_dir"] = str(datos_dir)
+        with open(ruta, "w", encoding="utf-8") as f:
+            json.dump(datos, f)
+
+        class _ST:
+            publicacion = "Estampa"; periodo = "1939"; pdf_dir = None
+            out_dir = None
+            input_tipo = "pdf"; archivos_sel = []; api_key = ""; max_ia = 15
+            campos_semillas = {}; ocr_done = False; seg_done = False
+            anal_done = False; vis_done = False; comp_done = False
+            resumen_ocr = None; temas_lda = None; graph_path = None
+            xlsx_path = None; df_articulos = None; indice_ner_global = {}
+            api_keys = {}; modelos_etapa = {}; repo = None; ruta_db = ""
+            wikidata_enlaces = {}
+
+        st = _ST()
+        res = cargar_proyecto(ruta, st)
+        assert res["ok"] is True
+        # 3 páginas de rev_ene_1939 + 2 de rev_feb_1939 = 5 documentos,
+        # no 2 (uno por número, el bug viejo)
+        assert len(st.corpus_txt) == 5
+        assert "pagina 1" in st.corpus_txt[0]

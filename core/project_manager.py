@@ -504,10 +504,9 @@ def cargar_proyecto(ruta: Path, st):
             if ocr_dir.exists():
                 for sub in sorted(ocr_dir.iterdir()):
                     if sub.is_dir():
-                        txts = sorted(sub.glob("*.txt"))
-                        if txts:
-                            textos.append(txts[-1].read_text(encoding="utf-8",
-                                                              errors="replace"))
+                        for txt in sorted(sub.glob("*.txt")):
+                            textos.append(txt.read_text(encoding="utf-8",
+                                                         errors="replace"))
                     elif sub.suffix == ".txt":
                         textos.append(sub.read_text(encoding="utf-8",
                                                     errors="replace"))
