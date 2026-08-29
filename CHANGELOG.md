@@ -2,6 +2,47 @@
 
 ---
 
+## Sesión 63 — 2026-08-29 — Mitigación (sin confirmar) del segfault RoBERTa + Motor NER real
+
+Continuación del hallazgo de calidad sin arreglar al cierre de sesión 62.
+Investigado el segfault nativo torch/tokenizers que forzó `usar_roberta=False`
+en toda la app: el modelo real (`mrm8488/bert-spanish-cased-finetuned-ner`)
+solo tiene categorías PER/LOC/ORG/MISC — arreglar el segfault **no** iba a
+llenar `fechas`/`obras_publicaciones`/`eventos_historicos` como sugería el
+diagnóstico anterior; esas siempre dependen del enriquecimiento opcional con
+IA. Corregido ese diagnóstico y separado el trabajo real: mejorar la calidad
+de personas/lugares/organizaciones cuando RoBERTa esté disponible.
+
+- **`core/recursos.py`** — `aplicar_limites_cpu()` ahora también fija
+  `TOKENIZERS_PARALLELISM=false` y `KMP_DUPLICATE_LIB_OK=TRUE`, las dos
+  mitigaciones estándar para esta familia de crash (pool de hilos Rust de
+  `tokenizers` compitiendo por núcleos + doble runtime OpenMP de torch/MKL
+  corrompiendo memoria al forzar un número de hilos). **Sin confirmar
+  todavía** en la máquina real donde se reprodujo el segfault original — no
+  hay forma de reproducir un segfault nativo en este entorno de desarrollo.
+- **`app.py`** — el selector "Motor NER" ahora sí controla `usar_roberta`
+  (antes lo ignoraba por completo: elegir "roberta" caía en `usar_roberta=False`
+  igual que "auto", Y encima cargaba `nlp=None`, así que producía NER vacío en
+  silencio). Ahora `usar_roberta=(motor == "roberta")` y `nlp` se carga como
+  red de seguridad salvo que el motor sea "fallback". Así la investigadora
+  puede elegir "roberta" a propósito para probar la mitigación con su corpus
+  real, sin cambiar el comportamiento por defecto de nadie más.
+- **`cli.py`** — variable de entorno `BASHKAR_NER_ROBERTA=1` como la misma
+  vía de escape para el CLI (mismo patrón que `BASHKAR_HILOS` en
+  `core/recursos.py`). Por defecto sigue en `usar_roberta=False`.
+- Tests de regresión actualizados/nuevos en `test_recursos_clip.py`,
+  `test_cli.py`, `test_ner_engine.py`.
+
+**Pendiente real para cerrar esto:** probar con `BASHKAR_NER_ROBERTA=1` (CLI)
+o "roberta" en Motor NER (GUI) sobre el corpus completo de Estampa en la
+máquina donde se reprodujo el segfault. Si no truena, subir `usar_roberta` a
+`True` por defecto en ambos sitios; si truena igual, la mitigación no alcanza
+y hace falta aislar RoBERTa en un subproceso (mismo patrón que
+`core/ocr_kraken.py` con `D:\kraken_env`) — no intentado en esta sesión por
+ser un cambio de arquitectura mayor sin forma de verificarlo aquí.
+
+---
+
 ## Sesión 62 — 2026-08-28 — v12.1: pipeline completo validado sobre el corpus real (792 páginas) + 6 bugs de producción reales
 
 Primera vez que el pipeline completo (Segmentar → NER → exportar TEI/BibTeX/CSV)

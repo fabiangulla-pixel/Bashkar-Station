@@ -38,6 +38,7 @@ Ejemplos:
 
 import argparse
 import json
+import os
 import sys
 import time
 from datetime import datetime
@@ -221,17 +222,19 @@ def _etapa_ner(articulos: list[dict], verbose: bool) -> dict:
         if not texto:
             continue
         try:
-            # usar_roberta=False: el CLI llama recursos.aplicar_limites_cpu()
-            # al arrancar (fija OMP_NUM_THREADS/MKL_NUM_THREADS por eficiencia).
-            # Con ese límite activo, cargar el modelo BERT de pipeline_ner
-            # (mrm8488/bert-spanish-cased-finetuned-ner vía transformers)
-            # SEGFAULTEA de forma reproducible — conflicto nativo de threading
-            # entre el runtime OpenMP de torch y el pool de la librería Rust
-            # `tokenizers`, no un bug de lógica Python. Reproducido con
-            # cualquier valor de hilos, tanto vía env var como
-            # torch.set_num_threads(); solo desaparece sin límite de hilos
+            # usar_roberta=False por defecto: el CLI llama
+            # recursos.aplicar_limites_cpu() al arrancar (fija
+            # OMP_NUM_THREADS/MKL_NUM_THREADS por eficiencia). Con ese límite
+            # activo, cargar el modelo BERT de pipeline_ner (transformers)
+            # SEGFAULTEABA de forma reproducible — conflicto nativo de
+            # threading entre el runtime OpenMP de torch y el pool de la
+            # librería Rust `tokenizers`, no un bug de lógica Python
             # (28-ago-2026, corrida real sobre el corpus completo de 792 pág.).
-            ner = pipeline_ner(texto, nlp, usar_roberta=False)
+            # recursos.py ya aplica una mitigación (TOKENIZERS_PARALLELISM,
+            # KMP_DUPLICATE_LIB_OK) sin confirmar todavía en la máquina real.
+            # BASHKAR_NER_ROBERTA=1 es cómo se prueba sin tocar el default.
+            usar_roberta = os.environ.get("BASHKAR_NER_ROBERTA", "") == "1"
+            ner = pipeline_ner(texto, nlp, usar_roberta=usar_roberta)
             actualizar_indice_global(indice, art.get("id", str(i)), ner)
         except Exception:
             pass

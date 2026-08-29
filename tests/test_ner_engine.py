@@ -198,9 +198,15 @@ class TestGuiNerEvitaSegfault:
     reproduciblemente, no solo el CLI. Reproducido y confirmado con el mismo
     camino de llamada exacto de la GUI, sesión 62 (28-ago-2026). Verificación
     a nivel de fuente (no instancia Tk real) porque el segfault en sí no es
-    capturable por pytest — lo que se puede probar es que el kwarg sigue ahí."""
+    capturable por pytest — lo que se puede probar es que el kwarg sigue ahí.
 
-    def test_ambos_sitios_de_gui_pasan_usar_roberta_false(self):
+    Sesión 63: core/recursos.py agregó una mitigación (TOKENIZERS_PARALLELISM,
+    KMP_DUPLICATE_LIB_OK) sin confirmar todavía en la máquina real donde se
+    reprodujo el crash. Mientras eso no se confirme, el default sigue siendo
+    False; el selector "Motor NER" == "roberta" es la única forma de
+    activarlo a propósito para probarlo."""
+
+    def test_ambos_sitios_de_gui_solo_activan_roberta_si_se_elige_a_proposito(self):
         raiz = __import__("pathlib").Path(__file__).resolve().parent.parent
         app_src = (raiz / "app.py").read_text(encoding="utf-8")
         llamadas = [
@@ -209,7 +215,9 @@ class TestGuiNerEvitaSegfault:
         ]
         assert len(llamadas) >= 2, "se esperaban al menos 2 llamadas a pipeline_ner en app.py"
         for bloque in llamadas:
-            assert "usar_roberta=False" in bloque, (
-                "una llamada a pipeline_ner en app.py no fuerza usar_roberta=False "
-                "— con aplicar_limites_cpu() activo esto segfaultea"
+            assert "usar_roberta=(motor == \"roberta\")" in bloque, (
+                "una llamada a pipeline_ner en app.py ya no ata usar_roberta a la "
+                "elección explícita de \"roberta\" en Motor NER — con "
+                "aplicar_limites_cpu() activo y sin confirmar la mitigación, "
+                "activarlo por defecto segfaultea"
             )

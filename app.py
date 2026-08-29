@@ -13460,7 +13460,7 @@ class BashkarApp(tk.Tk):
         self._ner_log(f"▶ Analizando: {art_id}")
         motor = p.get("motor", "auto")
         try:
-            nlp = spacy.load("es_core_news_lg") if motor in ("auto", "spacy") else None
+            nlp = spacy.load("es_core_news_lg") if motor != "fallback" else None
         except OSError:
             nlp = None
             if motor == "spacy":
@@ -13469,15 +13469,19 @@ class BashkarApp(tk.Tk):
                 return
         umbral = float(p.get("umbral_confianza", 0.7))
         cats   = p.get("categorias") or None
-        # usar_roberta=False: la app llama recursos.aplicar_limites_cpu() al
-        # arrancar (línea ~26); con ese límite de hilos activo, cargar el
-        # modelo BERT de pipeline_ner SEGFAULTEA de forma reproducible
-        # (conflicto nativo de threading torch/tokenizers, ver cli.py y
-        # sesión 62 de project_bashkar_station.md). Mismo fix que el CLI.
+        # usar_roberta solo se activa si la investigadora eligió "roberta" a
+        # propósito en "Motor NER": por defecto ("auto"/"spacy"/"fallback")
+        # se queda en False porque con recursos.aplicar_limites_cpu() activo
+        # (línea ~26) cargar el modelo BERT de pipeline_ner SEGFAULTEABA de
+        # forma reproducible (sesión 62 de project_bashkar_station.md).
+        # core/recursos.py ya aplica una mitigación (TOKENIZERS_PARALLELISM,
+        # KMP_DUPLICATE_LIB_OK) sin confirmar todavía en la máquina real — este
+        # selector es cómo se prueba. nlp sigue cargado como red de seguridad:
+        # si transformers falta o el modelo no carga, pipeline_ner cae a spaCy.
         ner = pipeline_ner(texto, nlp, api_key=api_key, callback=self._ner_log,
                            umbral_confianza=umbral, categorias=cats,
                            proveedor_llm=proveedor_llm, modelo_ollama=modelo_ollama,
-                           usar_roberta=False)
+                           usar_roberta=(motor == "roberta"))
         if not getattr(ST, "indice_ner_global", None):
             ST.indice_ner_global = {}
         actualizar_indice_global(ST.indice_ner_global, art_id, ner)
@@ -13527,7 +13531,7 @@ class BashkarApp(tk.Tk):
         cats    = p.get("categorias") or None
         min_palabras = int(p.get("min_longitud_texto", 100))
         try:
-            nlp = spacy.load("es_core_news_lg") if motor in ("auto", "spacy") else None
+            nlp = spacy.load("es_core_news_lg") if motor != "fallback" else None
         except OSError:
             nlp = None
             if motor == "spacy":
@@ -13556,12 +13560,12 @@ class BashkarApp(tk.Tk):
         self._ner_log(f"📚 Corpus: {total} textos (umbral ≥{min_palabras} palabras)")
         for i, (aid, txt) in enumerate(articulos, 1):
             self._ner_log(f"[{i}/{total}] {aid}")
-            # usar_roberta=False: ver comentario en _worker_ner_articulo — mismo
-            # segfault real de torch/tokenizers bajo el límite de hilos.
+            # usar_roberta: ver comentario en _worker_ner_articulo — solo True
+            # si la investigadora eligió "roberta" a propósito en "Motor NER".
             ner = pipeline_ner(txt, nlp, api_key=api_key,
                                umbral_confianza=umbral, categorias=cats,
                                proveedor_llm=proveedor_llm, modelo_ollama=modelo_ollama,
-                               usar_roberta=False)
+                               usar_roberta=(motor == "roberta"))
             actualizar_indice_global(ST.indice_ner_global, aid, ner)
             if i % 5 == 0:
                 self.after(0, self._ner_refrescar_tv)

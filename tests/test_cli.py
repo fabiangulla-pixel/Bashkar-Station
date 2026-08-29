@@ -64,10 +64,28 @@ def test_etapa_ner_usa_spacy_no_roberta():
     with patch("spacy.load", return_value=MagicMock()), \
          patch("core.ner_engine.pipeline_ner") as mock_pipeline_ner, \
          patch("core.ner_engine.actualizar_indice_global"), \
-         patch("core.ner_engine.indice_global_vacio", return_value={}):
+         patch("core.ner_engine.indice_global_vacio", return_value={}), \
+         patch.dict("os.environ", {}, clear=True):
         mock_pipeline_ner.return_value = {}
         _etapa_ner(articulos, verbose=False)
 
     assert mock_pipeline_ner.called
     _, kwargs = mock_pipeline_ner.call_args
     assert kwargs.get("usar_roberta") is False
+
+
+def test_etapa_ner_activa_roberta_solo_con_variable_de_entorno():
+    """Sesión 63: BASHKAR_NER_ROBERTA=1 es la vía de escape para probar la
+    mitigación del segfault (core/recursos.py) sin tocar el default False."""
+    articulos = [{"id": "a1", "texto": "Texto de prueba con alguna entidad."}]
+
+    with patch("spacy.load", return_value=MagicMock()), \
+         patch("core.ner_engine.pipeline_ner") as mock_pipeline_ner, \
+         patch("core.ner_engine.actualizar_indice_global"), \
+         patch("core.ner_engine.indice_global_vacio", return_value={}), \
+         patch.dict("os.environ", {"BASHKAR_NER_ROBERTA": "1"}, clear=True):
+        mock_pipeline_ner.return_value = {}
+        _etapa_ner(articulos, verbose=False)
+
+    _, kwargs = mock_pipeline_ner.call_args
+    assert kwargs.get("usar_roberta") is True
