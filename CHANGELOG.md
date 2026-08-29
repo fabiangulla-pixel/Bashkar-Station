@@ -72,6 +72,46 @@ real y spaCy lo detecta como organización (561 veces); palabras comunes
 **Suite final: 1453 passed, 23 skipped, 0 failed.** `APP_VERSION` y
 `_APP_VERSION_SPLASH`: `"12.0"` → `"12.1"`.
 
+### Continuación misma sesión — backlog cerrado + bug crítico en la GUI
+
+Tras el pipeline completo, se atacó el backlog restante:
+
+- **`.exe` v12.1 compilado y desplegado** (primera compilación, antes del bug
+  de GUI descrito abajo) — smoke-test real vigilado, `C:\Programas\BashkarStation\`
+  + USB D: + acceso directo actualizados.
+- **`core/ner_engine.py`** — `_limpiar()` quita los marcadores `--- COLUMNA ---`
+  y `[ilegible]` del prompt de Vision OCR antes de correr NER (eran 561
+  falsas "organizaciones", la entidad más frecuente del corpus). Filtro
+  `_es_falso_positivo_persona()` descarta candidatos PER de una sola palabra
+  que son palabras función españolas ("así", "sólo", etc.). 4 tests nuevos.
+- **Conflicto torch/tokenizers investigado y acotado:** aislado a RoBERTa
+  puro (sin necesitar spaCy), en el entorno COMPARTIDO de Python
+  (`torch 2.12.0`/`transformers 5.5.0`/`tokenizers 0.22.2` bajo Python 3.14).
+  Decisión explícita del usuario: no tocar el entorno compartido (afectaría
+  otros proyectos), dejar el fallback a spaCy.
+- **Módulos opcionales corridos sobre las 792 páginas reales por primera
+  vez** — frame_engine, sentimiento_discriminante, sentiment_engine
+  (emociones), morfologia_historica, network_engine, viz_engine,
+  stylometry_engine. **Todos en verde, cero bugs nuevos.**
+
+**Bug crítico #7 de la sesión, encontrado al cerrar (revisando el
+inventario de módulos contra el código real):** `app.py` TAMBIÉN llama
+`recursos.aplicar_limites_cpu()` al arrancar (línea ~26), igual que
+`cli.py` — y sus dos sitios que invocan `pipeline_ner`
+(`_worker_ner_articulo`, `_worker_ner_corpus`) NO forzaban
+`usar_roberta=False`. **El botón "Analizar NER" de la app de escritorio
+—la forma PRINCIPAL en que se usa Bashkar Station, no el CLI— segfaulteaba
+de forma reproducible.** Reproducido con el camino de llamada exacto de la
+GUI antes de aplicar el fix. Mismo arreglo que `cli.py`: ambos sitios pasan
+`usar_roberta=False`. Test de regresión a nivel de fuente (el segfault en
+sí no es capturable por pytest).
+
+**`.exe` v12.1 RECOMPILADO** con este fix (la primera compilación de la
+sesión NO lo llevaba) — smoke-test real repetido, redesplegado a
+`C:\Programas\BashkarStation\` + USB D:.
+
+**Suite final: 1459 passed, 22 skipped, 0 failed.**
+
 ---
 
 ## Sesión 60-61 — 2026-08-27 — Ground truth portado de Medallo + pase de Vision OCR a escala + bug real de ThinkingBlock
