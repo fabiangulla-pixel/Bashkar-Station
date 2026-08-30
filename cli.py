@@ -38,7 +38,6 @@ Ejemplos:
 
 import argparse
 import json
-import os
 import sys
 import time
 from datetime import datetime
@@ -222,19 +221,19 @@ def _etapa_ner(articulos: list[dict], verbose: bool) -> dict:
         if not texto:
             continue
         try:
-            # usar_roberta=False por defecto: el CLI llama
-            # recursos.aplicar_limites_cpu() al arrancar (fija
-            # OMP_NUM_THREADS/MKL_NUM_THREADS por eficiencia). Con ese límite
-            # activo, cargar el modelo BERT de pipeline_ner (transformers)
-            # SEGFAULTEABA de forma reproducible — conflicto nativo de
-            # threading entre el runtime OpenMP de torch y el pool de la
-            # librería Rust `tokenizers`, no un bug de lógica Python
-            # (28-ago-2026, corrida real sobre el corpus completo de 792 pág.).
-            # recursos.py ya aplica una mitigación (TOKENIZERS_PARALLELISM,
-            # KMP_DUPLICATE_LIB_OK) sin confirmar todavía en la máquina real.
-            # BASHKAR_NER_ROBERTA=1 es cómo se prueba sin tocar el default.
-            usar_roberta = os.environ.get("BASHKAR_NER_ROBERTA", "") == "1"
-            ner = pipeline_ner(texto, nlp, usar_roberta=usar_roberta)
+            # usar_roberta=True (el default de pipeline_ner): el segfault que
+            # sesión 62 le atribuyó a un conflicto de threading torch/tokenizers
+            # (con recursos.aplicar_limites_cpu() activo) no era eso. Causa
+            # real, confirmada en sesión 63 sobre el corpus completo (792
+            # páginas): core/ner_roberta_local.py importaba `transformers`
+            # (que arrastra huggingface_hub) ANTES de forzar HF_HUB_OFFLINE=1
+            # — huggingface_hub congela esa variable como constante en su
+            # propio import, así que fijarla después no evitaba que pipeline()
+            # saliera a red aunque el modelo ya estuviera en caché. Esa
+            # llamada de red era la que reventaba con access violation en
+            # Windows. Arreglado en ner_roberta_local.py (offline forzado a
+            # nivel de módulo, antes de cualquier import de transformers).
+            ner = pipeline_ner(texto, nlp)
             actualizar_indice_global(indice, art.get("id", str(i)), ner)
         except Exception:
             pass

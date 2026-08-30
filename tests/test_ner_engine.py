@@ -2,6 +2,90 @@
 import pytest
 
 
+class TestOfflineForzadoAntesDeImportarTransformers:
+    """Sesión 63: causa real del segfault documentado en TestGuiNerEvitaSegfault.
+
+    core/ner_roberta_local.py necesita fijar HF_HUB_OFFLINE=1 ANTES de que
+    huggingface_hub se importe por primera vez en el proceso — esa librería
+    lee la variable como constante de módulo una sola vez, y fijarla después
+    (como hacía el código viejo, que primero hacía `from transformers import
+    pipeline` y solo entonces forzaba offline) no tiene efecto. Estos tests
+    protegen ese orden, que es invisible en una revisión superficial del
+    diff porque el código "se ve" correcto línea por línea."""
+
+    def test_ruta_cache_hf_seria_la_misma_que_calcularia_huggingface_hub(self, tmp_path, monkeypatch):
+        from core.ner_roberta_local import _ruta_cache_hf
+        monkeypatch.delenv("HUGGINGFACE_HUB_CACHE", raising=False)
+        monkeypatch.setenv("HF_HOME", str(tmp_path))
+        ruta = _ruta_cache_hf("org/modelo-de-prueba")
+        assert ruta == tmp_path / "hub" / "models--org--modelo-de-prueba"
+
+    def test_huggingface_hub_cache_tiene_prioridad_sobre_hf_home(self, tmp_path, monkeypatch):
+        from core.ner_roberta_local import _ruta_cache_hf
+        monkeypatch.setenv("HF_HOME", str(tmp_path / "no-deberia-usarse"))
+        monkeypatch.setenv("HUGGINGFACE_HUB_CACHE", str(tmp_path / "cache-explicita"))
+        ruta = _ruta_cache_hf("org/modelo-de-prueba")
+        assert ruta == tmp_path / "cache-explicita" / "models--org--modelo-de-prueba"
+
+    def test_forzar_offline_no_importa_huggingface_hub(self, tmp_path, monkeypatch):
+        """El chequeo de caché debe ser puramente de sistema de archivos —
+        importar huggingface_hub aquí es justo el bug que se está evitando."""
+        import sys
+
+        from core.ner_roberta_local import _forzar_offline_si_ya_cacheado
+        monkeypatch.setenv("HUGGINGFACE_HUB_CACHE", str(tmp_path))
+        monkeypatch.setitem(sys.modules, "huggingface_hub", None)  # ImportError si algo lo intenta
+        monkeypatch.delenv("HF_HUB_OFFLINE", raising=False)
+        _forzar_offline_si_ya_cacheado("org/no-cacheado")  # no debe lanzar ImportError
+        assert "HF_HUB_OFFLINE" not in __import__("os").environ
+
+    def test_forzar_offline_activa_la_variable_si_esta_cacheado(self, tmp_path, monkeypatch):
+        from core.ner_roberta_local import _forzar_offline_si_ya_cacheado
+        modelo = "org/modelo-cacheado"
+        snapshot = tmp_path / "models--org--modelo-cacheado" / "snapshots" / "abc123"
+        snapshot.mkdir(parents=True)
+        (snapshot / "config.json").write_text("{}", encoding="utf-8")
+        monkeypatch.setenv("HUGGINGFACE_HUB_CACHE", str(tmp_path))
+        monkeypatch.delenv("HF_HUB_OFFLINE", raising=False)
+        _forzar_offline_si_ya_cacheado(modelo)
+        assert __import__("os").environ["HF_HUB_OFFLINE"] == "1"
+
+    def test_importar_el_modulo_deja_offline_congelado_a_true(self):
+        """Reproducción a nivel de proceso del bug real: si HF_HUB_OFFLINE no
+        queda en firme ANTES de que algo importe huggingface_hub, `pipeline()`
+        sale a red aunque el modelo esté cacheado — y esa llamada de red fue
+        la que reventaba con access violation en Windows (sesión 63,
+        confirmado con faulthandler sobre el corpus real de Estampa).
+        Se salta si el modelo real no está descargado en esta máquina: no
+        tiene sentido forzar una descarga desde un test."""
+        import subprocess
+        import sys
+        from pathlib import Path
+
+        pytest.importorskip("huggingface_hub")
+        from huggingface_hub import try_to_load_from_cache
+
+        from core.ner_roberta_local import _MODELO_NER
+        if not isinstance(try_to_load_from_cache(_MODELO_NER, "config.json"), str):
+            pytest.skip(f"{_MODELO_NER} no está cacheado en esta máquina")
+
+        raiz = Path(__file__).resolve().parent.parent
+        codigo = (
+            "import core.ner_roberta_local\n"
+            "import huggingface_hub.constants as c\n"
+            "print('OFFLINE=' + str(c.HF_HUB_OFFLINE))\n"
+        )
+        r = subprocess.run(
+            [sys.executable, "-c", codigo],
+            capture_output=True, text=True, cwd=raiz, timeout=60,
+        )
+        assert r.returncode == 0, f"stderr: {r.stderr}"
+        assert "OFFLINE=True" in r.stdout, (
+            f"HF_HUB_OFFLINE no quedó en True tras importar core.ner_roberta_local "
+            f"— stdout: {r.stdout!r}"
+        )
+
+
 class TestNEREngine:
     def test_pipeline_retorna_categorias_correctas(self):
         from core.ner_engine import CATEGORIAS, pipeline_ner
@@ -190,23 +274,29 @@ class TestFiltroRuidoNER:
 
 
 class TestGuiNerEvitaSegfault:
-    """Regresión: app.py TAMBIÉN llama recursos.aplicar_limites_cpu() al
-    arrancar (línea ~26, igual que cli.py) y sus dos sitios que invocan
-    pipeline_ner (_worker_ner_articulo, _worker_ner_corpus) no pasaban
-    usar_roberta=False — el botón "Analizar NER" de la app de escritorio
-    (la forma PRINCIPAL en que se usa Bashkar Station) segfaulteaba
-    reproduciblemente, no solo el CLI. Reproducido y confirmado con el mismo
-    camino de llamada exacto de la GUI, sesión 62 (28-ago-2026). Verificación
-    a nivel de fuente (no instancia Tk real) porque el segfault en sí no es
-    capturable por pytest — lo que se puede probar es que el kwarg sigue ahí.
+    """Regresión: app.py llama recursos.aplicar_limites_cpu() al arrancar
+    (línea ~26) y sus dos sitios que invocan pipeline_ner
+    (_worker_ner_articulo, _worker_ner_corpus) segfaulteaban al cargar
+    RoBERTa — reproducido con el camino de llamada exacto de la GUI, sesión
+    62 (28-ago-2026).
 
-    Sesión 63: core/recursos.py agregó una mitigación (TOKENIZERS_PARALLELISM,
-    KMP_DUPLICATE_LIB_OK) sin confirmar todavía en la máquina real donde se
-    reprodujo el crash. Mientras eso no se confirme, el default sigue siendo
-    False; el selector "Motor NER" == "roberta" es la única forma de
-    activarlo a propósito para probarlo."""
+    Sesión 63: reproducido de nuevo end-to-end sobre el corpus real de
+    Estampa (mrm8488/bert-spanish-cased-finetuned-ner + faulthandler) y
+    diagnosticado la causa real: no era threading torch/tokenizers como creyó
+    sesión 62. core/ner_roberta_local.py importaba `transformers` (que
+    arrastra huggingface_hub) ANTES de forzar HF_HUB_OFFLINE=1;
+    huggingface_hub congela esa variable como constante en su propio import,
+    así que fijarla después no evitaba que `pipeline()` saliera a red aunque
+    el modelo ya estuviera cacheado — esa llamada de red reventaba con access
+    violation en Windows. Arreglado ahí (offline forzado a nivel de módulo,
+    antes de cualquier import de transformers) y confirmado sin segfault
+    sobre un número completo de 89 páginas reales. usar_roberta vuelve a ser
+    el default salvo elección explícita de "spacy"/"fallback" en Motor NER.
+    Verificación a nivel de fuente (no instancia Tk real) porque el segfault
+    en sí no es capturable por pytest — lo que se puede probar es que el
+    kwarg sigue respetando esa elección."""
 
-    def test_ambos_sitios_de_gui_solo_activan_roberta_si_se_elige_a_proposito(self):
+    def test_ambos_sitios_de_gui_respetan_spacy_fallback_explicito(self):
         raiz = __import__("pathlib").Path(__file__).resolve().parent.parent
         app_src = (raiz / "app.py").read_text(encoding="utf-8")
         llamadas = [
@@ -215,9 +305,7 @@ class TestGuiNerEvitaSegfault:
         ]
         assert len(llamadas) >= 2, "se esperaban al menos 2 llamadas a pipeline_ner en app.py"
         for bloque in llamadas:
-            assert "usar_roberta=(motor == \"roberta\")" in bloque, (
-                "una llamada a pipeline_ner en app.py ya no ata usar_roberta a la "
-                "elección explícita de \"roberta\" en Motor NER — con "
-                "aplicar_limites_cpu() activo y sin confirmar la mitigación, "
-                "activarlo por defecto segfaultea"
+            assert 'usar_roberta=(motor not in ("spacy", "fallback"))' in bloque, (
+                "una llamada a pipeline_ner en app.py ya no respeta la elección "
+                'explícita de "spacy"/"fallback" en Motor NER'
             )

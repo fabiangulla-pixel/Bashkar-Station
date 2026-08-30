@@ -2,44 +2,79 @@
 
 ---
 
-## Sesión 63 — 2026-08-29 — Mitigación (sin confirmar) del segfault RoBERTa + Motor NER real
+## Sesión 63 — 2026-08-29 — El "segfault de threading torch/tokenizers" de sesión 62 no era eso: RoBERTa reactivado por defecto
 
-Continuación del hallazgo de calidad sin arreglar al cierre de sesión 62.
-Investigado el segfault nativo torch/tokenizers que forzó `usar_roberta=False`
-en toda la app: el modelo real (`mrm8488/bert-spanish-cased-finetuned-ner`)
-solo tiene categorías PER/LOC/ORG/MISC — arreglar el segfault **no** iba a
-llenar `fechas`/`obras_publicaciones`/`eventos_historicos` como sugería el
-diagnóstico anterior; esas siempre dependen del enriquecimiento opcional con
-IA. Corregido ese diagnóstico y separado el trabajo real: mejorar la calidad
-de personas/lugares/organizaciones cuando RoBERTa esté disponible.
+Cierre real del hallazgo de calidad que quedó abierto al cierre de sesión 62.
+Primero, un diagnóstico previo corregido: el modelo real
+(`mrm8488/bert-spanish-cased-finetuned-ner`) solo tiene categorías
+PER/LOC/ORG/MISC, así que arreglar el segfault nunca iba a llenar
+`fechas`/`obras_publicaciones`/`eventos_historicos` — esas siempre dependen
+del enriquecimiento opcional con IA, con o sin RoBERTa.
 
-- **`core/recursos.py`** — `aplicar_limites_cpu()` ahora también fija
-  `TOKENIZERS_PARALLELISM=false` y `KMP_DUPLICATE_LIB_OK=TRUE`, las dos
-  mitigaciones estándar para esta familia de crash (pool de hilos Rust de
-  `tokenizers` compitiendo por núcleos + doble runtime OpenMP de torch/MKL
-  corrompiendo memoria al forzar un número de hilos). **Sin confirmar
-  todavía** en la máquina real donde se reprodujo el segfault original — no
-  hay forma de reproducir un segfault nativo en este entorno de desarrollo.
-- **`app.py`** — el selector "Motor NER" ahora sí controla `usar_roberta`
-  (antes lo ignoraba por completo: elegir "roberta" caía en `usar_roberta=False`
-  igual que "auto", Y encima cargaba `nlp=None`, así que producía NER vacío en
-  silencio). Ahora `usar_roberta=(motor == "roberta")` y `nlp` se carga como
-  red de seguridad salvo que el motor sea "fallback". Así la investigadora
-  puede elegir "roberta" a propósito para probar la mitigación con su corpus
-  real, sin cambiar el comportamiento por defecto de nadie más.
-- **`cli.py`** — variable de entorno `BASHKAR_NER_ROBERTA=1` como la misma
-  vía de escape para el CLI (mismo patrón que `BASHKAR_HILOS` en
-  `core/recursos.py`). Por defecto sigue en `usar_roberta=False`.
-- Tests de regresión actualizados/nuevos en `test_recursos_clip.py`,
-  `test_cli.py`, `test_ner_engine.py`.
+Segundo, y más importante: **el segfault en sí no era un conflicto de
+threading torch/tokenizers.** Esta sesión sí tuvo máquina real con torch +
+transformers instalados y corpus real (792 páginas de Estampa) para
+reproducirlo con `faulthandler`, y el diagnóstico de sesión 62 no se sostuvo:
 
-**Pendiente real para cerrar esto:** probar con `BASHKAR_NER_ROBERTA=1` (CLI)
-o "roberta" en Motor NER (GUI) sobre el corpus completo de Estampa en la
-máquina donde se reprodujo el segfault. Si no truena, subir `usar_roberta` a
-`True` por defecto en ambos sitios; si truena igual, la mitigación no alcanza
-y hace falta aislar RoBERTa en un subproceso (mismo patrón que
-`core/ocr_kraken.py` con `D:\kraken_env`) — no intentado en esta sesión por
-ser un cambio de arquitectura mayor sin forma de verificarlo aquí.
+- Aplicar `OMP_NUM_THREADS`/`KMP_DUPLICATE_LIB_OK`/`TOKENIZERS_PARALLELISM`
+  (las mitigaciones "estándar" de threading) no evitó el crash. Quitarlas
+  tampoco lo cambió. El intento inicial de esta sesión de "mitigar sin
+  confirmar" (commit anterior) fue una pista falsa — revertido.
+- Con `faulthandler` el crash real ocurre dentro de `socket.getaddrinfo`,
+  en medio de una llamada de red que `transformers.pipeline()` hacía a
+  HuggingFace Hub — **con el modelo ya cacheado localmente**, cuando nunca
+  debería haber tocado la red.
+- Causa raíz encontrada: `core/ner_roberta_local.py::_forzar_offline_si_ya_cacheado()`
+  importaba `huggingface_hub` (para chequear la caché) y solo DESPUÉS fijaba
+  `HF_HUB_OFFLINE=1`. `huggingface_hub` lee esa variable como constante de
+  módulo en su *primer* import del proceso y nunca la vuelve a leer —
+  fijarla después no tiene ningún efecto. Peor: `_pipeline_ner()` hacía
+  `from transformers import pipeline` (que ya arrastra `huggingface_hub`)
+  **antes** de siquiera llamar a esa función. El resultado: `pipeline()`
+  seguía saliendo a red aunque el modelo estuviera cacheado, y esa llamada
+  de red terminaba en access violation en Windows. Verificado con
+  `import huggingface_hub.constants as c; print(c.HF_HUB_OFFLINE)` antes y
+  después de fijar la variable en ambos órdenes.
+
+**Arreglado en `core/ner_roberta_local.py`:** el chequeo de caché ahora es
+puro `pathlib` (`_ruta_cache_hf`, sin importar `huggingface_hub`) y
+`_forzar_offline_si_ya_cacheado()` se llama a **nivel de módulo**, en el
+momento en que `ner_roberta_local.py` se importa por primera vez — antes de
+que `roberta_disponible()` o `_pipeline_ner()` (definidas en el mismo
+archivo) hagan `import transformers`.
+
+**Verificado real, no solo con mocks:** con torch/transformers instalados y
+el modelo ya cacheado, `pipeline_ner(texto, nlp, usar_roberta=True)` con
+`recursos.aplicar_limites_cpu()` activo (el escenario exacto de cli.py/app.py)
+corrió limpio, repetido 3 veces, sobre un artículo de 6 páginas y sobre un
+número completo de 89 páginas (415k caracteres) del corpus real de Estampa
+— 0 segfaults donde antes reventaba el 100% de las veces.
+
+- **`core/ner_roberta_local.py`** — el fix real: offline forzado a nivel de
+  módulo, chequeo de caché sin importar `huggingface_hub`.
+- **`core/recursos.py`** — revertida la mitigación de threading que se
+  agregó (y no sirvió) en el intento anterior de esta sesión.
+- **`app.py`** — `usar_roberta=True` salvo que la investigadora elija
+  "spacy"/"fallback" a propósito en "Motor NER" (antes ese selector no
+  controlaba nada: elegir "roberta" caía en `usar_roberta=False` Y `nlp=None`,
+  NER vacío en silencio — arreglado de paso).
+- **`cli.py`** — vuelve al default real de `pipeline_ner` (`usar_roberta=True`,
+  sin pasar el kwarg); retirada la variable `BASHKAR_NER_ROBERTA` del intento
+  anterior, ya no hace falta.
+- Tests de regresión: `tests/test_ner_engine.py::TestOfflineForzadoAntesDeImportarTransformers`
+  prueba el orden de imports con un subproceso real (se salta si el modelo no
+  está cacheado en la máquina, no fuerza descarga). Actualizados
+  `test_cli.py`, `test_recursos_clip.py`.
+
+**Hallazgo aparte, sin resolver:** esta máquina (Python 3.14.3, muy nuevo)
+mostró crashes nativos intermitentes y no reproducibles en aislamiento al
+correr la suite completa de pytest con transformers real instalado (una vez
+en `markupsafe`/`jinja2` durante `import transformers`, otra vez en el cierre
+de pytest con un hilo de `tqdm` de fondo). No relacionado con este fix — no
+ocurre en ejecuciones limpias fuera de pytest, y el pipeline real (cli.py/
+app.py) no dispara esos caminos. Si vuelve a aparecer en uso real, sospechar
+primero de la combinación Python 3.14 + versiones actuales de torch/
+transformers/markupsafe antes que de la lógica de Bashkar.
 
 ---
 

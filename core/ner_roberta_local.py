@@ -18,9 +18,24 @@ Ventajas sobre spaCy para este corpus:
 
 import os
 from functools import lru_cache
+from pathlib import Path
 
 # Modelo BERT fine-tuned para NER en español (acceso público)
 _MODELO_NER = "mrm8488/bert-spanish-cased-finetuned-ner"
+
+
+def _ruta_cache_hf(modelo_id: str) -> Path:
+    """Reproduce la ruta de caché de huggingface_hub (HUGGINGFACE_HUB_CACHE >
+    HF_HOME/hub > default) SIN importar la librería — ver por qué en
+    `_forzar_offline_si_ya_cacheado`."""
+    override = os.environ.get("HUGGINGFACE_HUB_CACHE")
+    if override:
+        base = Path(override)
+    else:
+        home = os.environ.get("HF_HOME") or str(Path.home() / ".cache" / "huggingface")
+        base = Path(home) / "hub"
+    carpeta = "models--" + modelo_id.replace("/", "--")
+    return base / carpeta
 
 
 def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
@@ -33,16 +48,38 @@ def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
     (reportado en sesión; mismo patrón ya aplicado en ocr_churro.py para
     CHURRO). Si no está cacheado, se QUITA la variable en vez de dejarla
     intacta: si otro modelo ya cacheado la puso en "1" antes en el mismo
-    proceso, este modelo necesita red para su primera descarga real."""
+    proceso, este modelo necesita red para su primera descarga real.
+
+    El chequeo de caché se hace con `pathlib` puro, sin importar
+    `huggingface_hub`: esa librería lee HF_HUB_OFFLINE del entorno UNA sola
+    vez, como constante de módulo, en el momento en que se importa por
+    primera vez en el proceso — fijar la variable de entorno DESPUÉS de ese
+    import no tiene efecto (huggingface_hub 1.9.0, verificado). Con el orden
+    anterior (importar la librería para preguntar si el modelo estaba
+    cacheado, y solo ENTONCES fijar la variable), `pipeline()` seguía
+    saliendo a red aunque el modelo ya estuviera descargado — y esa llamada
+    de red terminaba con un access violation reproducible dentro de
+    `socket.getaddrinfo` en Windows (sesión 63, 29-ago-2026; el segfault que
+    sesión 62 le había atribuido a un conflicto de threading torch/tokenizers
+    no era eso — no había conflicto de threading que reproducir)."""
     try:
-        from huggingface_hub import try_to_load_from_cache
-        cacheado = isinstance(try_to_load_from_cache(modelo_id, "config.json"), str)
+        cacheado = any(_ruta_cache_hf(modelo_id).glob("snapshots/*/config.json"))
     except Exception:
         return
     if cacheado:
         os.environ.setdefault("HF_HUB_OFFLINE", "1")
     else:
         os.environ.pop("HF_HUB_OFFLINE", None)
+
+
+# Se llama aquí, a nivel de módulo, no dentro de una función: tiene que
+# ejecutarse en el momento en que este módulo se importa por primera vez,
+# ANTES de que `roberta_disponible()` (más abajo) o cualquier otra función de
+# este archivo hagan `import transformers` — ese import es justamente el que
+# arrastra `huggingface_hub` y congela su constante de offline. Moverlo a
+# dentro de `_pipeline_ner()`, después del `from transformers import
+# pipeline`, no sirve: para entonces la constante ya quedó en False.
+_forzar_offline_si_ya_cacheado(_MODELO_NER)
 
 # Ventana deslizante: procesar texto largo en fragmentos de 450 palabras
 # con solapamiento de 50 para no perder entidades en los límites
@@ -78,7 +115,9 @@ def _pipeline_ner():
             "transformers no está instalado. Ejecuta: pip install transformers torch"
         ) from e
 
-    _forzar_offline_si_ya_cacheado(_MODELO_NER)
+    # HF_HUB_OFFLINE ya se fijó a nivel de módulo, antes del import de arriba
+    # — ver el comentario junto a la llamada de _forzar_offline_si_ya_cacheado
+    # más abajo en este archivo.
     return pipeline(
         "ner",
         model=_MODELO_NER,

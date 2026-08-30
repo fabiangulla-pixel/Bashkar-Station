@@ -87,22 +87,6 @@ class TestAplicarLimitesCPU:
             with patch("os.cpu_count", return_value=8):
                 assert recursos.aplicar_limites_cpu() == 3   # 8//2 - 1
 
-    def test_fija_mitigacion_del_segfault_torch_tokenizers(self):
-        """Sesión 62/63: con OMP_NUM_THREADS fijado, cargar el modelo BERT de
-        core/ner_roberta_local.py segfaulteaba de forma reproducible.
-        aplicar_limites_cpu() debe dejar puestas las dos mitigaciones
-        conocidas para esa familia de crash nativo, ANTES de que nada
-        importe torch/tokenizers."""
-        with patch.dict(os.environ, {}, clear=True):
-            recursos.aplicar_limites_cpu(4)
-            assert os.environ["TOKENIZERS_PARALLELISM"] == "false"
-            assert os.environ["KMP_DUPLICATE_LIB_OK"] == "TRUE"
-
-    def test_respeta_mitigacion_que_el_usuario_ya_fijo(self):
-        with patch.dict(os.environ, {"TOKENIZERS_PARALLELISM": "true"}, clear=True):
-            recursos.aplicar_limites_cpu(4)
-            assert os.environ["TOKENIZERS_PARALLELISM"] == "true"
-
 
 class TestLimitarHilosTorch:
 

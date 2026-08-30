@@ -90,26 +90,6 @@ def aplicar_limites_cpu(hilos: int | None = None) -> int:
         "VECLIB_MAXIMUM_THREADS",
     ):
         os.environ.setdefault(variable, str(n))
-
-    # Mitigación para el segfault nativo documentado en sesión 62 (28-ago-2026,
-    # ver core/ner_engine.py y project_bashkar_station.md): con un límite de
-    # hilos activo, cargar el modelo BERT de core/ner_roberta_local.py revienta
-    # de forma reproducible. Dos causas conocidas de esta familia de crash,
-    # cada una con un arreglo estándar de una sola variable — deben fijarse
-    # aquí, antes de que nada importe torch/tokenizers, por la misma razón que
-    # las de arriba:
-    #   - TOKENIZERS_PARALLELISM: el pool de hilos en Rust de la librería
-    #     `tokenizers` compite por núcleos con el límite que acabamos de fijar.
-    #   - KMP_DUPLICATE_LIB_OK: torch trae su propio runtime OpenMP y puede
-    #     chocar con el que ya cargó numpy/MKL; con un número de hilos forzado,
-    #     la doble inicialización puede corromper memoria en vez de solo avisar.
-    # Sin verificar todavía en la máquina donde se reprodujo el segfault
-    # original: `usar_roberta` sigue en False por defecto en app.py/cli.py
-    # hasta confirmarlo ahí. Selecciona "roberta" en "Motor NER" (GUI) o fija
-    # BASHKAR_NER_ROBERTA=1 (CLI) para probarlo con esta mitigación puesta.
-    os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
-    os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
-
     return n
 
 
