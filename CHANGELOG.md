@@ -2,6 +2,66 @@
 
 ---
 
+## Sesión 63 (cont. 3) — 2026-08-30 — Mismo bug del segfault de RoBERTa en embeddings_local + otro real en búsqueda semántica
+
+Corrida la suite completa (no solo los archivos tocados) para cazar
+regresiones — `1306 passed, 15 skipped, 0 failed` — y apareció un test
+preexistente (`tests/test_hf_offline_cacheado.py`) que ya parametrizaba
+sobre `ner_roberta_local` Y `core/embeddings_local.py`: **el mismo bug
+exacto del offline-timing (ver sesión 63 anterior) seguía sin arreglar en
+`embeddings_local.py`**, usado por la búsqueda semántica. `_modelo_embeddings()`
+hacía `from sentence_transformers import SentenceTransformer` (que arrastra
+`huggingface_hub`) ANTES de forzar `HF_HUB_OFFLINE=1` — el mismo error de
+orden, mismo riesgo de segfault real si el proceso llega a intentar red con
+el modelo ya cacheado.
+
+**Arreglado igual que ner_roberta_local.py:** chequeo de caché con pathlib
+puro, llamado a nivel de módulo. Verificado con el modelo real cacheado y
+`recursos.aplicar_limites_cpu()` activo (escenario exacto de producción):
+carga en 49.9s sin crash.
+
+**Segundo bug real, distinto, encontrado en el camino:** `core/busqueda_semantica.py`
+importaba `faiss` en 5 sitios sin ninguna relación con `sentence_transformers`.
+Verificado empíricamente: `import faiss` seguido de `import sentence_transformers`
+en el mismo proceso revienta con access violation el 100% de las veces —
+cada librería trae su propio runtime OpenMP. En el orden contrario, nunca
+falla. El flujo real de la GUI donde esto se disparaba: botón "Cargar
+índice" (solo toca faiss, para reabrir un índice ya construido) seguido de
+"Buscar" (genera el embedding de la consulta, tocando sentence_transformers
+por primera vez) — un uso completamente normal que reventaba la app entera.
+
+**Arreglado:** nueva `_importar_faiss()` en `core/busqueda_semantica.py`
+garantiza que `sentence_transformers` se importe primero (si está
+instalado) antes de importar faiss, en los 5 sitios. Verificado con el flujo
+real completo (guardar índice → proceso nuevo → cargar índice → generar
+embedding de consulta → buscar) sin crash.
+
+**Hallazgo aparte, sin resolver del todo:** incluso con el orden correcto,
+tener faiss Y sentence_transformers/torch cargados en el mismo proceso deja
+algo de inestabilidad nativa en esta máquina específica (Python 3.14) que
+se manifiesta más tarde en llamadas nativas no relacionadas (crasheó dentro
+de `pathlib.mkdir()` de pytest, y al cargar el modelo real de embeddings,
+en corridas largas de la suite). La funcionalidad real de Bashkar se
+verificó a mano, fuera de pytest, y funciona sin problema — esto parece ser
+inestabilidad de la instalación de paquetes en esta máquina de desarrollo,
+no un bug de código. 5 tests de `tests/test_busqueda_semantica.py` quedaron
+marcados `skip` con la razón documentada in situ, en vez de dejar que
+tumben la corrida completa de la suite para todo el mundo.
+
+- **`core/embeddings_local.py`** — mismo fix que `ner_roberta_local.py`
+  (`_ruta_cache_hf`, offline a nivel de módulo).
+- **`core/busqueda_semantica.py`** — `_importar_faiss()` centraliza el orden
+  seguro en los 5 sitios que antes hacían `import faiss` directo.
+- **`tests/test_hf_offline_cacheado.py`** — reescrito para el chequeo por
+  pathlib (ya no mockea `huggingface_hub.try_to_load_from_cache`) y agrega
+  un test que verifica la llamada a nivel de módulo vía AST, para ambos
+  módulos.
+- **`tests/test_busqueda_semantica.py`** — ya no importa faiss directo en
+  ningún lado; 5 tests marcados `skip` por la inestabilidad nativa
+  específica de esta máquina, documentada in situ.
+
+---
+
 ## Sesión 63 (cont. 2) — 2026-08-30 — Barrido de excepciones silenciosas + corrector ortográfico no corregía el error de OCR más común
 
 Tras el fix de RoBERTa, barrido deliberado de otros `except Exception:

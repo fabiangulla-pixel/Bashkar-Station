@@ -13,11 +13,26 @@ Instalación:
 
 import os
 from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 
 MODELO_EMBEDDINGS = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 DIMENSIONES = 384
+
+
+def _ruta_cache_hf(modelo_id: str) -> Path:
+    """Reproduce la ruta de caché de huggingface_hub (HUGGINGFACE_HUB_CACHE >
+    HF_HOME/hub > default) SIN importar la librería — ver por qué en
+    `_forzar_offline_si_ya_cacheado`."""
+    override = os.environ.get("HUGGINGFACE_HUB_CACHE")
+    if override:
+        base = Path(override)
+    else:
+        home = os.environ.get("HF_HOME") or str(Path.home() / ".cache" / "huggingface")
+        base = Path(home) / "hub"
+    carpeta = "models--" + modelo_id.replace("/", "--")
+    return base / carpeta
 
 
 def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
@@ -28,16 +43,32 @@ def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
     algo cada vez que lo abro" reportado en sesión). Si no está cacheado,
     se QUITA la variable en vez de dejarla intacta: si otro modelo ya
     cacheado la puso en "1" antes en el mismo proceso, este modelo
-    necesita red para su primera descarga real."""
+    necesita red para su primera descarga real.
+
+    El chequeo de caché se hace con `pathlib` puro, sin importar
+    `huggingface_hub`, y esta función se llama a nivel de MÓDULO (ver abajo),
+    antes de que `sentence_transformers_disponible()` o `_modelo_embeddings()`
+    hagan `import sentence_transformers` (que arrastra `huggingface_hub`):
+    esa librería lee HF_HUB_OFFLINE del entorno UNA sola vez, como constante
+    de módulo, en su primer import del proceso — fijarla DESPUÉS no tiene
+    ningún efecto. Este era exactamente el bug real (no threading, como se
+    creyó al principio) detrás del segfault de RoBERTa en
+    core/ner_roberta_local.py, sesión 63 — mismo patrón exacto aquí, mismo
+    archivo de test (tests/test_hf_offline_cacheado.py) que ya cubría ambos
+    módulos en paralelo pero solo se había arreglado uno."""
     try:
-        from huggingface_hub import try_to_load_from_cache
-        cacheado = isinstance(try_to_load_from_cache(modelo_id, "config.json"), str)
+        cacheado = any(_ruta_cache_hf(modelo_id).glob("snapshots/*/config.json"))
     except Exception:
         return
     if cacheado:
         os.environ.setdefault("HF_HUB_OFFLINE", "1")
     else:
         os.environ.pop("HF_HUB_OFFLINE", None)
+
+
+# A nivel de módulo, no dentro de una función: ver el porqué en el docstring
+# de _forzar_offline_si_ya_cacheado de arriba.
+_forzar_offline_si_ya_cacheado(MODELO_EMBEDDINGS)
 
 
 def sentence_transformers_disponible() -> bool:
@@ -60,7 +91,7 @@ def _modelo_embeddings():
             "Ejecuta: pip install sentence-transformers"
         ) from e
 
-    _forzar_offline_si_ya_cacheado(MODELO_EMBEDDINGS)
+    # HF_HUB_OFFLINE ya se fijó a nivel de módulo, antes del import de arriba.
     return SentenceTransformer(MODELO_EMBEDDINGS)
 
 
