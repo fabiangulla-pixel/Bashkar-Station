@@ -2,6 +2,48 @@
 
 ---
 
+## Sesión 63 (cont. 2) — 2026-08-30 — Barrido de excepciones silenciosas + corrector ortográfico no corregía el error de OCR más común
+
+Tras el fix de RoBERTa, barrido deliberado de otros `except Exception:
+continue/pass` dentro de loops sobre todo el corpus (mismo patrón que causó
+el bug de RoBERTa) en `core/*.py`, `cli.py`, `app.py`. 9 candidatos de riesgo
+alto encontrados y verificados uno por uno con ejecución real (no solo
+lectura de código): 8 de 9 resultaron NO estar rotos — protegidos por
+`errors="replace"`, fallbacks reales (spaCy→regex, zonas→página completa,
+Repositorio con conexión fresca por llamada en vez de singleton cacheado) o
+simplemente porque el código bajo el `try` no falla en la práctica.
+
+**El 1 que sí estaba roto era un bug distinto al que se buscaba:**
+`core/spell_corrector.py::_parece_error_ocr()` — el `except` de
+`_sugerir_correccion()` nunca fallaba (Hunspell/spylls funciona bien), pero
+el heurístico *anterior* a esa llamada nunca dejaba pasar la palabra: solo
+detectaba dígitos mezclados, caracteres de ruido o palabras de 15+ letras —
+nunca la confusión de letras (rn→m, t→l, i→l) que es el error de OCR más
+común en prensa histórica. Verificado: 0 correcciones sobre una frase con 5
+errores típicos ("gobiemo", "presidenle", "republlca", "colombla",
+"nacionaies") aunque Hunspell los corrige bien y con alta confianza cuando
+se le pregunta directamente — nunca se le preguntaba. `core/spell_corrector.py`
+no tenía NINGÚN test.
+
+**Arreglado:** dado que `_parece_error_ocr()` solo se llama para palabras que
+YA no están en Hunspell ni en la lista blanca (`_es_palabra_real()` ya las
+descartó), el riesgo real no es "está en el diccionario" sino "es un nombre
+propio real sin catalogar" (topónimo, apellido) — y esos casi siempre
+empiezan en mayúscula en este corpus. El heurístico ahora también acepta
+palabras que empiezan en minúscula, dejando la distancia de edición ≤2 de
+`_sugerir_correccion()` como filtro de confianza real. Verificado que NO
+sobre-corrige: "Titiribí", "Amagá", "Bogotá" (topónimos reales sin
+catalogar, capitalizados) quedan intactos.
+
+- **`core/spell_corrector.py`** — el fix real.
+- **`core/pipeline_maestro.py`** — de paso, el único de los 9 con
+  inconsistencia real (sus vecinos loguean el fallo, este no) ahora también
+  loguea.
+- **`tests/test_spell_corrector.py`** (nuevo, 11 tests) — cubre corrección
+  de ruido común y protección de nombres propios sin catalogar.
+
+---
+
 ## Sesión 63 (cont.) — 2026-08-29 — RoBERTa fallaba 171/171 fragmentos en silencio: ventana por palabras, no por tokens
 
 Al pedir "¿qué sigue?" tras arreglar el segfault, quedaron dos pendientes:
