@@ -18,9 +18,24 @@ Ventajas sobre spaCy para este corpus:
 
 import os
 from functools import lru_cache
+from pathlib import Path
 
 # Modelo BERT fine-tuned para NER en español (acceso público)
 _MODELO_NER = "mrm8488/bert-spanish-cased-finetuned-ner"
+
+
+def _ruta_cache_hf(modelo_id: str) -> Path:
+    """Reproduce la ruta de caché de huggingface_hub (HUGGINGFACE_HUB_CACHE >
+    HF_HOME/hub > default) SIN importar la librería — ver por qué en
+    `_forzar_offline_si_ya_cacheado`."""
+    override = os.environ.get("HUGGINGFACE_HUB_CACHE")
+    if override:
+        base = Path(override)
+    else:
+        home = os.environ.get("HF_HOME") or str(Path.home() / ".cache" / "huggingface")
+        base = Path(home) / "hub"
+    carpeta = "models--" + modelo_id.replace("/", "--")
+    return base / carpeta
 
 
 def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
@@ -33,10 +48,22 @@ def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
     (reportado en sesión; mismo patrón ya aplicado en ocr_churro.py para
     CHURRO). Si no está cacheado, se QUITA la variable en vez de dejarla
     intacta: si otro modelo ya cacheado la puso en "1" antes en el mismo
-    proceso, este modelo necesita red para su primera descarga real."""
+    proceso, este modelo necesita red para su primera descarga real.
+
+    El chequeo de caché se hace con `pathlib` puro, sin importar
+    `huggingface_hub`: esa librería lee HF_HUB_OFFLINE del entorno UNA sola
+    vez, como constante de módulo, en el momento en que se importa por
+    primera vez en el proceso — fijar la variable de entorno DESPUÉS de ese
+    import no tiene efecto (huggingface_hub 1.9.0, verificado). Con el orden
+    anterior (importar la librería para preguntar si el modelo estaba
+    cacheado, y solo ENTONCES fijar la variable), `pipeline()` seguía
+    saliendo a red aunque el modelo ya estuviera descargado — y esa llamada
+    de red terminaba con un access violation reproducible dentro de
+    `socket.getaddrinfo` en Windows (sesión 63, 29-ago-2026; el segfault que
+    sesión 62 le había atribuido a un conflicto de threading torch/tokenizers
+    no era eso — no había conflicto de threading que reproducir)."""
     try:
-        from huggingface_hub import try_to_load_from_cache
-        cacheado = isinstance(try_to_load_from_cache(modelo_id, "config.json"), str)
+        cacheado = any(_ruta_cache_hf(modelo_id).glob("snapshots/*/config.json"))
     except Exception:
         return
     if cacheado:
@@ -44,10 +71,35 @@ def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
     else:
         os.environ.pop("HF_HUB_OFFLINE", None)
 
-# Ventana deslizante: procesar texto largo en fragmentos de 450 palabras
-# con solapamiento de 50 para no perder entidades en los límites
-_VENTANA = 450
-_SOLAPE  = 50
+
+# Se llama aquí, a nivel de módulo, no dentro de una función: tiene que
+# ejecutarse en el momento en que este módulo se importa por primera vez,
+# ANTES de que `roberta_disponible()` (más abajo) o cualquier otra función de
+# este archivo hagan `import transformers` — ese import es justamente el que
+# arrastra `huggingface_hub` y congela su constante de offline. Moverlo a
+# dentro de `_pipeline_ner()`, después del `from transformers import
+# pipeline`, no sirve: para entonces la constante ya quedó en False.
+_forzar_offline_si_ya_cacheado(_MODELO_NER)
+
+# Ventana deslizante: procesar texto largo en fragmentos de hasta
+# _VENTANA_TOKENS subtokens (el límite real del modelo son 512 posiciones;
+# se deja margen para [CLS]/[SEP] y algo de holgura), con solapamiento de
+# _SOLAPE_TOKENS para no perder entidades en los límites.
+#
+# ANTES esta ventana se medía en PALABRAS (450 palabras, asumiendo ~1
+# subtoken por palabra). Con texto OCR histórico real (números, mayúsculas
+# sostenidas, guiones, ruido) el tokenizador WordPiece parte mucho más de lo
+# esperado — medido sobre el corpus real de Estampa: ~1.4 subtokens por
+# palabra, no ~1. El resultado: CADA fragmento de 450 "palabras" superaba
+# los 512 subtokens y pipeline() reventaba con RuntimeError (tensor de N
+# posiciones contra 512), silenciado por el `except Exception: continue` de
+# más abajo — 171 de 171 fragmentos fallando en silencio sobre un número
+# completo real (89 páginas), 0 entidades encontradas donde debería haber
+# decenas (sesión 63, 29-ago-2026). Medir en subtokens reales, con el
+# tokenizador del propio modelo, es la única forma de que esto no dependa de
+# cuánto se fragmenta un texto en particular.
+_VENTANA_TOKENS = 480
+_SOLAPE_TOKENS  = 50
 
 # Mapeo de etiquetas del modelo a categorías de Bashkar
 MAPA_CATEGORIAS = {
@@ -78,7 +130,9 @@ def _pipeline_ner():
             "transformers no está instalado. Ejecuta: pip install transformers torch"
         ) from e
 
-    _forzar_offline_si_ya_cacheado(_MODELO_NER)
+    # HF_HUB_OFFLINE ya se fijó a nivel de módulo, antes del import de arriba
+    # — ver el comentario junto a la llamada de _forzar_offline_si_ya_cacheado
+    # más abajo en este archivo.
     return pipeline(
         "ner",
         model=_MODELO_NER,
@@ -87,13 +141,30 @@ def _pipeline_ner():
     )
 
 
+def _fragmentar_por_tokens(texto: str, tokenizador) -> list[str]:
+    """Parte `texto` en fragmentos que caben en _VENTANA_TOKENS subtokens del
+    tokenizador REAL del modelo (no una cuenta de palabras — ver por qué en
+    el comentario junto a _VENTANA_TOKENS). Decodifica cada trozo de vuelta a
+    texto para poder seguir usando el pipeline de alto nivel de transformers,
+    que espera texto de entrada."""
+    ids = tokenizador(texto, add_special_tokens=False)["input_ids"]
+    if len(ids) <= _VENTANA_TOKENS:
+        return [texto]
+    paso = _VENTANA_TOKENS - _SOLAPE_TOKENS
+    return [
+        tokenizador.decode(ids[inicio:inicio + _VENTANA_TOKENS], skip_special_tokens=True)
+        for inicio in range(0, len(ids), paso)
+    ]
+
+
 def ner_roberta(texto: str,
                 umbral_confianza: float = 0.60) -> list[dict]:
     """
     Extrae entidades nombradas con RoBERTa-BNE.
 
-    Usa ventana deslizante para textos largos (>512 tokens ≈ ~400 palabras).
-    Deduplica entidades repetidas manteniendo la de mayor confianza.
+    Usa ventana deslizante (medida en subtokens reales del propio
+    tokenizador, no en palabras) para textos largos. Deduplica entidades
+    repetidas manteniendo la de mayor confianza.
 
     Args:
         texto:             Texto a analizar.
@@ -106,25 +177,17 @@ def ner_roberta(texto: str,
         ImportError: Si transformers/torch no están instalados.
     """
     nlp = _pipeline_ner()
-    palabras = texto.split()
-
-    # Si el texto cabe en una ventana, procesarlo directo
-    if len(palabras) <= _VENTANA:
-        fragmentos = [texto]
-    else:
-        # Ventana deslizante con solapamiento
-        fragmentos = []
-        for inicio in range(0, len(palabras), _VENTANA - _SOLAPE):
-            frag = " ".join(palabras[inicio:inicio + _VENTANA])
-            fragmentos.append(frag)
+    fragmentos = _fragmentar_por_tokens(texto, nlp.tokenizer)
 
     # Procesar todos los fragmentos y deduplicar
     vistas: dict[tuple, dict] = {}  # (texto_norm, categoria) → entidad de mayor confianza
+    fallos = 0
 
     for frag in fragmentos:
         try:
             entidades = nlp(frag)
         except Exception:
+            fallos += 1
             continue
 
         # Fusionar entidades consecutivas del mismo tipo cuyos tokens empiezan con ##
@@ -164,6 +227,21 @@ def ner_roberta(texto: str,
                     "confianza": round(score, 4),
                     "fuente":    "roberta_bne",
                 }
+
+    if fallos:
+        # No debería pasar con la fragmentación por tokens de arriba, pero si
+        # pasa NO puede quedar en silencio otra vez: eso fue exactamente lo
+        # que dejó 171/171 fragmentos fallando sin que nadie se enterara
+        # (sesión 63). Un RuntimeWarning aparece en consola/logs sin
+        # necesitar tocar la firma de esta función para agregar un callback.
+        import warnings
+        warnings.warn(
+            f"ner_roberta: {fallos}/{len(fragmentos)} fragmentos fallaron y se "
+            "descartaron sin procesar (ver stacktrace con -W error si hace falta "
+            "diagnosticar)",
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
     return sorted(vistas.values(), key=lambda e: -e["confianza"])
 

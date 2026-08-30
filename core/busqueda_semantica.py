@@ -26,10 +26,34 @@ from pathlib import Path
 import numpy as np
 
 
+def _importar_faiss():
+    """Importa faiss, garantizando primero que sentence_transformers (si
+    está instalado) ya se haya importado en este proceso.
+
+    Bug real, sesión 63: faiss y sentence_transformers/torch cada uno trae
+    su propio runtime OpenMP. Importar faiss ANTES de sentence_transformers
+    deja el proceso envenenado: cualquier import de sentence_transformers
+    después de ese punto revienta con access violation — reproducido de
+    forma 100% determinística (`import faiss; import sentence_transformers`
+    siempre crashea; en el orden contrario nunca). En la GUI esto pasaba de
+    verdad: "Cargar índice" (botón que solo toca faiss, para reabrir un
+    índice ya construido sin volver a indexar) seguido de "Buscar" (que
+    genera el embedding de la consulta, tocando sentence_transformers por
+    primera vez en el proceso) — un flujo de uso normal que reventaba la app
+    entera. No se puede resolver dejando el orden en manos de qué botón
+    presiona primero la investigadora."""
+    try:
+        import sentence_transformers  # noqa: F401 — fuerza el orden seguro
+    except ImportError:
+        pass
+    import faiss
+    return faiss
+
+
 def faiss_disponible() -> bool:
     """True si faiss-cpu está instalado."""
     try:
-        import faiss  # noqa
+        _importar_faiss()
         return True
     except ImportError:
         return False
@@ -61,7 +85,7 @@ class IndiceSemantico:
             ImportError: Si faiss no está instalado.
         """
         try:
-            import faiss
+            faiss = _importar_faiss()
         except ImportError as e:
             raise ImportError(
                 "faiss-cpu no está instalado. Ejecuta: pip install faiss-cpu"
@@ -104,7 +128,7 @@ class IndiceSemantico:
             )
 
         try:
-            import faiss
+            faiss = _importar_faiss()
         except ImportError as e:
             raise ImportError("faiss-cpu no está instalado.") from e
 
@@ -137,7 +161,7 @@ class IndiceSemantico:
             raise RuntimeError("Índice vacío, nada que guardar.")
 
         try:
-            import faiss
+            faiss = _importar_faiss()
         except ImportError as e:
             raise ImportError("faiss-cpu no está instalado.") from e
 
@@ -153,7 +177,7 @@ class IndiceSemantico:
             True si la carga fue exitosa, False si los archivos no existen.
         """
         try:
-            import faiss
+            faiss = _importar_faiss()
         except ImportError:
             return False
 

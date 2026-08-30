@@ -12,10 +12,11 @@ Estrategia de tres capas:
 Diseño conservador: es preferible NO corregir que corregir mal. El corrector
 solo actúa sobre palabras que:
   a) No pasan el lookup de Hunspell
-  b) No están en la lista blanca de época
-  c) Tienen exactamente UNA sugerencia de alta confianza
-  d) La palabra original parece error OCR (contiene dígitos en letras, mezcla de
-     caso anormal, etc.)
+  b) No están en la lista blanca de época/usuario
+  c) Empiezan en minúscula, o contienen dígitos/ruido/son excesivamente
+     largas — los nombres propios reales sin catalogar (topónimos,
+     apellidos) casi siempre empiezan en mayúscula, y quedan protegidos
+  d) La sugerencia top de Hunspell está a distancia de edición ≤ 2
 
 Uso:
     from core.spell_corrector import SpellCorrector
@@ -262,8 +263,31 @@ class SpellCorrector:
         return clave in _VOCAB_EPOCA_LOWER or clave in self._vocab_usuario
 
     def _parece_error_ocr(self, palabra: str) -> bool:
-        """True si la palabra tiene características de error OCR."""
-        return bool(_RE_PARECE_OCR.search(palabra))
+        """True si la palabra tiene características de error OCR.
+
+        Antes de sesión 63 solo detectaba dígitos mezclados, caracteres de
+        ruido (|¡§~), puntuación pegada a letras o palabras de 15+
+        caracteres — NUNCA el error de OCR más común en texto histórico: la
+        confusión de letras (rn→m, t→l, i→l, etc: "gobiemo", "presidenle",
+        "colombla", "nacionaies"). Esas palabras nunca llegaban a pedirle una
+        sugerencia a Hunspell aunque Hunspell la tuviera correcta y con alta
+        confianza — el corrector ortográfico no corregía prácticamente nada
+        sobre ruido OCR real (verificado: 0 correcciones sobre una frase con
+        5 errores típicos de OCR).
+
+        Esta función solo se llama para palabras que YA pasaron el filtro de
+        `_es_palabra_real()` (no están en Hunspell ni en la lista blanca de
+        época/usuario) — así que el riesgo real no es "está en el
+        diccionario" sino "es un nombre propio real sin catalogar" (topónimo,
+        apellido) que no debería tocarse. En este corpus esos casi siempre
+        empiezan en mayúscula; una palabra que empieza en minúscula y no está
+        en ningún diccionario es casi siempre ruido de OCR de una palabra
+        común. `_sugerir_correccion()` sigue exigiendo distancia de edición
+        ≤2 como filtro de confianza — este heurístico decide si vale la pena
+        preguntarle, no si la sugerencia es buena."""
+        if _RE_PARECE_OCR.search(palabra):
+            return True
+        return palabra[:1].islower()
 
     def _es_palabra_real(self, palabra: str) -> bool:
         """

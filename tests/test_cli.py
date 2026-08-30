@@ -51,14 +51,15 @@ def test_info_no_revienta_en_consola_cp1252(tmp_path: Path):
     assert "UnicodeEncodeError" not in r.stderr
 
 
-def test_etapa_ner_usa_spacy_no_roberta():
-    """Regresión: _etapa_ner llamaba pipeline_ner(texto, nlp) con
-    usar_roberta=True por defecto. Combinado con recursos.aplicar_limites_cpu()
-    (que cli.py corre al arrancar, fijando OMP_NUM_THREADS/MKL_NUM_THREADS),
-    cargar el modelo BERT segfaultea de forma reproducible — conflicto nativo
-    de threading entre torch y la librería Rust `tokenizers`, verificado en
-    corrida real sobre el corpus completo de Estampa (792 páginas, 28-ago-2026).
-    _etapa_ner debe pasar usar_roberta=False explícitamente."""
+def test_etapa_ner_usa_roberta_por_defecto():
+    """Sesión 62 forzó usar_roberta=False creyendo que el segfault de NER era
+    un conflicto de threading torch/tokenizers bajo recursos.aplicar_limites_cpu().
+    Sesión 63 diagnosticó la causa real (ver tests/test_ner_engine.py::
+    TestOfflineForzadoAntesDeImportarTransformers y core/ner_roberta_local.py):
+    era un bug de orden de imports en el forzado de HF_HUB_OFFLINE, no
+    threading. Confirmado sin segfault sobre el corpus real completo de
+    Estampa (792 páginas) tras el fix — _etapa_ner vuelve a usar el default
+    real de pipeline_ner (usar_roberta=True)."""
     articulos = [{"id": "a1", "texto": "Texto de prueba con alguna entidad."}]
 
     with patch("spacy.load", return_value=MagicMock()), \
@@ -70,4 +71,4 @@ def test_etapa_ner_usa_spacy_no_roberta():
 
     assert mock_pipeline_ner.called
     _, kwargs = mock_pipeline_ner.call_args
-    assert kwargs.get("usar_roberta") is False
+    assert kwargs.get("usar_roberta") is not False

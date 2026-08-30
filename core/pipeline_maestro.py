@@ -237,8 +237,8 @@ class PipelineMaestro:
             if self.repo:
                 try:
                     self.repo.actualizar_estado(art_id, "completo")
-                except Exception:
-                    pass
+                except Exception as e:
+                    self._log(f"  ⚠ Repositorio actualizar_estado {art_id}: {e}")
 
         self.data["articulos"] = articulos
         self._guardar_bashkar()
