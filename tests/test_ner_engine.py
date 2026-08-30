@@ -216,6 +216,79 @@ class TestNERRoberta:
         textos_unicos = set(e["texto"] for e in entidades)
         assert len(textos_unicos) == len(entidades), "hay entidades duplicadas"
 
+    def test_fragmentar_por_tokens_respeta_el_limite_del_modelo(self):
+        """Sesión 63: la ventana deslizante se medía en PALABRAS (450),
+        asumiendo ~1 subtoken por palabra. Con texto OCR histórico real
+        (números, mayúsculas, ruido) el tokenizador WordPiece parte más de lo
+        esperado (~1.4 subtokens/palabra medido sobre el corpus real de
+        Estampa) — CADA fragmento de 450 "palabras" terminaba superando los
+        512 subtokens del modelo, y pipeline() reventaba con RuntimeError,
+        silenciado por el `except Exception: continue` de ner_roberta():
+        171 de 171 fragmentos fallando sin aviso sobre un número completo
+        real (89 páginas), 0 entidades donde debería haber habido cientos.
+        _fragmentar_por_tokens() ahora mide en subtokens reales del propio
+        tokenizador — este test usa un tokenizador falso donde CADA palabra
+        produce 3 subtokens (simula texto denso) para probarlo sin necesitar
+        el modelo real."""
+        from core.ner_roberta_local import (
+            _SOLAPE_TOKENS,
+            _VENTANA_TOKENS,
+            _fragmentar_por_tokens,
+        )
+
+        class _TokenizadorFalso:
+            """3 'subtokens' por palabra, como el texto OCR denso real."""
+            def __call__(self, texto, add_special_tokens=False):
+                return {"input_ids": list(range(len(texto.split()) * 3))}
+
+            def decode(self, ids, skip_special_tokens=True):
+                return " ".join(f"w{i}" for i in range(len(ids) // 3))
+
+        tok = _TokenizadorFalso()
+        # 450 "palabras" (lo que antes era una ventana completa) → 1350
+        # subtokens con este tokenizador denso: muy por encima de 512.
+        texto = " ".join(f"palabra{i}" for i in range(450))
+        fragmentos = _fragmentar_por_tokens(texto, tok)
+        assert len(fragmentos) > 1, "un texto de 1350 subtokens debe partirse en más de un fragmento"
+        for frag in fragmentos:
+            n_subtokens = len(tok(frag)["input_ids"])
+            assert n_subtokens <= _VENTANA_TOKENS, (
+                f"un fragmento de _fragmentar_por_tokens tiene {n_subtokens} subtokens, "
+                f"por encima del límite ({_VENTANA_TOKENS}) — exactamente el bug que "
+                "hacía reventar pipeline() con RuntimeError"
+            )
+        assert _SOLAPE_TOKENS < _VENTANA_TOKENS
+
+    def test_fragmentar_por_tokens_texto_corto_no_se_parte(self):
+        from core.ner_roberta_local import _fragmentar_por_tokens
+
+        class _TokenizadorFalso:
+            def __call__(self, texto, add_special_tokens=False):
+                return {"input_ids": list(range(5))}
+
+        texto = "Un texto corto."
+        assert _fragmentar_por_tokens(texto, _TokenizadorFalso()) == [texto]
+
+    def test_ner_roberta_texto_denso_no_pierde_fragmentos(self):
+        """Reproducción con el modelo real de la causa exacta del bug: texto
+        con muchos números y mayúsculas sostenidas (denso en subtokens),
+        suficiente para que la ventana vieja de 450 palabras superara los
+        512 subtokens. No debe emitir RuntimeWarning (fragmentos perdidos)."""
+        import warnings
+
+        from core.ner_roberta_local import ner_roberta, roberta_disponible
+        if not roberta_disponible():
+            pytest.skip("RoBERTa no disponible")
+        frase_densa = "1939, 1938, 1937: LA GUERRA, EL FRENTE, LA REPÚBLICA — 12,50 pesos. "
+        texto = frase_densa * 60  # denso, similar al ruido OCR real
+        with warnings.catch_warnings(record=True) as capturadas:
+            warnings.simplefilter("always")
+            entidades = ner_roberta(texto)
+        avisos_de_fallo = [w for w in capturadas if issubclass(w.category, RuntimeWarning)
+                           and "fragmentos fallaron" in str(w.message)]
+        assert not avisos_de_fallo, f"fragmentos perdidos: {[str(w.message) for w in avisos_de_fallo]}"
+        assert isinstance(entidades, list)
+
     def test_ner_roberta_a_indice_formato(self):
         from core.ner_engine import CATEGORIAS
         from core.ner_roberta_local import ner_roberta_a_indice, roberta_disponible

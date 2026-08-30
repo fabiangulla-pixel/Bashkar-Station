@@ -2,6 +2,51 @@
 
 ---
 
+## Sesión 63 (cont.) — 2026-08-29 — RoBERTa fallaba 171/171 fragmentos en silencio: ventana por palabras, no por tokens
+
+Al pedir "¿qué sigue?" tras arreglar el segfault, quedaron dos pendientes:
+verificar por los puntos de entrada reales (no solo llamando `pipeline_ner`
+en directo) y explicar por qué RoBERTa solo encontraba 7 entidades en 415k
+caracteres de corpus real — un número sospechosamente bajo. El segundo
+resultó ser un bug mucho más serio que el primero.
+
+**Hallazgo:** `core/ner_roberta_local.py::ner_roberta()` medía la ventana
+deslizante en PALABRAS (450), asumiendo ~1 subtoken por palabra. Con texto
+OCR histórico real (números, mayúsculas sostenidas, guiones, ruido) el
+tokenizador WordPiece del modelo parte mucho más de lo esperado — medido
+sobre el corpus real: ~1.4 subtokens por palabra. El resultado: prácticamente
+CADA fragmento de 450 palabras superaba los 512 subtokens que el modelo
+acepta, y `pipeline()` reventaba con `RuntimeError` (tensor de N posiciones
+contra 512) — silenciado por un `except Exception: continue` sin ningún
+aviso. Instrumentado directamente: **171 de 171 fragmentos fallando** sobre
+un número completo real (89 páginas, rev_estampa_mar_1939), 0 entidades
+donde debería haber cientos. Las "7 entidades" del hallazgo del segfault no
+eran una muestra pobre pero real — eran básicamente ruido de los pocos
+fragmentos casualmente cortos que sí cabían.
+
+**Arreglado:** nueva `_fragmentar_por_tokens()` mide con el tokenizador REAL
+del modelo (no una cuenta de palabras) y decodifica cada trozo de vuelta a
+texto para seguir usando la interfaz de alto nivel de `pipeline()`.
+`ner_roberta()` ahora también cuenta fallos y emite un `RuntimeWarning` si
+alguno ocurre — para que esta clase de bug no pueda volver a quedar en
+silencio total sin tocar la firma de la función.
+
+**Verificado real, con el CLI de verdad** (no solo con `pipeline_ner` en
+directo): `python cli.py --proyecto ... --etapas seg,ner --verbose` sobre un
+proyecto real apuntando al corpus completo de rev_estampa_mar_1939 —
+67 artículos segmentados, NER completo sin crash, **1206 entidades únicas**
+(antes: 7). Muestra de resultados con sentido histórico real: personas
+("Antonio Restrepo", "Ernesto Vasco Gutiérrez"), lugares ("Bogotá",
+"Cartagena", "Medellín", "Club Campestre de Medellín").
+
+- **`core/ner_roberta_local.py`** — `_VENTANA_TOKENS`/`_SOLAPE_TOKENS`
+  reemplazan `_VENTANA`/`_SOLAPE` (palabras); nueva `_fragmentar_por_tokens()`.
+- Tests nuevos en `tests/test_ner_engine.py`: fragmentación con tokenizador
+  falso (determinista, sin necesitar el modelo real) y con texto denso real
+  contra el modelo real (se salta si no está disponible).
+
+---
+
 ## Sesión 63 — 2026-08-29 — El "segfault de threading torch/tokenizers" de sesión 62 no era eso: RoBERTa reactivado por defecto
 
 Cierre real del hallazgo de calidad que quedó abierto al cierre de sesión 62.

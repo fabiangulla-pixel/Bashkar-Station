@@ -81,10 +81,25 @@ def _forzar_offline_si_ya_cacheado(modelo_id: str) -> None:
 # pipeline`, no sirve: para entonces la constante ya quedó en False.
 _forzar_offline_si_ya_cacheado(_MODELO_NER)
 
-# Ventana deslizante: procesar texto largo en fragmentos de 450 palabras
-# con solapamiento de 50 para no perder entidades en los límites
-_VENTANA = 450
-_SOLAPE  = 50
+# Ventana deslizante: procesar texto largo en fragmentos de hasta
+# _VENTANA_TOKENS subtokens (el límite real del modelo son 512 posiciones;
+# se deja margen para [CLS]/[SEP] y algo de holgura), con solapamiento de
+# _SOLAPE_TOKENS para no perder entidades en los límites.
+#
+# ANTES esta ventana se medía en PALABRAS (450 palabras, asumiendo ~1
+# subtoken por palabra). Con texto OCR histórico real (números, mayúsculas
+# sostenidas, guiones, ruido) el tokenizador WordPiece parte mucho más de lo
+# esperado — medido sobre el corpus real de Estampa: ~1.4 subtokens por
+# palabra, no ~1. El resultado: CADA fragmento de 450 "palabras" superaba
+# los 512 subtokens y pipeline() reventaba con RuntimeError (tensor de N
+# posiciones contra 512), silenciado por el `except Exception: continue` de
+# más abajo — 171 de 171 fragmentos fallando en silencio sobre un número
+# completo real (89 páginas), 0 entidades encontradas donde debería haber
+# decenas (sesión 63, 29-ago-2026). Medir en subtokens reales, con el
+# tokenizador del propio modelo, es la única forma de que esto no dependa de
+# cuánto se fragmenta un texto en particular.
+_VENTANA_TOKENS = 480
+_SOLAPE_TOKENS  = 50
 
 # Mapeo de etiquetas del modelo a categorías de Bashkar
 MAPA_CATEGORIAS = {
@@ -126,13 +141,30 @@ def _pipeline_ner():
     )
 
 
+def _fragmentar_por_tokens(texto: str, tokenizador) -> list[str]:
+    """Parte `texto` en fragmentos que caben en _VENTANA_TOKENS subtokens del
+    tokenizador REAL del modelo (no una cuenta de palabras — ver por qué en
+    el comentario junto a _VENTANA_TOKENS). Decodifica cada trozo de vuelta a
+    texto para poder seguir usando el pipeline de alto nivel de transformers,
+    que espera texto de entrada."""
+    ids = tokenizador(texto, add_special_tokens=False)["input_ids"]
+    if len(ids) <= _VENTANA_TOKENS:
+        return [texto]
+    paso = _VENTANA_TOKENS - _SOLAPE_TOKENS
+    return [
+        tokenizador.decode(ids[inicio:inicio + _VENTANA_TOKENS], skip_special_tokens=True)
+        for inicio in range(0, len(ids), paso)
+    ]
+
+
 def ner_roberta(texto: str,
                 umbral_confianza: float = 0.60) -> list[dict]:
     """
     Extrae entidades nombradas con RoBERTa-BNE.
 
-    Usa ventana deslizante para textos largos (>512 tokens ≈ ~400 palabras).
-    Deduplica entidades repetidas manteniendo la de mayor confianza.
+    Usa ventana deslizante (medida en subtokens reales del propio
+    tokenizador, no en palabras) para textos largos. Deduplica entidades
+    repetidas manteniendo la de mayor confianza.
 
     Args:
         texto:             Texto a analizar.
@@ -145,25 +177,17 @@ def ner_roberta(texto: str,
         ImportError: Si transformers/torch no están instalados.
     """
     nlp = _pipeline_ner()
-    palabras = texto.split()
-
-    # Si el texto cabe en una ventana, procesarlo directo
-    if len(palabras) <= _VENTANA:
-        fragmentos = [texto]
-    else:
-        # Ventana deslizante con solapamiento
-        fragmentos = []
-        for inicio in range(0, len(palabras), _VENTANA - _SOLAPE):
-            frag = " ".join(palabras[inicio:inicio + _VENTANA])
-            fragmentos.append(frag)
+    fragmentos = _fragmentar_por_tokens(texto, nlp.tokenizer)
 
     # Procesar todos los fragmentos y deduplicar
     vistas: dict[tuple, dict] = {}  # (texto_norm, categoria) → entidad de mayor confianza
+    fallos = 0
 
     for frag in fragmentos:
         try:
             entidades = nlp(frag)
         except Exception:
+            fallos += 1
             continue
 
         # Fusionar entidades consecutivas del mismo tipo cuyos tokens empiezan con ##
@@ -203,6 +227,21 @@ def ner_roberta(texto: str,
                     "confianza": round(score, 4),
                     "fuente":    "roberta_bne",
                 }
+
+    if fallos:
+        # No debería pasar con la fragmentación por tokens de arriba, pero si
+        # pasa NO puede quedar en silencio otra vez: eso fue exactamente lo
+        # que dejó 171/171 fragmentos fallando sin que nadie se enterara
+        # (sesión 63). Un RuntimeWarning aparece en consola/logs sin
+        # necesitar tocar la firma de esta función para agregar un callback.
+        import warnings
+        warnings.warn(
+            f"ner_roberta: {fallos}/{len(fragmentos)} fragmentos fallaron y se "
+            "descartaron sin procesar (ver stacktrace con -W error si hace falta "
+            "diagnosticar)",
+            RuntimeWarning,
+            stacklevel=2,
+        )
 
     return sorted(vistas.values(), key=lambda e: -e["confianza"])
 
