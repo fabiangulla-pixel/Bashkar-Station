@@ -374,6 +374,22 @@ class TestMorfologiaHistorica:
         assert res["score"] == 0.0
         assert res["n_arcaismos"] == 0
 
+    def test_futuro_subjuntivo_no_marca_quiere_presente(self):
+        # "quien quiere"/"quien prefiere" son español moderno normal (presente
+        # de indicativo); el sufijo -iere coincide con el de "quisiere" real
+        # pero no debe contarse como arcaísmo. Bug real hallado sobre el
+        # corpus de Estampa: 21/22 coincidencias del patrón eran de este tipo.
+        from core.morfologia_historica import analizar_densidad_historica
+        texto = "quien quiere puede lograrlo, y quien no quiere no lo intenta"
+        res = analizar_densidad_historica(texto)
+        assert "futuro_subjuntivo" not in res["marcadores_detectados"]
+
+    def test_futuro_subjuntivo_si_marca_arcaismo_real(self):
+        from core.morfologia_historica import analizar_densidad_historica
+        texto = "quien viniere sera bienvenido, y quien quisiere quedarse, que se quede"
+        res = analizar_densidad_historica(texto)
+        assert res["marcadores_detectados"].get("futuro_subjuntivo", 0) == 2
+
     def test_glosario_retorna_lista(self):
         from core.morfologia_historica import glosario_arcaismos
         glos = glosario_arcaismos()

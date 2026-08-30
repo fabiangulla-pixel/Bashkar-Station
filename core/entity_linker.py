@@ -43,13 +43,20 @@ _PAUSA_ENTRE_LLAMADAS = 0.5
 #   v1 → desambiguación previa a sesión 35
 #   v2 → fix sesión 35 (uselang=es, rango, P31, descarte homónimos)
 #   v3 → sesión 42: contexto LLM, ventana histórica 1930-40, filtro basura OCR
-_ALGO_VERSION = 3
+#   v4 → sesión 64: quitada la cota inferior de la ventana histórica (excluía
+#        por error entidades antiguas reales: Bogotá 1538, Cervantes 1547)
+_ALGO_VERSION = 4
 
 # Período histórico del corpus (revista Estampa, Colombia). Una entidad cuya
 # fecha de nacimiento/fundación sea MUY posterior no puede ser la que cita la
 # prensa de los años 30: se penaliza al desambiguar homónimos modernos. (#3)
+# NO hay cota inferior: una ciudad colonial (Bogotá, fundada 1538) o un autor
+# citado por su obra (Cervantes, n. 1547; Góngora, n. 1561) existen igual de
+# válidamente en 1939 sin importar cuán atrás quede su fecha — una cota
+# inferior de 1700 (usada hasta sesión 64) los excluía a todos por error real,
+# verificado sobre el corpus de Estampa (Bogotá, el lugar más mencionado del
+# corpus, no enlazaba con Wikidata por esta causa).
 _ANIO_CORPUS_FIN = 1945    # margen sobre 1940 para no excluir contemporáneos
-_ANIO_CORPUS_INI = 1700    # cota inferior holgada (personajes ya nacidos)
 
 # Longitud mínima de una entidad para intentar enlazarla. Fragmentos OCR muy
 # cortos ("Bogo", "Cal") generan enlaces espurios; se descartan. (#2)
@@ -456,7 +463,7 @@ def enlazar_entidad(
             # Descartar homónimos modernos (nacidos/fundados tras el corpus). (#3)
             time.sleep(_PAUSA_ENTRE_LLAMADAS)
             anio = _obtener_fecha_relevante(cand["id"])
-            if anio is not None and not (_ANIO_CORPUS_INI <= anio <= _ANIO_CORPUS_FIN):
+            if anio is not None and anio > _ANIO_CORPUS_FIN:
                 continue
         mejor, mejor_score = cand, sc
         break

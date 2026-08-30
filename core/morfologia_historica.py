@@ -183,6 +183,16 @@ _MARCADORES = {
         r'(\w+(?:are|ares|aren|áremos|areis|iere|ieres|ieren|iéremos|iereis))\b',
         re.IGNORECASE,
     ),
+    # ── OJO ────────────────────────────────────────────────────────────────
+    # El sufijo -iere/-ieren también aparece en el presente de indicativo de
+    # verbos como "querer" ("quiere", "quieren") y "preferir"/"referir"/
+    # "diferir"/"inferir" ("prefiere", "refiere"...), y el sufijo -ares en
+    # adjetivos/sustantivos comunes ("militares", "populares", "regulares").
+    # Sin filtrarlos, dominan los falsos positivos (verificado sobre corpus
+    # real de Estampa: 21/22 coincidencias eran "quiere"/"quieren"/
+    # "prefiere"/"militares", solo 1 arcaísmo genuino — "viniere"). Se
+    # excluyen por lista, no por regex, porque distinguir "quiere" (presente)
+    # de "quisiere" (subjuntivo futuro real) por morfología pura no es trivial.
     "voseo": re.compile(
         r'\b(vos|vosotros|vosotras)\b', re.IGNORECASE
     ),
@@ -201,6 +211,13 @@ _MARCADORES = {
         r'\bá\s+[A-ZÁÉÍÓÚ][a-záéíóú]+\b'
     ),
 }
+
+# Falsos positivos frecuentes de "futuro_subjuntivo" (ver nota en _MARCADORES).
+_FUTURO_SUBJ_EXCEPCIONES = frozenset({
+    "quiere", "quieren", "prefiere", "prefieren", "refiere", "refieren",
+    "difiere", "difieren", "infiere", "infieren", "militares", "populares",
+    "regulares", "particulares", "singulares", "similares",
+})
 
 
 # ── API pública ───────────────────────────────────────────────────────────────
@@ -323,6 +340,9 @@ def analizar_densidad_historica(texto: str) -> dict:
     ejemplos_marc: list[dict] = []
     for tipo, patron in _MARCADORES.items():
         matches = patron.findall(texto)
+        if tipo == "futuro_subjuntivo":
+            matches = [m for m in matches
+                       if m.lower() not in _FUTURO_SUBJ_EXCEPCIONES]
         if matches:
             marcadores_hallados[tipo] = len(matches)
             ejemplos_marc.extend(

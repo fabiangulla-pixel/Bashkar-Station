@@ -246,6 +246,28 @@ class TestMejorasDesambiguacion:
         assert _anio_de_claim(claims, "P569") == 1934
         assert _anio_de_claim({}, "P569") is None
 
+    def test_ventana_historica_no_excluye_entidad_antigua(self, tmp_path, monkeypatch):
+        """Bug real hallado sobre el corpus de Estampa: la cota inferior de
+        1700 excluía a Bogotá (fundada 1538) del enlace a Wikidata, pese a
+        ser el lugar más mencionado del corpus y el candidato correcto en
+        rango 0. La cota inferior no cumplía ningún propósito (los homónimos
+        modernos ya se filtran con la cota superior) — se removió. Mockeado
+        sin red: simula el candidato real Q2841 con fecha de fundación 1538."""
+        import core.entity_linker as el
+
+        candidato = {"id": "Q2841", "label": "Bogotá",
+                     "description": "capital de Colombia", "rango": 0,
+                     "url": "http://www.wikidata.org/entity/Q2841"}
+
+        monkeypatch.setattr(el, "_llamar_wikidata", lambda t, cat, lang="es": [candidato])
+        monkeypatch.setattr(el, "_obtener_p31", lambda qid: ["Q1549591"])  # capital
+        monkeypatch.setattr(el, "_obtener_fecha_relevante", lambda qid: 1538)
+        monkeypatch.setattr(el.time, "sleep", lambda s: None)
+
+        r = el.enlazar_entidad("Bogotá", "lugares", str(tmp_path / "c.db"))
+        assert r is not None
+        assert r["id"] == "Q2841"
+
     def test_cache_invalida_version_vieja(self, tmp_path):
         """#4 — un resultado guardado con algo_version < actual se ignora
         (se trata como ausente para forzar re-enlace con la lógica nueva)."""
