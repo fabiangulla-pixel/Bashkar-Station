@@ -2,6 +2,47 @@
 
 ---
 
+## Sesión 64 — 2026-08-30 — Merge de fixes s.63, análisis real de Estampa, 3 bugs de auditoría, v12.3
+
+**Merge y despliegue:**
+- Mergeada a `main` la rama `claude/bashkar-station-8qhcvs` (5 commits de sesión 63:
+  offline-timing HF Hub en `ner_roberta_local`/`embeddings_local`, ventana por
+  tokens reales en RoBERTa, orden `faiss`/`sentence_transformers`, `spell_corrector`
+  rn→m). Sin conflictos. Suite 1479 passed/0 failed. Pusheado (`c5fd7e3`).
+
+**Análisis real del corpus de Estampa (792 páginas, proyecto
+`Estampa_1939__Vision_OCR_completo`):**
+- Corrido el pipeline completo (`norm,seg,ner,tei,bibtex,csv`) con RoBERTa real
+  (no el fallback spaCy de s.62): 639 artículos, 7.650 entidades únicas.
+- Producidos `PAPER_METODOLOGICO_ESQUELETO.md`, `REPORTE_ANALISIS_ESTAMPA.md`
+  y `ENSAYO_ESTAMPA_BORRADOR.md` con hallazgos reales (red de entidades,
+  encuadres, polaridad, campo literario — Arciniegas/De Greiff/Chaves
+  Nogales/Lorca) calibrados contra la tesis de maestría del autor.
+
+**3 bugs reales encontrados y arreglados auditando la herramienta sobre el
+corpus real (no tests sintéticos):**
+1. `core/morfologia_historica.py` — "quien quiere" (presente normal de
+   "querer") marcado como arcaísmo de futuro-subjuntivo por coincidencia de
+   sufijo con "quisiere". 21/22 detecciones en el corpus eran falsos
+   positivos. Fix: lista de exclusión.
+2. `core/entity_linker.py` — la ventana histórica del filtro de homónimos
+   modernos tenía cota inferior de 1700 sin propósito real; excluía
+   cualquier entidad genuinamente antigua (Bogotá, fundada 1538, nunca
+   enlazaba con Wikidata pese a ser el lugar más mencionado del corpus).
+   Fix: eliminada la cota inferior, `_ALGO_VERSION` 3→4.
+3. **`core/ocr_normalizer.py`** — el marcador de layout `--- COLUMNA ---`
+   (que el prompt de Vision OCR pide insertar) solo se limpiaba dentro de
+   una función interna de NER, nunca en la etapa `norm` que alimenta
+   segmentación/`corpus_txt`/análisis de frecuencia. Era la palabra #1 de
+   todo el corpus (2.462 apariciones). Fix en la capa correcta; recorrido
+   el pipeline completo de nuevo con backup de `03_ocr/` previo.
+
+**`.exe` v12.3** — recompilado y desplegado con los 3 fixes (el build
+anterior, v12.2, no los llevaba). Ver sección de despliegue del informe de
+cierre para detalle.
+
+---
+
 ## Sesión 63 (cont. 3) — 2026-08-30 — Mismo bug del segfault de RoBERTa en embeddings_local + otro real en búsqueda semántica
 
 Corrida la suite completa (no solo los archivos tocados) para cazar
