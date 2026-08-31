@@ -4,7 +4,8 @@
 **Fuente:** digitalización de la Biblioteca Nacional de Colombia, 792 páginas,
 transcritas con OCR de visión (IA multimodal).
 **Herramienta:** Bashkar Station v12.2.
-**Fecha de la corrida:** 30 de agosto de 2026.
+**Fecha de la corrida:** 30 de agosto de 2026 (corrida final, incluye
+normalización — ver nota de verificación al final del documento).
 **Pipeline:** segmentación → NER (RoBERTa, modelo `mrm8488/bert-spanish-cased-finetuned-ner`)
 → red de co-ocurrencia → encuadre → polaridad → estilometría.
 
@@ -21,14 +22,14 @@ transcritas con OCR de visión (IA multimodal).
 | Mayo 1939 | 173 |
 | **Total** | **792** |
 
-**Segmentación en unidades editoriales:** 636 artículos (página como unidad
+**Segmentación en unidades editoriales:** 639 artículos (página como unidad
 atómica, con consolidación de continuaciones entre páginas).
 
 ## 2. Autoría
 
 | Categoría | N | % |
 |---|---|---|
-| Anónimo / Sin atribuir | 635 | 99,8% |
+| Anónimo / Sin atribuir | 638 | 99,8% |
 | Firmado (Alfonso Fuenmayor) | 1 | 0,2% |
 
 **Nota metodológica:** con un solo texto firmado, no hay base estadística
@@ -39,7 +40,7 @@ mismo el resultado relevante de este eje de análisis.
 ## 3. Reconocimiento de entidades nombradas (NER)
 
 **Motor:** RoBERTa (`bert-spanish-cased-finetuned-ner`), 6 categorías.
-**Total de entidades únicas identificadas:** 7.652.
+**Total de entidades únicas identificadas:** 7.650.
 
 ### 3.1 Personas más mencionadas (por número de artículos en que aparecen)
 
@@ -117,9 +118,9 @@ peso mínimo de coocurrencia = 2 (default).
 | Métrica | Valor |
 |---|---|
 | Nodos | 300 |
-| Aristas | 4.083 |
-| Comunidades (Louvain/greedy modularity) | 8 |
-| Modularidad | 0,218 |
+| Aristas | 3.919 |
+| Comunidades (Louvain/greedy modularity) | 9 |
+| Modularidad | 0,195 |
 
 ### 4.1 Nodos más conectados (grado)
 
@@ -145,7 +146,7 @@ peso mínimo de coocurrencia = 2 (default).
 sino por un núcleo doble — el par Colombia/Bogotá (la escena local de la
 revista) y un cinturón de potencias europeas (España, Francia, Alemania,
 Inglaterra) más las figuras de Hitler, Mussolini y Franco. La modularidad
-relativamente baja (0,218, sobre una escala 0-1 donde >0,4 suele considerarse
+relativamente baja (0,195, sobre una escala 0-1 donde >0,4 suele considerarse
 estructura comunitaria fuerte) indica que estos dos polos —lo local
 colombiano y la crisis europea de 1939— no están segregados en comunidades
 temáticas separadas, sino densamente entrelazados: la revista no separa
@@ -156,8 +157,9 @@ frecuencia.
 *(Corrección respecto a un análisis previo de la bitácora del proyecto: una
 cifra de modularidad 0,67 citada en sesiones anteriores correspondía a un
 subconjunto curado de solo 43 nodos —sesión 36 del proyecto—, no al corpus
-completo. No es comparable con la cifra de 0,218 reportada aquí, que es la
-única calculada sobre la red completa y real del corpus.)*
+completo. No es comparable con la cifra de 0,195 reportada aquí, que es la
+única calculada sobre la red completa y real del corpus, tras corregir el
+bug del marcador "COLUMNA" — ver nota de verificación al final del documento.)*
 
 ## 5. Encuadres temáticos (frame analysis)
 
@@ -166,15 +168,15 @@ ilustrada colombiana de los años 30 (10 categorías).
 
 | Encuadre | Artículos | % del corpus |
 |---|---|---|
-| Nación | 148 | 23,3% |
-| Mujer / vida social | 117 | 18,4% |
-| Política | 91 | 14,3% |
-| Modernidad | 64 | 10,1% |
-| Cultura | 54 | 8,5% |
+| Nación | 148 | 23,2% |
+| Mujer / vida social | 117 | 18,3% |
+| Política | 92 | 14,4% |
+| Modernidad | 64 | 10,0% |
+| Cultura | 55 | 8,6% |
 | Internacional | 51 | 8,0% |
 | Guerra | 39 | 6,1% |
-| Economía | 29 | 4,6% |
-| Religión / moral | 25 | 3,9% |
+| Economía | 29 | 4,5% |
+| Religión / moral | 26 | 4,1% |
 | Ciencia | 13 | 2,0% |
 
 **Lectura:** el encuadre dominante no es "Guerra" ni "Internacional" pese a
@@ -196,9 +198,9 @@ conflicto europeo.
 |---|---|
 | Positivo | 278 |
 | Negativo | 189 |
-| Neutro | 169 |
+| Neutro | 172 |
 
-**Índice de polarización afectiva (IPA):** 0,594 (escala 0-1; valores altos
+**Índice de polarización afectiva (IPA):** 0,592 (escala 0-1; valores altos
 indican que la cobertura se concentra en los extremos positivo/negativo más
 que en el centro neutro).
 
@@ -211,7 +213,7 @@ que en el centro neutro).
 |---|---|---|---|---|---|---|
 | Hitler | Negativo | −0,324 | 25 | 49 | 123 | 59 |
 | Mussolini | Neutro (leve negativo) | −0,143 | 21 | 28 | 100 | 55 |
-| Franco | Negativo | −0,400 | 42 | 98 | 222 | 70 |
+| Franco | Negativo | −0,391 | 42 | 96 | 220 | 70 |
 | López (Alfonso López / Presidente López) | Positivo | +0,193 | 34 | 23 | 214 | 80 |
 
 **Lectura:** el contraste es claro y consistente con la orientación editorial
@@ -223,7 +225,7 @@ europeo (Hitler el menos negativo de los tres, −0,324; Franco el más negativo
 −0,400, coherente con la cobertura de la Guerra Civil española recién
 terminada en 1939), frente a un tono positivo hacia el presidente colombiano
 en ejercicio o reciente, Alfonso López Pumarejo (+0,193). Franco es, además,
-la figura con más menciones totales de las cuatro (222, en 70 de los 636
+la figura con más menciones totales de las cuatro (220, en 70 de los 639
 artículos) — la Guerra Civil española y su desenlace son, por volumen de
 menciones, el evento internacional más presente del corpus, por encima de
 Hitler pese a que este también atraviesa el período previo a la Segunda
@@ -245,7 +247,7 @@ co-ocurrencia (§4) y con la sección editorial asignada por artículo.
 | García Lorca (España) | 5 | ene, feb, may |
 | Guillermo Valencia | 4 | mar, abr, may |
 | Vargas Vila | 4 | feb, abr, may |
-| Eduardo Caballero Calderón | 4 | ene, may |
+| Eduardo Caballero Calderón | 3 | ene, may |
 | Tomás Carrasquilla | 3 | ene, abr |
 | Baldomero Sanín Cano | 2 | abr |
 | Pablo Neruda (Chile) | 2 | feb, mar |
@@ -270,7 +272,7 @@ correctamente como "persona" bajo la forma exacta buscada.)*
 De los 17 escritores identificados, solo **3 logran integrarse a la red**
 (umbral mínimo de 2 co-apariciones): Arciniegas (grado 18, vecinos
 principales Colombia/América/Bogotá/Europa), Chaves Nogales (grado 14,
-vecinos Francia/España/Franco/Cataluña) y García Lorca (grado 8, vecinos
+vecinos Francia/España/Franco/Cataluña) y García Lorca (grado 7, vecinos
 Bogotá/Madrid/Granada/España). Los 14 restantes aparecen en el corpus pero
 sin suficiente co-ocurrencia repetida como para dejar huella estructural.
 De los tres integrados, los dos españoles (Chaves Nogales, Lorca) se conectan
@@ -313,10 +315,35 @@ o "Cine".
   encuadres del §5, siguiendo el protocolo de `validacion_engine.exportar_muestra`
   + `calcular_concordancia` ya disponible en el proyecto.
 
+## 9. Nota de verificación: corrección del marcador "COLUMNA" (30-ago-2026)
+
+Auditando el pipeline completo se encontró que el marcador de layout
+`--- COLUMNA ---` (que el prompt de Vision OCR le pide al modelo insertar,
+`core/ocr_llm.py`) solo se limpiaba dentro de una función interna de NER
+(`ner_engine._limpiar()`), no en la etapa de normalización (`ocr_normalizer`)
+que alimenta segmentación, `corpus_txt` y cualquier análisis basado en
+frecuencia de palabras. Verificado con `collocation_engine.frecuencias`:
+**"columna" era la palabra número 1 de todo el corpus** (2.462 apariciones en
+563/636 artículos), muy por encima de cualquier palabra real. Arreglado en
+`ocr_normalizer.normalizar_texto_ocr` (commit de sesión 64) y verificado que
+"columna" desaparece del top-15 de frecuencias tras el fix.
+
+Todas las cifras de este reporte (§1-§8) ya reflejan la corrida FINAL
+—después del fix, con la etapa `norm` incluida— excepto donde se indica lo
+contrario. El impacto real del fix sobre las cifras de más alto nivel (red,
+encuadres, polaridad, autoría) fue **menor de lo esperado**: la mayoría de
+las diferencias son de 1-3 puntos, dentro del ruido normal de una re-corrida.
+La única diferencia con lectura sustantiva es la modularidad de la red
+(0,218→0,195 tras el fix; ambas cifras describen la misma estructura general
+—red integrada, sin bloques temáticos nítidos— así que la lectura cualitativa
+de §4 no cambia). El número de artículos subió de 636 a 639 porque limpiar el
+marcador también cambió ligeramente la heurística de fusión de páginas
+consecutivas del segmentador.
+
 ---
 
 *Reporte generado automáticamente a partir de una corrida real del pipeline
 de Bashkar Station sobre el corpus completo. Todas las cifras son
-verificables reejecutando `cli.py --etapas seg,ner` sobre el proyecto
+verificables reejecutando `cli.py --etapas norm,seg,ner` sobre el proyecto
 `Estampa_1939__Vision_OCR_completo.bashkar` más el script de análisis de
 red/encuadre/polaridad documentado en la sesión del 30-ago-2026.*

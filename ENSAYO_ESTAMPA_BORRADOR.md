@@ -10,6 +10,14 @@
 > de esta sesión para las cifras literarias nuevas, aún no volcadas al
 > reporte técnico). `[cita pendiente: ...]` marca donde falta tu criterio o
 > una fuente secundaria que no tengo verificada — no inventé ninguna.
+>
+> **Corrección posterior (mismo día):** auditando el pipeline se encontró
+> que el marcador de layout "--- COLUMNA ---" se colaba sin limpiar en el
+> texto de los artículos (bug real, ver `REPORTE_ANALISIS_ESTAMPA.md` §9).
+> Arreglado y todo recorrido: las cifras de este documento ya son la versión
+> FINAL post-fix. El impacto fue menor —conteo de artículos 636→639, un
+> escritor bajó de 4 a 3 menciones, la red bajó de 4.083 a 3.919 aristas—
+> ninguna lectura cualitativa del ensayo cambia.
 
 ---
 
@@ -25,7 +33,7 @@ Cuervo)*
 
 Este artículo examina la presencia de escritores y del campo literario dentro
 del corpus completo de la revista ilustrada colombiana *Estampa*
-correspondiente a cinco números de 1939 (enero-mayo, 792 páginas, 636
+correspondiente a cinco números de 1939 (enero-mayo, 792 páginas, 639
 unidades editoriales), a partir de un análisis distante sobre 7.652 entidades
 nombradas identificadas automáticamente. Se identifica un conjunto de
 escritores colombianos, latinoamericanos y españoles mencionados a lo largo
@@ -92,7 +100,7 @@ aparece cada figura:
 | García Lorca (España) | 5 | ene, feb, may |
 | Guillermo Valencia | 4 | mar, abr, may |
 | Vargas Vila | 4 | feb, abr, may |
-| Eduardo Caballero Calderón | 4 | ene, may |
+| Eduardo Caballero Calderón | 3 | ene, may |
 | Tomás Carrasquilla | 3 | ene, abr |
 | Baldomero Sanín Cano | 2 | abr |
 | Pablo Neruda (Chile) | 2 | feb, mar |
@@ -131,7 +139,7 @@ una sección literaria separada del acontecer internacional.
 
 *(cifras verificadas, corrida propia de esta sección)*
 
-La red de co-ocurrencia completa del corpus —300 nodos, 4.083 aristas,
+La red de co-ocurrencia completa del corpus —300 nodos, 3.919 aristas,
 construida con un umbral mínimo de dos co-apariciones para formar una
 arista²— deja fuera a la mayoría de los escritores del inventario anterior:
 de dieciséis nombres literarios identificados, solo tres —Germán Arciniegas,
@@ -177,7 +185,7 @@ estructuralmente a la red política del corpus.)*
 
 *(cifras verificadas, corrida propia de esta sección)*
 
-De las 636 unidades editoriales del corpus, la revista clasifica
+De las 639 unidades editoriales del corpus, la revista clasifica
 explícitamente solo 15 bajo secciones de contenido estrictamente literario:
 8 en "Libros", 5 en "Poema/Verso", 2 en "Cuento" —un 2,4% del corpus—, frente
 a 265 en "General", 76 en "Política", 42 en "Modas/Hogar" y 39 en

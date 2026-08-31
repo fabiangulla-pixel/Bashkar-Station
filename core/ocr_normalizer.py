@@ -371,6 +371,17 @@ def normalizar_texto_ocr(texto: str,
             else:
                 patron, reemplazo = item
                 texto = re.sub(patron, reemplazo, texto)
+        # Marcadores de layout que el prompt de Vision OCR le pide al modelo
+        # insertar (--- COLUMNA ---, [ilegible], ver ocr_llm.py) no son
+        # contenido del artículo. Bug real hallado sesión 64: solo se
+        # limpiaban dentro de ner_engine._limpiar() antes de correr NER, no
+        # aquí — así que se colaban intactos en segmentacion.csv/corpus_txt y
+        # contaminaban frecuencias, nubes de palabras, Word2Vec y LDA
+        # ("columna" era la palabra #1 de todo el corpus, 2.462 apariciones
+        # en 563/636 artículos). Limpiarlos aquí, en la normalización, cubre
+        # a TODOS los consumidores de una vez.
+        texto = re.sub(r"---\s*COLUMNA\s*---|\[ilegible\]", " ", texto,
+                        flags=re.IGNORECASE)
 
     # ── 6. Corrección ortográfica Hunspell (opcional, conservadora) ──────────
     if spell_check:

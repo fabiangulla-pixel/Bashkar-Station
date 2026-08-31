@@ -37,6 +37,23 @@ class TestNormalizarTextoOcr:
     def test_s_larga_sustituida(self):
         assert "s" in normalizar_texto_ocr("ſeñor")
 
+    def test_marcador_columna_eliminado(self):
+        # Bug real hallado sesión 64: el marcador "--- COLUMNA ---" que el
+        # prompt de Vision OCR le pide al modelo insertar (ocr_llm.py) solo
+        # se limpiaba dentro de ner_engine._limpiar(), no aquí — se colaba
+        # intacto a segmentacion.csv/corpus_txt y era la palabra #1 de todo
+        # el corpus de Estampa (2.462 apariciones).
+        texto = "primer párrafo.\n\n--- COLUMNA ---\n\nsegundo párrafo."
+        resultado = normalizar_texto_ocr(texto)
+        assert "COLUMNA" not in resultado.upper()
+        assert "primer párrafo" in resultado
+        assert "segundo párrafo" in resultado
+
+    def test_marcador_ilegible_eliminado(self):
+        texto = "texto real [ilegible] mas texto real"
+        resultado = normalizar_texto_ocr(texto)
+        assert "[ilegible]" not in resultado.lower()
+
     def test_ligadura_fi(self):
         resultado = normalizar_texto_ocr("ﬁesta")
         assert "fi" in resultado
