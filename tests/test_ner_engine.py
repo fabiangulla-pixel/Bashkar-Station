@@ -382,3 +382,50 @@ class TestGuiNerEvitaSegfault:
                 "una llamada a pipeline_ner en app.py ya no respeta la elección "
                 'explícita de "spacy"/"fallback" en Motor NER'
             )
+
+
+class TestHeuristicaFechas:
+    """Sesión de auditoría (frente 2): RoBERTa-BNE solo reconoce PER/LOC/ORG/
+    MISC (core/ner_roberta_local.py) — la categoría "fechas" queda siempre en
+    0 salvo que se pague enriquecimiento LLM. Verificado sobre el corpus real
+    de Estampa (indice_ner.json: 0 fechas en 6096 entidades pese a que el
+    texto sí las trae). extraer_fechas_heuristico() cubre el patrón dominante
+    con regex de meses en español, sin LLM ni costo."""
+
+    def test_detecta_fecha_completa_dia_mes_anio(self):
+        from core.ner_engine import extraer_fechas_heuristico
+        r = extraer_fechas_heuristico("El acto se realizó el 22 de marzo de 1939 en Bogotá.")
+        assert "22 de marzo de 1939" in r
+
+    def test_detecta_fecha_sin_anio(self):
+        from core.ner_engine import extraer_fechas_heuristico
+        r = extraer_fechas_heuristico("Volverá el 20 de julio próximo.")
+        assert "20 de julio" in r
+
+    def test_detecta_decada_nombrada(self):
+        from core.ner_engine import extraer_fechas_heuristico
+        r = extraer_fechas_heuristico("Aquello ocurrió en los años treinta.")
+        assert any("treinta" in f for f in r)
+
+    def test_no_falso_positivo_sin_nombre_de_mes(self):
+        """Bug real de la primera versión del regex: '1 de los', '3 de la',
+        '24 de este' matcheaban por no exigir un mes real después de 'de'."""
+        from core.ner_engine import extraer_fechas_heuristico
+        r = extraer_fechas_heuristico(
+            "Llegaron 3 de la comitiva y 1 de los invitados; volverán 24 de este mes."
+        )
+        assert r == set()
+
+    def test_texto_vacio_no_lanza(self):
+        from core.ner_engine import extraer_fechas_heuristico
+        assert extraer_fechas_heuristico("") == set()
+        assert extraer_fechas_heuristico(None) == set()
+
+    def test_pipeline_ner_incluye_fechas_heuristicas_sin_llm(self):
+        """El pipeline debe llamar a la heurística de fechas aunque no haya
+        api_key ni RoBERTa/spaCy disponibles — cubriendo el corpus real
+        donde la mayoría de sesiones corren sin motor de IA pesado."""
+        from core.ner_engine import pipeline_ner
+        texto = "El congreso se instaló el 19 de Diciembre de 1938 en Medellín. " * 3
+        r = pipeline_ner(texto, nlp=None, api_key=None, usar_roberta=False)
+        assert any("diciembre" in f.lower() for f in r.get("fechas", []))

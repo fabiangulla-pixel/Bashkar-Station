@@ -86,6 +86,36 @@ _SPACY_MAP = {"PER": "personas", "LOC": "lugares", "ORG": "organizaciones",
 # 28-ago-2026).
 _MARCADORES_ESTRUCTURALES = re.compile(r"---\s*COLUMNA\s*---|\[ilegible\]", re.IGNORECASE)
 
+# ── Heurística de fechas (complemento a RoBERTa, que no tiene categoría DATE) ─
+# RoBERTa-BNE (core/ner_roberta_local.py) solo reconoce PER/LOC/ORG/MISC — la
+# categoría "fechas" queda siempre vacía salvo que se pague enriquecimiento
+# con LLM. Verificado sobre el corpus real de Estampa (indice_ner.json,
+# 28-ago-2026): 0 fechas en 6096 entidades pese a que el texto SÍ las trae
+# ("19 de Diciembre de 1938", "22 de marzo de 1939", etc.). Un regex con
+# lista cerrada de meses en español cubre el patrón dominante sin arriesgar
+# falsos positivos (validado: "1 de los", "3 de la" NO matchean porque no
+# hay nombre de mes después de "de").
+_MESES = ("enero|febrero|marzo|abril|mayo|junio|julio|agosto|"
+          "septiembre|setiembre|octubre|noviembre|diciembre")
+_RE_FECHA_DIA_MES = re.compile(
+    rf"\b\d{{1,2}}\s+de\s+(?:{_MESES})(?:\s+de\s+\d{{4}})?\b", re.IGNORECASE)
+_DECADAS = "veinte|treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa"
+_RE_FECHA_DECADA = re.compile(
+    rf"\b(?:los\s+años|la\s+d[eé]cada\s+de(?:\s+los)?)\s+(?:{_DECADAS})\b",
+    re.IGNORECASE)
+
+
+def extraer_fechas_heuristico(texto: str) -> set[str]:
+    """Extrae fechas con regex de patrones fijos del español (día + mes,
+    décadas nombradas). No detecta años sueltos ni fechas numéricas
+    (dd/mm/aaaa) para evitar falsos positivos con folios/precios/páginas.
+    """
+    if not texto:
+        return set()
+    fechas = {m.group(0).strip() for m in _RE_FECHA_DIA_MES.finditer(texto)}
+    fechas |= {m.group(0).strip() for m in _RE_FECHA_DECADA.finditer(texto)}
+    return fechas
+
 # Palabras función del español que spaCy (modelo pequeño, es_core_news_sm)
 # etiqueta como PER por estar en mayúscula inicial de oración — nunca son
 # nombres de persona. Filtro conservador: solo aplica a candidatos de UNA
@@ -288,6 +318,13 @@ def pipeline_ner(texto: str, nlp=None, api_key: str | None = None,
             log(f"  spaCy: {sum(len(v) for v in indice.values())} entidades candidatas")
         else:
             log("  ⚠ Sin motor NER local disponible (instala transformers o spaCy)")
+
+    # Heurística de fechas — complementa a RoBERTa/spaCy, que rara vez
+    # detectan fechas en español histórico de forma consistente.
+    fechas_heuristicas = extraer_fechas_heuristico(texto)
+    if fechas_heuristicas:
+        indice["fechas"] |= fechas_heuristicas
+        log(f"  Heurística fechas: +{len(fechas_heuristicas)} candidatas")
 
     # Enriquecimiento opcional con LLM
     if api_key:
