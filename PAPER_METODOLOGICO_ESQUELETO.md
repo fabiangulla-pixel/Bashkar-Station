@@ -20,9 +20,41 @@ Rasgos observados a replicar:
 - Cierre de sección con una síntesis interpretativa que conecta el dato material
   con la pregunta más amplia del campo editorial/histórico.
 
-Lo que este esqueleto NO puede resolver por ti (requiere tu criterio de investigador):
-marco teórico secundario, bibliografía crítica sobre *Estampa*/prensa ilustrada
-colombiana 1930s, y el argumento historiográfico central del artículo.
+**Marco teórico secundario — decidido (2-sep-2026):** grupo generacional
+**Los Nuevos** (revista homónima, Bogotá, 6-jun-1925 — junta editorial: Felipe
+y Alberto Lleras Camargo, Rafael Maya, Germán Arciniegas, Eliseo Arango, José
+Enrique Gaviria, Abel Botero, Jorge Zalamea, León de Greiff, Francisco Umaña
+Bernal, José Mar, Manuel García Herreros, Luis Vidales; influencia de "Ariel"
+de Rodó y de las ideas socialistas de posguerra; reacción contra el modernismo
+y la generación centenarista). Fuente académica a citar:
+Rodríguez Morales, R. y Sierra Restrepo, A. (2005). Los Nuevos: entre la
+tradición y la vanguardia. *Boletín Cultural y Bibliográfico*, 42(69), 2-23.
+https://publicaciones.banrepcultural.org/index.php/boletin_cultural/article/view/707
+(también indexado en Dialnet y en la Biblioteca Virtual Miguel de Cervantes;
+verificar acceso al PDF completo antes de citar página exacta).
+
+**Puente real con el corpus (no fabricado — verificar antes de usarlo como
+argumento fuerte):** los dos escritores literarios que dominan el índice de
+personas de *Estampa* 1939 (Germán Arciniegas, 11 artículos, presente en los
+5 números; León de Greiff, 7 artículos) fueron miembros fundadores de la
+junta editorial de *Los Nuevos* en 1925. Catorce años después, en *Estampa*,
+esa misma generación aparece ya consolidada como referencia cultural — puede
+leerse como el momento en que el proyecto generacional de los años 20 se
+volvió canon citable en la prensa ilustrada de circulación masiva, o como
+continuidad de red social/editorial entre publicaciones. Esto SÍ requiere
+lectura historiográfica propia (no basta con la coincidencia de nombres); el
+esqueleto no la redacta por ti.
+
+**Veta central del artículo — decidida (2-sep-2026):** el campo literario
+(eje ya trabajado en `ENSAYO_ESTAMPA_BORRADOR.md`), leído ahora en diálogo
+con Los Nuevos como antecedente generacional inmediato de esos mismos
+nombres.
+
+Lo que este esqueleto todavía NO puede resolver por ti (requiere tu criterio
+de investigador): bibliografía crítica secundaria sobre *Estampa*/prensa
+ilustrada colombiana 1930s más allá de Los Nuevos, y el argumento
+historiográfico central completo del artículo (la relación entre Los Nuevos
+y *Estampa* es una pista, no una tesis ya armada).
 
 ---
 
@@ -231,16 +263,18 @@ anteriores, no de la corrida completa más reciente.
 
 ## Próximos pasos concretos antes de escribir prosa final
 
-1. **Decidir la revista objetivo** — define normas de citación exactas,
-   extensión máxima, si el resumen bilingüe va antes o después de la
-   introducción, y si se admite primera persona (tu tesis la usa puntualmente;
-   no todas las revistas de Estudios Editoriales/HD la aceptan igual).
+1. **Decidir la revista objetivo** — sigue pendiente. Define normas de
+   citación exactas, extensión máxima, si el resumen bilingüe va antes o
+   después de la introducción, y si se admite primera persona (tu tesis la
+   usa puntualmente; no todas las revistas de Estudios Editoriales/HD la
+   aceptan igual).
 2. ~~Recorrer el pipeline completo sobre el corpus actual~~ — **HECHO
    30-ago-2026**, cifras finales ya incorporadas arriba (7.652 entidades,
    red 300 nodos/0.218 modularidad, IPA 0.594, encuadres, 99.8% anónimo).
-3. **Definir el argumento histórico central** — este esqueleto solo organiza
-   evidencia; el argumento sobre qué significó *Estampa* en el campo editorial
-   colombiano de los 30 es una decisión de investigación tuya.
+3. ~~Definir marco teórico secundario y veta central~~ — **HECHO
+   2-sep-2026**: Los Nuevos (Rodríguez Morales y Sierra Restrepo, 2005) +
+   campo literario. Falta todavía el argumento histórico completo (la
+   relación Los Nuevos↔*Estampa* es una pista real, no una tesis redactada).
 4. Redactar la prosa final en tu voz sobre esta estructura (yo puedo ayudar
    sección por sección una vez tengas 2-3 lo suficientemente decididas para
    calibrar contra ellas, igual que se hizo aquí con la tesis de 2018).

@@ -17,6 +17,32 @@ from datos.repositorio import Repositorio
 
 VERSION_NUEVA = "11"
 
+# Valor canónico de "sin autor" que usa el segmentador actual
+# (core/article_segmenter.py::_extraer_autor) y que el resto del código
+# compara con `==` (p.ej. app.py al contar autores únicos). Los .bashkar v10
+# reales vienen de un pipeline basado en pandas que dejaba en el campo
+# "autor" basura de la conversión DataFrame → JSON en vez de vacío real:
+# NaN se volvía el string literal "nan" (str(float('nan')) == "nan") y
+# celdas vacías quedaban como "" o "None". Comparado sobre un .bashkar de
+# marzo de 2026 con proyectos/Proyecto_04_Mar_2026.db (351 artículos): 179
+# "Anónimo / Sin atribuir", 142 "nan", 28 "" — solo 179/349 se contaban bien
+# como anónimos aguas abajo, el resto quedaba como "autor" fantasma no vacío
+# y no comparaba igual a nada. Normalizar aquí, en la migración, es más
+# seguro que tocar el criterio de "anónimo" en cada consumidor.
+AUTOR_ANONIMO = "Anónimo / Sin atribuir"
+_AUTOR_BASURA = {"", "nan", "none", "null", "na", "n/a", "-"}
+
+
+def _normalizar_autor(valor) -> str:
+    """Convierte basura de OCR/pandas del v10 (None, "", "nan", "None"...) al
+    mismo valor canónico que usa el segmentador actual para "sin autor"."""
+    if valor is None:
+        return AUTOR_ANONIMO
+    texto = str(valor).strip()
+    if texto.lower() in _AUTOR_BASURA:
+        return AUTOR_ANONIMO
+    return texto
+
 
 def necesita_migracion(ruta: str) -> bool:
     """True si el .bashkar es de versión anterior a 11."""
@@ -73,7 +99,7 @@ def migrar(ruta: str) -> dict:
             "numero":           art.get("numero", ""),
             "tipo":             art.get("tipo", "articulo"),
             "titulo":           art.get("titulo"),
-            "autor":            art.get("autor"),
+            "autor":            _normalizar_autor(art.get("autor")),
             "fecha_publicacion":art.get("fecha"),
             "seccion":          art.get("seccion"),
             "palabras":         art.get("n_palabras", 0),

@@ -92,3 +92,64 @@ class TestMigrar:
         from datos.migracion import migrar, necesita_migracion
         migrar(str(bashkar_v10))
         assert not necesita_migracion(str(bashkar_v10))
+
+
+class TestNormalizarAutor:
+    """Regresión: .bashkar v10 reales (pipeline basado en pandas) dejaban en
+    "autor" basura de la conversión DataFrame→JSON ("nan", "", "None") en vez
+    de vacío real, y el resto del código compara contra el valor canónico
+    "Anónimo / Sin atribuir" — confirmado sobre
+    proyectos/Proyecto_04_Mar_2026.db: 142/349 artículos con autor=="nan" y
+    28/349 con autor=="" no se contaban como anónimos aguas abajo."""
+
+    def test_none_a_anonimo(self):
+        from datos.migracion import _normalizar_autor, AUTOR_ANONIMO
+        assert _normalizar_autor(None) == AUTOR_ANONIMO
+
+    def test_string_nan_a_anonimo(self):
+        from datos.migracion import _normalizar_autor, AUTOR_ANONIMO
+        assert _normalizar_autor("nan") == AUTOR_ANONIMO
+        assert _normalizar_autor("NaN") == AUTOR_ANONIMO
+
+    def test_vacio_a_anonimo(self):
+        from datos.migracion import _normalizar_autor, AUTOR_ANONIMO
+        assert _normalizar_autor("") == AUTOR_ANONIMO
+        assert _normalizar_autor("   ") == AUTOR_ANONIMO
+
+    def test_string_none_a_anonimo(self):
+        from datos.migracion import _normalizar_autor, AUTOR_ANONIMO
+        assert _normalizar_autor("None") == AUTOR_ANONIMO
+
+    def test_nombre_real_se_conserva(self):
+        from datos.migracion import _normalizar_autor
+        assert _normalizar_autor("German Arciniegas") == "German Arciniegas"
+
+    def test_migrar_normaliza_autor_basura(self, tmp_path):
+        """Un .bashkar v10 con basura de OCR/pandas en "autor" queda con el
+        valor canónico tras migrar, no con la basura original."""
+        import json
+        from datos.migracion import migrar, AUTOR_ANONIMO
+        from datos.repositorio import Repositorio
+
+        ruta = tmp_path / "sucio.bashkar"
+        data = {
+            "version": "10",
+            "nombre": "Sucio Test",
+            "articulos": [
+                {"id": "a1", "titulo": "T1", "autor": "nan", "n_palabras": 10},
+                {"id": "a2", "titulo": "T2", "autor": "", "n_palabras": 10},
+                {"id": "a3", "titulo": "T3", "autor": None, "n_palabras": 10},
+                {"id": "a4", "titulo": "T4", "autor": "Alfonso Fuenmayor", "n_palabras": 10},
+            ],
+        }
+        with open(ruta, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+
+        resultado = migrar(str(ruta))
+        repo = Repositorio(resultado["ruta_db"])
+        arts = {a["id"]: a for a in repo.listar_articulos()}
+
+        assert arts["a1"]["autor"] == AUTOR_ANONIMO
+        assert arts["a2"]["autor"] == AUTOR_ANONIMO
+        assert arts["a3"]["autor"] == AUTOR_ANONIMO
+        assert arts["a4"]["autor"] == "Alfonso Fuenmayor"
