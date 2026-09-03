@@ -208,10 +208,40 @@ class TestLineaATexto:
 
     def test_dos_spans_sin_espacio(self):
         s1 = _span("hola",  50, 100, x1=80)
-        s2 = _span("mundo", 81, 100)  # gap = 1 ≤ 2 → sin espacio extra
+        s2 = _span("mundo", 81, 100)  # gap = 1, umbral relativo a size=10 → sin espacio extra
         texto = _linea_a_texto([s1, s2])
         assert "hola" in texto
         assert "mundo" in texto
+
+    def test_espacio_correcto_gap_apretado_tipografia_compacta(self):
+        # Regresión: coordenadas REALES de "tiene un" en Panida (rev_panida_nro1.pdf,
+        # página 3), donde el hueco real entre palabras es de solo 0.35 pt a tamaño de
+        # fuente ~9.8-9.9. Con el umbral fijo anterior (2.0 pt) este par se fusionaba en
+        # "tieneun". El umbral relativo al tamaño de fuente debe seguir detectando el
+        # espacio real aunque sea mucho más chico que 2 pt.
+        s1 = _span("tiene", 238.78, 232.56, x1=262.93, size=9.84)
+        s2 = _span("un",    263.28, 232.56, x1=276.86, size=9.93)  # gap = 0.35
+        texto = _linea_a_texto([s1, s2])
+        assert "tiene un" in texto
+        assert "tieneun" not in texto
+
+    def test_espacio_correcto_gap_apretado_un_ala(self):
+        # Regresión: coordenadas reales de "un ala" en la misma página de Panida.
+        # gap = 277.10 - 276.86 = 0.24 pt, tamaño ~9.8-9.9 pt.
+        s1 = _span("un",  263.28, 232.56, x1=276.86, size=9.93)
+        s2 = _span("ala", 277.10, 232.56, x1=292.40, size=9.80)
+        texto = _linea_a_texto([s1, s2])
+        assert "un ala" in texto
+        assert "unala" not in texto
+
+    def test_coma_pegada_sin_espacio_espurio(self):
+        # La puntuación pegada a la palabra anterior (gap casi cero o negativo, como
+        # ocurre realmente en Panida entre palabra y coma) NO debe ganar un espacio
+        # espurio con el umbral relativo.
+        s1 = _span("que", 50, 100, x1=68.0, size=9.8)
+        s2 = _span(",",   68.1, 100, x1=71.0, size=9.8)  # gap = 0.1, pegado
+        texto = _linea_a_texto([s1, s2])
+        assert texto == "que,"
 
     def test_strip_al_final(self):
         s1 = _span("  texto  ", 50, 100)

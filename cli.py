@@ -115,8 +115,21 @@ def _etapa_ocr(cfg: dict, verbose: bool):
         return {}
 
     _log(f"OCR sobre {len(archivos)} archivo(s) en modo '{input_tipo}'", verbose)
-    from core.ocr_engine import procesar_imagen, procesar_pdf
+    # Misma ruta que usa app.py en su worker OCR (_worker_ocr): analizar_pdf
+    # decide si el PDF ya trae texto embebido de calidad (ruta BNC, reconstruido
+    # por coordenadas con alto_reconstructor) o si hay que pasarlo por Tesseract
+    # (pdf_a_imagenes + ocr_pagina). procesar_imagen/procesar_pdf NUNCA existieron
+    # en core/ocr_engine.py — ver bug documentado en la auditoría de sesión.
+    from core.ocr_engine import (
+        EXTS_IMAGEN,
+        analizar_pdf,
+        ocr_pagina,
+        pdf_a_imagenes,
+    )
+    from core.ocr_normalizer import normalizar_texto_ocr
 
+    dpi = 300
+    lang = "spa"
     resultados = {}
     for i, archivo in enumerate(archivos, 1):
         p = Path(archivo)
@@ -129,16 +142,49 @@ def _etapa_ocr(cfg: dict, verbose: bool):
             txt_dir = out_dir / "03_ocr" / nombre
             txt_dir.mkdir(parents=True, exist_ok=True)
 
-            if p.suffix.lower() == ".pdf":
-                textos = procesar_pdf(p, dpi=150, lang="spa")
+            n_paginas = 0
+            if p.suffix.lower() in EXTS_IMAGEN:
+                texto, _conf = ocr_pagina(p, lang=lang)
+                (txt_dir / "p0001.txt").write_text(texto, encoding="utf-8")
+                n_paginas = 1
+            elif p.suffix.lower() == ".pdf":
+                info = analizar_pdf(p)
+                if info["tiene_texto"]:
+                    # Texto embebido de calidad (ej. Paper Capture BNC):
+                    # reconstrucción por coordenadas para respetar columnas.
+                    import fitz
+
+                    from core.alto_reconstructor import reconstruir_texto_pagina
+
+                    doc = fitz.open(str(p))
+                    for j, pagina in enumerate(doc, 1):
+                        try:
+                            resultado = reconstruir_texto_pagina(
+                                pagina, ignorar_ocr_basura=True
+                            )
+                            texto = resultado.get("texto", "")
+                        except Exception:
+                            texto = pagina.get_text("text")
+                        texto = normalizar_texto_ocr(texto)
+                        (txt_dir / f"p{j:04d}.txt").write_text(
+                            texto, encoding="utf-8"
+                        )
+                    n_paginas = doc.page_count
+                    doc.close()
+                else:
+                    img_dir = out_dir / "02_imagenes" / nombre
+                    imgs = pdf_a_imagenes(p, img_dir, dpi)
+                    for j, img_path in enumerate(imgs, 1):
+                        texto, _conf = ocr_pagina(img_path, lang=lang)
+                        (txt_dir / f"p{j:04d}.txt").write_text(
+                            texto, encoding="utf-8"
+                        )
+                    n_paginas = len(imgs)
             else:
-                textos = [procesar_imagen(p, lang="spa")]
+                _log(f"    ⚠ Extensión no soportada: {p.suffix}", verbose)
+                continue
 
-            for j, texto in enumerate(textos, 1):
-                txt_path = txt_dir / f"p{j:04d}.txt"
-                txt_path.write_text(texto, encoding="utf-8")
-
-            resultados[nombre] = len(textos)
+            resultados[nombre] = n_paginas
         except Exception as e:
             _log(f"    ERROR: {e}", verbose)
 

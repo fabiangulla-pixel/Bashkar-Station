@@ -6,7 +6,41 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from cli import _etapa_ner, _etapa_seg
+from cli import _etapa_ner, _etapa_ocr, _etapa_seg
+
+
+def test_etapa_ocr_sobre_pdf_real_sin_importerror(tmp_path: Path):
+    """_etapa_ocr importaba `procesar_imagen`/`procesar_pdf` de core.ocr_engine,
+    funciones que nunca existieron ahí — ImportError en cuanto se corría
+    `cli.py --etapas ocr` (reproducido en auditoría de sesión). Este test usa
+    un PDF real (sin mocks) para que un futuro refactor de ocr_engine.py que
+    rompa el contrato que _etapa_ocr espera falle aquí, no en producción."""
+    import fitz
+
+    pdf_path = tmp_path / "numero_test.pdf"
+    doc = fitz.open()
+    pagina = doc.new_page()
+    # Suficientes palabras para superar PALABRAS_MIN_PAGINA (40) en
+    # core.ocr_engine.analizar_pdf y tomar la ruta de texto embebido
+    # (reconstruir_texto_pagina), sin depender de tesseract instalado.
+    for i in range(6):
+        pagina.insert_text((72, 72 + i * 14), "Texto de prueba con palabras suficientes " * 3)
+    doc.save(str(pdf_path))
+    doc.close()
+
+    out_dir = tmp_path / "salida"
+    cfg = {
+        "out_dir": str(out_dir),
+        "input_tipo": "pdf",
+        "archivos_sel": [str(pdf_path)],
+    }
+
+    resultados = _etapa_ocr(cfg, verbose=False)
+
+    assert resultados.get("numero_test") == 1
+    txt = out_dir / "03_ocr" / "numero_test" / "p0001.txt"
+    assert txt.exists()
+    assert "prueba" in txt.read_text(encoding="utf-8")
 
 
 def test_etapa_seg_segmenta_sin_typeerror(tmp_path: Path):

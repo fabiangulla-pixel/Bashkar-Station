@@ -35,6 +35,18 @@ _TOL_Y = 3.0
 # Tolerancia horizontal para detectar separación de columnas (múltiplo del ancho medio de char)
 _TOL_COL = 15.0
 
+# Umbral de espacio entre spans consecutivos, como fracción del tamaño de fuente (em).
+# Antes era un valor fijo en puntos (2.0) calibrado implícitamente contra la tipografía
+# de Estampa (1939). Con un corpus tipográficamente distinto (Panida, 1915, imprenta más
+# compacta) ese umbral fijo resultó demasiado alto: los huecos reales entre palabras medían
+# 0.2-0.9 pt a tamaño de fuente ~10 pt (evidencia real: página 3 de rev_panida_nro1.pdf,
+# pares como "tiene"|"un" gap=0.35, "un"|"ala" gap=0.24, "sabe"|"hacer" gap=0.86), muy por
+# debajo del umbral de 2.0 pt, así que el texto se fusionaba sin espacio. Un umbral relativo
+# al tamaño de fuente detectado del span se adapta a la tipografía de cada digitalización en
+# vez de necesitar un valor mágico distinto por corpus.
+_UMBRAL_ESPACIO_REL = 0.018  # ~1.8% del tamaño de fuente (em)
+_UMBRAL_ESPACIO_MIN = 0.15   # piso absoluto en puntos, para fuentes muy pequeñas
+
 
 def _es_fuente_ocr_basura(nombre_fuente: str) -> bool:
     return nombre_fuente.lower().replace("-", "").replace(" ", "") in _FUENTES_OCR_BASURA
@@ -108,10 +120,15 @@ def _linea_a_texto(linea: list[dict]) -> str:
     for i, sp in enumerate(linea):
         texto = sp["text"]
         if i > 0:
+            anterior = linea[i-1]
             # Calcular gap entre span anterior y actual
-            gap = sp["x0"] - linea[i-1]["x1"]
-            # Si el gap es > 2 pts, añadir espacio (evitar fusión de palabras)
-            if gap > 2.0:
+            gap = sp["x0"] - anterior["x1"]
+            # Umbral relativo al tamaño de fuente de los spans (promedio), con piso absoluto
+            # para fuentes diminutas. Adaptativo por diseño: una fuente más grande necesita
+            # un hueco mayor en puntos para representar el mismo espacio en blanco relativo.
+            size_ref = (anterior.get("size", 0) + sp.get("size", 0)) / 2 or 8.0
+            umbral = max(_UMBRAL_ESPACIO_MIN, size_ref * _UMBRAL_ESPACIO_REL)
+            if gap > umbral:
                 partes.append(" ")
         partes.append(texto)
 
