@@ -24,6 +24,21 @@ def cargar_proyecto(ruta: str | Path) -> dict:
     return json.loads(ruta.read_text(encoding="utf-8"))
 
 
+def _indice_ner(p: dict) -> dict:
+    """Ubica el índice NER de un proyecto .bashkar.
+
+    En proyectos reales (post-migración a SQLite) el índice NER vive
+    anidado en resultados.indice_ner_global, no en la raíz del dict —
+    la raíz nunca tiene "indice_ner_global" ni "ner_global". Sin este
+    fallback, comparar_entidades() siempre veía índices vacíos y
+    reportaba 0 entidades comunes para cualquier par de proyectos reales.
+    """
+    idx = p.get("indice_ner_global") or p.get("ner_global")
+    if idx:
+        return idx
+    return (p.get("resultados", {}) or {}).get("indice_ner_global", {}) or {}
+
+
 # ── Comparación de entidades NER ──────────────────────────────────────────────
 
 def comparar_entidades(proyectos: list[dict]) -> dict:
@@ -34,10 +49,7 @@ def comparar_entidades(proyectos: list[dict]) -> dict:
       - exclusivas: {nombre_proyecto: {cat: [entidades]}}
       - frecuencia_global: Counter de entidades
     """
-    indices = []
-    for p in proyectos:
-        idx = p.get("indice_ner_global") or p.get("ner_global") or {}
-        indices.append(idx)
+    indices = [_indice_ner(p) for p in proyectos]
 
     if not indices:
         return {"comunes": {}, "exclusivas": [], "frecuencia_global": {}}
