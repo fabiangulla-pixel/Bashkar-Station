@@ -72,7 +72,18 @@ Transcribe con exactitud el texto de esta página de la revista *Estampa*.
 Reglas:
 - Conserva la estructura de párrafos con saltos de línea reales
 - Mantén ortografía y puntuación de época (no modernices: "habia", "fué", etc.)
-- Si una palabra es ilegible, escribe [ilegible]
+- Si una palabra es ilegible, escribe [ilegible]. NO inventes una palabra
+  parecida ni completes por contexto lo que no puedes leer con certeza:
+  es preferible [ilegible] a texto que "suena bien" pero no está en la
+  imagen (esto se evaluó contra 46 páginas reales de Estampa marzo 1939
+  y fue el error más frecuente: pasajes enteros "sin sentido" o que "no
+  corresponden a contenido legible de la imagen").
+- Transcribe tildes y diéresis con exactitud letra por letra; no las
+  omitas ni las agregues por intuición ortográfica moderna.
+- Las abreviaturas de ordinales (1er., 2o., 3er., 4o., 11o., etc.) y
+  numerales van tal como aparecen impresos, letra por letra — no las
+  sustituyas por otra palabra parecida visualmente.
+- Respeta mayúsculas y minúsculas exactamente como están impresas.
 - Marca cambios de columna con: --- COLUMNA ---
 - No agregues comentarios ni explicaciones, solo el texto transcrito
 """

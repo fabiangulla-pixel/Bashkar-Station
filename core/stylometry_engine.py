@@ -151,8 +151,13 @@ def cluster_tematico(
         if callback:
             callback(m)
 
+    if len(textos) < 2:
+        # KMeans exige n_samples >= n_clusters >= 2 (sklearn ValueError si no).
+        # Con 0 o 1 texto no hay nada que agrupar: todo va a un único cluster.
+        log("Muy pocos textos para clustering (<2); se omite K-Means.")
+        return {art_id: 0 for art_id in textos}
     if len(textos) < n_clusters:
-        n_clusters = max(2, len(textos))
+        n_clusters = len(textos)
 
     ids = list(textos.keys())
     corpus = list(textos.values())
