@@ -9988,16 +9988,8 @@ class BashkarApp(tk.Tk):
         try:
             import sqlite3
             con = sqlite3.connect(str(db_path))
-            con.execute("""CREATE TABLE IF NOT EXISTS normalizaciones (
-                numero       TEXT NOT NULL,
-                pagina       TEXT NOT NULL,
-                ocr_crudo    TEXT,
-                norm_usuario TEXT,
-                norm_ia      TEXT,
-                ts_usuario   TEXT,
-                ts_ia        TEXT,
-                PRIMARY KEY (numero, pagina)
-            )""")
+            from datos.schema import SCHEMA_NORMALIZACIONES
+            con.executescript(SCHEMA_NORMALIZACIONES)
             from datetime import datetime
             ts = datetime.now().isoformat(timespec="seconds")
             con.execute("""INSERT INTO normalizaciones
@@ -19580,6 +19572,10 @@ class BashkarApp(tk.Tk):
 
             from core.colaboracion import crear_parche, exportar_parche
             actual = json.loads(Path(self._proyecto_ruta).read_text(encoding="utf-8"))
+            # "_ruta" es como el resto del proyecto (core/comparador.py) ubica el
+            # SQLite hermano cuando "db" quedo relativo. Sin esto el parche sale
+            # sin las correcciones manuales de OCR, que en v11 viven alli.
+            actual["_ruta"] = str(self._proyecto_ruta)
             # Construir estado actual con NER actualizado
             actual_mod = dict(actual)
             actual_mod["indice_ner_global"] = ST.indice_ner_global
@@ -19651,6 +19647,7 @@ class BashkarApp(tk.Tk):
             def _aplicar():
                 try:
                     actual = json.loads(Path(self._proyecto_ruta).read_text(encoding="utf-8"))
+                    actual["_ruta"] = str(self._proyecto_ruta)
                     # Backup automático antes de aplicar
                     backup = Path(self._proyecto_ruta).with_suffix(".bashkar.bak")
                     backup.write_text(json.dumps(actual, indent=2, ensure_ascii=False),
@@ -19661,6 +19658,10 @@ class BashkarApp(tk.Tk):
                     from core.colaboracion import indice_ner_de
                     ST.indice_ner_global = (indice_ner_de(actualizado)
                                             or ST.indice_ner_global)
+                    # "_ruta" es contexto en memoria, no un campo del formato:
+                    # persistirlo dejaria una ruta absoluta obsoleta dentro del
+                    # .bashkar en cuanto el proyecto cambie de carpeta o de PC.
+                    actualizado.pop("_ruta", None)
                     Path(self._proyecto_ruta).write_text(
                         json.dumps(actualizado, indent=2, ensure_ascii=False),
                         encoding="utf-8")

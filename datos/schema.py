@@ -248,6 +248,24 @@ CREATE INDEX IF NOT EXISTS idx_relaciones_predicado ON relaciones(predicado);
 
 # ── Schema global (~/.bashkar/bashkar.db) ─────────────────────────────────────
 
+# Correcciones manuales de OCR por página, hechas por el investigador en el
+# panel de Normalizar. Vivía como DDL suelta dentro de app.py, de modo que
+# cualquier otro consumidor (colaboración, kraken_finetune) tenía que asumir su
+# forma en vez de leerla de un sitio único; se centraliza aquí.
+SCHEMA_NORMALIZACIONES = """
+CREATE TABLE IF NOT EXISTS normalizaciones (
+    numero       TEXT NOT NULL,
+    pagina       TEXT NOT NULL,
+    ocr_crudo    TEXT,
+    norm_usuario TEXT,
+    norm_ia      TEXT,
+    ts_usuario   TEXT,
+    ts_ia        TEXT,
+    PRIMARY KEY (numero, pagina)
+);
+"""
+
+
 SCHEMA_GLOBAL = """
 PRAGMA journal_mode = WAL;
 PRAGMA foreign_keys = ON;
