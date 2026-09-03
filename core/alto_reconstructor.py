@@ -36,14 +36,37 @@ _TOL_Y = 3.0
 _TOL_COL = 15.0
 
 # Umbral de espacio entre spans consecutivos, como fracción del tamaño de fuente (em).
-# Antes era un valor fijo en puntos (2.0) calibrado implícitamente contra la tipografía
-# de Estampa (1939). Con un corpus tipográficamente distinto (Panida, 1915, imprenta más
-# compacta) ese umbral fijo resultó demasiado alto: los huecos reales entre palabras medían
-# 0.2-0.9 pt a tamaño de fuente ~10 pt (evidencia real: página 3 de rev_panida_nro1.pdf,
-# pares como "tiene"|"un" gap=0.35, "un"|"ala" gap=0.24, "sabe"|"hacer" gap=0.86), muy por
-# debajo del umbral de 2.0 pt, así que el texto se fusionaba sin espacio. Un umbral relativo
-# al tamaño de fuente detectado del span se adapta a la tipografía de cada digitalización en
-# vez de necesitar un valor mágico distinto por corpus.
+# Antes era un valor fijo en puntos (2.0). Se descubrió fusionando palabras en Panida
+# (1915), pero al medirlo resultó que también fusionaba en Estampa (1939) —el corpus
+# principal, contra el que supuestamente estaba calibrado— 126 veces en 12 páginas, sin
+# que nadie lo hubiera notado. No era, por tanto, un problema de un corpus "raro": el
+# umbral fijo era simplemente demasiado alto para ambos. Un umbral relativo al tamaño de
+# fuente del span se adapta a la tipografía de cada digitalización en vez de necesitar un
+# valor mágico distinto por corpus.
+# Valor calibrado midiendo la RUTA DE PRODUCCIÓN real (reconstruir_texto_pagina con
+# ignorar_ocr_basura=True, que filtra los spans de fuente OCR basura y cambia la geometría
+# respecto a los spans crudos) sobre dos corpus a la vez, contando palabras fusionadas
+# (>16 caracteres) y fragmentos espurios (<=2 caracteres fuera de una lista de palabras
+# cortas legítimas). Barrido real, 12 páginas de cada corpus:
+#
+#   REL     Estampa fus/frag    Panida fus/frag
+#   0.185   126 / 200           18 / 132     <- equivalente al viejo umbral fijo de 2.0 pt
+#   0.100    56 / 235            3 / 149
+#   0.050    19 / 269            0 / 171
+#   0.018    12 / 285            0 / 179
+#
+# El valor NO es libre: los pares reales de Panida (fuente 9.83 pt) acotan el rango por
+# ambos lados. Huecos que SÍ son separación de palabra: 0.226 ("sentir;"|"que"), 0.235
+# ("un"|"ala"), 0.353 ("tiene"|"un") -> el umbral debe quedar por DEBAJO de 0.226 pt, o
+# sea rel < 0.023. Hueco que NO debe recibir espacio: 0.068 ("que"|",", puntuación
+# pegada) -> el umbral debe quedar por ENCIMA, o sea rel > 0.007. Rango admisible:
+# 0.007 < rel < 0.023. Se elige 0.018, cerca del extremo alto del rango para no partir
+# puntuación, y es además el valor con menos fusiones en la tabla de arriba para ambos
+# corpus. (Un intento de subirlo a 0.05 buscando menos fragmentación en Estampa se
+# descartó: cae fuera del rango y vuelve a fusionar "tieneun"/"unala" en Panida.)
+# Criterio de desempate general: errar hacia el fragmento antes que hacia la fusión, ya
+# que un token fusionado ("decirtequetuversosabehacer") es irrecuperable para NER y
+# frecuencias, mientras que un fragmento corto es filtrable aguas abajo.
 _UMBRAL_ESPACIO_REL = 0.018  # ~1.8% del tamaño de fuente (em)
 _UMBRAL_ESPACIO_MIN = 0.15   # piso absoluto en puntos, para fuentes muy pequeñas
 
