@@ -65,6 +65,19 @@ class PipelineMaestro:
         self._datos_dir = self._carpeta / "datos"
         self._datos_dir.mkdir(exist_ok=True)
 
+    def _nombre_proyecto(self) -> str:
+        """Nombre del proyecto según el esquema que traiga el archivo.
+
+        El pipeline creaba sus propios .bashkar con la clave "proyecto", pero
+        los que abre la GUI la llaman "nombre": leyendo solo "proyecto" cada
+        entregable (reporte, Word, nombre del ZIP) salía rotulado "Corpus" en
+        vez del nombre real del proyecto.
+        """
+        return str(self.data.get("proyecto")
+                   or self.data.get("nombre")
+                   or self.bashkar_path.stem
+                   or "Corpus")
+
     # ── Interfaz pública ──────────────────────────────────────────────────────
 
     def ejecutar_en_hilo(self, articulos_existentes: list | None = None):
@@ -86,7 +99,7 @@ class PipelineMaestro:
     def _pipeline_completo(self, articulos_existentes: list | None):
         try:
             self._log("=== BASHKAR STATION — Pipeline Maestro ===")
-            self._log(f"Proyecto: {self.data.get('proyecto', '?')}")
+            self._log(f"Proyecto: {self._nombre_proyecto()}")
             self._log(f"Inicio: {datetime.now().strftime('%H:%M:%S')}")
 
             # ── FASE 1: Análisis por artículo ─────────────────────────────────
@@ -400,7 +413,7 @@ class PipelineMaestro:
                       if a.get("texto", "").strip()]
             if textos:
                 ruta = self._viz_dir / "nube_corpus.png"
-                nube_palabras(textos, ruta, titulo=self.data.get("proyecto", "Corpus"))
+                nube_palabras(textos, ruta, titulo=self._nombre_proyecto())
                 rutas["nube"] = str(ruta)
                 self._log(f"  ✓ Nube palabras: {ruta.name}")
         except Exception as e:
@@ -449,7 +462,7 @@ class PipelineMaestro:
             stats_tono = estadisticas_tono(tono_resultados) if tono_resultados else None
 
             generar_reporte_html(
-                proyecto_nombre=self.data.get("proyecto", "Corpus"),
+                proyecto_nombre=self._nombre_proyecto(),
                 stats_corpus=self._stats_corpus(),
                 indice_ner=self.data.get("indice_global", {}),
                 stats_tono=stats_tono,
@@ -468,7 +481,7 @@ class PipelineMaestro:
             from core.storytelling_engine import exportar_word
             ruta = self._docs_dir / "seccion_resultados.docx"
             exportar_word(
-                proyecto_nombre=self.data.get("proyecto", "Corpus"),
+                proyecto_nombre=self._nombre_proyecto(),
                 stats_corpus=self._stats_corpus(),
                 indice_ner=self.data.get("indice_global", {}),
                 narrativas=narrativas,
@@ -488,7 +501,7 @@ class PipelineMaestro:
             exportar_corpus_tei(
                 arts,
                 ruta=ruta,
-                proyecto_nombre=self.data.get("proyecto", "Corpus Estampa"),
+                proyecto_nombre=self._nombre_proyecto(),
                 callback=self._log,
             )
             self._log(f"  ✓ TEI: {ruta.name}")
@@ -510,7 +523,7 @@ class PipelineMaestro:
     # ── Fase 5: ZIP ──────────────────────────────────────────────────────────
 
     def _fase5_zip(self) -> Path:
-        proyecto = re.sub(r"[^\w\-]", "_", self.data.get("proyecto", "bashkar"))
+        proyecto = re.sub(r"[^\w\-]", "_", self._nombre_proyecto())
         fecha = datetime.now().strftime("%Y-%m")
         nombre_zip = f"{proyecto}_resultados_{fecha}.zip"
         ruta_zip = self._carpeta / nombre_zip
@@ -546,12 +559,12 @@ class PipelineMaestro:
         return {
             "n_articulos": len(arts),
             "n_palabras_total": sum(len(t.split()) for t in textos if t),
-            "proyecto": self.data.get("proyecto", "Corpus"),
+            "proyecto": self._nombre_proyecto(),
             "periodo": self.data.get("periodo", "1930-1940"),
         }
 
     def _generar_leame(self) -> str:
-        proyecto = self.data.get("proyecto", "Corpus")
+        proyecto = self._nombre_proyecto()
         fecha = datetime.now().strftime("%d de %B de %Y")
         n_arts = len(self.data.get("articulos", []))
         return f"""BASHKAR STATION — PAQUETE DE INVESTIGACIÓN
@@ -593,6 +606,16 @@ Generado con Bashkar Station — https://github.com/gulla-editorial/bashkar-stat
 
     def _guardar_bashkar(self):
         self.data["ultima_modificacion"] = datetime.now().isoformat()
+        # El pipeline trabaja con su propio esquema plano ("articulos",
+        # "indice_global") pero escribe sobre el .bashkar real, que la GUI lee
+        # con otro: project_manager.cargar_proyecto solo mira
+        # resultados.indice_ner_global. Sin este espejo, el índice NER que
+        # produce el pipeline queda en una clave que nadie lee y al reabrir el
+        # proyecto el investigador ve el índice anterior, no el recién
+        # calculado.
+        indice = self.data.get("indice_global")
+        if indice and isinstance(self.data.get("resultados", {}), dict):
+            self.data.setdefault("resultados", {})["indice_ner_global"] = indice
         with open(self.bashkar_path, "w", encoding="utf-8") as f:
             json.dump(self.data, f, ensure_ascii=False, indent=2, default=str)
 

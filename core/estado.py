@@ -76,6 +76,8 @@ class Estado:
         self.resumen_ocr     = None   # dict con stats de extracción
         self.temas_lda       = None   # list de dicts con palabras por tema
         self.matriz_sim      = None   # DataFrame de similitud comparativa
+        self.articulos       = []     # [dict] artículos segmentados (con texto)
+        self.metricas_red    = {}     # métricas de la red de co-ocurrencias
         self.terminos_dist   = {}     # dict {nombre: [términos distinctivos]}
         self.ner_done        = False
         self.indice_ner_global = {}  # {categoria: {entidad: [art_ids]}}

@@ -206,6 +206,11 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
         "df_layout":     "layout.csv",
         "df_temas":      "temas.csv",
         "df_doc_temas":  "doc_temas.csv",
+        # corpus_meta no se guardaba, pero progreso["anal"] sí: al reabrir un
+        # proyecto analizado, la pestaña Resultados hacía ST.corpus_meta["numero"]
+        # sobre None y reventaba con TypeError. La bandera decía que el análisis
+        # estaba hecho y el dato que lo respalda no volvía.
+        "corpus_meta":   "corpus_meta.csv",
     }
     saved_dfs = []
     for attr, fname in df_fields.items():
@@ -294,9 +299,7 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
     historial = historial_ia or []
 
     # ── Sincronizar con SQLite ────────────────────────────────────────────────
-    ruta_db = datos.get("db", "")
-    if not ruta_db:
-        ruta_db = str(ruta.with_suffix(".db"))
+    ruta_db = _ruta_db(ruta, datos)
     try:
         from datos.repositorio import Repositorio
         repo = Repositorio(ruta_db)
@@ -477,6 +480,7 @@ def cargar_proyecto(ruta: Path, st):
         "df_layout":    "layout.csv",
         "df_temas":     "temas.csv",
         "df_doc_temas": "doc_temas.csv",
+        "corpus_meta":  "corpus_meta.csv",
     }
     try:
         import pandas as pd
@@ -515,9 +519,7 @@ def cargar_proyecto(ruta: Path, st):
             st.corpus_txt = []
 
     # ── Conectar/crear SQLite ─────────────────────────────────────────────────
-    ruta_db = datos.get("db", "")
-    if not ruta_db:
-        ruta_db = str(ruta.with_suffix(".db"))
+    ruta_db = _ruta_db(ruta, datos)
     try:
         from datos.repositorio import Repositorio
         repo = Repositorio(ruta_db)
@@ -542,6 +544,22 @@ def cargar_proyecto(ruta: Path, st):
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _ruta_db(ruta: Path, datos: dict) -> str:
+    """Ruta absoluta del SQLite del proyecto.
+
+    El campo "db" de proyectos migrados por versiones anteriores de
+    datos/migracion.py quedó como nombre pelado ("Proyecto.db"). Abierto así,
+    sqlite3 lo resolvía contra el directorio de trabajo y creaba una base vacía
+    junto al ejecutable, mientras la del proyecto quedaba huérfana. Un "db"
+    relativo se interpreta siempre respecto a la carpeta del .bashkar.
+    """
+    valor = (datos.get("db") or "").strip()
+    if not valor:
+        return str(ruta.with_suffix(".db"))
+    p = Path(valor)
+    return str(p if p.is_absolute() else (ruta.parent / p))
+
 
 def _slugify(texto: str) -> str:
     import re

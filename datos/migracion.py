@@ -44,6 +44,62 @@ def _normalizar_autor(valor) -> str:
     return texto
 
 
+def _articulos_v10(ruta: Path, datos_v10: dict) -> list[dict]:
+    """Artículos de un proyecto v10, buscándolos donde de verdad están.
+
+    Los .bashkar v10 reales NO llevan una lista "articulos" en la raíz: el
+    guardado de esa época ya escribía los DataFrames como CSV en la carpeta
+    hermana ``<stem>/`` y solo dejaba en el JSON la lista de nombres en
+    ``resultados.dataframes_guardados``. Leer la raíz sin más hacía que la
+    migración fuese un no-op silencioso: sobre el proyecto real
+    Proyecto_04_Mar_2026 (138 filas en articulos.csv, 138 textos en
+    corpus_txt.json) registró "articulos_migrados: 0".
+    """
+    arts = datos_v10.get("articulos")
+    if isinstance(arts, dict):
+        arts = list(arts.values())
+    if isinstance(arts, list) and arts:
+        return [a for a in arts if isinstance(a, dict)]
+
+    carpeta = Path(ruta).with_suffix("")
+    csv_arts = carpeta / "articulos.csv"
+    if not csv_arts.exists():
+        return []
+
+    import csv as _csv
+    try:
+        with open(csv_arts, encoding="utf-8") as f:
+            filas = list(_csv.DictReader(f))
+    except Exception:
+        return []
+
+    textos: list[str] = []
+    corpus = carpeta / "corpus_txt.json"
+    if corpus.exists():
+        try:
+            cargado = json.loads(corpus.read_text(encoding="utf-8"))
+            if isinstance(cargado, list):
+                textos = [str(t) for t in cargado]
+        except Exception:
+            textos = []
+
+    salida = []
+    for i, fila in enumerate(filas):
+        art = {
+            "id":         fila.get("id") or f"{fila.get('numero', 'art')}_{i:04d}",
+            "numero":     fila.get("numero", ""),
+            "titulo":     fila.get("titulo", ""),
+            "autor":      fila.get("autor", ""),
+            "tipo":       fila.get("tipo", "articulo"),
+            "seccion":    fila.get("seccion", ""),
+            "n_palabras": int(float(fila.get("palabras") or 0)),
+        }
+        if i < len(textos) and textos[i]:
+            art["texto_ocr"] = textos[i]
+        salida.append(art)
+    return salida
+
+
 def necesita_migracion(ruta: str) -> bool:
     """True si el .bashkar es de versión anterior a 11."""
     ruta = Path(ruta)
@@ -84,8 +140,8 @@ def migrar(ruta: str) -> dict:
     ruta_db = ruta.parent / nombre_db
     repo = Repositorio(str(ruta_db))
 
-    # 3. Migrar artículos del JSON a la DB
-    articulos_json = datos_v10.get("articulos", [])
+    # 3. Migrar artículos a la DB
+    articulos_json = _articulos_v10(ruta, datos_v10)
     n_arts = 0
     n_ents = 0
 
@@ -156,9 +212,17 @@ def migrar(ruta: str) -> dict:
         "periodo":     datos_v10.get("periodo", config_v10.get("periodo", "")),
         "creado":      datos_v10.get("creado", datetime.now().isoformat()),
         "modificado":  datetime.now().isoformat(),
-        "db":          nombre_db,
+        # Ruta ABSOLUTA. Con el nombre pelado, project_manager la resolvía
+        # contra el directorio de trabajo: al abrir Proyecto_04_Mar_2026 desde
+        # otra carpeta se creaba un .db nuevo y vacío ahí, y todo lo que el
+        # investigador anotara (351 artículos, 505 OCR, 115 entidades, 183
+        # revisiones en el caso real) quedaba fuera del proyecto.
+        "db":          str(ruta_db),
         "config":      config_v10,
         "progreso":    datos_v10.get("progreso", {}),
+        # `resultados` se perdía al migrar: con él se iban el índice NER, los
+        # nombres de los CSV guardados y las rutas del grafo y del Excel.
+        "resultados":  datos_v10.get("resultados", {}),
         "historial_ia":datos_v10.get("historial_ia", []),
         "migracion": {
             "origen_version": str(datos_v10.get("version", "?")),
