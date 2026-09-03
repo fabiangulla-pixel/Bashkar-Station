@@ -18,6 +18,20 @@ from typing import Callable
 PATCH_VERSION = "1.0"
 
 
+def _get_indice_ner(bashkar: dict) -> dict:
+    """Ubica el índice NER en un proyecto .bashkar.
+
+    En proyectos reales (post-migración a SQLite) el índice NER vive anidado
+    en ``resultados.indice_ner_global``, no en la raíz del dict. Algunas
+    llamadas de la GUI (p. ej. al construir el estado "modificado" antes de
+    generar un parche) sí lo colocan en la raíz. Se revisan ambas ubicaciones
+    para no comparar un índice real contra un `{}` espurio.
+    """
+    if bashkar.get("indice_ner_global"):
+        return bashkar["indice_ner_global"]
+    return bashkar.get("resultados", {}).get("indice_ner_global", {}) or {}
+
+
 # ── Crear parche ──────────────────────────────────────────────────────────────
 
 def crear_parche(
@@ -33,8 +47,8 @@ def crear_parche(
     cambios = {}
 
     # Comparar índice NER
-    ner_orig = bashkar_original.get("indice_ner_global", {})
-    ner_mod  = bashkar_modificado.get("indice_ner_global", {})
+    ner_orig = _get_indice_ner(bashkar_original)
+    ner_mod  = _get_indice_ner(bashkar_modificado)
     cambios_ner = {}
     for cat in set(list(ner_orig.keys()) + list(ner_mod.keys())):
         orig_ents = ner_orig.get(cat, {})
