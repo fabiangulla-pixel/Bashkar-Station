@@ -13,6 +13,9 @@ build/
 
 # Datos y bases de datos (proyectos del investigador, nunca al repo)
 *.db
+# Archivos transitorios de SQLite en modo WAL (los crea cualquier lectura)
+*.db-wal
+*.db-shm
 *.sqlite
 *.sqlite3
 _prueba5/
