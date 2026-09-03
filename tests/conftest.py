@@ -2,6 +2,7 @@
 tests/conftest.py — Fixtures compartidas para todos los tests de Bashkar Station.
 """
 
+import csv
 import json
 
 import pytest
@@ -77,7 +78,12 @@ def zonas_ejemplo():
 
 @pytest.fixture
 def bashkar_v10(tmp_path):
-    """Archivo .bashkar de versión 10 para tests de migración."""
+    """.bashkar con los artículos EMBEBIDOS en la raíz del JSON.
+
+    Ojo: esta forma no la tiene ningún proyecto real del usuario — solo la
+    produce pipeline_maestro. Cubre esa rama de `_articulos_v10`, no la que se
+    ejecuta al migrar un proyecto de verdad. Para esa, usar `bashkar_v10_real`.
+    """
     ruta = tmp_path / "proyecto_test.bashkar"
     data = {
         "version":     "10",
@@ -113,6 +119,71 @@ def bashkar_v10(tmp_path):
         ],
         "progreso":    {"ocr": True, "seg": True, "anal": False, "vis": False, "comp": False},
         "historial_ia": [],
+    }
+    with open(ruta, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    return ruta
+
+
+@pytest.fixture
+def bashkar_v10_real(tmp_path):
+    """.bashkar anterior a v11 con la forma que tienen los REALES en disco.
+
+    El fixture `bashkar_v10` de arriba pone los artículos embebidos en la raíz
+    del JSON. Ningún proyecto real los tuvo así: verificado contra
+    ``Proyecto_04_Mar_2026_v10_backup_20260528_203620.bashkar`` (version 8.8),
+    cuyas claves de raíz son solo config/creado/historial_ia/modificado/nombre/
+    periodo/progreso/publicacion/resultados/version — **sin** "articulos". Los
+    artículos viven en la carpeta hermana ``<stem>/`` como ``articulos.csv``
+    (sin columna de texto, y sin columnas "id" ni "seccion") junto a
+    ``corpus_txt.json``, una lista de textos posicionalmente alineada con las
+    filas del CSV.
+
+    Es la rama que de verdad se ejecuta al migrar un proyecto del usuario, y la
+    que el bug de la sesión 65 dejaba migrando 0 de 138 artículos REPORTANDO
+    ÉXITO. Los tests que usan solo el fixture embebido nunca la tocan.
+    """
+    ruta = tmp_path / "proyecto_real.bashkar"
+    carpeta = tmp_path / "proyecto_real"
+    carpeta.mkdir()
+
+    filas = [
+        {"numero": "rev_estampa_mar_1939", "titulo": "Antonio Jose Cadavid",
+         "autor": "", "tipo": "Politica", "paginas": "[1]", "palabras": "166",
+         "confianza": "0.95", "metodo_seg": "atomico"},
+        {"numero": "rev_estampa_mar_1939", "titulo": "La educacion",
+         "autor": "German Arciniegas", "tipo": "articulo", "paginas": "[2]",
+         "palabras": "350", "confianza": "0.91", "metodo_seg": "atomico"},
+        {"numero": "rev_estampa_mar_1939", "titulo": "Fotografia",
+         "autor": "nan", "tipo": "foto", "paginas": "[3]", "palabras": "80",
+         "confianza": "0.88", "metodo_seg": "atomico"},
+    ]
+    with open(carpeta / "articulos.csv", "w", encoding="utf-8", newline="") as f:
+        escritor = csv.DictWriter(f, fieldnames=list(filas[0].keys()))
+        escritor.writeheader()
+        escritor.writerows(filas)
+
+    textos = [
+        "Antonio Jose Cadavid fue un jurista de Medellin.",
+        "La educacion en Colombia fue tema de Bogota.",
+        "",  # una fila sin texto: pasa en corpus reales
+    ]
+    (carpeta / "corpus_txt.json").write_text(
+        json.dumps(textos, ensure_ascii=False), encoding="utf-8")
+
+    data = {
+        "version":     "8.8",
+        "nombre":      "Estampa Real",
+        "publicacion": "Estampa",
+        "periodo":     "1939",
+        "config":      {"publicacion": "Estampa", "periodo": "1939"},
+        "progreso":    {"ocr": True, "seg": True, "anal": True,
+                        "vis": False, "comp": False},
+        "resultados":  {"dataframes_guardados": True,
+                        "corpus_txt_guardado": True},
+        "historial_ia": [],
+        "creado":      "2026-03-01T10:00:00",
+        "modificado":  "2026-05-28T20:36:20",
     }
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)

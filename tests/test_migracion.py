@@ -153,3 +153,75 @@ class TestNormalizarAutor:
         assert arts["a2"]["autor"] == AUTOR_ANONIMO
         assert arts["a3"]["autor"] == AUTOR_ANONIMO
         assert arts["a4"]["autor"] == "Alfonso Fuenmayor"
+
+
+class TestMigrarProyectoConLaFormaReal:
+    """Migración por la rama que de verdad se ejecuta con proyectos del usuario.
+
+    Los tests de arriba usan `bashkar_v10`, que embebe los artículos en la raíz
+    del JSON — forma que ningún .bashkar real tuvo (verificado contra el backup
+    v10 de Proyecto_04, version 8.8, sin clave "articulos"). En un proyecto real
+    los artículos están en `<stem>/articulos.csv` + `corpus_txt.json`. Esa es la
+    rama donde vivía el bug de la sesión 65: migraba 0 de 138 artículos y aun
+    así reportaba éxito.
+    """
+
+    def test_migra_los_articulos_del_csv(self, bashkar_v10_real):
+        from datos.migracion import migrar
+        resultado = migrar(str(bashkar_v10_real))
+        assert resultado["ok"] is True
+        assert resultado["articulos"] == 3
+
+    def test_no_reporta_exito_migrando_cero(self, bashkar_v10_real):
+        """El fallo silencioso original: ok=True con 0 artículos migrados."""
+        from datos.migracion import migrar
+        from datos.repositorio import Repositorio
+        resultado = migrar(str(bashkar_v10_real))
+        repo = Repositorio(resultado["ruta_db"])
+        assert len(repo.listar_articulos()) > 0
+
+    def test_el_texto_del_corpus_llega_a_la_db(self, bashkar_v10_real):
+        """corpus_txt.json va alineado por posición con las filas del CSV."""
+        from datos.migracion import migrar
+        from datos.repositorio import Repositorio
+        resultado = migrar(str(bashkar_v10_real))
+        repo = Repositorio(resultado["ruta_db"])
+        textos = [repo.obtener_texto(a["id"]) or ""
+                  for a in repo.listar_articulos()]
+        assert any("Antonio Jose Cadavid" in t for t in textos)
+        assert any("La educacion en Colombia" in t for t in textos)
+
+    def test_fila_sin_texto_no_rompe_la_migracion(self, bashkar_v10_real):
+        from datos.migracion import migrar
+        resultado = migrar(str(bashkar_v10_real))
+        assert resultado["ok"] is True
+        assert resultado["articulos"] == 3
+
+    def test_autor_basura_del_csv_queda_normalizado(self, bashkar_v10_real):
+        """El CSV real trae "" y "nan" en autor; ambos son anónimo."""
+        from datos.migracion import migrar, AUTOR_ANONIMO
+        from datos.repositorio import Repositorio
+        resultado = migrar(str(bashkar_v10_real))
+        repo = Repositorio(resultado["ruta_db"])
+        autores = [a["autor"] for a in repo.listar_articulos()]
+        assert autores.count(AUTOR_ANONIMO) == 2
+        assert "German Arciniegas" in autores
+
+    def test_conserva_los_resultados_del_proyecto(self, bashkar_v10_real):
+        """La migración descartaba el bloque `resultados` (bug 6ca405c)."""
+        import json
+        from datos.migracion import migrar
+        migrar(str(bashkar_v10_real))
+        datos = json.loads(bashkar_v10_real.read_text(encoding="utf-8"))
+        assert datos.get("resultados", {}).get("corpus_txt_guardado") is True
+
+    def test_db_queda_en_ruta_absoluta(self, bashkar_v10_real):
+        """Un "db" relativo se resolvía contra el cwd y creaba una base vacía
+        junto al ejecutable: así se perdieron los datos de Proyecto_04."""
+        import json
+        from pathlib import Path
+        from datos.migracion import migrar
+        migrar(str(bashkar_v10_real))
+        datos = json.loads(bashkar_v10_real.read_text(encoding="utf-8"))
+        assert Path(datos["db"]).is_absolute()
+        assert Path(datos["db"]).exists()
