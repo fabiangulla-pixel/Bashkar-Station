@@ -19,6 +19,19 @@ from pathlib import Path
 TIPOS_NOTA   = ("libre", "hipotesis", "cita")
 ESTADOS_HYPO = ("abierta", "confirmada", "descartada", "revisada")
 
+# Meses en español, para no depender del locale del sistema (que en Windows
+# suele quedar en inglés y produce fechas mixtas tipo "02 de September de 2026"
+# en un documento que va a apéndice de paper en español).
+_MESES_ES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+]
+
+
+def _fecha_es(dt: datetime) -> str:
+    return f"{dt.day:02d} de {_MESES_ES[dt.month - 1]} de {dt.year}"
+
+
 # Iconos para exportación Markdown
 _ICONO_TIPO = {"libre": "📝", "hipotesis": "💡", "cita": "📌"}
 _ICONO_ESTADO = {
@@ -208,7 +221,7 @@ class BitacoraEngine:
         ruta = Path(ruta)
         ruta.parent.mkdir(parents=True, exist_ok=True)
         notas = self.listar()
-        fecha = datetime.now().strftime("%d de %B de %Y")
+        fecha = _fecha_es(datetime.now())
 
         lineas = [
             "# Bitácora de investigación",
