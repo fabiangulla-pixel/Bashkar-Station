@@ -32,6 +32,29 @@ def _get_indice_ner(bashkar: dict) -> dict:
     return bashkar.get("resultados", {}).get("indice_ner_global", {}) or {}
 
 
+# Alias público: app.py y otros frontends deben leer el índice por aquí y no
+# por `proyecto["indice_ner_global"]`, que en un .bashkar real no existe.
+indice_ner_de = _get_indice_ner
+
+
+def _get_articulos(bashkar: dict) -> dict:
+    """Artículos con texto embebido en el dict del proyecto, si los hay.
+
+    Ojo: un .bashkar real (v11) NO los trae. Sus artículos viven en el SQLite
+    hermano y en ``<stem>/articulos.csv`` (que además no guarda la columna
+    'texto'). Solo pipeline_maestro escribe "articulos" en la raíz. Se acepta
+    también la forma de lista para no depender de cuál de los dos productores
+    generó el archivo.
+    """
+    arts = bashkar.get("articulos")
+    if arts is None:
+        arts = (bashkar.get("resultados", {}) or {}).get("articulos")
+    if isinstance(arts, list):
+        return {str(a.get("id", i)): a for i, a in enumerate(arts)
+                if isinstance(a, dict)}
+    return arts if isinstance(arts, dict) else {}
+
+
 # ── Crear parche ──────────────────────────────────────────────────────────────
 
 def crear_parche(
@@ -64,8 +87,8 @@ def crear_parche(
         cambios["ner"] = cambios_ner
 
     # Comparar textos OCR mejorados
-    arts_orig = bashkar_original.get("articulos", {})
-    arts_mod  = bashkar_modificado.get("articulos", {})
+    arts_orig = _get_articulos(bashkar_original)
+    arts_mod  = _get_articulos(bashkar_modificado)
     cambios_ocr = {}
     for art_id, art in arts_mod.items():
         orig_txt = arts_orig.get(art_id, {}).get("texto_limpio", "")
@@ -132,8 +155,20 @@ def aplicar_parche(
             callback(msg)
 
     # Aplicar cambios NER
+    #
+    # Se escribe en resultados.indice_ner_global, que es de donde
+    # project_manager.cargar_proyecto lee el índice. Escribirlo en la raíz
+    # —como se hacía— dejaba el parche aplicado invisible: al reabrir el
+    # proyecto la GUI leía `resultados` y encontraba el índice viejo, mientras
+    # la copia parcheada quedaba en una clave raíz que nadie lee (y que además
+    # es la que confundía a crear_parche, bug 6a24d4e).
     if "ner" in cambios:
-        ner = resultado.setdefault("indice_ner_global", {})
+        ner = _get_indice_ner(resultado)
+        resultado.setdefault("resultados", {})["indice_ner_global"] = ner
+        if "indice_ner_global" in resultado:
+            # El archivo ya traía la copia en la raíz: se mantiene apuntando al
+            # mismo objeto para que las dos no se separen.
+            resultado["indice_ner_global"] = ner
         for cat, ops in cambios["ner"].items():
             cat_dict = ner.setdefault(cat, {})
             for ent, arts in ops.get("agregadas", {}).items():
@@ -148,7 +183,9 @@ def aplicar_parche(
 
     # Aplicar cambios OCR
     if "ocr" in cambios:
-        arts = resultado.setdefault("articulos", {})
+        arts = _get_articulos(resultado)
+        if arts:
+            resultado["articulos"] = arts
         for art_id, cambio in cambios["ocr"].items():
             if art_id in arts:
                 arts[art_id]["texto_limpio"] = cambio["despues"]

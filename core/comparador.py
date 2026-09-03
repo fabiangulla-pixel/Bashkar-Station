@@ -17,11 +17,110 @@ from typing import Callable
 # ── Carga de proyectos ────────────────────────────────────────────────────────
 
 def cargar_proyecto(ruta: str | Path) -> dict:
-    """Carga un .bashkar y retorna su dict."""
+    """Carga un .bashkar y retorna su dict.
+
+    Anota la ruta de origen en ``_ruta``: el JSON de un proyecto real es solo
+    metadatos, y el contenido pesado (textos, artículos) vive en la carpeta
+    hermana ``<stem>/`` y en el SQLite ``<stem>.db``. Sin la ruta, las
+    comparaciones que necesitan texto no tienen dónde buscarlo y devuelven 0.
+    """
     ruta = Path(ruta)
     if not ruta.exists():
         raise FileNotFoundError(f"Proyecto no encontrado: {ruta}")
-    return json.loads(ruta.read_text(encoding="utf-8"))
+    p = json.loads(ruta.read_text(encoding="utf-8"))
+    if isinstance(p, dict):
+        p["_ruta"] = str(ruta)
+    return p
+
+
+def _carpeta_datos(p: dict) -> Path | None:
+    """Carpeta hermana <stem>/ donde viven los CSV y corpus_txt.json."""
+    ruta = p.get("_ruta")
+    if not ruta:
+        return None
+    carpeta = Path(ruta).with_suffix("")
+    return carpeta if carpeta.is_dir() else None
+
+
+def _textos_proyecto(p: dict) -> list[str]:
+    """Textos planos de un proyecto, buscándolos donde de verdad están.
+
+    Orden real de los datos (verificado sobre los proyectos de
+    ~/Documents/BashkarStation/proyectos):
+      1. ``<stem>/corpus_txt.json`` — lo que escribe project_manager cuando
+         ``resultados.corpus_txt_guardado`` es True.
+      2. tabla ``ocr`` del SQLite hermano (texto_limpio).
+      3. raíz ``articulos`` — solo lo produce pipeline_maestro; los .bashkar
+         que abre la GUI nunca la tienen.
+    """
+    carpeta = _carpeta_datos(p)
+    if carpeta:
+        corpus = carpeta / "corpus_txt.json"
+        if corpus.exists():
+            try:
+                datos = json.loads(corpus.read_text(encoding="utf-8"))
+                if isinstance(datos, list):
+                    return [str(t) for t in datos if t]
+            except Exception:
+                pass
+
+    ruta_db = p.get("db") or ""
+    if ruta_db and p.get("_ruta"):
+        db = Path(ruta_db)
+        if not db.is_absolute():
+            db = Path(p["_ruta"]).parent / db
+        if db.exists():
+            try:
+                import sqlite3
+                con = sqlite3.connect(str(db))
+                filas = con.execute(
+                    "SELECT COALESCE(NULLIF(texto_limpio,''), texto_crudo) FROM ocr"
+                ).fetchall()
+                con.close()
+                textos = [str(f[0]) for f in filas if f and f[0]]
+                if textos:
+                    return textos
+            except Exception:
+                pass
+
+    arts = p.get("articulos")
+    if isinstance(arts, dict):
+        arts = list(arts.values())
+    if isinstance(arts, list):
+        return [str(a.get("texto_limpio") or a.get("texto_ocr") or a.get("texto") or "")
+                for a in arts if isinstance(a, dict)]
+    return []
+
+
+def _n_articulos(p: dict) -> int:
+    """Número de artículos de un proyecto real (CSV hermano o SQLite)."""
+    carpeta = _carpeta_datos(p)
+    if carpeta and (carpeta / "articulos.csv").exists():
+        try:
+            import csv
+            # Con csv.reader, no contando líneas: los títulos con saltos de
+            # línea embebidos inflaban el total (142 en vez de 138 reales).
+            with open(carpeta / "articulos.csv", encoding="utf-8", newline="") as f:
+                return max(sum(1 for _ in csv.reader(f)) - 1, 0)
+        except Exception:
+            pass
+    ruta_db = p.get("db") or ""
+    if ruta_db and p.get("_ruta"):
+        db = Path(ruta_db)
+        if not db.is_absolute():
+            db = Path(p["_ruta"]).parent / db
+        if db.exists():
+            try:
+                import sqlite3
+                con = sqlite3.connect(str(db))
+                n = con.execute("SELECT COUNT(*) FROM articulos").fetchone()[0]
+                con.close()
+                if n:
+                    return int(n)
+            except Exception:
+                pass
+    arts = p.get("articulos")
+    return len(arts) if isinstance(arts, (dict, list)) else 0
 
 
 def _indice_ner(p: dict) -> dict:
@@ -100,15 +199,15 @@ def comparar_vocabulario(proyectos: list[dict], nombres: list[str]) -> dict:
     import re
 
     def _vocab(p: dict) -> Counter:
-        textos = []
-        for art in p.get("articulos", {}).values():
-            textos.append(art.get("texto_limpio") or art.get("texto_ocr") or "")
-        texto = " ".join(textos).lower()
+        texto = " ".join(_textos_proyecto(p)).lower()
         tokens = re.findall(r"[a-záéíóúüñ]{3,}", texto)
         return Counter(tokens)
 
     vocabs = [_vocab(p) for p in proyectos]
     sets = [set(v.keys()) for v in vocabs]
+    if not sets:
+        return {"compartido_total": 0, "exclusivos": {}, "jaccard": 0.0,
+                "vocabulario_por_proyecto": {}}
 
     compartido = sets[0]
     for s in sets[1:]:
@@ -137,13 +236,51 @@ def comparar_vocabulario(proyectos: list[dict], nombres: list[str]) -> dict:
 
 # ── Comparación de tópicos ────────────────────────────────────────────────────
 
+def _etiquetas_topicos(p: dict) -> list[str]:
+    """Etiquetas (o palabras clave) de los tópicos de un proyecto real."""
+    top = p.get("topicos") or {}
+    if isinstance(top, dict):
+        etiquetas = top.get("etiquetas_llm") or {}
+        if isinstance(etiquetas, dict) and etiquetas:
+            return list(etiquetas.values())
+        topicos = top.get("topicos") or {}
+        if isinstance(topicos, dict) and topicos:
+            return [str(v.get("nombre") or ", ".join(v.get("palabras", [])[:5]))
+                    for v in topicos.values() if isinstance(v, dict)]
+
+    temas = (p.get("resultados", {}) or {}).get("temas_lda") or []
+    if isinstance(temas, list) and temas:
+        out = []
+        for t in temas:
+            if isinstance(t, dict):
+                out.append(str(t.get("nombre") or t.get("etiqueta")
+                               or ", ".join(map(str, t.get("palabras", [])[:5]))))
+            else:
+                out.append(str(t))
+        return out
+
+    carpeta = _carpeta_datos(p)
+    if carpeta and (carpeta / "temas.csv").exists():
+        try:
+            import csv
+            with open(carpeta / "temas.csv", encoding="utf-8") as f:
+                return [str(r.get("palabras_clave") or r.get("tema") or "")
+                        for r in csv.DictReader(f)]
+        except Exception:
+            pass
+    return []
+
 def comparar_topicos(proyectos: list[dict], nombres: list[str]) -> dict:
-    """Compara etiquetas de tópicos entre proyectos."""
+    """Compara etiquetas de tópicos entre proyectos.
+
+    Los tópicos de un proyecto real no están en la raíz: la GUI los guarda como
+    ``<stem>/temas.csv`` (columnas tema, palabras_clave) y, cuando hay LDA en
+    memoria, en ``resultados.temas_lda``. La raíz ``topicos`` solo la escribe
+    pipeline_maestro. Se revisan las tres, en ese orden de especificidad.
+    """
     result = {}
     for nom, p in zip(nombres, proyectos):
-        top = p.get("topicos") or {}
-        etiquetas = top.get("etiquetas_llm") or {}
-        result[nom] = list(etiquetas.values()) if isinstance(etiquetas, dict) else []
+        result[nom] = _etiquetas_topicos(p)
 
     # Tópicos comunes (por coincidencia de etiqueta)
     if len(result) >= 2:
@@ -197,11 +334,13 @@ def generar_reporte_comparativo(
     # Metadatos básicos de cada proyecto
     metadatos = []
     for nom, p in zip(nombres, proyectos):
-        n_arts = len(p.get("articulos", {}))
+        # El .bashkar real no tiene ni "articulos" ni "fecha_creacion" en la
+        # raíz: los artículos están en <stem>/articulos.csv o en el SQLite, y
+        # la fecha se llama "creado". Antes esta tabla salía siempre "0 / vacío".
         metadatos.append({
             "nombre": nom,
-            "articulos": n_arts,
-            "fecha_creacion": p.get("fecha_creacion", ""),
+            "articulos": _n_articulos(p),
+            "fecha_creacion": p.get("fecha_creacion") or p.get("creado", ""),
         })
 
     _log("Reporte comparativo listo.")

@@ -131,12 +131,23 @@ def exportar_presentacion(
         s = _slide_en_blanco()
         _caja(s, 0.5, 0.3, 12, 0.7, "Tópicos detectados", size=28, bold=True, color=C_AZUL)
         topicos = topicos_res.get("topicos", [])
+        # core/topic_engine.py devuelve {id: {palabras, n_docs, nombre}} —un
+        # dict, no una lista— y llama a la clave "palabras", no "palabras_top".
+        # Iterando la lista sin más, un resultado real del motor recorría las
+        # claves (strings) y la diapositiva salía vacía o reventaba.
+        if isinstance(topicos, dict):
+            topicos = [{"id": k, **v} if isinstance(v, dict) else {"id": k}
+                       for k, v in topicos.items()]
         etiquetas = topicos_res.get("etiquetas_llm", {})
         y = 1.5
         for i, top in enumerate(topicos[:8]):
+            if not isinstance(top, dict):
+                continue
             t_id = top.get("id", i)
-            etq = etiquetas.get(str(t_id)) or etiquetas.get(t_id) or f"Tópico {t_id}"
-            palabras = ", ".join(top.get("palabras_top", [])[:6])
+            etq = (etiquetas.get(str(t_id)) or etiquetas.get(t_id)
+                   or top.get("nombre") or f"Tópico {t_id}")
+            palabras = ", ".join(
+                (top.get("palabras_top") or top.get("palabras") or [])[:6])
             _caja(s, 0.5, y, 4.0, 0.45, f"● {etq}", size=14, bold=True, color=C_VERDE)
             _caja(s, 4.7, y, 8.0, 0.45, palabras, size=11, color=C_GRIS)
             y += 0.6

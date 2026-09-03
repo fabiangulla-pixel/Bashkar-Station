@@ -388,6 +388,29 @@ class TestPipelineMaestroEscribeEnElEsquemaReal:
         assert pm._nombre_proyecto() == "MiCorpus"
 
 
+class TestPptxAceptaLaFormaRealDeTopicEngine:
+    """core/topic_engine.py devuelve {id: {palabras,...}}; el exportador
+    iteraba una lista y leía "palabras_top". Con un resultado real del motor
+    la diapositiva de tópicos salía vacía."""
+
+    def test_topicos_dict_del_motor(self, tmp_path):
+        pytest.importorskip("pptx")
+        from exportadores.exportar_pptx import exportar_presentacion
+        datos = {
+            "articulos": {"a1": {"texto_limpio": "hola", "paginas": ["1", "2"]}},
+            "indice_ner_global": {"personas": {"Zalamea": ["a1"]}},
+            "topicos": {"topicos": {
+                "0": {"palabras": ["guerra", "europa"], "n_docs": 3,
+                      "nombre": "Conflicto"}}},
+            "metricas_red": {"nodos": 4, "aristas": 3},
+            "estadisticas_tono": {},
+            "narrativa": "",
+        }
+        salida = tmp_path / "p.pptx"
+        exportar_presentacion(datos, salida, titulo_proyecto="X")
+        assert salida.exists() and salida.stat().st_size > 0
+
+
 # ── estado: atributos que el código usaba y no existían ──────────────────────
 
 def test_estado_define_los_atributos_que_los_exportadores_leen():

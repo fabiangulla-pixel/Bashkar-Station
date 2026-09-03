@@ -12905,10 +12905,18 @@ class BashkarApp(tk.Tk):
             return
         from core.excel_export import generar_figuras_completas
 
+        # Un proyecto guardado antes de que corpus_meta se persistiera vuelve
+        # con anal_done=True pero sin corpus_meta: esto reventaba con
+        # TypeError ('NoneType' no es suscriptable) al abrir Resultados.
         meta=ST.corpus_meta
-        self._lbl_r_num.config(text=str(meta["numero"].nunique()))
-        self._lbl_r_pag.config(text=f"{len(meta):,}")
-        self._lbl_r_pal.config(text=f"{int(meta['palabras'].sum()):,}")
+        if meta is None or not hasattr(meta, "columns"):
+            for attr in ("_lbl_r_num","_lbl_r_pag","_lbl_r_pal"):
+                if hasattr(self, attr):
+                    getattr(self, attr).config(text="—")
+        else:
+            self._lbl_r_num.config(text=str(meta["numero"].nunique()))
+            self._lbl_r_pag.config(text=f"{len(meta):,}")
+            self._lbl_r_pal.config(text=f"{int(meta['palabras'].sum()):,}")
         n_art=len(ST.df_articulos) if ST.df_articulos is not None else 0
         n_aut=(ST.df_articulos[ST.df_articulos["autor"]!="Anónimo / Sin atribuir"]["autor"].nunique()
                if ST.df_articulos is not None and not ST.df_articulos.empty else 0)
@@ -15886,6 +15894,9 @@ class BashkarApp(tk.Tk):
             )
             self._grafo_actual = G
             met = metricas_red(G)
+            # Publicar en el estado: los exportadores (PPTX, reportes) las
+            # buscaban en ST y no las encontraba nadie porque solo eran local.
+            ST.metricas_red = met
 
             def _actualizar_ui():
                 # Tabla métricas
@@ -18678,18 +18689,33 @@ class BashkarApp(tk.Tk):
             from pathlib import Path
 
             from exportadores.exportar_pptx import exportar_presentacion
+            # Los nombres ST.topicos_resultado / ST.narrativa_corpus no existen
+            # en core/estado.py y nunca se asignan: el getattr los tapaba y la
+            # presentación salía siempre sin tópicos, sin métricas de red y sin
+            # narrativa. Se leen los atributos reales del estado.
+            temas = getattr(ST, "temas_lda", None) or []
             datos = {
                 "articulos": {},
                 "indice_ner_global": ST.indice_ner_global,
-                "topicos": getattr(ST, "topicos_resultado", {}),
-                "metricas_red": getattr(ST, "metricas_red", {}),
-                "estadisticas_tono": getattr(ST, "estadisticas_tono", {}),
-                "narrativa": getattr(ST, "narrativa_corpus", ""),
+                "topicos": {"topicos": {
+                    str(i): (t if isinstance(t, dict) else {"palabras": [str(t)]})
+                    for i, t in enumerate(temas)}} if temas else {},
+                "metricas_red": getattr(ST, "metricas_red", {}) or {},
+                "estadisticas_tono": getattr(ST, "estadisticas_tono", {}) or {},
+                "narrativa": getattr(ST, "narrativa_corpus", "") or "",
             }
             if ST.df_articulos is not None:
                 for _, row in ST.df_articulos.iterrows():
                     aid = str(row.get("id", row.name))
-                    datos["articulos"][aid] = {"texto_limpio": str(row.get("texto", ""))}
+                    # 'paginas' es la columna real del segmentador; sin ella la
+                    # diapositiva de estadísticas informaba siempre 0 páginas.
+                    pags = row.get("paginas", "")
+                    if not isinstance(pags, (list, tuple)):
+                        pags = [p for p in str(pags or "").split(",") if p.strip()]
+                    datos["articulos"][aid] = {
+                        "texto_limpio": str(row.get("texto", "")),
+                        "paginas": list(pags),
+                    }
             exportar_presentacion(
                 datos, Path(dest),
                 titulo_proyecto=ST.publicacion,
@@ -19632,8 +19658,9 @@ class BashkarApp(tk.Tk):
                     _log(f"Backup guardado: {backup.name}")
 
                     actualizado = aplicar_parche(actual, parche, callback=_log)
-                    ST.indice_ner_global = actualizado.get(
-                        "indice_ner_global", ST.indice_ner_global)
+                    from core.colaboracion import indice_ner_de
+                    ST.indice_ner_global = (indice_ner_de(actualizado)
+                                            or ST.indice_ner_global)
                     Path(self._proyecto_ruta).write_text(
                         json.dumps(actualizado, indent=2, ensure_ascii=False),
                         encoding="utf-8")
@@ -20707,7 +20734,12 @@ class BashkarApp(tk.Tk):
         def _exportar_glosario():
             import csv
             import pathlib
-            out = pathlib.Path(ST.datos_dir) / "glosario_arcaismos.csv" if ST.datos_dir else None
+            # ST.datos_dir no existe en core/estado.py: leerlo así reventaba
+            # con AttributeError antes de llegar al diálogo de guardado, y el
+            # botón "Exportar glosario" no funcionaba nunca. El directorio de
+            # salida real del proyecto es ST.out_dir.
+            destino = getattr(ST, "out_dir", None)
+            out = pathlib.Path(destino) / "glosario_arcaismos.csv" if destino else None
             if out is None:
                 from tkinter import filedialog
                 ruta = filedialog.asksaveasfilename(
