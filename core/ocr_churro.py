@@ -95,7 +95,7 @@ SEGUNDOS_POR_ZONA_CPU = 210.0
 # Ajustable sin tocar código con BASHKAR_CHURRO_MAX_PIXELS, para poder barrer
 # el compromiso velocidad/CER con `core/benchmark_ocr.py` sobre el estándar de oro.
 MAX_PIXELS_POR_DEFECTO = 1_003_520
-MIN_PIXELS_POR_DEFECTO = 200_704      # 256 tokens: piso para que un pie de foto no se diluya
+MIN_PIXELS_POR_DEFECTO = 200_704  # 256 tokens: piso para que un pie de foto no se diluya
 
 PROMPT_POR_DEFECTO = (
     "Transcribe all the text in this historical document image. "
@@ -129,22 +129,28 @@ def motivo_no_disponible() -> str | None:
     congelado = _esta_congelado()
     if not _hay_modulo("torch"):
         if congelado:
-            return ("CHURRO-3B no está disponible en la versión compilada: "
-                    "PyTorch se excluye del .exe a propósito (pesaría más de "
-                    "3 GB).\n\nPara usar esta ruta, ejecuta Bashkar Station "
-                    "desde el código fuente:  python app.py")
+            return (
+                "CHURRO-3B no está disponible en la versión compilada: "
+                "PyTorch se excluye del .exe a propósito (pesaría más de "
+                "3 GB).\n\nPara usar esta ruta, ejecuta Bashkar Station "
+                "desde el código fuente:  python app.py"
+            )
         return "Falta PyTorch. Instala:  pip install torch"
     if not _hay_modulo("transformers"):
         if congelado:
-            return ("CHURRO-3B no está disponible en la versión compilada. "
-                    "Ejecuta Bashkar Station desde el código fuente para usarlo.")
+            return (
+                "CHURRO-3B no está disponible en la versión compilada. "
+                "Ejecuta Bashkar Station desde el código fuente para usarlo."
+            )
         return "Faltan los transformers. Instala:  pip install transformers accelerate"
     soporta, error = _soporta_qwen()
     if error:
         return f"No se pudo inspeccionar transformers: {error}"
     if not soporta:
-        return ("Tu versión de transformers no soporta Qwen2.5-VL. "
-                "Actualiza:  pip install -U transformers")
+        return (
+            "Tu versión de transformers no soporta Qwen2.5-VL. "
+            "Actualiza:  pip install -U transformers"
+        )
     return None
 
 
@@ -157,8 +163,9 @@ def _soporta_qwen() -> tuple[bool, str | None]:
     """
     try:
         import transformers
+
         return hasattr(transformers, "Qwen2_5_VLForConditionalGeneration"), None
-    except Exception as e:                      # noqa: BLE001
+    except Exception as e:  # noqa: BLE001
         return False, str(e)
 
 
@@ -181,6 +188,7 @@ def _hay_modulo(nombre: str) -> bool:
     """
     import importlib.util
     import sys
+
     try:
         return importlib.util.find_spec(nombre) is not None
     except (ImportError, ValueError):
@@ -302,8 +310,7 @@ def esta_descargado() -> bool:
             except (OSError, ValueError):
                 requeridos = set()
             if requeridos:
-                presentes = {p.name for p in carpeta.rglob("*.safetensors")
-                             if p.stat().st_size > 0}
+                presentes = {p.name for p in carpeta.rglob("*.safetensors") if p.stat().st_size > 0}
                 return requeridos.issubset(presentes)
 
         # Sin índice. Ojo: que no haya índice no significa que el modelo sea de
@@ -327,7 +334,7 @@ def esta_descargado() -> bool:
         if fragmentos:
             return any(len(vistos) == total for total, vistos in fragmentos.items())
         if sueltos:
-            return True          # modelo de un solo archivo, de verdad
+            return True  # modelo de un solo archivo, de verdad
     return False
 
 
@@ -341,8 +348,10 @@ def estimar_tiempo(n_paginas: int) -> dict:
         "paginas": n_paginas,
         "segundos": segundos,
         "minutos": round(segundos / 60, 1),
-        "texto": (f"{n_paginas} página(s) · ~{round(segundos / 60, 1)} min "
-                  f"en CPU (~{int(SEGUNDOS_POR_PAGINA_CPU)} s por página)"),
+        "texto": (
+            f"{n_paginas} página(s) · ~{round(segundos / 60, 1)} min "
+            f"en CPU (~{int(SEGUNDOS_POR_PAGINA_CPU)} s por página)"
+        ),
         "costo_usd": 0.0,
         "descarga_pendiente_gb": 0.0 if esta_descargado() else 7.0,
     }
@@ -368,7 +377,7 @@ def _dtype(torch):
     if nombre in ("float32", "fp32"):
         return torch.float32
     if nombre in ("float16", "fp16"):
-        return torch.float16          # a petición expresa; da NaN en CPU
+        return torch.float16  # a petición expresa; da NaN en CPU
     return torch.bfloat16
 
 
@@ -396,13 +405,44 @@ def _cargar():
         return _modelo, _procesador
 
     with _lock:
-        if _modelo is not None:            # otro hilo lo cargó mientras esperábamos
+        if _modelo is not None:  # otro hilo lo cargó mientras esperábamos
             return _modelo, _procesador
+
+        # ── HF_HUB_OFFLINE va ANTES DE TODO, incluida la comprobación ─────
+        #
+        # `motivo_no_disponible()` parece una comprobación inocua, pero NO lo es:
+        # usa `importlib.util.find_spec()`, que con estos paquetes ejecuta el
+        # módulo. Medido el 3-sep-2026: antes de llamarla, ni torch ni
+        # transformers ni huggingface_hub están en `sys.modules`; después, los
+        # tres. Es decir, la comprobación de disponibilidad IMPORTA la pila
+        # entera.
+        local = _carpeta_modelo_local()
+        origen = str(local) if local else MODELO_ID
+        if local or esta_descargado():
+            os.environ.setdefault("HF_HUB_OFFLINE", "1")
 
         motivo = motivo_no_disponible()
         if motivo:
             raise RuntimeError(motivo)
 
+        # ── Por qué el orden de arriba no es cosmético ────────────────────
+        #
+        # Ponerlo después provoca un SEGFAULT (0xC0000005 en
+        # Windows, sin stderr ni traza de Python). `huggingface_hub` congela el
+        # valor de esta variable como constante de módulo en su propio import, y
+        # `transformers` lo arrastra; escribirla más tarde deja el proceso con
+        # dos verdades distintas sobre si hay red, y la carga del procesador
+        # revienta en código nativo.
+        #
+        # Reproducido el 3-sep-2026 con el mismo script cambiando solo el orden:
+        # antes del import -> código de salida 0; después -> 139 (segfault).
+        # Es la MISMA causa raíz que la sesión 63 encontró en
+        # `core/ner_roberta_local.py`; reapareció aquí porque la lógica está
+        # copiada en dos módulos en vez de compartida.
+        #
+        # Se resuelve el origen antes de importar nada, porque
+        # `_carpeta_modelo_local()` y `esta_descargado()` no dependen de
+        # transformers.
         import torch
         from transformers import AutoProcessor, Qwen2_5_VLForConditionalGeneration
 
@@ -410,17 +450,12 @@ def _cargar():
         # sin turno de planificación: la app se ve congelada durante los minutos
         # que dura la transcripción. Reservar núcleos apenas cuesta tiempo.
         from core import recursos
+
         recursos.limitar_hilos_torch()
 
-        # Una carpeta local con el modelo tiene prioridad sobre la caché: es lo
-        # que hace posible el modo portátil en la memoria USB.
-        local = _carpeta_modelo_local()
-        origen = str(local) if local else MODELO_ID
-
-        # Si ya está en caché (o es local), forzar modo offline: evita que el
-        # arranque se cuelgue consultando el Hub sin conexión.
-        if local or esta_descargado():
-            os.environ.setdefault("HF_HUB_OFFLINE", "1")
+        # `origen` y el modo offline ya quedaron resueltos arriba, antes de
+        # importar transformers. Una carpeta local del modelo tiene prioridad
+        # sobre la caché: es lo que hace posible el modo portátil en USB.
 
         modelo = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             origen,
@@ -445,41 +480,53 @@ def liberar() -> None:
         _modelo = None
         _procesador = None
     import gc
+
     gc.collect()
 
 
-def ocr_pagina(imagen, prompt: str = PROMPT_POR_DEFECTO,
-               max_tokens: int = 2048) -> str:
+def ocr_pagina(imagen, prompt: str = PROMPT_POR_DEFECTO, max_tokens: int = 2048) -> str:
     """Transcribe UNA imagen. `imagen` es una ruta o un objeto PIL.Image."""
     from PIL import Image
 
     modelo, procesador = _cargar()
-    img = Image.open(imagen).convert("RGB") if isinstance(imagen, (str, Path)) else imagen.convert("RGB")
+    img = (
+        Image.open(imagen).convert("RGB")
+        if isinstance(imagen, (str, Path))
+        else imagen.convert("RGB")
+    )
 
-    mensajes = [{
-        "role": "user",
-        "content": [{"type": "image"}, {"type": "text", "text": prompt}],
-    }]
+    mensajes = [
+        {
+            "role": "user",
+            "content": [{"type": "image"}, {"type": "text", "text": prompt}],
+        }
+    ]
     texto_plantilla = procesador.apply_chat_template(
-        mensajes, tokenize=False, add_generation_prompt=True)
+        mensajes, tokenize=False, add_generation_prompt=True
+    )
     entradas = procesador(text=[texto_plantilla], images=[img], return_tensors="pt")
 
     import torch
+
     with torch.inference_mode():
-        generado = modelo.generate(**entradas, max_new_tokens=max_tokens,
-                                   do_sample=False)
+        generado = modelo.generate(**entradas, max_new_tokens=max_tokens, do_sample=False)
 
     # Recortar el eco del prompt: solo interesan los tokens nuevos
-    recortado = [salida[len(entrada):]
-                 for entrada, salida in zip(entradas.input_ids, generado)]
-    salida = procesador.batch_decode(recortado, skip_special_tokens=True,
-                                     clean_up_tokenization_spaces=False)
+    recortado = [salida[len(entrada) :] for entrada, salida in zip(entradas.input_ids, generado)]
+    salida = procesador.batch_decode(
+        recortado, skip_special_tokens=True, clean_up_tokenization_spaces=False
+    )
     return salida[0].strip() if salida else ""
 
 
-def ocr_pagina_con_zonas(img_path, zonas, prompt: str = PROMPT_POR_DEFECTO,
-                         margen_px: int = 6, max_tokens: int = 1024,
-                         callback=None) -> dict:
+def ocr_pagina_con_zonas(
+    img_path,
+    zonas,
+    prompt: str = PROMPT_POR_DEFECTO,
+    margen_px: int = 6,
+    max_tokens: int = 1024,
+    callback=None,
+) -> dict:
     """Transcribe SOLO las zonas etiquetadas como texto, en orden de lectura.
 
     Es la forma correcta de usar este modelo dentro del flujo de Bashkar: el
@@ -504,8 +551,7 @@ def ocr_pagina_con_zonas(img_path, zonas, prompt: str = PROMPT_POR_DEFECTO,
         if callback:
             callback(m)
 
-    procesables = [z for z in zonas
-                   if TIPOS_ZONA.get(z.tipo, {}).get("ocr", True)]
+    procesables = [z for z in zonas if TIPOS_ZONA.get(z.tipo, {}).get("ocr", True)]
     if not procesables:
         log("Ninguna zona de esta página lleva texto a transcribir.")
         return {"texto": "", "zonas": [], "confianza": 0.0}
@@ -517,46 +563,49 @@ def ocr_pagina_con_zonas(img_path, zonas, prompt: str = PROMPT_POR_DEFECTO,
     img = Image.open(img_path).convert("RGB")
     W, H = img.size
     saltadas = len(zonas) - len(procesables)
-    log(f"{len(procesables)} zona(s) con texto · {saltadas} saltada(s) "
-        f"(foto/publicidad/filete)")
+    log(f"{len(procesables)} zona(s) con texto · {saltadas} saltada(s) (foto/publicidad/filete)")
 
     salida, partes = [], []
     for i, z in enumerate(procesables):
         x0, y0, x1, y1 = z.a_pixeles(W, H)
-        x0 = max(0, x0 - margen_px); y0 = max(0, y0 - margen_px)
-        x1 = min(W, x1 + margen_px); y1 = min(H, y1 + margen_px)
+        x0 = max(0, x0 - margen_px)
+        y0 = max(0, y0 - margen_px)
+        x1 = min(W, x1 + margen_px)
+        y1 = min(H, y1 + margen_px)
         if x1 - x0 < 8 or y1 - y0 < 8:
             continue
 
         t0 = time.perf_counter()
         try:
-            texto = ocr_pagina(img.crop((x0, y0, x1, y1)), prompt=prompt,
-                               max_tokens=max_tokens)
-        except Exception as e:                  # noqa: BLE001
+            texto = ocr_pagina(img.crop((x0, y0, x1, y1)), prompt=prompt, max_tokens=max_tokens)
+        except Exception as e:  # noqa: BLE001
             texto = ""
             log(f"  zona {i + 1}/{len(procesables)} ({z.tipo}) — ERROR: {e}")
         seg = time.perf_counter() - t0
 
-        salida.append({"orden": z.orden, "tipo": z.tipo, "texto": texto,
-                       "zid": getattr(z, "zid", "")})
+        salida.append(
+            {"orden": z.orden, "tipo": z.tipo, "texto": texto, "zid": getattr(z, "zid", "")}
+        )
         if texto:
             partes.append(texto)
-        log(f"  zona {i + 1}/{len(procesables)} ({z.tipo}): "
-            f"{len(texto.split())} palabras en {seg / 60:.1f} min")
+        log(
+            f"  zona {i + 1}/{len(procesables)} ({z.tipo}): "
+            f"{len(texto.split())} palabras en {seg / 60:.1f} min"
+        )
 
     return {
         "texto": "\n\n".join(partes),
         "zonas": salida,
         # CHURRO no reporta confianza por token; se informa cobertura: qué
         # proporción de las zonas con texto devolvió algo.
-        "confianza": round(100 * sum(1 for z in salida if z["texto"])
-                           / max(len(salida), 1), 1),
+        "confianza": round(100 * sum(1 for z in salida if z["texto"]) / max(len(salida), 1), 1),
     }
 
 
 def estimar_tiempo_zonas(zonas) -> dict:
     """Estimación previa contando SOLO las zonas que llevan texto."""
     from core.zone_labeler import TIPOS_ZONA
+
     n = sum(1 for z in zonas if TIPOS_ZONA.get(z.tipo, {}).get("ocr", True))
     segundos = n * SEGUNDOS_POR_ZONA_CPU
     return {
@@ -564,14 +613,14 @@ def estimar_tiempo_zonas(zonas) -> dict:
         "zonas_saltadas": len(zonas) - n,
         "segundos": segundos,
         "minutos": round(segundos / 60, 1),
-        "texto": (f"{n} zona(s) con texto de {len(zonas)} · "
-                  f"~{round(segundos / 60, 1)} min en CPU"),
+        "texto": (f"{n} zona(s) con texto de {len(zonas)} · ~{round(segundos / 60, 1)} min en CPU"),
         "costo_usd": 0.0,
     }
 
 
-def ocr_lote(rutas_imagenes, prompt: str = PROMPT_POR_DEFECTO,
-             callback=None, max_tokens: int = 2048) -> dict:
+def ocr_lote(
+    rutas_imagenes, prompt: str = PROMPT_POR_DEFECTO, callback=None, max_tokens: int = 2048
+) -> dict:
     """Transcribe varias imágenes. Devuelve {nombre_pagina: texto}.
 
     `callback(indice, total, nombre, segundos)` se llama tras cada página para
@@ -588,13 +637,11 @@ def ocr_lote(rutas_imagenes, prompt: str = PROMPT_POR_DEFECTO,
         nombre = Path(ruta).stem
         t0 = time.perf_counter()
         try:
-            resultados[nombre] = ocr_pagina(ruta, prompt=prompt,
-                                            max_tokens=max_tokens)
-        except Exception as e:                  # noqa: BLE001
+            resultados[nombre] = ocr_pagina(ruta, prompt=prompt, max_tokens=max_tokens)
+        except Exception as e:  # noqa: BLE001
             resultados[nombre] = ""
             if callback:
-                callback(i + 1, len(rutas), f"{nombre} — ERROR: {e}",
-                         time.perf_counter() - t0)
+                callback(i + 1, len(rutas), f"{nombre} — ERROR: {e}", time.perf_counter() - t0)
             continue
         if callback:
             callback(i + 1, len(rutas), nombre, time.perf_counter() - t0)
