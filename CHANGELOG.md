@@ -2,6 +2,144 @@
 
 ---
 
+## Sesión 66 — 2026-09-03 — Colaboración, contrato A1, prueba de generalización sobre 9 publicaciones, CHURRO reparado
+
+**Cinco bugs reales corregidos, todos verificados contra datos reales, no
+fixtures. Suite final: 1587 passed, 27 skipped. Todo empujado a GitHub
+(`c20b8d7..a31f687`, 18 commits).**
+
+### 1. Los parches de colaboración no llevaban ninguna corrección de OCR (`b07b906`)
+
+En v11 el texto no vive en el dict del `.bashkar` sino en el SQLite hermano, y
+las correcciones manuales quedan en la tabla `normalizaciones` (numero, pagina,
+ocr_crudo, norm_usuario, ts_usuario), **no** en la tabla `ocr`, que solo guarda
+salida de motores. `crear_parche()` solo miraba artículos embebidos en el dict:
+un parche de un proyecto real salía siempre **sin una sola corrección**.
+Verificado sobre copia del proyecto real: 0 antes, **169 después**, idempotente.
+
+Además, en el mismo commit:
+- El parche guardaba **solo los primeros 200 caracteres** del texto y
+  `aplicar_parche` escribía ese recorte como texto completo del artículo: el
+  resto se perdía en el proyecto receptor.
+- El hash de validación incluía claves privadas (`_ruta`), dando un hash distinto
+  por máquina para el mismo proyecto.
+- La DDL de `normalizaciones` vivía suelta dentro de `app.py`; centralizada en
+  `datos/schema.py` como `SCHEMA_NORMALIZACIONES`.
+
+### 2. El fixture de migración reproducía una forma que ningún proyecto tuvo (`2b06c5a`)
+
+`conftest.bashkar_v10` embebe los artículos en la raíz del JSON. Verificado
+contra el backup v10 real (version 8.8): sus claves de raíz **no incluyen**
+`articulos`; los 138 artículos reales están en `<stem>/articulos.csv` (sin
+columnas `id` ni `seccion`) más `corpus_txt.json` alineado por posición. Los 12
+tests de migración existentes ejercitaban solo la rama embebida —la que produce
+`pipeline_maestro`— y nunca la que corre con un proyecto del usuario, que es
+justo donde vivía el fallo silencioso de la sesión 65. Nuevo fixture
+`bashkar_v10_real` + 7 tests.
+
+### 3. Contrato A1: identidad de artículo (`7bb90a6`)
+
+Convivían **nueve** formas incompatibles de acuñar el id. Los productores de NER
+caían a `titulo` o al stem del archivo; **todos** los exportadores usaban
+`art_%04d`. Nunca podían coincidir: por eso el índice NER de Proyecto_04 tiene
+184 entidades y la exportación TEI logra asignar **0**.
+
+Pero el daño no era solo de enlace. `articulos.id` es `TEXT PRIMARY KEY` y
+`guardar_articulo` inserta con `ON CONFLICT DO UPDATE`: con el título como id,
+dos artículos homónimos **se pisan en silencio**. Medido sobre el corpus real:
+138 filas, 117 títulos distintos, **21 artículos perdidos (15 %)**. Los que se
+repiten son lo que se repite en una revista — "Especial para ESTAMPA" ×3.
+
+`core/identidad_articulo.py` acuña `<numero>_p<pagina>_<orden>`, derivado del
+contenido bibliográfico y no de un contador global, de modo que reprocesar el
+mismo PDF devuelve los mismos ids. Verificado: **138 de 138, cero colisiones**.
+24 tests, incluida la contraprueba de que el esquema viejo sí perdía artículos.
+Módulo aislado a propósito: adoptarlo en `app.py` cambia ids de proyectos
+existentes y exige migración; decisión aparte.
+
+### 4. CHURRO llevaba roto desde alguna actualización de bibliotecas (`342f29c`)
+
+Segfault (0xC0000005 / código 139) **sin stderr ni traza de Python**, mientras la
+GUI ofrece el botón para usarlo. `_cargar()` fijaba `HF_HUB_OFFLINE` justo antes
+de importar torch y transformers, lo cual parece temprano y no lo es: la llamada
+anterior, `motivo_no_disponible()`, usa `importlib.util.find_spec()`, que con
+estos paquetes **ejecuta el módulo**. Antes de esa llamada ni torch ni
+transformers ni huggingface_hub están en `sys.modules`; después, los tres.
+
+Misma causa raíz que la sesión 63 arregló en `ner_roberta_local.py`. Reapareció
+porque la lógica está copiada en **tres** módulos, y porque el test que la
+guardaba cubría dos de ellos mientras su docstring daba por bueno el tercero.
+`tests/test_churro_offline_orden.py`, 4 tests **con prueba negativa verificada**.
+
+### 5. Prueba de generalización sobre 9 publicaciones de la BNC (`a31f687`)
+
+Primera medición real fuera de *Estampa*. En
+`scripts/_experimentos/generalizacion_20260903/`.
+
+- **8 de 9 traen la capa oculta de Paper Capture.** El acoplamiento al formato de
+  la BNC es menos grave de lo que sugería leer el código.
+- **La fusión de palabras ya no es problema** en ningún corpus (máximo 0,26 %):
+  el umbral relativo de la sesión 65 funcionó para todas.
+- **La fragmentación varía de 2,6 % a 35,6 %** sin que nada la detecte ni la
+  reporte. Umbral empírico de abstención propuesto: por encima de ~10 % el
+  documento no es utilizable sin revisión.
+- ***El Día*** declara la capa oculta y solo tiene **2 de 16 páginas** OCR-izadas.
+  La ruta debe decidirse **por página y por presencia real de texto**, nunca por
+  la declaración de fuentes.
+- ***El Gráfico*** (contraste principal del plan de beca) es la única sin capa de
+  texto. Bloqueada además porque **Tesseract no tenía instalado el español**.
+  Resuelto con `tessdata_best`: 34 s/página, confianza 93, 3,1 % de fragmentación
+  —mejor que la línea base de *Estampa*.
+- **Tesseract supera a CHURRO como ruta de producción**: 34 s frente a 2.068 s
+  por página. CHURRO lee mejor los caracteres dañados (`tervieite`→`ferviente`)
+  pero rompe las palabras partidas por guion de línea y hay indicio de que
+  moderniza la ortografía (`imágen`→`imagen`), riesgo serio en corpus histórico.
+
+### Hallazgo que bloquea el fine-tune de Kraken
+
+`kraken_finetune.recolectar_ground_truth()` sobre el proyecto real devuelve
+**0 pares utilizables de 169 correcciones**: 116 descartadas por ser solo
+reformateo, 53 por corrección trivial. Mediana de corrección real: **0,0289 %**
+de los caracteres. Bajando el umbral cinco veces (0,1 %) solo califican 4 páginas
+y hacen falta 20.
+
+Causa: la pantalla de Normalizar precarga el OCR y desenvuelve los renglones; al
+guardar deja un registro que **parece** transcripción y no lo es.
+
+Y no hay verdad de referencia en ningún otro sitio: `ground_truth_piloto/`
+contiene imágenes, candidatos de máquina y **juicios de IA**, no transcripción
+humana. **La exactitud de 0,686 del proyecto está estimada por otra IA, no medida
+contra referencia humana.** Hoy no existe forma de calcular un CER real.
+
+### Pendientes para la próxima sesión
+
+1. **`spa.traineddata` está en `C:\build_rf\tessdata`, carpeta temporal.** Si
+   desaparece, la ruta de respaldo vuelve a estar muerta para español. Moverlo a
+   la instalación de Tesseract o fijarlo en la configuración del proyecto.
+2. **Arreglar la pantalla de Normalizar** para que distinga «revisado, sin
+   cambios» de «transcrito» y muestre cuánto se cambió de verdad. Es lo que
+   produjo el espejismo de las 169 correcciones.
+3. **Construir verdad de referencia por post-edición** (no transcribiendo desde
+   cero) con `estandar_oro.exportar_zonas`, usando CHURRO como base porque lee
+   mejor los caracteres dañados. Mínimo 20 páginas. Desbloquea CER real,
+   comparación entre motores y el fine-tune de Kraken.
+4. **Recorte de motores de OCR** (decidido, sin ejecutar): quedarse con
+   `alto_reconstructor` + Tesseract + Vision OCR en la nube como rutas de
+   producción, CHURRO etiquetado solo como herramienta de estándar de oro, y
+   sacar del catálogo PERO-OCR y Ollama (nunca instalados, nunca medidos).
+   Kraken: sacar la inferencia del catálogo, conservar `kraken_finetune` como
+   línea de investigación de los meses 5-7 del proyecto financiado.
+5. **Contrato A2** (`core/corpus.py`): la función única que devuelve los
+   artículos con forma declarada. Hoy hay cinco sitios que arman esa lista a
+   mano. Ver `ROADMAP_PRO.md`.
+6. **Re-run de NER sobre Proyecto_04** — desbloqueado por A1. Medido: ~5,4 min,
+   gratis, offline. Va **después** de adoptar A1.
+7. `crear_parche` sigue sin generar parches de OCR embebido en v11 (el camino de
+   `normalizaciones` sí funciona); `excel_export.py` y `tei_engine.py` sin
+   auditar con datos reales.
+
+---
+
 ## Sesión 64 — 2026-08-30 — Merge de fixes s.63, análisis real de Estampa, 3 bugs de auditoría, v12.3
 
 **Merge y despliegue:**
