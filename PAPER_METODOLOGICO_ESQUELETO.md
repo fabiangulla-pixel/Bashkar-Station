@@ -263,11 +263,33 @@ anteriores, no de la corrida completa más reciente.
 
 ## Próximos pasos concretos antes de escribir prosa final
 
-1. **Decidir la revista objetivo** — sigue pendiente. Define normas de
-   citación exactas, extensión máxima, si el resumen bilingüe va antes o
-   después de la introducción, y si se admite primera persona (tu tesis la
-   usa puntualmente; no todas las revistas de Estudios Editoriales/HD la
-   aceptan igual).
+1. **Revista candidata identificada (2-sep-2026, sin confirmar aún):**
+   *Literatura: teoría, historia, crítica* — Departamento de Literatura,
+   Universidad Nacional de Colombia (ISSN 0123-5931 impreso / 2256-5450 en
+   línea, desde 1997, Latindex/Redalyc/Dialnet). Normas reales verificadas en
+   revistas.unal.edu.co/index.php/lthc/about/submissions:
+   - Extensión: **6.000-12.000 palabras** para artículos (incluye referencias).
+   - **Citación en MLA, NO APA** — ⚠️ discrepancia con el patrón calibrado
+     contra la tesis de 2018 (que usa APA). Decisión pendiente: convertir las
+     citas del artículo a MLA, o buscar otra revista que acepte APA. El
+     Boletín Cultural y Bibliográfico (donde está el artículo de Los Nuevos)
+     podría ser alternativa a evaluar si se prefiere mantener APA.
+   - Resumen en **español, inglés Y portugués** (máx. 150 palabras cada uno,
+     no solo bilingüe como asumía el esqueleto original) — debe cubrir
+     propósito, desarrollo lógico, punto de vista del autor y conclusiones.
+   - 3-6 palabras clave.
+   - Primera persona: sin restricción explícita en las normas.
+   - Evaluación doble ciego; envío por OJS (literaturathc.unal.edu.co) o
+     correo (revliter_fchbog@unal.edu.co); requiere CV y perfil institucional
+     del autor adjuntos.
+   - Formato: Word editable, tablas/figuras editables (no imágenes), imágenes
+     ≥300 dpi si aplica.
+   - Licencia final: CC BY-NC-ND 4.0.
+   **Confirmado por el usuario (2-sep-2026): revista objetivo = esta, citación
+   en MLA** (no APA). Pendiente de ejecución (no de decisión): convertir el
+   patrón de citas del cuerpo del esqueleto de `(Autor, año, p. XX)` estilo
+   APA a formato MLA antes de redactar prosa final, y ajustar el resumen a
+   las 3 lenguas exigidas (español/inglés/portugués, no solo bilingüe).
 2. ~~Recorrer el pipeline completo sobre el corpus actual~~ — **HECHO
    30-ago-2026**, cifras finales ya incorporadas arriba (7.652 entidades,
    red 300 nodos/0.218 modularidad, IPA 0.594, encuadres, 99.8% anónimo).

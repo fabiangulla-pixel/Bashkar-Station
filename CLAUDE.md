@@ -359,7 +359,12 @@ Entrega: arquitectura → implementación → feedback de revisión → versión
 
 ## 8. ESTADO Y ROADMAP
 
-**Estado actual (sesión 14, 2026-05-28): 499 tests pasando, 9 skipped, 0 fallos.**
+**Estado actual (sesión 66, 2026-09-03): 1.587 tests pasando, 27 skipped, 0 fallos.**
+Verificado el 7-sep-2026. Estado detallado, limitaciones y siguiente tarea en
+`docs/PROJECT_STATE.md`, `docs/DECISIONS.md` y `docs/NEXT_STEPS.md`.
+
+> Esta cifra estuvo 52 sesiones desactualizada (decía "sesión 14, 499 tests").
+> Recuerda la regla 0: si este archivo y el disco discrepan, gana el disco.
 
 ### Completado ✅
 - v11–v19 implementados: todos los módulos `core/` listados en la sección 4
