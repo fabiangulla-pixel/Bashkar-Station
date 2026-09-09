@@ -367,7 +367,29 @@ def dirs_tessdata() -> list[Path]:
 
 # ── Poppler (pdftoppm, que usa pdf2image) ─────────────────────────────────────
 
+def _ruta_configurada_poppler() -> Path | None:
+    """Carpeta `bin` que dejó escrita el instalador (o el usuario) en
+    `poppler_path.txt`, junto a la raíz del proyecto.
+
+    Sin esto el diagnóstico y el runtime no coinciden: `ocr_engine.
+    _get_poppler_path()` sí lee ese archivo y rasteriza sin problema, mientras
+    `buscar_poppler()` —la que usan `core/requisitos.py` y el servidor web para
+    responder "¿está instalado?"— devolvía "" y le decía al investigador que
+    falta Poppler cuando el OCR estaba funcionando.
+    """
+    try:
+        cfg = Path(__file__).resolve().parent.parent / "poppler_path.txt"
+        if cfg.exists():
+            valor = cfg.read_text(encoding="utf-8").strip()
+            if valor and Path(valor).is_dir():
+                return Path(valor)
+    except OSError:
+        pass
+    return None
+
+
 def _candidatos_poppler() -> list[Path]:
+    configurados = [p for p in (_ruta_configurada_poppler(),) if p is not None]
     if es_windows():
         # Poppler para Windows no tiene instalador: se descomprime un .zip
         # donde caiga, y el binario queda enterrado varios niveles
@@ -380,11 +402,12 @@ def _candidatos_poppler() -> list[Path]:
             valor = os.environ.get(var)
             if valor:
                 rutas.append(Path(valor) / "poppler")
-        return rutas
+        return configurados + rutas
     if es_macos():
         # `brew install poppler`: binarios sueltos en el bin del prefijo.
-        return [Path("/opt/homebrew/bin"), Path("/usr/local/bin"), Path("/opt/local/bin")]
-    return [Path("/usr/bin"), Path("/usr/local/bin"), Path("/snap/bin")]
+        return configurados + [Path("/opt/homebrew/bin"), Path("/usr/local/bin"),
+                               Path("/opt/local/bin")]
+    return configurados + [Path("/usr/bin"), Path("/usr/local/bin"), Path("/snap/bin")]
 
 
 def buscar_poppler() -> str:

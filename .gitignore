@@ -47,3 +47,9 @@ vision_ocr/entrada/
 Thumbs.db
 .DS_Store
 desktop.ini
+
+# Rutas de binarios propias de CADA maquina: las escribe instalar.py o el
+# usuario. Estuvieron versionadas hasta la sesion 67, asi que el repo viajaba
+# con la ruta de otro equipo dentro.
+poppler_path.txt
+tesseract_path.txt

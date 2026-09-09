@@ -467,6 +467,34 @@ class TestDirsTessdata:
         assert "Users/Lenovo" not in fuente
 
 
+class TestRutaConfiguradaPoppler:
+    """`instalar.py` escribe la carpeta bin en poppler_path.txt, y
+    `ocr_engine._get_poppler_path()` la lee y rasteriza sin problema. Pero
+    `buscar_poppler()` —la que responden `core/requisitos.py` y el servidor web
+    cuando el investigador pregunta "¿esta instalado?"— la ignoraba y decia que
+    no. Diagnostico y runtime tienen que coincidir."""
+
+    def test_la_ruta_configurada_va_primero(self, monkeypatch, tmp_path):
+        binario = tmp_path / "poppler-24.08" / "Library" / "bin"
+        binario.mkdir(parents=True)
+        monkeypatch.setattr(plataforma, "_ruta_configurada_poppler", lambda: binario)
+        assert plataforma._candidatos_poppler()[0] == binario
+
+    def test_sin_archivo_de_configuracion_no_agrega_nada(self, monkeypatch, tmp_path):
+        monkeypatch.setattr(plataforma.Path, "cwd", staticmethod(lambda: tmp_path))
+        monkeypatch.setattr(plataforma, "_ruta_configurada_poppler", lambda: None)
+        candidatos = plataforma._candidatos_poppler()
+        assert candidatos and all(c is not None for c in candidatos)
+
+    def test_ruta_configurada_que_ya_no_existe_se_ignora(self, monkeypatch, tmp_path):
+        # El repo viajaba con poppler_path.txt versionado: al clonar en otra
+        # maquina, la ruta de dentro apunta a una carpeta que no existe.
+        cfg = tmp_path / "poppler_path.txt"
+        cfg.write_text(str(tmp_path / "no" / "existe"), encoding="utf-8")
+        monkeypatch.setattr(plataforma, "__file__", str(tmp_path / "core" / "plataforma.py"))
+        assert plataforma._ruta_configurada_poppler() is None
+
+
 class TestBuscarPoppler:
     def test_toma_pdftoppm_del_path(self, monkeypatch, cualquier_sistema):
         monkeypatch.setattr(shutil, "which", lambda n: "/usr/bin/" + n)
