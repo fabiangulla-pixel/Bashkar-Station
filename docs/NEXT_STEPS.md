@@ -4,11 +4,19 @@ Estado al 9-sep-2026 (código en sesión 67).
 
 ## Siguiente tarea concreta
 
-**Medir *El Gráfico* con Tesseract en español.** Era el paso 4 de esta lista y
-estaba bloqueado porque el idioma español no estaba instalado; en el MSI ya lo
-está (5.4.0 + `spa.traineddata`, 9-sep-2026). *El Gráfico* es la única de las 9
-publicaciones sin capa de texto y el contraste principal del plan de la beca:
-hasta ahora la prueba de generalización no pudo decir nada de ella.
+**[EN PROGRESO] Medir *El Gráfico* con Tesseract en español.** 
+Tesseract 5.4.0 + `spa.traineddata` ya funciona en el MSI (9-sep-2026). 
+Prueba rápida en `ps20_elgrafico_dic_1910.pdf` (primeras 3 páginas):
+  - Confianza media: 93.2%
+  - Fusión: 0.1%
+  - Fragmentación: 4.3%
+  
+El corpus de El Gráfico vive en 
+`G:\Mi unidad\1_MAIA_UniAndes\Coursera\Despliegue de soluciones\Microproyecto\Publicaciones\El Gráfico`
+con 82 números (1910-1929, 2.6 GB total).
+
+*El Gráfico* es la única de las 9 publicaciones sin capa de texto oculta y el 
+contraste principal del plan de la beca. Medición de muestra en progreso.
 
 ~~Convertir las citas del paper de APA a MLA y ampliar el resumen a tres
 lenguas~~ — **HECHO el 9-sep-2026**. Del paper queda solo lo que exige

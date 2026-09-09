@@ -2,6 +2,34 @@
 
 ---
 
+## Sesión 68 — 2026-09-09 (cont.) — Compilación del .exe en MSI + medición de El Gráfico
+
+Continuación del trabajo de migración. El .exe se compiló exitosamente con 
+PyInstaller (1.2 GB, torch incluido a propósito para CHURRO), y Tesseract 
+español en MSI ya puede medir El Gráfico. Este es el único de los 9 corpus 
+que no tenía capa de texto OCR.
+
+- **PyInstaller fix:** `bashkar_station.spec` llevaba rutas hardcodeadas de 
+  `C:/Users/Lenovo/...` para el diccionario Hunspell. Ahora `_datas_diccionario_es()` 
+  lo resuelve en tiempo de build desde `~/.bashkar/diccionarios/` y los datos 
+  de `spylls`, y omite el dato sin romper el build si no aparece. Test de 
+  regresión nuevo en `tests/test_spec_portable.py` convierte la ruta cableada 
+  en fallo de suite (cuesta segundos vs 4 min de recompilación). 
+  `core/spell_corrector.py` también mira en `sys._MEIPASS/diccionarios` para 
+  encontrarlo dentro del bundle congelado.
+
+- **Compilación exitosa:** 1,2 GB (torch + datasets completos), el .exe arranca 
+  en el MSI, muestra Tesseract/Poppler/PyMuPDF habilitados, se desplegó 
+  a `C:\Users\fabia\Programas\BashkarStation\` preservando backups.
+
+- **El Gráfico initial:** prueba en `ps20_elgrafico_dic_1910.pdf` (22 MB):
+  - Confianza Tesseract: 93.2%
+  - Fusión (caracteres >16 pegados): 0.1%
+  - Fragmentación (ruido <2 chars): 4.3%
+  Muestra comprensiva en progreso de corpus 1910-1929 (82 números, 2.6 GB).
+
+---
+
 ## Sesión 67 — 2026-09-09 — Migración al MSI: tres fallos silenciosos que el equipo nuevo destapó
 
 Sesión de infraestructura sobre un equipo recién montado. La migración
