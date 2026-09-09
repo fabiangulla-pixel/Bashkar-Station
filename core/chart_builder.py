@@ -227,8 +227,16 @@ def ocr_boxplot(corpus_confianza: dict, titulo: str = "") -> plt.Figure:
     datos   = [por_numero[n] for n in numeros]
 
     fig, ax = _fig(max(7, len(numeros) * 0.9 + 2), 5)
-    bp = ax.boxplot(datos, labels=numeros, patch_artist=True,
-                    medianprops={"color": "#F59E0B", "linewidth": 2})
+    # matplotlib renombro `labels` a `tick_labels` en 3.9 y elimino el nombre
+    # viejo en 3.11: con `labels` la grafica revienta con TypeError. Se intenta
+    # primero el nombre actual y se cae al viejo para no romper instalaciones
+    # con matplotlib < 3.9 (requirements.txt admite desde 3.8).
+    _kw = {"patch_artist": True,
+           "medianprops": {"color": "#F59E0B", "linewidth": 2}}
+    try:
+        bp = ax.boxplot(datos, tick_labels=numeros, **_kw)
+    except TypeError:
+        bp = ax.boxplot(datos, labels=numeros, **_kw)
     for patch, color in zip(bp["boxes"], PALETA):
         patch.set_facecolor(color)
         patch.set_alpha(0.7)

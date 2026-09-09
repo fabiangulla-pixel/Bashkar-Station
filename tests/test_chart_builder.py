@@ -192,6 +192,16 @@ class TestOcrBoxplot:
         datos = {"p1": {"confianza": 0.8, "palabras": 200, "numero": "n1"}}
         assert _es_figura(ocr_boxplot(datos))
 
+    def test_cada_caja_lleva_el_numero_como_etiqueta(self):
+        # matplotlib 3.11 elimino el argumento `labels` de boxplot. La
+        # compatibilidad se resuelve con un try/except que podria degradar en
+        # silencio a un eje sin etiquetas: sin el numero de revista debajo de
+        # cada caja el grafico no dice de que numero habla.
+        fig = ocr_boxplot(_confianza())
+        etiquetas = [t.get_text() for t in fig.axes[0].get_xticklabels()]
+        numeros = sorted({str(i["numero"]) for i in _confianza().values()})
+        assert etiquetas == numeros
+
     def teardown_method(self):
         plt.close("all")
 
