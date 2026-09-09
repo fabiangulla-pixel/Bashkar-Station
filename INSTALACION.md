@@ -56,6 +56,19 @@ Baja el `.zip` de
 [poppler-windows](https://github.com/oschwartz10612/poppler-windows/releases)
 y descomprímelo en `C:\poppler`. Bashkar lo busca ahí.
 
+### 5. Diccionario Hunspell español
+
+Lo baja `python instalar.py` (paso 2b) a `~/.bashkar/diccionarios/`. Si
+prefieres hacerlo a mano, toma `es_ES.aff` y `es_ES.dic` de los
+[diccionarios de LibreOffice](https://github.com/LibreOffice/dictionaries/tree/master/es)
+y déjalos ahí. Para usar otro diccionario, apunta la variable de entorno
+`BASHKAR_DICCIONARIO_ES` a la ruta base, sin extensión.
+
+Por qué es un paso aparte: la biblioteca `spylls` empaqueta inglés, ruso y
+sueco, pero **no español**. Sin este archivo la corrección ortográfica
+post-OCR no corrige nada y **no avisa** — el pipeline sigue como si todo
+estuviera bien. `python instalar.py` lo reporta al final, en la verificación.
+
 ---
 
 ## macOS
@@ -116,8 +129,31 @@ python3 setup_wizard.py
 | Modelo `es_core_news_sm` | Lematización, entidades, sintaxis en español | Sí |
 | Tesseract + español | Reconocer el texto de las páginas escaneadas | Sí |
 | Poppler | Convertir las páginas del PDF en imágenes | Sí |
+| Diccionario Hunspell es_ES | Corrección ortográfica post-OCR | No |
 | Kraken | OCR de manuscrito e impresión antigua | No |
 | Dictado por voz | Dictar notas en vez de escribirlas | No |
+
+---
+
+## Reproducir el entorno exacto
+
+`requirements.txt` declara rangos (`>=`), así que una instalación nueva trae
+las últimas versiones de hoy, que no son las probadas. Para reproducir el
+entorno con el que la suite quedó en verde:
+
+```
+pip install -r requirements.lock.txt
+```
+
+No es una precaución teórica: al migrar al equipo nuevo, pip resolvió
+matplotlib 3.11, que eliminó un argumento que el código usaba, y el gráfico de
+confianza de OCR reventaba con el código intacto.
+
+Para desarrollar (tests y lint) hace falta además:
+
+```
+pip install -r requirements-dev.txt
+```
 
 ---
 
