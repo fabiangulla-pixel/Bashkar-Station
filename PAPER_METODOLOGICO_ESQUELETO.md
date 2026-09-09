@@ -1,16 +1,29 @@
 # Nota de calibración de estilo (borrar antes de someter)
 
-Calibrado contra: Gullaván Vera, F. A. (2018). *La Biblioteca de Literatura Colombiana
+Calibrado contra: Gullaván Vera, Fabián Andrés. *La Biblioteca de Literatura Colombiana
 de la editorial La Oveja Negra. Contribuciones para el estudio bibliográfico de
-colecciones editoriales* [Trabajo de grado, Instituto Caro y Cuervo].
-https://bibliotecadigital.caroycuervo.gov.co/id/eprint/1337/
+colecciones editoriales*. 2018. Instituto Caro y Cuervo, trabajo de grado,
+https://bibliotecadigital.caroycuervo.gov.co/id/eprint/1337/.
 
 Rasgos observados a replicar:
-- Resumen en español (máx. 250 palabras) + Palabras clave, luego Abstract + Key Words en inglés.
+- Resumen en español + Palabras clave, luego Abstract + Key Words en inglés.
+  ⚠️ La tesis de 2018 admitía 250 palabras; *Literatura: teoría, historia, crítica*
+  exige **máx. 150 palabras** y **tres lenguas** (español, inglés, portugués).
 - Voz mixta: mayoría "se + verbo" impersonal, con primera persona singular puntual
   cuando se describe una decisión metodológica propia ("para este estudio he
   realizado una matriz...", "no puedo dejar pasar...").
-- Citas APA en texto: `(Autor, año, p. XX)`. Citas largas en bloque, sangradas, sin comillas.
+- Citas largas en bloque, sangradas, sin comillas.
+- ⚠️ **Estilo de citación: MLA 9, no APA** (la tesis de 2018 usa APA; la revista
+  objetivo exige MLA). Lo que cambia al escribir la prosa:
+  - En texto: `(Apellido 23)` — apellido y número de página, **sin coma y sin año**.
+    Con el apellido ya nombrado en la frase, solo el número: "Bhaskar sostiene (23)".
+    Dos autores: `(Rodríguez Morales y Sierra Restrepo 5)`. Tres o más: `(Apellido et al. 5)`.
+    Dos obras del mismo autor: `(Apellido, *Título abreviado* 23)`.
+  - Sin fuente paginada (sitio, base de datos, salida de software): solo `(Apellido)`.
+  - La lista final se rotula **Obras citadas**, no "Referencias", en orden
+    alfabético y con sangría francesa.
+  - Patrón de entrada MLA: Apellido, Nombre. "Título del artículo". *Título de la
+    publicación*, vol. X, no. Y, año, pp. 00-00. *Base de datos*, URL o DOI.
 - Notas al pie numeradas para digresiones/aclaraciones que no caben en el cuerpo.
 - No hay sección rotulada "Metodología" aparte — el método se narra dentro de la
   prosa, en el punto donde se aplica ("Para este estudio bibliográfico he
@@ -27,11 +40,15 @@ Enrique Gaviria, Abel Botero, Jorge Zalamea, León de Greiff, Francisco Umaña
 Bernal, José Mar, Manuel García Herreros, Luis Vidales; influencia de "Ariel"
 de Rodó y de las ideas socialistas de posguerra; reacción contra el modernismo
 y la generación centenarista). Fuente académica a citar:
-Rodríguez Morales, R. y Sierra Restrepo, A. (2005). Los Nuevos: entre la
-tradición y la vanguardia. *Boletín Cultural y Bibliográfico*, 42(69), 2-23.
+Rodríguez Morales, [nombre de pila], y [nombre de pila] Sierra Restrepo. "Los Nuevos: entre la
+tradición y la vanguardia". *Boletín Cultural y Bibliográfico*, vol. 42, no. 69,
+2005, pp. 2-23,
 https://publicaciones.banrepcultural.org/index.php/boletin_cultural/article/view/707
 (también indexado en Dialnet y en la Biblioteca Virtual Miguel de Cervantes;
-verificar acceso al PDF completo antes de citar página exacta).
+verificar acceso al PDF completo antes de citar página exacta. ⚠️ **Verificar
+además los nombres de pila completos de ambos autores antes de someter**: la
+entrada MLA los exige y aquí están reconstruidos a partir de las iniciales de
+la referencia APA original, no confirmados contra la fuente).
 
 **Puente real con el corpus (no fabricado — verificar antes de usarlo como
 argumento fuerte):** los dos escritores literarios que dominan el índice de
@@ -72,7 +89,9 @@ Fabián Andrés Gullaván Vera¹
 Estudios Editoriales, MinCultura 2025; Instituto Caro y Cuervo)*
 
 ## Resumen
-*(≤250 palabras, español — borrador de contenido, no de redacción final)*
+*(**máx. 150 palabras**, español — borrador de contenido, no de redacción final.
+Las normas de la revista exigen que cubra cuatro cosas: propósito, desarrollo
+lógico, punto de vista del autor y conclusiones.)*
 
 - Objeto: revista *Estampa* (Colombia, 1930-1940), corpus de 5 números
   digitalizados por la Biblioteca Nacional de Colombia (ene-may 1939, 792
@@ -90,12 +109,26 @@ Estudios Editoriales, MinCultura 2025; Instituto Caro y Cuervo)*
   ver banco de hallazgos abajo].
 
 ## Palabras clave
+*(3-6, según normas de la revista; estas son 6, el tope)*
 Humanidades digitales, prensa ilustrada colombiana, estudios editoriales,
 reconocimiento de entidades nombradas, OCR histórico, *Estampa*.
 
-## Abstract / Key Words
-*(traducir el resumen final una vez fijado en español — no traducir antes de
-cerrar el texto en español, como se hizo en la tesis de referencia)*
+## Abstract
+*(**máx. 150 palabras**, inglés — traducir el resumen final una vez fijado en
+español; no traducir antes de cerrar el texto en español, como se hizo en la
+tesis de referencia)*
+
+## Keywords
+*(traducción de las palabras clave; conservar *Estampa* sin traducir)*
+
+## Resumo
+*(**máx. 150 palabras**, portugués — tercera lengua exigida por la revista, que
+la tesis de 2018 no tenía. Traducir al final, junto con el Abstract, no antes.
+Conviene revisión de un lector nativo o competente en portugués: es un resumen
+que va publicado con la firma del autor.)*
+
+## Palavras-chave
+*(traducción de las palabras clave al portugués)*
 
 ---
 
@@ -231,10 +264,32 @@ computacional:
 
 *(a redactar — depende del argumento final)*
 
-## Referencias
+## Obras citadas
 
-*(APA — agregar aquí Bhaskar 2014, Mollier 2017, y cualquier fuente sobre
-prensa/revistas ilustradas colombianas 1930s que uses; no fabricar ninguna)*
+*(MLA 9, orden alfabético, sangría francesa. Agregar aquí Bhaskar, Mollier y
+cualquier fuente sobre prensa/revistas ilustradas colombianas de los años 30 que
+uses; **no fabricar ninguna**. Las dos entradas de abajo son las únicas ya
+verificadas del esqueleto; el resto lleva marcador `[ ]` hasta que se compruebe
+el dato contra la fuente.)*
+
+Gullaván Vera, Fabián Andrés. *La Biblioteca de Literatura Colombiana de la
+  editorial La Oveja Negra. Contribuciones para el estudio bibliográfico de
+  colecciones editoriales*. 2018. Instituto Caro y Cuervo, trabajo de grado,
+  https://bibliotecadigital.caroycuervo.gov.co/id/eprint/1337/.
+
+Rodríguez Morales, [nombre de pila], y [nombre de pila] Sierra Restrepo. "Los
+  Nuevos: entre la tradición y la vanguardia". *Boletín Cultural y
+  Bibliográfico*, vol. 42, no. 69, 2005, pp. 2-23,
+  https://publicaciones.banrepcultural.org/index.php/boletin_cultural/article/view/707.
+
+*(Pendientes de verificar antes de redactar: Bhaskar — la tesis de 2018 lo cita
+como 2014, falta el título y la editorial exactos de la edición usada; Mollier
+2017, ídem. En MLA el año va después del título, así que la ficha APA de la
+tesis no se puede convertir sin tener el registro completo delante.)*
+
+*(Si el artículo cita el software como fuente, la entrada MLA del depósito
+Zenodo es la vía correcta — DOI de concepto `10.5281/zenodo.21939404` —, no una
+nota al pie. Ver `CITATION.cff` del repo, que ya trae los metadatos.)*
 
 ---
 
@@ -270,10 +325,10 @@ anteriores, no de la corrida completa más reciente.
    revistas.unal.edu.co/index.php/lthc/about/submissions:
    - Extensión: **6.000-12.000 palabras** para artículos (incluye referencias).
    - **Citación en MLA, NO APA** — ⚠️ discrepancia con el patrón calibrado
-     contra la tesis de 2018 (que usa APA). Decisión pendiente: convertir las
-     citas del artículo a MLA, o buscar otra revista que acepte APA. El
-     Boletín Cultural y Bibliográfico (donde está el artículo de Los Nuevos)
-     podría ser alternativa a evaluar si se prefiere mantener APA.
+     contra la tesis de 2018 (que usa APA). **Resuelto: se convirtió a MLA 9**
+     (9-sep-2026); el patrón en texto está en la nota de calibración del inicio.
+     La alternativa que se descartó era someter al Boletín Cultural y
+     Bibliográfico, que acepta APA.
    - Resumen en **español, inglés Y portugués** (máx. 150 palabras cada uno,
      no solo bilingüe como asumía el esqueleto original) — debe cubrir
      propósito, desarrollo lógico, punto de vista del autor y conclusiones.
@@ -286,10 +341,15 @@ anteriores, no de la corrida completa más reciente.
      ≥300 dpi si aplica.
    - Licencia final: CC BY-NC-ND 4.0.
    **Confirmado por el usuario (2-sep-2026): revista objetivo = esta, citación
-   en MLA** (no APA). Pendiente de ejecución (no de decisión): convertir el
-   patrón de citas del cuerpo del esqueleto de `(Autor, año, p. XX)` estilo
-   APA a formato MLA antes de redactar prosa final, y ajustar el resumen a
-   las 3 lenguas exigidas (español/inglés/portugués, no solo bilingüe).
+   en MLA** (no APA). ~~Pendiente de ejecución: convertir las citas a MLA y
+   ajustar el resumen a 3 lenguas~~ — **HECHO 9-sep-2026**: la nota de
+   calibración documenta el patrón MLA 9 en texto, "Referencias" pasó a
+   "Obras citadas" con las dos fuentes ya verificadas convertidas, el resumen
+   bajó de 250 a 150 palabras y se añadieron los bloques de Abstract/Keywords
+   y Resumo/Palavras-chave. Queda abierto solo lo que exige consultar fuentes:
+   los nombres de pila de Rodríguez Morales y Sierra Restrepo, y las fichas
+   completas de Bhaskar y Mollier (MLA pone el año tras el título, así que la
+   ficha APA de la tesis de 2018 no basta para convertirlas).
 2. ~~Recorrer el pipeline completo sobre el corpus actual~~ — **HECHO
    30-ago-2026**, cifras finales ya incorporadas arriba (7.652 entidades,
    red 300 nodos/0.218 modularidad, IPA 0.594, encuadres, 99.8% anónimo).
