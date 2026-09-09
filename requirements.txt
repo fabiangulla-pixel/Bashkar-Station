@@ -59,6 +59,12 @@ sounddevice>=0.4.6
 # XML validation (v11)
 lxml>=5.0.0
 
+# Correccion ortografica post-OCR (core/spell_corrector.py). Hunspell en puro
+# Python, sin dependencias nativas. OJO: spylls NO empaqueta el diccionario
+# espanol (solo en/ru/sv); instalar.py lo descarga aparte a
+# ~/.bashkar/diccionarios/. Sin diccionario el corrector no corrige y no avisa.
+spylls>=0.1.7
+
 # Semantic search + NLP local
 transformers>=4.40.0
 sentence-transformers>=3.0.0

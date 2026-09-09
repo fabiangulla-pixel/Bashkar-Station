@@ -78,3 +78,51 @@ class TestNoSobrecorrige:
         stats = sc.estadisticas()
         assert stats["diccionario_cargado"] is True
         assert stats["palabras_corregidas"] >= 1
+
+
+class TestResolucionDelDiccionario:
+    """spylls empaqueta en/ru/sv pero NO español: hasta la sesión 67 el
+    corrector solo miraba los datos internos de spylls, así que en cualquier
+    máquina recién instalada `_cargar_diccionario()` devolvía False y el
+    corrector quedaba inerte sin decir una palabra. Estas pruebas fijan las
+    dos rutas que hoy sí se buscan."""
+
+    def test_encuentra_el_diccionario_en_la_carpeta_del_usuario(self, tmp_path, monkeypatch):
+        from core import spell_corrector as sc_mod
+        (tmp_path / "es_ES.aff").write_text("SET UTF-8\n", encoding="utf-8")
+        (tmp_path / "es_ES.dic").write_text("1\ncasa\n", encoding="utf-8")
+        monkeypatch.delenv("BASHKAR_DICCIONARIO_ES", raising=False)
+        monkeypatch.setattr(sc_mod, "DICCIONARIOS_DIR", tmp_path)
+        assert sc_mod.ruta_diccionario_es() == tmp_path / "es_ES"
+
+    def test_la_variable_de_entorno_manda_sobre_la_carpeta(self, tmp_path, monkeypatch):
+        from core import spell_corrector as sc_mod
+        otra = tmp_path / "otra"
+        otra.mkdir()
+        (otra / "es_ES.aff").write_text("SET UTF-8\n", encoding="utf-8")
+        monkeypatch.setattr(sc_mod, "DICCIONARIOS_DIR", tmp_path)
+        monkeypatch.setenv("BASHKAR_DICCIONARIO_ES", str(otra / "es_ES"))
+        assert sc_mod.ruta_diccionario_es() == otra / "es_ES"
+
+    def test_sin_diccionario_devuelve_none_y_no_revienta(self, tmp_path, monkeypatch):
+        from core import spell_corrector as sc_mod
+        monkeypatch.delenv("BASHKAR_DICCIONARIO_ES", raising=False)
+        monkeypatch.setattr(sc_mod, "DICCIONARIOS_DIR", tmp_path / "no_existe")
+        monkeypatch.setattr(sc_mod, "_NOMBRES_DIC_ES", ("es_ES",))
+        import spylls
+        from pathlib import Path as _P
+        monkeypatch.setattr(spylls, "__file__",
+                            str(_P(tmp_path) / "spylls" / "__init__.py"))
+        assert sc_mod.ruta_diccionario_es() is None
+
+    def test_verificar_instalacion_mira_donde_mira_el_corrector(self, tmp_path, monkeypatch):
+        # El diagnostico y el runtime deben coincidir: antes verificar_instalacion()
+        # solo miraba los datos de spylls y decia "no hay diccionario" con el
+        # diccionario ya instalado al lado.
+        from core import spell_corrector as sc_mod
+        (tmp_path / "es_ES.aff").write_text("SET UTF-8\n", encoding="utf-8")
+        monkeypatch.delenv("BASHKAR_DICCIONARIO_ES", raising=False)
+        monkeypatch.setattr(sc_mod, "DICCIONARIOS_DIR", tmp_path)
+        estado = sc_mod.verificar_instalacion()
+        assert estado["diccionario_es"] is True
+        assert estado["ruta_diccionario"] == str(tmp_path / "es_ES")

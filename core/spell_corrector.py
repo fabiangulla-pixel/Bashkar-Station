@@ -28,6 +28,7 @@ Uso:
 from __future__ import annotations
 
 import json
+import os
 import re
 import threading
 from pathlib import Path
@@ -177,6 +178,47 @@ _RE_SOLO_PUNTACION = re.compile(r'^[^a-záéíóúüñA-ZÁÉÍÓÚÜÑ]+$')
 _VOCAB_USUARIO_PATH = Path.home() / ".bashkar" / "vocab_usuario.json"
 _VOCAB_USUARIO_LOCK = threading.Lock()
 
+# ─────────────────────────────────────────────────────────────────────────────
+# DICCIONARIO HUNSPELL ESPAÑOL
+#
+# spylls solo empaqueta inglés, ruso y sueco: el español NO viene incluido.
+# Sin diccionario, SpellCorrector._cargar_diccionario() devuelve False y el
+# corrector se vuelve inerte EN SILENCIO — el pipeline sigue corriendo y no
+# corrige nada, que es exactamente el fallo que la sesión 63 arregló a nivel
+# de heurístico. `instalar.py` lo descarga a ~/.bashkar/diccionarios/.
+# ─────────────────────────────────────────────────────────────────────────────
+
+DICCIONARIOS_DIR = Path.home() / ".bashkar" / "diccionarios"
+_NOMBRES_DIC_ES = ("es_ES", "es_ANY", "es")
+
+
+def ruta_diccionario_es() -> Path | None:
+    """Ruta base (sin extensión) del diccionario Hunspell español, o None.
+
+    Orden de búsqueda: variable de entorno BASHKAR_DICCIONARIO_ES, luego
+    ~/.bashkar/diccionarios/, y por último los datos empaquetados con spylls
+    (que hoy no traen español, pero podrían traerlo en el futuro).
+    """
+    env = os.environ.get("BASHKAR_DICCIONARIO_ES", "").strip()
+    if env:
+        p = Path(env)
+        if p.with_suffix(".aff").exists():
+            return p
+
+    bases: list[Path] = [DICCIONARIOS_DIR]
+    try:
+        import spylls
+        bases.append(Path(spylls.__file__).parent / "hunspell" / "data" / "es")
+    except ImportError:
+        pass
+
+    for base in bases:
+        for nombre in _NOMBRES_DIC_ES:
+            p = base / nombre
+            if p.with_suffix(".aff").exists():
+                return p
+    return None
+
 
 def _cargar_vocab_usuario() -> set[str]:
     """Carga el vocabulario de usuario. Nunca lanza: archivo ausente o
@@ -241,17 +283,9 @@ class SpellCorrector:
             return True
         try:
             from spylls.hunspell import Dictionary
-            if self._dic_path:
-                self._dic = Dictionary.from_files(self._dic_path)
-            else:
-                # Buscar diccionario español empaquetado con spylls o descargado
-                import spylls
-                base = Path(spylls.__file__).parent / "hunspell" / "data" / "es"
-                for nombre in ("es_ES", "es_ANY", "es"):
-                    p = base / nombre
-                    if (p.with_suffix(".aff")).exists():
-                        self._dic = Dictionary.from_files(str(p))
-                        break
+            ruta = self._dic_path or ruta_diccionario_es()
+            if ruta:
+                self._dic = Dictionary.from_files(str(ruta))
             return self._dic is not None
         except Exception:
             return False
@@ -469,15 +503,16 @@ def verificar_instalacion() -> dict:
         "ruta_diccionario":  None,
     }
     try:
-        import spylls
+        import spylls  # noqa: F401
         resultado["spylls_disponible"] = True
-        base = Path(spylls.__file__).parent / "hunspell" / "data" / "es"
-        for nombre in ("es_ES", "es_ANY", "es"):
-            aff = base / (nombre + ".aff")
-            if aff.exists():
-                resultado["diccionario_es"]   = True
-                resultado["ruta_diccionario"] = str(base / nombre)
-                break
     except ImportError:
-        pass
+        return resultado
+
+    # Misma resolucion que usa el corrector en runtime: si aqui se mirara solo
+    # los datos empaquetados con spylls (que no traen espanol), el diagnostico
+    # diria "no hay diccionario" con el diccionario ya instalado al lado.
+    ruta = ruta_diccionario_es()
+    if ruta is not None:
+        resultado["diccionario_es"]   = True
+        resultado["ruta_diccionario"] = str(ruta)
     return resultado

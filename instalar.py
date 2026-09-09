@@ -180,6 +180,42 @@ def instalar_spacy_model(modelo="es_core_news_sm"):
         print("     Ejecuta manualmente:  python -m spacy download es_core_news_sm\n")
 
 
+# ── PASO 2b: diccionario Hunspell español ─────────────────────────────────────
+
+_DIC_ES_URL = ("https://raw.githubusercontent.com/LibreOffice/dictionaries/"
+               "master/es/{archivo}")
+
+
+def instalar_diccionario_es():
+    """Descarga el diccionario Hunspell es_ES a ~/.bashkar/diccionarios/.
+
+    spylls empaqueta inglés, ruso y sueco, pero NO español. Sin este
+    diccionario, core/spell_corrector.py no corrige nada y no avisa: el
+    pipeline sigue como si todo estuviera bien. Es el mismo fallo silencioso
+    que el heurístico de la sesión 63, un piso más abajo.
+    """
+    print("=" * 60)
+    print("  PASO 2b — Diccionario Hunspell español (corrección post-OCR)")
+    print("=" * 60)
+    destino = Path.home() / ".bashkar" / "diccionarios"
+    if (destino / "es_ES.aff").exists() and (destino / "es_ES.dic").exists():
+        print(f"  ✓  Diccionario es_ES ya disponible en {destino}.\n")
+        return
+    print("  → Descargando diccionario es_ES (LibreOffice, ~0,9 MB)…")
+    try:
+        destino.mkdir(parents=True, exist_ok=True)
+        for archivo in ("es_ES.aff", "es_ES.dic"):
+            urllib.request.urlretrieve(_DIC_ES_URL.format(archivo=archivo),
+                                       destino / archivo)
+        print(f"  ✅ Diccionario es_ES instalado en {destino}.\n")
+    except Exception as e:
+        print(f"  ⚠️  No se pudo descargar el diccionario: {e}")
+        print("     Descarga es_ES.aff y es_ES.dic de")
+        print("     https://github.com/LibreOffice/dictionaries/tree/master/es")
+        print(f"     y colócalos en: {destino}")
+        print("     Sin ellos la corrección ortográfica post-OCR queda inactiva.\n")
+
+
 # ── PASO 3: Tesseract (Windows) ───────────────────────────────────────────────
 
 _TESS_EXE_URL = (
@@ -521,6 +557,31 @@ def verificar() -> bool:
         print(f"  ❌ {'Tesseract':<28} NO ENCONTRADO — instala manualmente")
         todo_ok = False
 
+    # Idioma español de Tesseract: sin el, el OCR propio no sirve para este
+    # corpus aunque el binario este instalado.
+    if tess:
+        if (tess.parent / "tessdata" / "spa.traineddata").exists():
+            print(f"  ✅ {'Tesseract idioma español':<28} spa.traineddata")
+        else:
+            print(f"  ❌ {'Tesseract idioma español':<28} FALTA spa.traineddata")
+            todo_ok = False
+
+    # Diccionario Hunspell español (corrección post-OCR). Opcional: la app
+    # funciona sin el, pero el corrector queda inerte y conviene decirlo.
+    try:
+        from core.spell_corrector import verificar_instalacion as _vi
+        est = _vi()
+        if est["diccionario_es"]:
+            print(f"  ✅ {'Diccionario Hunspell es_ES':<28} {est['ruta_diccionario']}")
+        elif est["spylls_disponible"]:
+            print(f"  ℹ️  {'Diccionario Hunspell es_ES':<28} ausente "
+                  "(corrección post-OCR inactiva)")
+        else:
+            print(f"  ℹ️  {'spylls':<28} no instalado "
+                  "(corrección post-OCR inactiva)")
+    except Exception:
+        pass
+
     # Modelos IA (verificación rápida, sin descargar)
     print()
     try:
@@ -584,6 +645,7 @@ def main() -> int:
 
     instalar_python()          # Paso 1: paquetes pip (incluye torch, transformers, faiss)
     instalar_spacy_model()     # Paso 2: modelo spaCy es_core_news_sm
+    instalar_diccionario_es()  # Paso 2b: diccionario Hunspell es_ES
 
     if platform.system() == "Windows":
         instalar_tesseract_windows()   # Paso 3
