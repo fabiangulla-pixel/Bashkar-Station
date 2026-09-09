@@ -5,6 +5,28 @@ extenso y explica el porqué de cada corrección.
 
 ---
 
+## 9-sep-2026 — Sesión 67: llegada al MSI y tres fallos silenciosos
+
+La migración funcionó como una prueba de instalación desde cero, y por eso
+salieron cosas que en el Lenovo estaban tapadas por configuración manual sin
+documentar.
+
+- **Entorno montado**: clon en `C:\dev\bashkar_station` (traído de GitHub),
+  venv con Python 3.12.10, Tesseract 5.4.0 con español, diccionario Hunspell
+  es_ES, `es_core_news_sm`.
+- **Bug de producción**: matplotlib 3.11 eliminó `labels` de `boxplot` y el
+  gráfico de confianza de OCR reventaba con el código intacto. Primer daño real
+  de los rangos `>=`; de ahí `requirements.lock.txt`.
+- **Bug silencioso**: la corrección ortográfica post-OCR estaba inerte porque
+  `spylls` no trae diccionario español y nadie lo declaraba ni lo instalaba.
+- **Bug de proceso**: el hook `pre-commit` corría con un intérprete sin
+  dependencias y decía "tests en rojo" sin correr un solo test.
+- **Conteo**: la primera corrida aquí dio 1.577 contra las 1.587 del Lenovo. No
+  era una regresión: `spylls` ausente quitaba 11 tests de la recolección. Una
+  cifra verde que probaba menos, que es justo lo que un verde no debería poder
+  esconder.
+- Paper: esqueleto convertido a MLA 9 y resumen a tres lenguas.
+
 ## 7-sep-2026 — Cierre para migración a PC MSI
 
 Sesión de infraestructura, sin cambios funcionales.

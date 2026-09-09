@@ -78,3 +78,25 @@ publicaciones de la BNC es el primer paso medido en esa dirección.
 *Literatura: teoría, historia, crítica* (Universidad Nacional de Colombia).
 Confirmado por Fabián. Implica convertir las citas de APA a MLA y ampliar el
 resumen a tres lenguas. Ver NEXT_STEPS.
+
+### D-15 — Archivo de bloqueo de dependencias *(9-sep-2026)*
+`requirements.txt` sigue declarando rangos `>=` (instala lo último compatible),
+pero se agrega `requirements.lock.txt` con las versiones exactas verificadas en
+verde. Motivo medido, no teórico: al montar el equipo MSI, pip resolvió
+matplotlib 3.11, que eliminó el argumento `labels` de `boxplot`, y el gráfico de
+confianza de OCR reventaba con el código intacto. Al actualizar dependencias a
+propósito: correr la suite y regenerar el lock en el mismo commit.
+
+### D-16 — El diccionario Hunspell español se instala, no se supone *(9-sep-2026)*
+`spylls` empaqueta inglés, ruso y sueco, no español. Hasta hoy el corrector solo
+miraba los datos internos de `spylls`, así que en cualquier máquina recién
+instalada quedaba inerte **sin avisar**. Ahora `core/spell_corrector.py` busca en
+`~/.bashkar/diccionarios/` (y en `BASHKAR_DICCIONARIO_ES`), `instalar.py` lo
+descarga en el paso 2b y la verificación final lo reporta.
+
+### D-17 — La CI local elige intérprete, nunca `python` a secas *(9-sep-2026)*
+`check.bat` resuelve `BASHKAR_PYTHON` → venv activo → `.venv`/`venv` del repo →
+PATH, y distingue "entorno mal montado" de "código roto". Antes, el hook
+`pre-commit` lo invocaba desde `cmd.exe`, que no hereda el venv de la consola:
+en el equipo nuevo eso daba "[FALLO] hay tests en rojo" sin haber corrido un
+solo test.

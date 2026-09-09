@@ -2,6 +2,79 @@
 
 ---
 
+## Sesión 67 — 2026-09-09 — Migración al MSI: tres fallos silenciosos que el equipo nuevo destapó
+
+Sesión de infraestructura sobre un equipo recién montado. La migración
+funcionó como una prueba de instalación desde cero, y ahí salieron tres
+fallos que en el equipo viejo estaban tapados por configuración manual que
+nadie había documentado.
+
+### 1. El gráfico de confianza de OCR reventaba con matplotlib 3.11
+
+`requirements.txt` pide `matplotlib>=3.8`. En el equipo nuevo pip resolvió
+**3.11**, que eliminó el argumento `labels` de `Axes.boxplot` (renombrado a
+`tick_labels` en 3.9). `chart_builder.ocr_boxplot` seguía usando el nombre
+viejo: `TypeError` al abrir el gráfico, con el código intacto. Se usa el
+nombre nuevo con respaldo al viejo, para no romper instalaciones con
+matplotlib < 3.9.
+
+El test que existía solo comprobaba "¿esto es una figura?", así que el
+`try/except` podía degradar en silencio a un eje numerado 1, 2, 3 y seguir en
+verde. Se agrega un test que exige que **cada caja conserve el número de
+revista como etiqueta**.
+
+### 2. La corrección ortográfica post-OCR estaba inerte y no avisaba
+
+`spylls` empaqueta diccionarios de inglés, ruso y sueco — **no de español**.
+`_cargar_diccionario()` solo miraba los datos internos de `spylls`, de modo
+que en cualquier máquina recién instalada devolvía `False` y el corrector
+dejaba pasar el texto sin tocarlo, sin error ni aviso. Es el mismo fallo
+silencioso que la sesión 63 arregló a nivel de heurístico, un piso más abajo:
+allí el corrector no *detectaba* los errores; aquí ni siquiera tenía con qué
+buscarlos.
+
+- `ruta_diccionario_es()` resuelve `BASHKAR_DICCIONARIO_ES` →
+  `~/.bashkar/diccionarios/` → datos de `spylls`.
+- `verificar_instalacion()` ahora mira donde mira el runtime: antes podía
+  decir "no hay diccionario" con el diccionario instalado al lado.
+- `instalar.py` lo descarga en el paso 2b y lo reporta en la verificación
+  final, junto con un aviso nuevo si falta `spa.traineddata` de Tesseract.
+- `spylls` pasa a estar **declarado** en `requirements.txt`. No lo estaba, y
+  su ausencia borraba 11 tests de la cuenta sin dejar rastro: el equipo viejo
+  reportaba 1.587 y este 1.577 sobre el mismo commit. Un verde que probaba
+  menos.
+
+Verificado con el diccionario real: `gobiemo → gobierno`,
+`presidenle → presidente`, los mismos errores de OCR de la sesión 63.
+
+### 3. El hook `pre-commit` corría con un intérprete sin dependencias
+
+`check.bat` invocaba `python` a secas. El hook lo lanza desde `cmd.exe`, que
+no hereda el venv activado en otra consola; en un equipo con dos Python
+instalados eso significa el intérprete equivocado. Resultado: `[FALLO] hay
+tests en rojo` **sin haber corrido un solo test**. Ahora resuelve
+`BASHKAR_PYTHON` → venv activo → `.venv`/`venv` del repo → PATH, y distingue
+"faltan pytest/ruff, entorno mal montado" de "código roto". Comprobado con
+prueba negativa: con el intérprete equivocado sale código 1 y el diagnóstico
+correcto.
+
+### Estado de la suite
+
+**1.594 pasan, 25 saltadas, 0 fallan** (4 min 11 s, Python 3.12.10 sobre el
+MSI). Las 1.619 recolectadas incluyen 5 tests nuevos de esta sesión y las 11
+del corrector ortográfico que hasta hoy no se ejecutaban en ninguna máquina
+recién instalada.
+
+### Además
+
+- `requirements.lock.txt`: versiones exactas verificadas en verde (ver D-15).
+- `requirements-dev.txt`: `pytest` y `ruff` no estaban declarados en ninguna
+  parte.
+- `PAPER_METODOLOGICO_ESQUELETO.md` convertido a MLA 9 con resumen en tres
+  lenguas, que era la tarea pendiente #1 del paper.
+
+---
+
 ## Sesión 66 — 2026-09-03 — Colaboración, contrato A1, prueba de generalización sobre 9 publicaciones, CHURRO reparado
 
 **Cinco bugs reales corregidos, todos verificados contra datos reales, no

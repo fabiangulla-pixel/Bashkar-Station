@@ -134,7 +134,9 @@ python app.py
 
 ## 4. ARQUITECTURA REAL (verifícala en disco)
 
-**Estado actual verificado: sesión 14 (2026-05-28). `app.py` tiene ~8018 líneas.**
+**Estado actual verificado: sesión 67 (2026-09-09). `app.py` tiene 21.459 líneas.**
+> Esta línea decía "sesión 14, ~8018 líneas" hasta hoy. Si vuelves a ver una
+> cifra que no cuadre, gana `wc -l app.py`.
 
 ```
 bashkar_station/
@@ -149,7 +151,7 @@ bashkar_station/
 │   └── migracion.py            — Migración v10→v11 + capa de grafo reversible (aplicar_grafo/revertir_grafo)
 ├── exportadores/
 │   └── exportar_alto.py        — ALTO XML v4 (ISO 12148)
-├── tests/                      — 499 tests pytest (9 skipped, 0 fallos)
+├── tests/                      — 81 archivos, 1.619 tests (1.594 pasan, 25 skipped)
 └── core/                       — 41+ módulos funcionales independientes
     ├── ocr_engine.py           — OCR Tesseract + PyMuPDF
     ├── ocr_normalizer.py       — Post-OCR: arcaísmos preservados, normalización
@@ -359,7 +361,7 @@ Entrega: arquitectura → implementación → feedback de revisión → versión
 
 ## 8. ESTADO Y ROADMAP
 
-**Estado actual (sesión 66, 2026-09-03): 1.587 tests pasando, 27 skipped, 0 fallos.**
+**Estado actual (sesión 67, 2026-09-09): 1.594 tests pasando, 25 skipped, 0 fallos.**
 Verificado el 7-sep-2026. Estado detallado, limitaciones y siguiente tarea en
 `docs/PROJECT_STATE.md`, `docs/DECISIONS.md` y `docs/NEXT_STEPS.md`.
 
@@ -374,8 +376,8 @@ Verificado el 7-sep-2026. Estado detallado, limitaciones y siguiente tarea en
 - Embeddings FAISS + búsqueda semántica
 - Etiquetador de zonas rediseñado (bug doble escala corregido)
 - Preprocesamiento imagen (deskew, CLAHE, despeckle)
-- Kraken 7.0.2 instalado en `D:\kraken_env`
-- Suite de 499 tests con cobertura completa
+- Kraken 7.0.2 — instalado en el Lenovo (`D:\kraken_env`); **no** en el MSI
+- Suite de 1.619 tests (1.594 pasan, 25 skipped, 0 fallos)
 
 ### Pendiente inmediato ⏳
 1. **Descargar CATMuS-Print** — desde la app: panel OCR → "⬇ Descargar CATMuS-Print"

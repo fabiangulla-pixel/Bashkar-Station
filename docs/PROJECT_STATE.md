@@ -1,6 +1,6 @@
 # PROJECT_STATE — Bashkar Station
 
-Última verificación: **7-sep-2026**, antes de migrar del PC Lenovo a un MSI.
+Última verificación: **9-sep-2026**, ya sobre el MSI (sesión 67).
 Comprobado en esta sesión, no recordado.
 
 ## Estado funcional
@@ -10,11 +10,16 @@ computacional de publicaciones periódicas históricas digitalizadas en español
 Corre **100% offline** tras la instalación; solo son opcionales y en línea la
 descripción de imágenes con IA y la extracción de metadatos desde URL.
 
-- `python -m pytest -q` → **1.587 pasan, 27 saltadas, 0 fallan**. Medido dos
-  veces el 7-sep-2026: **6 min 01 s** en disco local (`C:`) y **6 min 33 s**
-  desde Google Drive (`I:`). El disco pesa poco aquí, ~9%.
+- `python -m pytest -q` → **1.594 pasan, 25 saltadas, 0 fallan** (9-sep-2026,
+  MSI, Python 3.12.10, **4 min 11 s**). Sube desde las 1.587 del Lenovo por 5
+  tests nuevos (4 de resolución del diccionario, 1 de etiquetas del boxplot) y
+  porque 11 pruebas del corrector ortográfico, antes saltadas por falta de
+  diccionario, ahora se ejecutan de verdad.
+  ⚠️ En la primera corrida sobre este equipo salieron **1.577**: faltaban 11
+  tests porque `spylls` no estaba declarado en `requirements.txt` y el módulo
+  entero no se recolectaba. Un verde con menos pruebas detrás.
 - Caso real: corpus de ***Estampa*** (1930-1940), Instituto Caro y Cuervo.
-- Estado del código en sesión **66** (3-sep-2026).
+- Estado del código en sesión **67** (9-sep-2026).
 
 > ⚠️ La sección 8 de `CLAUDE.md` decía "sesión 14, 499 tests" — quedó
 > desactualizada 52 sesiones. Corregida hoy. Si vuelves a ver una cifra que no
@@ -41,7 +46,7 @@ Primera medición real sobre 9 publicaciones de la BNC:
 ## Arquitectura
 
 Ver `CLAUDE.md` sección 4, que es la referencia detallada y está al día.
-En resumen: `app.py` (GUI Tkinter, ~14.500 líneas), `core/` (motores: OCR,
+En resumen: `app.py` (GUI Tkinter, **21.459 líneas**), `core/` (motores: OCR,
 NER, embeddings, estilometría, TEI, zonas), `datos/` (capa SQLite,
 `schema.py`), `exportadores/`, `conocimiento/`, `lib/`, `tests/`.
 
@@ -59,7 +64,7 @@ Ejecutar.bat           # arrancar la app (Windows)
 ./ejecutar.sh          # Linux/macOS
 python app.py          # directo
 
-python -m pytest -q    # 1.587 pruebas, 27 saltadas, ~6 min
+python -m pytest -q    # 1.594 pruebas, 25 saltadas, ~4 min
 check.bat              # CI local: py_compile app.py + ruff + pytest
 ```
 
@@ -69,13 +74,16 @@ PC/" y crear el acceso directo (`crear_acceso_directo.ps1`).
 
 ## Dependencias externas
 
-- **Tesseract OCR** — ⚠️ necesita el paquete de idioma **español** instalado
-  aparte; su ausencia bloqueó *El Gráfico* en la prueba de generalización
+- **Tesseract OCR** — necesita el paquete de idioma **español** aparte. ✅
+  Instalado en el MSI el 9-sep-2026 (5.4.0 + `spa.traineddata`); esto
+  desbloquea *El Gráfico*, que la prueba de generalización no pudo medir.
+- **Diccionario Hunspell es_ES** en `~/.bashkar/diccionarios/` — `spylls` no
+  trae español y sin él la corrección post-OCR queda inerte sin avisar
 - **Poppler** (render de PDF) · **spaCy** + modelo español
 - **BERT-Spanish / RoBERTa** y **CHURRO** (transformers + torch, offline)
 - **FAISS** (embeddings y búsqueda semántica)
-- **Kraken 7.0.2** — instalado en `D:\kraken_env` ⚠️ **esa unidad no existirá
-  en el MSI**
+- **Kraken 7.0.2** — vivía en `D:\kraken_env` en el Lenovo. ⚠️ **En el MSI no
+  está instalado todavía**: esa unidad no existe aquí.
 - **Ollama** (opcional) · **API de Claude** (opcional, para Vision y NER)
 
 ## Variables de entorno
@@ -100,7 +108,8 @@ Ningún secreto vive en el repo. Las credenciales van a
    real y medido —con el título como id, **21 de 138 artículos (15%) se pisaban
    en silencio**— pero adoptarlo en `app.py` cambia los ids de proyectos
    existentes y exige migración. Decisión aparte, no tomada.
-4. **`app.py` tiene ~14.500 líneas y estado global.** Es la causa raíz
+4. **`app.py` tiene 21.459 líneas y estado global.** (La cifra que circulaba,
+   ~14.500, era vieja: medido con `wc -l` el 9-sep-2026.) Es la causa raíz
    reconocida de los bugs recurrentes. El refactor está pendiente.
 5. **Kraken vive en `D:\kraken_env`** — ruta absoluta fuera del repo, en una
    unidad que no estará en el equipo nuevo.
