@@ -21,6 +21,29 @@ try:
 except Exception:
     _google_genai_imports = []
 
+# Diccionario Hunspell espanol para la correccion post-OCR. Hasta la sesion 67
+# esta ruta estaba CABLEADA a la maquina de desarrollo
+# (C:/Users/Lenovo/AppData/Roaming/Python/Python314/...), asi que el .spec no
+# compilaba en ningun otro equipo: PyInstaller aborta con "Unable to find". Se
+# resuelve en tiempo de build y, si no aparece, se omite en vez de romper el
+# empaquetado; el .exe seguira funcionando con el corrector inactivo.
+def _datas_diccionario_es():
+    candidatos = [Path.home() / '.bashkar' / 'diccionarios']
+    try:
+        import spylls
+        candidatos.append(Path(spylls.__file__).parent / 'hunspell' / 'data' / 'es')
+    except Exception:
+        pass
+    for base in candidatos:
+        if (base / 'es_ES.aff').exists():
+            return [(str(base / 'es_ES.aff'), 'diccionarios'),
+                    (str(base / 'es_ES.dic'), 'diccionarios')]
+    print('[spec] AVISO: no se encontro el diccionario Hunspell es_ES; '
+          'el .exe saldra con la correccion post-OCR inactiva.')
+    return []
+
+_datas_dic_es = _datas_diccionario_es()
+
 a = Analysis(
     [str(APP_DIR / 'app.py')],
     pathex=[str(APP_DIR)],
@@ -39,9 +62,8 @@ a = Analysis(
             else (str(APP_DIR / 'README.md'), '.'),
         (str(APP_DIR / 'poppler_path.txt'), '.') if (APP_DIR / 'poppler_path.txt').exists()
             else (str(APP_DIR / 'requirements.txt'), '.'),
-        # Diccionario spylls español
-        ('C:/Users/Lenovo/AppData/Roaming/Python/Python314/site-packages/spylls/hunspell/data/es',
-         'spylls/hunspell/data/es'),
+        # Diccionario Hunspell español (ver _datas_diccionario_es arriba)
+        *_datas_dic_es,
     ],
     hiddenimports=[
         # Capa visual: define la paleta (import en la cabecera de app.py) y el

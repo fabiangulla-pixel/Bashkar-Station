@@ -30,6 +30,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 import threading
 from pathlib import Path
 
@@ -206,6 +207,14 @@ def ruta_diccionario_es() -> Path | None:
             return p
 
     bases: list[Path] = [DICCIONARIOS_DIR]
+
+    # Congelado (PyInstaller): el .spec empaqueta el diccionario en
+    # diccionarios/ dentro del bundle. Sin esto, el .exe llevaria el archivo y
+    # no lo encontraria nunca.
+    base_frozen = getattr(sys, "_MEIPASS", None)
+    if base_frozen:
+        bases.append(Path(base_frozen) / "diccionarios")
+
     try:
         import spylls
         bases.append(Path(spylls.__file__).parent / "hunspell" / "data" / "es")
