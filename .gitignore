@@ -29,6 +29,11 @@ modelos/
 .env
 *.key
 
+# Entornos virtuales (check.bat los busca aqui cuando no hay BASHKAR_PYTHON
+# ni un venv activado)
+.venv/
+venv/
+
 # Marcador local de "dependencias ya instaladas" que usa Ejecutar.bat
 .installed
 
