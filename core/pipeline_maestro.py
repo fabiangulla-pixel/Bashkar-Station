@@ -190,13 +190,20 @@ class PipelineMaestro:
 
             # Persistir artículo base en Repositorio
             if self.repo:
+                # El segmentador entrega el rango de páginas dentro del campo
+                # `pagina` ("17-18"), no en `pagina_inicio`/`pagina_fin`:
+                # pedírselas por su nombre dejaba las dos columnas en NULL para
+                # TODOS los artículos (351 de 351 en el proyecto real), sin que
+                # nada fallara. Ver identidad_articulo.rango_paginas.
+                from core.identidad_articulo import rango_paginas
+                _p_ini, _p_fin = rango_paginas(art)
                 try:
                     self.repo.guardar_articulo({
                         "id":            art_id,
                         "archivo_origen": art.get("archivo_origen", ""),
                         "numero":        art.get("numero", ""),
-                        "pagina_inicio": art.get("pagina_inicio"),
-                        "pagina_fin":    art.get("pagina_fin"),
+                        "pagina_inicio": _p_ini or None,
+                        "pagina_fin":    _p_fin or None,
                         "tipo":          art.get("tipo", "articulo"),
                         "titulo":        art.get("titulo"),
                         "autor":         art.get("autor"),

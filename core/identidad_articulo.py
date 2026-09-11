@@ -53,7 +53,9 @@ __all__ = [
     "id_articulo",
     "asignar_ids",
     "primera_pagina",
+    "rango_paginas",
     "slug_numero",
+    "ultima_pagina",
 ]
 
 SIN_NUMERO = "sin_numero"
@@ -107,6 +109,66 @@ def primera_pagina(paginas) -> int:
         return primera_pagina(valor)
     m = _RE_DIGITOS.search(texto)
     return int(m.group()) if m else 0
+
+
+def ultima_pagina(paginas) -> int:
+    """Última página de un artículo, con los mismos formatos que acepta
+    `primera_pagina`. Un artículo de una sola página devuelve la misma.
+
+    Existe porque el segmentador entrega el rango en un solo campo `pagina`
+    ("17-18", "p0017–p0018") y el esquema SQLite lo guarda partido en
+    `pagina_inicio` y `pagina_fin`. Sin esta función, la mitad del dato no
+    tenía de dónde salir y la columna se quedaba en NULL.
+    """
+    if isinstance(paginas, bool):
+        return 0
+    if isinstance(paginas, int):
+        return max(paginas, 0)
+    if isinstance(paginas, (list, tuple)):
+        for p in reversed(list(paginas)):
+            try:
+                return max(int(p), 0)
+            except (TypeError, ValueError):
+                continue
+        return 0
+    texto = str(paginas or "").strip()
+    if not texto:
+        return 0
+    try:
+        valor = ast.literal_eval(texto)
+    except (ValueError, SyntaxError):
+        valor = None
+    if isinstance(valor, (list, tuple, int)) and not isinstance(valor, bool):
+        return ultima_pagina(valor)
+    encontrados = _RE_DIGITOS.findall(texto)
+    return int(encontrados[-1]) if encontrados else 0
+
+
+def rango_paginas(articulo: dict, campo: str = "pagina") -> tuple[int, int]:
+    """`(pagina_inicio, pagina_fin)` de un artículo del segmentador.
+
+    Respeta los valores ya presentes: si el artículo trae `pagina_inicio` o
+    `pagina_fin` explícitos, mandan ellos. Si no, se derivan del campo de rango
+    (`pagina`), que es lo que el segmentador produce de verdad.
+
+    **Por qué existe.** `pipeline_maestro` persistía `art.get("pagina_inicio")`
+    y `art.get("pagina_fin")`, claves que el segmentador nunca ha puesto: lo
+    que entrega es `pagina` con el rango dentro ("17-18"). Resultado medido
+    sobre el proyecto real de Estampa: las 351 filas de `articulos` tienen las
+    dos columnas en NULL. Nadie se enteró porque nada falla — solo se pierde el
+    dato: `ORDER BY numero, pagina_inicio` ordena por NULL, la exportación OKF
+    ordena por `pagina_inicio or 0` y el contrato A1 no puede acuñar ids con
+    página. Misma familia que la deriva de esquema de la sesión 65.
+    """
+    ini = articulo.get("pagina_inicio")
+    fin = articulo.get("pagina_fin")
+    rango = articulo.get(campo)
+
+    p_ini = primera_pagina(ini) if ini not in (None, "") else primera_pagina(rango)
+    p_fin = ultima_pagina(fin) if fin not in (None, "") else ultima_pagina(rango)
+    if p_fin < p_ini:
+        p_fin = p_ini
+    return p_ini, p_fin
 
 
 def id_articulo(numero: str | None, paginas, orden: int = 1) -> str:

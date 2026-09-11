@@ -9,6 +9,7 @@ import sqlite3
 
 import pytest
 
+from core import identidad_articulo as ia
 from core.identidad_articulo import (
     SIN_NUMERO,
     asignar_ids,
@@ -166,3 +167,63 @@ def test_el_id_no_depende_de_la_posicion_global():
     ids_despues = asignar_ids(nuevo)[1:]
 
     assert ids_antes == ids_despues
+
+
+# ── rango_paginas: la deriva que dejaba pagina_inicio/pagina_fin en NULL ─────
+
+class TestRangoPaginas:
+    """`pipeline_maestro` pedía `pagina_inicio`/`pagina_fin` al artículo, y el
+    segmentador nunca ha puesto esas claves: entrega `pagina` con el rango
+    dentro. Medido sobre el proyecto real de Estampa, las 351 filas de
+    `articulos` tienen las dos columnas en NULL. Nada falla; solo se pierde el
+    dato, y con él el orden de lectura y la página en el id del contrato A1."""
+
+    def test_rango_del_formato_que_produce_el_segmentador(self):
+        # article_segmenter.py: f"{pagina_ini}-{pagina_fin}"
+        assert ia.rango_paginas({"pagina": "17-18"}) == (17, 18)
+
+    def test_rango_del_formato_con_ceros_y_guion_largo(self):
+        # article_segmenter.py: f"p{curr['pi']:04d}–p{pf:04d}"
+        assert ia.rango_paginas({"pagina": "p0017–p0018"}) == (17, 18)
+
+    def test_articulo_de_una_sola_pagina(self):
+        assert ia.rango_paginas({"pagina": "p0007"}) == (7, 7)
+
+    def test_los_valores_explicitos_mandan_sobre_el_rango(self):
+        art = {"pagina": "17-18", "pagina_inicio": 3, "pagina_fin": 4}
+        assert ia.rango_paginas(art) == (3, 4)
+
+    def test_pagina_inicio_explicita_y_fin_derivada(self):
+        assert ia.rango_paginas({"pagina": "17-18", "pagina_inicio": 17}) == (17, 18)
+
+    def test_sin_dato_ninguno_da_cero_no_revienta(self):
+        assert ia.rango_paginas({}) == (0, 0)
+        assert ia.rango_paginas({"pagina": ""}) == (0, 0)
+        assert ia.rango_paginas({"pagina": None}) == (0, 0)
+
+    def test_fin_menor_que_inicio_se_corrige(self):
+        """Un rango invertido no puede producir un fin anterior al inicio."""
+        assert ia.rango_paginas({"pagina_inicio": 18, "pagina_fin": 3}) == (18, 18)
+
+    def test_lista_real_de_paginas(self):
+        assert ia.rango_paginas({"pagina": [3, 4, 5]}) == (3, 5)
+
+    def test_repr_de_lista_como_lo_escribe_pandas(self):
+        assert ia.rango_paginas({"pagina": "[3, 4, 5]"}) == (3, 5)
+
+
+class TestUltimaPagina:
+    def test_entero(self):
+        assert ia.ultima_pagina(7) == 7
+
+    def test_rango_en_cadena(self):
+        assert ia.ultima_pagina("17-18") == 18
+
+    def test_lista(self):
+        assert ia.ultima_pagina([3, 4, 5]) == 5
+
+    def test_ilegible_da_cero_detectable(self):
+        assert ia.ultima_pagina("sin página") == 0
+
+    def test_booleano_no_cuenta_como_entero(self):
+        assert ia.ultima_pagina(True) == 0
