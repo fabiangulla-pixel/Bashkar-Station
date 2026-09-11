@@ -20,6 +20,12 @@ class Estado:
         self.input_tipo    = "pdf"
         self.archivos_sel  = []
         self.modos_detec   = {}
+        # {nombre_archivo: ["digital"|"escaneado", …]}, una entrada por página.
+        # La ruta de OCR se decide por página y por presencia real de texto,
+        # nunca por la declaración de fuentes del documento: ver
+        # core/calidad_ocr.py y el caso de El Día (2 de 16 páginas con texto,
+        # declarando la capa oculta de Paper Capture en las dieciséis).
+        self.censos_pagina = {}
         self.etz_done      = False
         self.ocr_done      = False
         self.norm_done     = False

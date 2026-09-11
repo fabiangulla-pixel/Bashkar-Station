@@ -131,6 +131,7 @@ def _etapa_ocr(cfg: dict, verbose: bool):
     dpi = 300
     lang = "spa"
     resultados = {}
+    calidad: dict[str, str] = {}
     for i, archivo in enumerate(archivos, 1):
         p = Path(archivo)
         if not p.exists():
@@ -149,15 +150,30 @@ def _etapa_ocr(cfg: dict, verbose: bool):
                 n_paginas = 1
             elif p.suffix.lower() == ".pdf":
                 info = analizar_pdf(p)
+                modos = info.get("modos_pagina") or []
                 if info["tiene_texto"]:
+                    _log(f"    {info['resumen']}", verbose)
+                if info.get("mixto"):
+                    _log("    ⚠ Documento mixto: las páginas sin texto se "
+                         "pasan por Tesseract, no se dan por vacías.", verbose)
+
+                if any(m == "digital" for m in modos):
                     # Texto embebido de calidad (ej. Paper Capture BNC):
                     # reconstrucción por coordenadas para respetar columnas.
+                    # La decisión es POR PÁGINA: El Día declara la capa oculta
+                    # de Paper Capture y solo 2 de sus 16 páginas la tienen de
+                    # verdad. Confiar en un veredicto de documento escribía
+                    # catorce archivos vacíos y reportaba éxito.
                     import fitz
 
                     from core.alto_reconstructor import reconstruir_texto_pagina
 
                     doc = fitz.open(str(p))
+                    pendientes_ocr = []
                     for j, pagina in enumerate(doc, 1):
+                        if modos[j - 1] != "digital":
+                            pendientes_ocr.append(j)
+                            continue
                         try:
                             resultado = reconstruir_texto_pagina(
                                 pagina, ignorar_ocr_basura=True
@@ -171,6 +187,19 @@ def _etapa_ocr(cfg: dict, verbose: bool):
                         )
                     n_paginas = doc.page_count
                     doc.close()
+
+                    if pendientes_ocr:
+                        _log(f"    🔍 {len(pendientes_ocr)} página(s) sin texto "
+                             "embebido → Tesseract", verbose)
+                        img_dir = out_dir / "02_imagenes" / nombre
+                        imgs = pdf_a_imagenes(p, img_dir, dpi)
+                        for j in pendientes_ocr:
+                            if j > len(imgs):
+                                continue
+                            texto, _conf = ocr_pagina(imgs[j - 1], lang=lang)
+                            (txt_dir / f"p{j:04d}.txt").write_text(
+                                normalizar_texto_ocr(texto), encoding="utf-8"
+                            )
                 else:
                     img_dir = out_dir / "02_imagenes" / nombre
                     imgs = pdf_a_imagenes(p, img_dir, dpi)
@@ -185,11 +214,49 @@ def _etapa_ocr(cfg: dict, verbose: bool):
                 continue
 
             resultados[nombre] = n_paginas
+
+            # Calidad del texto obtenido. Sin esto, un documento con un tercio
+            # de sus tokens partidos en trozos de una o dos letras entra al NER
+            # y a las frecuencias exactamente igual que uno limpio.
+            veredicto = _evaluar_calidad_ocr(txt_dir)
+            if veredicto is not None:
+                _log(f"    {veredicto.mensaje}", verbose)
+                calidad[nombre] = veredicto.veredicto
         except Exception as e:
             _log(f"    ERROR: {e}", verbose)
 
     _log(f"OCR completado: {sum(resultados.values())} páginas", verbose)
+    _reportar_abstenciones(calidad, verbose)
     return resultados
+
+
+def _evaluar_calidad_ocr(txt_dir: Path):
+    """Veredicto de calidad sobre los .txt ya escritos de un documento."""
+    from core.calidad_ocr import evaluar_paginas
+    textos = []
+    for tp in sorted(Path(txt_dir).glob("p*.txt")):
+        try:
+            textos.append(tp.read_text(encoding="utf-8", errors="replace"))
+        except Exception:
+            continue
+    if not textos:
+        return None
+    return evaluar_paginas(textos)
+
+
+def _reportar_abstenciones(calidad: dict, verbose: bool) -> None:
+    """Resume qué documentos no deberían analizarse sin revisión humana."""
+    from core.calidad_ocr import NO_UTILIZABLE, REVISAR
+    dudosos = [n for n, v in calidad.items() if v == REVISAR]
+    malos = [n for n, v in calidad.items() if v == NO_UTILIZABLE]
+    if not dudosos and not malos:
+        return
+    if malos:
+        _log(f"✖ {len(malos)} documento(s) NO utilizables sin nueva "
+             f"transcripción: {', '.join(sorted(malos))}", verbose)
+    if dudosos:
+        _log(f"⚠ {len(dudosos)} documento(s) degradados, revisar antes de "
+             f"analizar: {', '.join(sorted(dudosos))}", verbose)
 
 
 def _etapa_norm(cfg: dict, verbose: bool):

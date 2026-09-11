@@ -82,31 +82,65 @@ def analizar_pdf(pdf_path: Path) -> dict:
     Analiza un PDF y determina si ya tiene texto OCR embebido de calidad.
     Retorna:
         {
-          "tiene_texto": bool,
-          "palabras_promedio": float,   # palabras promedio por página
+          "tiene_texto": bool,          # ¿ALGUNA página trae texto real?
+          "palabras_promedio": float,   # palabras promedio por página con texto
           "n_paginas": int,
           "confianza_estimada": float,  # 0-100
+          "paginas_con_texto": int,
+          "cobertura_texto": float,     # 0-1, fracción de páginas con texto
+          "modos_pagina": list[str],    # "digital"|"escaneado" por página
+          "mixto": bool,                # unas páginas sí y otras no
+          "resumen": str,
         }
+
+    Censa TODAS las páginas, no las cinco primeras. El muestreo anterior
+    promediaba el arranque del documento y emitía un único veredicto para el
+    ejemplar entero; *El Día* tiene su texto en las páginas 15 y 16 de 16, así
+    que cualquier decisión tomada sobre el principio se lleva por delante el
+    87,5 % del contenido en un sentido o en el otro. `get_text` no rasteriza
+    nada: el censo completo cuesta poco.
+
+    `tiene_texto` pasa a significar "hay texto aprovechable en alguna página";
+    quien procesa página por página debe mirar `modos_pagina`, no esta bandera.
     """
+    from core.calidad_ocr import censar_paginas
+
     try:
         import fitz  # pymupdf
         doc = fitz.open(str(pdf_path))
-        n   = doc.page_count
-        totales = []
-        for i in range(min(n, 5)):   # muestrear primeras 5 páginas
-            texto = doc[i].get_text("text")
-            palabras = len(texto.split())
-            totales.append(palabras)
-        doc.close()
-        promedio = sum(totales) / max(len(totales), 1)
-        tiene    = promedio >= PALABRAS_MIN_PAGINA
-        # Estimar confianza: páginas con >100 palabras = alta calidad
-        conf_est = min(100.0, promedio / 1.5)
-        return {"tiene_texto": tiene, "palabras_promedio": round(promedio, 1),
-                "n_paginas": n, "confianza_estimada": round(conf_est, 1)}
+        try:
+            censo = censar_paginas(pdf_path, doc=doc)
+        finally:
+            doc.close()
     except Exception:
+        censo = None
+
+    if censo is None or censo.n_paginas == 0:
         return {"tiene_texto": False, "palabras_promedio": 0,
-                "n_paginas": 0, "confianza_estimada": 0}
+                "n_paginas": 0, "confianza_estimada": 0,
+                "paginas_con_texto": 0, "cobertura_texto": 0.0,
+                "modos_pagina": [], "mixto": False,
+                "resumen": "documento sin páginas legibles"}
+
+    con_texto = censo.paginas_con_texto
+    # El promedio se calcula sobre las páginas que SÍ traen texto: meter las
+    # vacías en el promedio hunde la cifra de un documento mixto y lo hace
+    # parecer basura cuando tiene páginas perfectamente aprovechables.
+    promedio = (sum(censo.palabras_por_pagina[i] for i in con_texto) / len(con_texto)
+                if con_texto else 0.0)
+
+    return {
+        "tiene_texto": bool(con_texto) and promedio >= PALABRAS_MIN_PAGINA,
+        "palabras_promedio": round(promedio, 1),
+        "n_paginas": censo.n_paginas,
+        # Estimar confianza: páginas con >100 palabras = alta calidad
+        "confianza_estimada": round(min(100.0, promedio / 1.5), 1),
+        "paginas_con_texto": len(con_texto),
+        "cobertura_texto": round(censo.cobertura, 4),
+        "modos_pagina": censo.modos,
+        "mixto": 0 < len(con_texto) < censo.n_paginas,
+        "resumen": censo.resumen,
+    }
 
 
 def _palabras_significativas(texto: str) -> set:

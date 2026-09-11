@@ -11793,6 +11793,65 @@ class BashkarApp(tk.Tk):
         threading.Thread(target=self._worker_ocr, args=(self._snapshot_ocr(),),
                          daemon=True).start()
 
+    def _ocr_paginas_faltantes(self, archivo, nombre, txt_dir, dir_img,
+                               paginas, dpi):
+        """Tesseract sobre las páginas de un PDF que NO traen texto embebido.
+
+        Un documento puede declarar la capa oculta de Paper Capture y tenerla
+        solo en algunas páginas (El Día: 2 de 16). Antes esas páginas se
+        escribían vacías y el número se daba por completo. Aquí se rasterizan
+        y se reconocen SOLO ellas, y la fila queda marcada `revision=True`
+        para que se vea de dónde salió el texto.
+
+        `paginas` son números 1-based. Devuelve las filas de metadatos.
+        """
+        from core.ocr_engine import ocr_pagina
+        from core.ocr_normalizer import normalizar_texto_ocr
+
+        filas = []
+        img_dir_n = dir_img / nombre
+        img_dir_n.mkdir(parents=True, exist_ok=True)
+        try:
+            import fitz
+            doc = fitz.open(str(archivo))
+        except Exception as e:
+            self._put(tipo="log", texto=f"  ❌ No se pudo rasterizar: {e}")
+            return filas
+
+        try:
+            mat = fitz.Matrix(dpi / 72.0, dpi / 72.0)
+            for n in paginas:
+                pagina_id = f"p{n:04d}"
+                tp = txt_dir / f"{pagina_id}.txt"
+                img_path = img_dir_n / f"{pagina_id}.png"
+                try:
+                    if not img_path.exists():
+                        doc[n - 1].get_pixmap(matrix=mat).save(str(img_path))
+                    texto, conf = ocr_pagina(img_path)
+                    texto = normalizar_texto_ocr(texto)
+                except Exception as e:
+                    # Sin texto y sin OCR: NO se escribe un .txt vacío que haga
+                    # pasar la página por procesada. Se avisa y se omite.
+                    self._put(tipo="log",
+                              texto=f"  ⚠ {pagina_id} sin texto y sin OCR: {e}")
+                    continue
+                tp.write_text(texto, encoding="utf-8")
+                filas.append({
+                    "numero":   nombre,
+                    "pagina":   pagina_id,
+                    "txt_path": str(tp),
+                    "palabras": len(texto.split()),
+                    "confianza": conf,
+                    "revision": True,
+                    "metodo":   "tesseract_relleno",
+                })
+        finally:
+            try:
+                doc.close()
+            except Exception:
+                pass
+        return filas
+
     def _worker_ocr(self, snap: dict | None = None):
         snap = snap if snap is not None else self._snapshot_ocr()
         from core.ocr_engine import (
@@ -11857,6 +11916,7 @@ class BashkarApp(tk.Tk):
         # En Ruta 1 (tesseract), Ruta 2 (vision_ia) forzamos re-OCR.
         # En Ruta 3 (bnc) usamos el texto embebido con reconstrucción de líneas.
         modos = {}
+        censos = {}
         for p in archivos:
             if ST.input_tipo == "img" or p.suffix.lower() in EXTS_IMAGEN:
                 modos[p.name] = "imagen"
@@ -11864,9 +11924,15 @@ class BashkarApp(tk.Tk):
                 # Forzar re-OCR desde imágenes, ignorar texto BNC
                 modos[p.name] = "escaneado"
             else:
-                # Ruta 3: usar texto embebido si existe
+                # Ruta 3: usar texto embebido si existe. El censo es por página
+                # (ver core/calidad_ocr.py): un ejemplar puede traer texto en
+                # unas páginas y no en otras, y antes eso se perdía entero.
                 info = analizar_pdf(p)
+                censos[p.name] = info.get("modos_pagina") or []
                 modos[p.name] = "digital" if info["tiene_texto"] else "escaneado"
+                if info.get("mixto"):
+                    self._put(tipo="log",
+                        texto=f"   ⚠ {p.name}: {info['resumen']}")
 
         n_dig = sum(1 for m in modos.values() if m=="digital")
         n_ocr = sum(1 for m in modos.values() if m=="escaneado")
@@ -11877,6 +11943,7 @@ class BashkarApp(tk.Tk):
         if n_img: parts.append(f"🖼️ {n_img} imagen(es)")
         self._put(tipo="log", texto="   "+"|".join(parts))
         ST.modos_detec = modos
+        ST.censos_pagina = censos
 
         for idx, archivo in enumerate(archivos):
             nombre = archivo.stem; modo = modos.get(archivo.name,"escaneado")
@@ -11895,12 +11962,26 @@ class BashkarApp(tk.Tk):
 
                     _MARCA_BNC = "Digitalizado Biblioteca Nacional de Colombia"
 
+                    # La ruta se decide POR PÁGINA, nunca por la declaración de
+                    # fuentes del documento: El Día declara la capa oculta de
+                    # Paper Capture igual que Estampa y solo 2 de sus 16 páginas
+                    # la tienen. Con un veredicto de documento se escribían
+                    # catorce archivos vacíos y se reportaba éxito.
+                    modos_pag = (ST.censos_pagina.get(archivo.name)
+                                 if hasattr(ST, "censos_pagina") else None) or []
+
                     rows = []
+                    sin_texto = []
                     doc_bnc = fitz.open(str(archivo))
                     for i, page in enumerate(doc_bnc):
                         pagina_id = f"p{i+1:04d}"
                         tp = txt_dir / f"{pagina_id}.txt"
                         if not tp.exists():
+                            if i < len(modos_pag) and modos_pag[i] != "digital":
+                                # No tiene texto embebido: no se escribe un .txt
+                                # vacío. Se anota para OCR y se resuelve abajo.
+                                sin_texto.append(i + 1)
+                                continue
                             try:
                                 resultado = reconstruir_texto_pagina(
                                     page,
@@ -11925,6 +12006,14 @@ class BashkarApp(tk.Tk):
                             "metodo":   "bnc_coordenadas",
                         })
                     doc_bnc.close()
+
+                    if sin_texto:
+                        self._put(tipo="log",
+                            texto=f"  🔍 {len(sin_texto)} pág sin texto embebido "
+                                  "→ Tesseract (no se dan por vacías)")
+                        rows.extend(self._ocr_paginas_faltantes(
+                            archivo, nombre, txt_dir, dir_img, sin_texto, dpi))
+
                     meta_rows.extend(rows)
                     self._put(tipo="log",
                         texto=f"  ✅ {len(rows)} pág · BNC + reconstrucción por coordenadas")

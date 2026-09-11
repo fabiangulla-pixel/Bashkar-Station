@@ -106,3 +106,82 @@ def test_etapa_ner_usa_roberta_por_defecto():
     assert mock_pipeline_ner.called
     _, kwargs = mock_pipeline_ner.call_args
     assert kwargs.get("usar_roberta") is not False
+
+
+def test_etapa_ocr_documento_mixto_no_deja_paginas_vacias(tmp_path: Path):
+    """El caso de *El Día*: el PDF declara la capa oculta de Paper Capture y
+    solo algunas páginas la tienen de verdad. Con la decisión tomada a nivel de
+    documento, las páginas sin texto se escribían vacías y el CLI reportaba
+    éxito. Ahora cada página sin texto embebido tiene que ir a Tesseract.
+
+    Tesseract se sustituye por un doble: lo que se comprueba es el ENRUTADO,
+    no el reconocimiento (que ya tiene sus propios tests)."""
+    import fitz
+
+    pdf_path = tmp_path / "el_dia_mixto.pdf"
+    doc = fitz.open()
+    for i in range(4):
+        pagina = doc.new_page()
+        if i >= 2:      # solo las dos últimas traen texto, como el ejemplar real
+            for k in range(6):
+                pagina.insert_text(
+                    (72, 72 + k * 14),
+                    "Texto embebido con palabras suficientes " * 3,
+                )
+    doc.save(str(pdf_path))
+    doc.close()
+
+    out_dir = tmp_path / "salida"
+    cfg = {"out_dir": str(out_dir), "input_tipo": "pdf",
+           "archivos_sel": [str(pdf_path)]}
+
+    imgs = []
+    for i in range(1, 5):
+        img = tmp_path / f"pag{i}.png"
+        img.write_bytes(b"")
+        imgs.append(img)
+
+    with patch("core.ocr_engine.pdf_a_imagenes", return_value=imgs) as m_img, \
+         patch("core.ocr_engine.ocr_pagina",
+               return_value=("Texto reconocido por Tesseract en la pagina", 88.0)) as m_ocr:
+        _etapa_ocr(cfg, verbose=False)
+
+    txt_dir = out_dir / "03_ocr" / "el_dia_mixto"
+    escritos = sorted(p.name for p in txt_dir.glob("p*.txt"))
+    assert escritos == ["p0001.txt", "p0002.txt", "p0003.txt", "p0004.txt"]
+
+    # Las dos primeras NO pueden quedar vacías: tuvieron que pasar por OCR.
+    for nombre in ("p0001.txt", "p0002.txt"):
+        contenido = (txt_dir / nombre).read_text(encoding="utf-8").strip()
+        assert contenido, f"{nombre} quedó vacía: la página se dio por perdida"
+        assert "Tesseract" in contenido
+
+    # Las dos últimas vienen del texto embebido, sin pasar por Tesseract.
+    assert "embebido" in (txt_dir / "p0003.txt").read_text(encoding="utf-8")
+
+    assert m_img.called, "no se rasterizó nada pese a haber páginas sin texto"
+    assert m_ocr.call_count == 2, "se OCR-izaron páginas que ya traían texto"
+
+
+def test_etapa_ocr_reporta_documento_no_utilizable(tmp_path: Path, capsys):
+    """Un documento con un tercio de sus tokens partidos tiene que decirlo,
+    no entrar al pipeline como si fuera texto limpio."""
+    import fitz
+
+    # 40 % de tokens de una sola letra: por encima del umbral crítico.
+    basura = " ".join(["palabra"] * 6 + ["x"] * 4) + " "
+    pdf_path = tmp_path / "fragmentado.pdf"
+    doc = fitz.open()
+    pagina = doc.new_page()
+    for k in range(40):
+        pagina.insert_text((40, 40 + k * 16), basura * 3, fontsize=8)
+    doc.save(str(pdf_path))
+    doc.close()
+
+    out_dir = tmp_path / "salida"
+    _etapa_ocr({"out_dir": str(out_dir), "input_tipo": "pdf",
+                "archivos_sel": [str(pdf_path)]}, verbose=True)
+
+    salida = capsys.readouterr().out
+    assert "no utilizable" in salida.lower()
+    assert "fragmentado" in salida
