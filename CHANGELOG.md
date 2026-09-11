@@ -90,6 +90,137 @@ que cada bloque extraído ahora tiene tests.
 
 ---
 
+## Sesión 69 — 2026-09-10 — El sistema aprende a decir «este texto no sirve»
+
+Sesión de pendientes acumulados. Los dos hallazgos de la prueba de
+generalización del 3 de septiembre llevaban una semana escritos en
+`RESULTADOS.md` sin bajar al código, y por el camino aparecieron tres bugs que
+nadie buscaba.
+
+### 1. Abstención por calidad de OCR
+
+`core/calidad_ocr.py` mide fragmentación y fusión y emite un veredicto:
+`utilizable`, `revisar` o `no_utilizable`. Hasta hoy, un documento con un
+tercio de sus tokens partidos en trozos de una o dos letras entraba al NER y a
+las frecuencias exactamente igual que uno limpio.
+
+El umbral (10 %) no está calibrado contra un caso frontera: cae en el hueco
+vacío entre las cinco publicaciones aceptables de la BNC (hasta 7,4 %) y las
+dos críticas (desde 20,8 %). *Estampa* —el corpus sobre el que está hecho todo
+el análisis publicado— queda dentro con margen, y hay un test que lo exige: un
+umbral que se abstenga de la línea base está mal puesto.
+
+Validado contra los nueve PDF reales, no solo con texto sintético: ninguna
+publicación cruza de bando, y donde coincide el ejemplar con el del experimento
+el porcentaje sale idéntico al segundo decimal.
+
+### 2. La ruta de OCR se decide por página
+
+D-09 lo decidió hace una semana; el código seguía sin hacerlo. `analizar_pdf`
+muestreaba las cinco primeras páginas y emitía un veredicto para el ejemplar
+entero. *El Día* declara la capa oculta de Paper Capture en sus dieciséis
+páginas y solo dos la tienen: se escribían catorce `.txt` vacíos y se reportaba
+éxito.
+
+Ahora censa el documento completo y `cli.py` y el worker de `app.py` enrutan
+página a página. Una página sin texto embebido va a Tesseract; si tampoco se
+puede OCR-izar, se avisa y se omite, nunca se escribe vacía. El test de
+regresión se comprobó con prueba negativa: forzando el veredicto único de
+documento, falla.
+
+### 3. *El Gráfico*, medido entero — y es mejor que *Estampa*
+
+Los 82 números (1910-1929), copiados a local con verificación de truncamiento
+—85 de 85 íntegros, abriendo la última página de cada uno— y medidos en
+paralelo con checkpoint reanudable.
+
+| | El Gráfico | Estampa (línea base) |
+|---|---:|---:|
+| Confianza Tesseract | 89,4 % | — |
+| Fragmentación | **3,0 %** | 4,7 % |
+| Fusión | **0,03 %** | 0,16 % |
+| Utilizables sin revisión | **99 %** (84 de 85) | — |
+
+El contraste colombiano del plan de la beca se resuelve por la ruta barata: no
+hace falta CHURRO (7 GB, ~34 min/página).
+
+La abstención estrenó su primer uso real, y **no por donde se esperaba**. Los
+cinco números que marcó no tenían el texto degradado: tenían *poco* texto. Se
+marcaron por la regla de muestra insuficiente (62-197 tokens frente a los ~2.200
+de media), no por fragmentación. *El Gráfico* es una revista gráfica: hay
+páginas que son una fotografía a plana entera y dan entre 5 y 40 tokens, y la
+muestra fija de cuatro páginas cayó ahí.
+
+**Y la regla de muestra insuficiente no solo evitó certificar sin evidencia:
+evitó publicar una cifra falsa.** El número que el primer informe daba como el
+peor de la colección —*ago 1919*, 17,89 % de fragmentación— resultó ser, medido
+con evidencia suficiente, **el mejor: 1,58 %**. Aquel 17,89 % salía de 95
+tokens. Si el módulo hubiera emitido veredicto sobre esa muestra, el dato habría
+entrado al informe de la beca como bueno.
+
+El arreglo no fue el obvio. Muestrear más páginas en los ejemplares largos
+arregla los de 221 y no hace nada por los de 101, porque el problema es **dónde**
+cae la muestra, no cuántas páginas tiene el número. `medir_elgrafico_completo`
+amplía ahora la muestra hasta reunir los 200 tokens que `calidad_ocr` exige para
+opinar. Con eso, *ago 1919* pasa de 95 a 1.455 tokens y *nov 1919* de 70 a 1.750.
+
+(Las cifras agregadas salen de 4 páginas por número, 8 en los que necesitaron
+ampliación: sirven para comparar publicaciones entre sí, que es para lo que se
+hicieron, no para describir la colección página a página.)
+
+Con la muestra ya corregida queda **un solo número** marcado en toda la
+colección: *may 1925*, con 11,3 % de fragmentación sobre 346 tokens. Ese sí
+parece degradado de verdad.
+
+Aparece además un indicio de degradación con los años —2,8 % de fragmentación en
+los 74 números de los 1910 frente a 4,4 % en los 11 de los 1920— que, de
+confirmarse, obliga a controlar la fecha en cualquier serie temporal sobre este
+corpus.
+
+### 4. `pagina_inicio` estaba en NULL en los 351 artículos
+
+Medido sobre el proyecto real de Fabián, el de las 183 revisiones manuales. El
+segmentador entrega el rango de páginas en un solo campo, `pagina`; el pipeline
+persistía `pagina_inicio`/`pagina_fin`, claves que el segmentador nunca ha
+puesto. `.get` devuelve `None`, SQLite acepta `NULL`, nada falla. Se perdía el
+orden de lectura (`ORDER BY numero, pagina_inicio` sobre NULL), la ordenación
+de la exportación OKF, y la posibilidad de que el contrato A1 acuñara ids con
+página. Misma familia que la deriva de la sesión 65.
+
+### 5. La Ruta 2 usaba una copia peor del OCR de visión
+
+Buscando por dónde partir el monolito apareció `_ocr_vision_multiproveedor`,
+71 líneas de `app.py` que duplicaban `core.ocr_llm.ocr_con_vision`. La Ruta 2
+—la que consume API de pago— llamaba a la copia: sin el prompt calibrado
+contra las 46 páginas del juez de ground truth, sin registrar el gasto de IA,
+sin filtrar los rechazos del modelo y devolviendo `""` en silencio ante un
+proveedor desconocido. Eliminada, con un test que impide que vuelva.
+
+### 6. Lo que se cerró sin escribir código
+
+- **Negrita y cursiva** (roadmap FineReader): ya estaban detectadas y nadie las
+  consumía. Medido sobre las nueve publicaciones, **no vale la pena cablearlas**
+  a la detección de títulos: `italic` marca hasta el 26,6 % de las líneas de
+  *Estampa* (es cómo el OCR clasificó la tipografía, no cursiva real) y `bold`
+  solo señala títulos que el umbral de tamaño ya detecta, mientras que en *La
+  Semana Cómica* marcaría 21 líneas que no lo son.
+- **Bibliografía del paper**: el artículo de *Boletín Cultural* tiene **un solo
+  autor**, Ricardo Rodríguez Morales; el esqueleto arrastraba un coautor
+  inexistente. Bhaskar queda fijado en Anthem Press, **2013** —no 2014— contra
+  el catálogo de la editorial. Mollier sigue abierto y no se inventa: la obra
+  que encaja es de 2015 y la tesis cita 2017.
+- **Contrato A1**: sigue sin adoptarse (D-07 es decisión de Fabián), pero ya no
+  es una decisión a ciegas. Los 351 ids de la base real son literalmente el
+  título del artículo, incluidos "Sin titulo" y basura de OCR.
+
+### Nota operativa
+
+Lanzar dos `git commit` a la vez en este repo **no da error**: los dos hooks
+corren la suite, los dos dicen "todo en verde" y ninguno de los dos commits
+queda en el historial. Van de uno en uno (D-21).
+
+---
+
 ## Sesión 68 — 2026-09-09 (cont.) — Compilación del .exe en MSI + medición de El Gráfico
 
 Continuación del trabajo de migración. El .exe se compiló exitosamente con 

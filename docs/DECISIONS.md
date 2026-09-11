@@ -100,3 +100,50 @@ PATH, y distingue "entorno mal montado" de "código roto". Antes, el hook
 `pre-commit` lo invocaba desde `cmd.exe`, que no hereda el venv de la consola:
 en el equipo nuevo eso daba "[FALLO] hay tests en rojo" sin haber corrido un
 solo test.
+
+### D-18 — La calidad del OCR se mide y el sistema se abstiene *(10-sep-2026)*
+`core/calidad_ocr.py` es el único sitio donde se decide si un texto sirve. Tres
+veredictos: `utilizable`, `revisar`, `no_utilizable`. El umbral de
+fragmentación está en **10 %** y no está calibrado contra un caso frontera: cae
+en el hueco vacío entre las cinco publicaciones aceptables de la BNC (hasta
+7,4 %) y las dos críticas (desde 20,8 %). *Estampa*, el corpus sobre el que está
+hecho todo el análisis publicado, queda dentro con margen, y hay un test que lo
+exige: **un umbral que se abstenga de la línea base está mal puesto**.
+
+Una muestra por debajo de 200 tokens nunca se declara `utilizable`; se marca
+`revisar` diciendo que la muestra es insuficiente. Callarse ante poca evidencia
+es el mismo fallo silencioso que el módulo existe para evitar.
+
+Validado contra los nueve PDF reales, no solo con texto sintético
+(`scripts/_experimentos/generalizacion_20260903/validar_calidad_ocr.py`):
+ninguna publicación cruza de bando. Primer uso en producción, sobre los 82
+números de *El Gráfico*: marcó dos números degradados que habrían entrado al
+análisis sin que nadie se enterara.
+
+### D-19 — La ruta de OCR se decide por página, y ejecutarlo así *(10-sep-2026)*
+D-09 lo decidió en septiembre de 2026 y el código seguía sin hacerlo.
+`ocr_engine.analizar_pdf` censa **todas** las páginas —`get_text` no rasteriza,
+cuesta poco— y devuelve `modos_pagina`; `cli.py` y el worker de `app.py`
+enrutan página a página. Una página sin texto embebido va a Tesseract; si
+tampoco se puede OCR-izar, **se avisa y se omite**, nunca se escribe un `.txt`
+vacío que la haga pasar por procesada. Las páginas rellenadas quedan con
+`metodo="tesseract_relleno"` y `revision=True`.
+
+### D-20 — El OCR por visión se implementa una sola vez *(10-sep-2026)*
+En `core/ocr_llm.py`. `app.py` tenía su propia copia, y la Ruta 2 de la interfaz
+—la que consume API de pago— llamaba a ella: sin el prompt calibrado contra el
+juez de ground truth, sin registrar el gasto de IA, sin filtrar los rechazos del
+modelo y devolviendo `""` en silencio ante un proveedor desconocido.
+`tests/test_ocr_vision_sin_duplicado.py` impide que vuelva.
+
+La lección general, que vale para el refactor pendiente de `app.py`: **cada
+trozo de lógica duplicado dentro del monolito es un sitio donde una mejora
+medida no llega al usuario.**
+
+### D-21 — Los commits de este repo van de uno en uno *(10-sep-2026)*
+El hook `pre-commit` corre la suite completa (4-5 min, más si la máquina está
+ocupada). Lanzar dos `git commit` a la vez **no da error**: los dos hooks
+corren, los dos dicen "todo en verde" y ninguno de los dos commits queda en el
+historial. Se descubrió al ver que `git log` no había avanzado con los cambios
+todavía en el árbol de trabajo. Encadenar commits en segundo plano: esperar a
+que el anterior aparezca en `git log` antes de lanzar el siguiente.

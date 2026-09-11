@@ -44,11 +44,17 @@ y la generación centenarista). Fuente académica a citar:
 Rodríguez Morales, Ricardo. "Los Nuevos: entre la tradición y la vanguardia". *Boletín Cultural y Bibliográfico*, vol. 42, no. 69,
 2005, pp. 2-23,
 https://publicaciones.banrepcultural.org/index.php/boletin_cultural/article/view/707
-(también indexado en Dialnet y en la Biblioteca Virtual Miguel de Cervantes;
-verificar acceso al PDF completo antes de citar página exacta. ⚠️ **Verificar
-además los nombres de pila completos de ambos autores antes de someter**: la
-entrada MLA los exige y aquí están reconstruidos a partir de las iniciales de
-la referencia APA original, no confirmados contra la fuente).
+(también indexado en Dialnet, cód. 2990096, y en la Biblioteca Virtual Miguel
+de Cervantes; verificar acceso al PDF completo antes de citar página exacta).
+
+⚠️ **Corregido el 10-sep-2026: el artículo tiene UN SOLO AUTOR.** El esqueleto
+arrastraba "Rodríguez Morales y Sierra Restrepo" con los dos nombres de pila en
+blanco, reconstruido a partir de las iniciales de la referencia APA de la tesis
+de 2018. El registro del Banco de la República, Dialnet y Cervantes Virtual
+coinciden: el autor es **Ricardo Rodríguez Morales**, y no aparece ningún
+coautor apellidado Sierra Restrepo. La cita en texto es `(Rodríguez Morales 5)`,
+no la forma de dos autores; el patrón de dos autores del §nota de calibración
+sigue siendo válido como regla, pero ya no se ilustra con esta fuente.
 
 **Puente real con el corpus (no fabricado — verificar antes de usarlo como
 argumento fuerte):** los dos escritores literarios que dominan el índice de
@@ -328,6 +334,15 @@ Rodríguez Morales, Ricardo. "Los Nuevos: entre la tradición y la
 Mollier, Jean-Yves. "Prólogo". *La colección: auge y consolidación de un
   objeto editorial*, compilado por Christine Rivalan Guégo y Miriam Nicoli,
   Universidad de los Andes / Universidad Nacional de Colombia, 2017, pp. [ ].
+
+*(Discrepancia resuelta, 29-sep-2026. La sesión 69 (10-sep) fijó Bhaskar en
+el original inglés —*The Content Machine*, Anthem Press, 2013— y concluyó que no
+existía edición de 2014; y dejó Mollier abierto, conjeturando una obra de 2015.
+La bibliografía de la tesis de 2018 cita otra cosa en ambos casos: la
+**traducción del FCE (México, 2014)** de Bhaskar, que existe (ISBN
+978-607-16-2215-0), y el **"Prólogo" de Mollier a *La colección* (2017)**. En
+MLA se cita la edición efectivamente usada, así que valen las fichas de arriba;
+si el artículo nuevo trabaja con el original inglés, cambiar a Anthem 2013.)*
 
 *(Bhaskar y Mollier resueltos 29-sep-2026: las fichas salen de la bibliografía
 de la tesis de 2018 —PDF del repositorio del Caro y Cuervo— y los nombres
