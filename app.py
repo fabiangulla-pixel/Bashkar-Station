@@ -449,77 +449,15 @@ class _VarCongelada:
 # HELPERS API / MODELOS
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _ocr_vision_multiproveedor(img_path, proveedor: str,
-                                api_key: str, modelo: str = "") -> str:
-    """
-    Extrae el texto de una imagen de página usando cualquier proveedor de visión IA.
-    Retorna el texto transcrito como string.
-    """
-    import base64
-    from pathlib import Path as _Path
+# El OCR por visión vive ENTERO en core/ocr_llm.py. Aquí hubo durante mucho
+# tiempo una copia propia, `_ocr_vision_multiproveedor`, que la Ruta 2 de la
+# GUI llamaba en vez de la de core: sin el prompt calibrado contra las 46
+# páginas del juez de ground truth, sin registrar el gasto de IA, sin filtrar
+# los rechazos del modelo, sin lmstudio y devolviendo "" en silencio ante un
+# proveedor desconocido. Eliminada: `tests/test_ocr_vision_sin_duplicado.py`
+# impide que vuelva.
+_MODELO_VISION_DEFECTO = "claude-sonnet-4-6"
 
-    _PROMPT_OCR = (
-        "Transcribe todo el texto visible en esta imagen de página de revista histórica "
-        "(Colombia, años 1930-1940). Respeta el orden de lectura: columna izquierda de "
-        "arriba a abajo, luego columna derecha. Preserva los saltos de párrafo. "
-        "No añadas comentarios ni explicaciones — solo el texto transcrito."
-    )
-
-    img_path = _Path(img_path)
-    ext = img_path.suffix.lower()
-    mt_map = {".jpg": "image/jpeg", ".jpeg": "image/jpeg",
-               ".png": "image/png",  ".webp": "image/webp"}
-    mt = mt_map.get(ext, "image/png")
-    with open(img_path, "rb") as f:
-        b64 = base64.standard_b64encode(f.read()).decode()
-
-    if proveedor == "claude":
-        import anthropic
-        m = modelo or "claude-haiku-4-5-20251001"
-        client = anthropic.Anthropic(api_key=api_key)
-        resp = client.messages.create(
-            model=m, max_tokens=4096,
-            messages=[{"role": "user", "content": [
-                {"type": "image", "source": {"type": "base64",
-                                              "media_type": mt, "data": b64}},
-                {"type": "text", "text": _PROMPT_OCR},
-            ]}])
-        return resp.content[0].text
-
-    elif proveedor == "openai":
-        import openai
-        m = modelo or "gpt-4o-mini"
-        client = openai.OpenAI(api_key=api_key)
-        resp = client.chat.completions.create(
-            model=m, max_tokens=4096,
-            messages=[{"role": "user", "content": [
-                {"type": "image_url",
-                 "image_url": {"url": f"data:{mt};base64,{b64}"}},
-                {"type": "text", "text": _PROMPT_OCR},
-            ]}])
-        return resp.choices[0].message.content
-
-    elif proveedor == "gemini":
-        import google.generativeai as genai
-        from PIL import Image as _Img
-        genai.configure(api_key=api_key)
-        m = modelo or "gemini-1.5-flash"
-        gm = genai.GenerativeModel(m)
-        img = _Img.open(img_path)
-        resp = gm.generate_content([_PROMPT_OCR, img])
-        return resp.text
-
-    elif proveedor == "ollama":
-        import requests
-        m = modelo or "llava"
-        resp = requests.post(
-            "http://localhost:11434/api/generate",
-            json={"model": m, "prompt": _PROMPT_OCR,
-                  "images": [b64], "stream": False},
-            timeout=300)
-        return resp.json().get("response", "")
-
-    return ""
 
 
 def _resolver_api_key_modelo(etapa: str) -> tuple[str, str]:
@@ -12089,9 +12027,18 @@ class BashkarApp(tk.Tk):
                                 texto = tp.read_text("utf-8", errors="replace"); conf = 95.0
                             else:
                                 try:
-                                    # Usar el proveedor elegido
-                                    texto = _ocr_vision_multiproveedor(
-                                        ip, prov, api_key, model)
+                                    # core.ocr_llm es la ÚNICA implementación
+                                    # de OCR por visión. app.py tenía la suya
+                                    # propia, divergente: sin el prompt
+                                    # calibrado contra el juez de ground truth,
+                                    # sin registrar el gasto de IA, sin filtrar
+                                    # los rechazos del modelo y sin lmstudio.
+                                    # La Ruta 2 —la que se paga— usaba esa.
+                                    from core.ocr_llm import ocr_con_vision
+                                    texto = ocr_con_vision(
+                                        ip, api_key=api_key,
+                                        modelo=model or _MODELO_VISION_DEFECTO,
+                                        proveedor=prov)
                                     conf  = 95.0
                                 except Exception as ec:
                                     self._put(tipo="log",
