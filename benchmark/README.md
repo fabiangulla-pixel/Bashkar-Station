@@ -29,6 +29,10 @@ palabras donde Tesseract de página completa saca ~600: por eso no se cargó.
 Para medir `zonas` en serio hacen falta las imágenes a resolución completa
 (asset del release `vision-ocr-entrada-v1`).
 
+Las imágenes (`ground_truth_piloto/*/imagenes/`) **no están en el repositorio**
+por las condiciones de uso de la BNC: quien clone el proyecto debe obtenerlas
+aparte. Las referencias y las salidas son texto y sí se versionan.
+
 ## Cómo completarlo
 
 1. En `estampa-1939/benchmark.json`, escribe tu nombre en

@@ -55,3 +55,8 @@ desktop.ini
 # con la ruta de otro equipo dentro.
 poppler_path.txt
 tesseract_path.txt
+
+# Imágenes de Estampa (BNC): tienen sus propias condiciones de uso y no se
+# redistribuyen. Se conservan en disco para el benchmark (sesión 70). OJO:
+# siguen en el historial de git anterior a este cambio.
+ground_truth_piloto/*/imagenes/

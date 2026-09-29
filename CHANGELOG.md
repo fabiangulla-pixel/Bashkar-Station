@@ -87,6 +87,9 @@ que cada bloque extraído ahora tiene tests.
 - Transcribir referencias humanas en `benchmark/estampa-1939/referencia/`.
 - Decidir si las 47 imágenes de Estampa de `ground_truth_piloto/` deben estar
   en un repositorio público (el README decía que el corpus no se distribuye).
+
+---
+
 ## Sesión 68 — 2026-09-09 (cont.) — Compilación del .exe en MSI + medición de El Gráfico
 
 Continuación del trabajo de migración. El .exe se compiló exitosamente con 

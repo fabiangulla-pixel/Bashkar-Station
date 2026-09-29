@@ -453,7 +453,7 @@ capas con licencias distintas:
 | Capa | Licencia | ¿Se distribuye aquí? |
 |---|---|---|
 | Código | Apache 2.0 | Sí |
-| Corpus (*Estampa*, digitalizado por la Biblioteca Nacional de Colombia) | Condiciones de la BNC | No, salvo la muestra de investigación de `ground_truth_piloto/` y los textos OCR de `vision_ocr/salida/` y `benchmark/` |
+| Corpus (*Estampa*, digitalizado por la Biblioteca Nacional de Colombia) | Condiciones de la BNC | No. Sí se versionan textos OCR derivados (`vision_ocr/salida/`, `benchmark/`, candidatos del piloto). Las imágenes del piloto se retiraron en la sesión 70, pero siguen en el historial de git anterior |
 | Modelos (spaCy, Tesseract, Kraken/CATMuS, CHURRO, BERT) | Cada uno la suya | No: se descargan aparte |
 
 Las exportaciones repiten este aviso en su manifiesto de proveniencia.
