@@ -273,3 +273,28 @@ def exportar_json(resultados: list[Resultado], destino: Path) -> Path:
         json.dumps([r.como_dict() for r in resultados], ensure_ascii=False, indent=2),
         encoding="utf-8")
     return destino
+
+
+def catalogo_rutas() -> list[tuple[str, str, str]]:
+    """Rutas de OCR ofrecidas, con su disponibilidad real: (clave, etiqueta, nota).
+
+    Extraído de app.py (``_bench_catalogo_rutas``, sesión 70) para que la GUI,
+    la web y la CLI ofrezcan la misma lista.
+    """
+    from core import ocr_churro, ocr_pero
+    catalogo = [
+        ("tesseract", "Tesseract (local, rápido)", ""),
+        ("zonas", "Tesseract por zonas (deskew + RLSA)", ""),
+    ]
+    if ocr_churro.motivo_no_disponible():
+        catalogo.append(("churro", "CHURRO-3B", "no disponible: dependencias"))
+    elif not ocr_churro.esta_descargado():
+        catalogo.append(("churro", "CHURRO-3B (visión, local)",
+                         "requiere descargar ~7 GB la primera vez"))
+    else:
+        catalogo.append(("churro", "CHURRO-3B (visión, local)", "~3 min/página en CPU"))
+    if ocr_pero.motivo_no_disponible():
+        catalogo.append(("pero", "PERO-OCR", "no instalado: pip install pero-ocr"))
+    else:
+        catalogo.append(("pero", "PERO-OCR (microfilm de prensa)", "~12 s/página"))
+    return catalogo

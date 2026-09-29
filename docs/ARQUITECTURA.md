@@ -145,14 +145,22 @@ Hechos:
 - `core/servicios_corpus.py` ← conteo de páginas, reconstrucción de metadatos
   del corpus y agrupación por período (sesión 70).
 
-Siguientes, por orden (lógica pura, alto uso):
+- `core/servicios_exportacion.py` ← configuración y estadísticas de
+  METHODS.md (duplicadas en dos sitios, ambas con cifras falsas) y artículos
+  TEI. Destapó que el paquete de publicación nunca incluía `corpus.xml`.
+- `core/exploradores.exportar_gexf` ← `_can_escribir_gexf` (el GEXF se rompía
+  con comillas en un nombre de entidad).
+- `core/benchmark_ocr.catalogo_rutas` ← `_bench_catalogo_rutas`.
 
-1. Exportación de resultados (`_res_exportar_tei`, `_res_exportar_bibtex`,
-   `_res_validar_tei`, `_res_generar_methods`) → `core/servicios_exportacion.py`.
-2. Catálogo y ejecución de rutas del benchmark (`_bench_*`) → `core/benchmark_ocr`.
-3. Escritura GEXF (`_can_escribir_gexf`) → `core/exploradores.py`.
-4. Pestaña NER: separar primero lectura/escritura en SQLite (ya existe
+Tres de las cinco extracciones destaparon un fallo real. Es el argumento
+práctico a favor de seguir: la lógica escondida en la GUI no tenía tests.
+
+Siguientes, por orden:
+
+1. Ejecución de rutas del benchmark (`_bench_correr_ruta`) → `core/benchmark_ocr`.
+2. Pestaña NER: separar primero lectura/escritura en SQLite (ya existe
    `datos/repositorio.py`), después la vista.
+3. Etiquetador de zonas: separar render de PDF y persistencia de zonas.
 
 Meta: `app.py` como punto de composición (construye ventanas y conecta
 señales). No hay fecha, pero sí un indicador: la tabla de arriba, regenerada

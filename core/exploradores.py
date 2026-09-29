@@ -22,6 +22,8 @@ import json
 import unicodedata
 from pathlib import Path
 
+from core.proveniencia import con_proveniencia
+
 _GAZETTEER = Path(__file__).parent.parent / "datos" / "coordenadas_colombia.json"
 
 
@@ -196,6 +198,45 @@ _NS = "https://bashkar.station/entidad/"
 _PRED = "https://bashkar.station/predicado/"
 
 
+@con_proveniencia("GEXF", "ruta_salida")
+def exportar_gexf(grafo: dict, ruta_salida: str | Path) -> dict:
+    """Exporta el grafo {nodos, aristas} a GEXF 1.3 (Gephi), sin dependencias.
+
+    Extraído de app.py (``_can_escribir_gexf``, sesión 70).
+    Retorna {ok, ruta, n_nodos, n_aristas}.
+    """
+    from xml.sax.saxutils import quoteattr
+    nodos = grafo.get("nodos", [])
+    aristas = grafo.get("aristas", [])
+    lineas = ['<?xml version="1.0" encoding="UTF-8"?>',
+              '<gexf xmlns="http://gexf.net/1.3" version="1.3">',
+              '<graph mode="static" defaultedgetype="directed">',
+              '<attributes class="node"><attribute id="0" title="tipo" type="string"/>'
+              '<attribute id="1" title="wikidata" type="string"/></attributes>',
+              '<nodes>']
+    for n in nodos:
+        nid = quoteattr(str(n["id"]))
+        lbl = quoteattr(str(n.get("nombre", n["id"])))
+        tipo = quoteattr(str(n.get("tipo", "")))
+        wd = quoteattr(str(n.get("wikidata_id") or ""))
+        lineas.append(f'<node id={nid} label={lbl}>'
+                      f'<attvalues><attvalue for="0" value={tipo}/>'
+                      f'<attvalue for="1" value={wd}/></attvalues></node>')
+    lineas.append('</nodes>')
+    lineas.append('<edges>')
+    for i, a in enumerate(aristas):
+        peso = a.get("confianza")
+        peso = 1.0 if peso is None else peso
+        lineas.append(f'<edge id="{i}" source={quoteattr(str(a["origen_id"]))} '
+                      f'target={quoteattr(str(a["destino_id"]))} '
+                      f'label={quoteattr(str(a.get("predicado", "")))} weight="{peso}"/>')
+    lineas.append('</edges></graph></gexf>')
+    Path(ruta_salida).write_text("\n".join(lineas), encoding="utf-8")
+    return {"ok": True, "ruta": str(ruta_salida), "n_nodos": len(nodos),
+            "n_aristas": len(aristas)}
+
+
+@con_proveniencia("RDF/Turtle", "ruta_salida")
 def exportar_rdf(grafo: dict, ruta_salida: str | Path) -> dict:
     """
     Exporta el grafo {nodos, aristas} a RDF/Turtle. Usa rdflib si está; si no,

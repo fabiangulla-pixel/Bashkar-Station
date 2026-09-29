@@ -112,3 +112,12 @@ def test_cli_verificar_devuelve_1_ante_regresion(tmp_path, monkeypatch):
     assert cli.main(["verificar", str(tmp_path)]) == 0
     (tmp_path / "salidas" / "t" / "p2.txt").write_text("xx", encoding="utf-8")
     assert cli.main(["verificar", str(tmp_path)]) == 1
+
+
+def test_catalogo_rutas_siempre_ofrece_tesseract_y_declara_estado():
+    from core.benchmark_ocr import catalogo_rutas
+    cat = catalogo_rutas()
+    claves = [c[0] for c in cat]
+    assert claves[:2] == ["tesseract", "zonas"]
+    assert {"churro", "pero"} <= set(claves)
+    assert all(len(c) == 3 for c in cat)

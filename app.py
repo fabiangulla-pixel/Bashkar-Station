@@ -15596,35 +15596,9 @@ class BashkarApp(tk.Tk):
 
     @staticmethod
     def _can_escribir_gexf(graf, ruta):
-        """Escribe el grafo canónico a GEXF (Gephi). Sin dependencias externas."""
-        from xml.sax.saxutils import escape
-        nodos, aristas = graf["nodos"], graf["aristas"]
-        lineas = ['<?xml version="1.0" encoding="UTF-8"?>',
-                  '<gexf xmlns="http://gexf.net/1.3" version="1.3">',
-                  '<graph mode="static" defaultedgetype="directed">',
-                  '<attributes class="node"><attribute id="0" title="tipo" type="string"/>'
-                  '<attribute id="1" title="wikidata" type="string"/></attributes>',
-                  '<nodes>']
-        for n in nodos:
-            nid = escape(str(n["id"]))
-            lbl = escape(str(n.get("nombre", n["id"])))
-            tipo = escape(str(n.get("tipo", "")))
-            wd = escape(str(n.get("wikidata_id") or ""))
-            lineas.append(f'<node id="{nid}" label="{lbl}">'
-                          f'<attvalues><attvalue for="0" value="{tipo}"/>'
-                          f'<attvalue for="1" value="{wd}"/></attvalues></node>')
-        lineas.append('</nodes>')
-        lineas.append('<edges>')
-        for i, a in enumerate(aristas):
-            src = escape(str(a["origen_id"]))
-            dst = escape(str(a["destino_id"]))
-            pred = escape(str(a.get("predicado", "")))
-            w = a.get("confianza", 1.0)
-            lineas.append(f'<edge id="{i}" source="{src}" target="{dst}" '
-                          f'label="{pred}" weight="{w}"/>')
-        lineas.append('</edges></graph></gexf>')
-        with open(ruta, "w", encoding="utf-8") as f:
-            f.write("\n".join(lineas))
+        """Escribe el grafo canónico a GEXF (Gephi). Ver core.exploradores."""
+        from core.exploradores import exportar_gexf
+        exportar_gexf(graf, ruta)
 
     # ── Fase 4: export RDF ─────────────────────────────────────────────────────
 
@@ -17397,25 +17371,8 @@ class BashkarApp(tk.Tk):
 
     def _bench_catalogo_rutas(self):
         """Rutas ofrecidas, con su estado real de disponibilidad a la vista."""
-        from core import ocr_churro, ocr_pero
-        catalogo = [
-            ("tesseract", "Tesseract (local, rápido)", ""),
-            ("zonas",     "Tesseract por zonas (deskew + RLSA)", ""),
-        ]
-        motivo_ch = ocr_churro.motivo_no_disponible()
-        if motivo_ch:
-            catalogo.append(("churro", "CHURRO-3B", "no disponible: dependencias"))
-        elif not ocr_churro.esta_descargado():
-            catalogo.append(("churro", "CHURRO-3B (visión, local)",
-                             "requiere descargar ~7 GB la primera vez"))
-        else:
-            catalogo.append(("churro", "CHURRO-3B (visión, local)", "~3 min/página en CPU"))
-
-        if ocr_pero.motivo_no_disponible():
-            catalogo.append(("pero", "PERO-OCR", "no instalado: pip install pero-ocr"))
-        else:
-            catalogo.append(("pero", "PERO-OCR (microfilm de prensa)", "~12 s/página"))
-        return catalogo
+        from core.benchmark_ocr import catalogo_rutas
+        return catalogo_rutas()
 
     def _bench_preparar_oro(self):
         """Exporta las zonas etiquetadas listas para transcribir a mano.
