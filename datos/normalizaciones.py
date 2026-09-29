@@ -200,3 +200,32 @@ ETIQUETAS_ESTADO = {
     "ocr": "○ OCR sin revisar",
     "sin_datos": "— sin texto",
 }
+
+
+def resumen_revision(db_path) -> dict | None:
+    """Cuántas páginas hay en cada estado epistémico. None si no hay base.
+
+    Solo cuenta páginas que pasaron por Normalizar: una página que nunca se
+    abrió allí no está en la tabla, y eso se dice en ``nota`` en vez de
+    contarla como revisada o no.
+    """
+    if not db_path or not Path(db_path).exists():
+        return None
+    con = sqlite3.connect(str(db_path), timeout=30)
+    try:
+        con.row_factory = sqlite3.Row
+        asegurar_esquema(con)
+        filas = [dict(r) for r in con.execute(
+            "SELECT ocr_crudo, norm_ia, norm_usuario FROM normalizaciones")]
+    finally:
+        con.close()
+    conteo = {k: 0 for k in ETIQUETAS_ESTADO}
+    for f in filas:
+        conteo[estado_epistemico(f)] += 1
+    total = len(filas)
+    return {
+        **conteo,
+        "total": total,
+        "pct_revision_humana": round(100 * conteo["revisado"] / total, 1) if total else 0.0,
+        "nota": "Solo páginas registradas en el panel Normalizar.",
+    }

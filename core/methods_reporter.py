@@ -99,6 +99,17 @@ def generar_methods_md(
     n_arts   = estadisticas.get("n_articulos", 0)
     n_ents   = estadisticas.get("n_entidades", 0)
     conf_ocr = estadisticas.get("confianza_ocr_media", None)
+    revision = estadisticas.get("revision")
+
+    def _num(v) -> str:
+        # None = no se pudo calcular: se dice, no se imprime un 0 que parece dato.
+        return "desconocido" if v is None else f"{v:,}"
+
+    try:
+        from core.proveniencia import commit_software
+        commit = commit_software()
+    except Exception:
+        commit = "desconocido"
 
     # ── Construir documento ───────────────────────────────────────────────────
     lineas = [
@@ -121,7 +132,7 @@ def generar_methods_md(
         "| Software | Versión |",
         "|---|---|",
         f"| Python | {py_ver} |",
-        f"| Bashkar Station | {bashkar} |",
+        f"| Bashkar Station | {bashkar} (commit `{commit}`) |",
         f"| Tesseract OCR | {tes_ver} |",
     ]
     for etiq, ver in versiones_paq:
@@ -134,8 +145,8 @@ def generar_methods_md(
         "## 2. Corpus y preprocesamiento",
         "",
         f"- **Archivos procesados:** {n_arch} número(s) de la publicación",
-        f"- **Páginas analizadas:** {n_pags:,}",
-        f"- **Palabras extraídas:** {n_words:,}",
+        f"- **Páginas analizadas:** {_num(n_pags)}",
+        f"- **Palabras extraídas:** {_num(n_words)}",
         f"- **Unidades segmentadas:** {n_arts} artículos",
     ]
 
@@ -172,13 +183,33 @@ def generar_methods_md(
             "  > La lematización fue desactivada para preservar la variación ortográfica "
             "histórica como dato lingüístico.")
 
+    lineas += ["", "### 2.3 Revisión humana del texto", ""]
+    if revision and revision.get("total"):
+        lineas += [
+            "El texto de cada página conserva tres capas separadas: la salida del OCR "
+            "(nunca sobrescrita), la corrección automática y la revisión del investigador.",
+            "",
+            "| Estado del texto | Páginas |",
+            "|---|---:|",
+            f"| Revisado por el investigador | {revision['revisado']:,} |",
+            f"| Solo corrección automática | {revision['corregido_ia']:,} |",
+            f"| OCR sin revisar | {revision['ocr']:,} |",
+            "",
+            f"**{revision['pct_revision_humana']}%** de las páginas registradas en el "
+            f"panel de normalización ({revision['total']:,}) tuvo revisión humana. "
+            f"{revision.get('nota', '')}",
+        ]
+    else:
+        lineas.append("No hay registro de revisión humana: el texto analizado es salida "
+                      "de OCR y, si se aplicó, corrección automática sin revisar.")
+
     lineas += [
         "",
         "---",
         "",
         "## 3. Reconocimiento de entidades nombradas (NER)",
         "",
-        f"- **Entidades únicas identificadas:** {n_ents:,}",
+        f"- **Entidades únicas identificadas:** {_num(n_ents)}",
         "- **Categorías:** personas, lugares, organizaciones, obras/publicaciones,",
         "  eventos históricos, cargos/títulos",
         "- **Pipeline:** spaCy `es_core_news_sm` (capa 1) + refinamiento con",
@@ -217,6 +248,22 @@ def generar_methods_md(
         f"*Documento generado automáticamente por Bashkar Station v{bashkar}.*",
         "*Revisa y complementa antes de incluir en publicación.*",
     ]
+
+    limitaciones = []
+    if n_pags is None or n_words is None:
+        limitaciones.append("No se pudo determinar el número de páginas o de palabras "
+                            "procesadas: ejecutar la extracción antes de exportar.")
+    if not revision or not revision.get("total"):
+        limitaciones.append("Sin revisión humana registrada del texto OCR.")
+    elif revision["pct_revision_humana"] < 100:
+        limitaciones.append(f"{100 - revision['pct_revision_humana']:.1f}% de las páginas "
+                            "registradas no tuvo revisión humana.")
+    if commit.endswith("+sucio") or commit == "desconocido":
+        limitaciones.append(f"Versión del software no reproducible exactamente (commit: {commit}).")
+    lineas += ["", "---", "", "## Limitaciones conocidas", ""]
+    lineas += [f"- {x}" for x in limitaciones] or ["- Ninguna detectada automáticamente."]
+    lineas += ["", "_Las secciones con descripción del pipeline son genéricas: verificar "
+               "que coinciden con las etapas realmente usadas antes de publicar._"]
 
     contenido = "\n".join(lineas)
     ruta.write_text(contenido, encoding="utf-8")

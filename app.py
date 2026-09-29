@@ -18635,13 +18635,8 @@ class BashkarApp(tk.Tk):
         if not corpus_txt:
             messagebox.showwarning("Sin corpus", "Extrae el texto del corpus primero.")
             return
-        articulos = []
-        for i, t in enumerate(corpus_txt):
-            art_id = f"art_{i:04d}"
-            ner_art = {}
-            for cat, ents in ner_global.items():
-                ner_art[cat] = [e for e, arts in ents.items() if art_id in arts]
-            articulos.append({"id": art_id, "texto": t or "", "ner": ner_art})
+        from core.servicios_exportacion import articulos_para_tei
+        articulos = articulos_para_tei(corpus_txt, ner_global)
         try:
             from pathlib import Path as _PPath
 
@@ -18788,28 +18783,9 @@ class BashkarApp(tk.Tk):
             return
         try:
             from core.methods_reporter import generar_methods_md
-            cfg = {
-                "publicacion":    getattr(ST, "publicacion", ""),
-                "periodo":        getattr(ST, "periodo", ""),
-                "investigador":   getattr(ST, "investigador", ""),
-                "institucion":    getattr(ST, "institucion", ""),
-                "bashkar_version": APP_VERSION,
-                "dpi":            getattr(ST, "dpi", "150"),
-                "lang":           getattr(ST, "lang", "spa"),
-                "lematizar":      getattr(ST, "lematizar", True),
-                "modelos_etapa":  getattr(ST, "modelos_etapa", {}),
-                "archivos_sel":   getattr(ST, "archivos_sel", []),
-            }
-            stats = {
-                "n_paginas":   len(getattr(ST, "archivos_sel", []) or []),
-                "n_palabras":  0,
-                "n_articulos": (len(ST.df_articulos)
-                               if ST.df_articulos is not None else 0),
-                "n_entidades": sum(len(v) for v in
-                                   (getattr(ST, "indice_ner_global", {}) or {}).values()
-                                   if isinstance(v, dict)),
-            }
-            ruta = generar_methods_md(cfg, stats, Path(dest))
+            from core.servicios_exportacion import config_methods, estadisticas_methods
+            ruta = generar_methods_md(config_methods(ST, APP_VERSION),
+                                      estadisticas_methods(ST), Path(dest))
             messagebox.showinfo("METHODS.md generado",
                                 f"✅ Sección de metodología guardada:\n{ruta}\n\n"
                                 f"Revisa y complementa antes de publicar.")
@@ -18872,15 +18848,19 @@ class BashkarApp(tk.Tk):
             # 1. XML-TEI
             _log("Exportando TEI…")
             try:
+                from core.servicios_exportacion import articulos_para_tei
                 from core.tei_engine import exportar_corpus_tei
                 corpus_txt = getattr(ST, "corpus_txt", []) or []
-                arts_tei = [{"id": f"art_{i:04d}", "texto": t}
-                            for i, t in enumerate(corpus_txt)]
+                arts_tei = articulos_para_tei(
+                    corpus_txt, getattr(ST, "indice_ner_global", {}) or {})
                 if arts_tei:
+                    # Antes pasaba titulo=/fecha=, que la función no acepta: el
+                    # TypeError dejaba el paquete SIEMPRE sin corpus.xml.
                     exportar_corpus_tei(
                         arts_tei, tmp / "corpus.xml",
-                        titulo=getattr(ST, "publicacion", ""),
-                        fecha=getattr(ST, "periodo", ""),
+                        proyecto_nombre=getattr(ST, "publicacion", "") or "Corpus",
+                        investigador=getattr(ST, "investigador", "") or "Investigador",
+                        institucion=getattr(ST, "institucion", "") or "",
                     )
             except Exception as e:
                 errores.append(f"TEI: {e}")
@@ -18937,28 +18917,12 @@ class BashkarApp(tk.Tk):
             _log("Generando METHODS.md…")
             try:
                 from core.methods_reporter import generar_methods_md
-                cfg_methods = {
-                    "publicacion":    getattr(ST, "publicacion", ""),
-                    "periodo":        getattr(ST, "periodo", ""),
-                    "investigador":   getattr(ST, "investigador", ""),
-                    "institucion":    getattr(ST, "institucion", ""),
-                    "bashkar_version": APP_VERSION,
-                    "dpi":            getattr(ST, "dpi", "150"),
-                    "lang":           getattr(ST, "lang", "spa"),
-                    "lematizar":      getattr(ST, "lematizar", True),
-                    "modelos_etapa":  getattr(ST, "modelos_etapa", {}),
-                    "archivos_sel":   getattr(ST, "archivos_sel", []),
-                }
-                stats_methods = {
-                    "n_paginas":   meta.get("n_archivos", 0),
-                    "n_palabras":  0,
-                    "n_articulos": (len(ST.df_articulos)
-                                   if ST.df_articulos is not None else 0),
-                    "n_entidades": sum(len(v) for v in
-                                      (getattr(ST, "indice_ner_global", {}) or {}).values()
-                                      if isinstance(v, dict)),
-                }
-                generar_methods_md(cfg_methods, stats_methods, tmp / "METHODS.md")
+                from core.servicios_exportacion import (
+                    config_methods,
+                    estadisticas_methods,
+                )
+                generar_methods_md(config_methods(ST, APP_VERSION),
+                                   estadisticas_methods(ST), tmp / "METHODS.md")
             except Exception as e:
                 errores.append(f"METHODS.md: {e}")
 
