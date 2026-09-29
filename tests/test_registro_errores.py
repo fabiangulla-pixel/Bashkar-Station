@@ -59,3 +59,9 @@ def test_registrar_anonimiza_rutas(log):
     RE.registrar(f"fallo en {Path.home()}\\proyecto.db")
     texto = log.read_text(encoding="utf-8")
     assert str(Path.home()) not in texto and "~" in texto
+
+
+def test_los_tests_no_escriben_en_el_registro_real():
+    import os
+    assert os.environ.get("BASHKAR_REGISTRO")
+    assert "BashkarStation" not in str(RE.ruta_registro())

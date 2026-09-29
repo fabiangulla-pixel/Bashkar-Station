@@ -26,6 +26,12 @@ _logger: logging.Logger | None = None
 
 
 def ruta_registro() -> Path:
+    """``BASHKAR_REGISTRO`` manda (la usan los tests para no ensuciar el
+    registro real del investigador); si no, la carpeta de datos del usuario."""
+    import os
+    forzada = os.environ.get("BASHKAR_REGISTRO", "").strip()
+    if forzada:
+        return Path(forzada)
     from core.plataforma import dir_datos_usuario
     return dir_datos_usuario("BashkarStation") / "logs" / "errores.log"
 

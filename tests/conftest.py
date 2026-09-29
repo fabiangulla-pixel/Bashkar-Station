@@ -4,8 +4,16 @@ tests/conftest.py — Fixtures compartidas para todos los tests de Bashkar Stati
 
 import csv
 import json
+import os
+import tempfile
 
 import pytest
+
+# Los tests de GUI destruyen ventanas con hilos todavía vivos; sus errores
+# no deben caer en el registro real del investigador (sesión 70: miles de
+# líneas "main thread is not in main loop" tras cada corrida de la suite).
+os.environ.setdefault("BASHKAR_REGISTRO",
+                      os.path.join(tempfile.gettempdir(), "bashkar_tests_errores.log"))
 
 
 @pytest.fixture
