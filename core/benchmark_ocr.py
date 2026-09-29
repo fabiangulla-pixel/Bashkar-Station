@@ -298,3 +298,91 @@ def catalogo_rutas() -> list[tuple[str, str, str]]:
     else:
         catalogo.append(("pero", "PERO-OCR (microfilm de prensa)", "~12 s/página"))
     return catalogo
+
+
+def correr_ruta(ruta: str, imagenes: list, log=print, out_dir=None,
+                numero_etq: str = "") -> dict[str, str]:
+    """Ejecuta UNA ruta de OCR sobre las imágenes. Devuelve {nombre_pagina: texto}.
+
+    Extraído de app.py (``_bench_correr_ruta``, sesión 70): así la GUI y el
+    benchmark de regresión (``core.benchmark_regresion``) corren exactamente
+    el mismo código. No toca Tk; puede correr en un hilo.
+
+    ``out_dir`` + ``numero_etq`` permiten a CHURRO usar las zonas etiquetadas.
+    """
+    import time
+
+    def avance(i, total, nombre, seg):
+        log(f"    {i}/{total}  {nombre}  ({seg:.1f} s)")
+
+    def _lote(fn):
+        salida = {}
+        for i, img in enumerate(imagenes):
+            t0 = time.perf_counter()
+            salida[Path(img).stem] = fn(img) or ""
+            avance(i + 1, len(imagenes), Path(img).stem, time.perf_counter() - t0)
+        return salida
+
+    if ruta == "churro":
+        from core import ocr_churro
+        from core.zone_labeler import cargar_pagina
+
+        def _una(img):
+            img = Path(img)
+            pag = cargar_pagina(out_dir, numero_etq, img.stem) if out_dir and numero_etq else None
+            if pag and pag.zonas:
+                # Solo zonas de texto: evita gastar tokens visuales en fotos y publicidad.
+                log(f"    {img.stem}: usando {len(pag.zonas)} zona(s) etiquetada(s)")
+                return ocr_churro.ocr_pagina_con_zonas(img, pag.zonas, callback=log)["texto"]
+            log(f"    {img.stem}: sin etiquetar — página completa (más lento)")
+            return ocr_churro.ocr_pagina(img)
+        try:
+            return _lote(_una)
+        finally:
+            # CHURRO en float32 ocupa ~12 GB: no dejarlo residente, tampoco si
+            # el lote falla a la mitad.
+            ocr_churro.liberar()
+            log("    (modelo CHURRO liberado de memoria)")
+    if ruta == "pero":
+        from core import ocr_pero
+        candidatas = ocr_pero.rutas_config_probables()
+        if not candidatas:
+            raise RuntimeError(
+                "No se encontró el config.ini de PERO-OCR. Descarga un motor "
+                "de https://pero-ocr.fit.vutbr.cz")
+        return ocr_pero.ocr_lote([str(p) for p in imagenes], candidatas[0],
+                                 callback=avance)
+    if ruta == "zonas":
+        return _lote(_ocr_zonas_automaticas)
+    if ruta != "tesseract":
+        raise ValueError(f"ruta de OCR desconocida: {ruta!r}")
+    from core.ocr_engine import ocr_pagina
+    return _lote(lambda img: ocr_pagina(Path(img), lang="spa")[0])
+
+
+def _ocr_zonas_automaticas(img) -> str:
+    """Ruta "zonas": deskew + bloques RLSA + OCR por zona, sin etiquetas manuales.
+
+    Antes la ruta llamaba ``layout_tesseract.ocr_pagina_con_zonas(ruta)`` con
+    una firma que esa función nunca tuvo (exige out_dir, numero y pagina, y
+    devuelve una tupla): la ruta fallaba siempre con TypeError.
+
+    Trabaja sobre una COPIA temporal: el deskew de ``analizar_pagina_local``
+    guarda la imagen enderezada encima del archivo, lo que en un benchmark
+    modificaría las imágenes de referencia en silencio.
+    """
+    import shutil
+    import tempfile
+
+    from core.layout_tesseract import analizar_pagina_local, ocr_por_zonas
+    img = Path(img)
+    with tempfile.TemporaryDirectory(prefix="bashkar_zonas_") as tmp:
+        copia = Path(tmp) / img.name
+        shutil.copy2(img, copia)
+        zonas = analizar_pagina_local(copia)
+        if zonas:
+            texto = ocr_por_zonas(copia, zonas)["texto"]
+            if texto.strip():
+                return texto
+        from core.ocr_engine import ocr_pagina
+        return ocr_pagina(copia, lang="spa")[0]

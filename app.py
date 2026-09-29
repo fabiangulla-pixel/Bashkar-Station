@@ -17620,73 +17620,13 @@ class BashkarApp(tk.Tk):
 
     def _bench_correr_ruta(self, ruta: str, imagenes: list, log,
                            numero_etq: str = "") -> dict:
-        """Ejecuta UNA ruta sobre las imágenes. Devuelve {nombre_pagina: texto}.
+        """Ejecuta UNA ruta sobre las imágenes. Ver core.benchmark_ocr.correr_ruta.
 
-        Corre DENTRO del hilo del benchmark: no debe tocar Tk. `numero_etq` (el
-        número del corpus cuyas etiquetas hay que buscar) viene ya leído desde
-        el hilo principal.
+        Corre DENTRO del hilo del benchmark: no toca Tk. `numero_etq` viene ya
+        leído desde el hilo principal.
         """
-        def avance(i, total, nombre, seg):
-            log(f"    {i}/{total}  {nombre}  ({seg:.1f} s)")
-
-        if ruta == "churro":
-            from core import ocr_churro
-
-            # Si la página está etiquetada, se transcribe SOLO por zonas de
-            # texto: es el flujo del proyecto (el investigador etiqueta primero
-            # la tipología) y evita gastar miles de tokens visuales en
-            # fotografías, publicidad y filetes. Sin etiquetas, página completa.
-            from core.zone_labeler import cargar_pagina
-            salida = {}
-            numero = numero_etq          # leído en el hilo principal
-            try:
-                for i, p in enumerate(imagenes):
-                    pag_etq = None
-                    if ST.out_dir and numero:
-                        pag_etq = cargar_pagina(ST.out_dir, numero, p.stem)
-                    if pag_etq and pag_etq.zonas:
-                        log(f"    {p.stem}: usando {len(pag_etq.zonas)} zona(s) etiquetada(s)")
-                        r = ocr_churro.ocr_pagina_con_zonas(p, pag_etq.zonas,
-                                                            callback=log)
-                        salida[p.stem] = r["texto"]
-                    else:
-                        log(f"    {p.stem}: sin etiquetar — página completa (más lento)")
-                        salida[p.stem] = ocr_churro.ocr_pagina(p)
-                    avance(i + 1, len(imagenes), p.stem, 0.0)
-            finally:
-                # CHURRO en float32 ocupa ~12 GB, más de la mitad de la RAM de un
-                # portátil típico. Si se queda residente al acabar el lote, todo
-                # lo que venga después —incluido el propio benchmark comparando
-                # con otras rutas— trabaja contra el archivo de paginación y el
-                # equipo se arrastra. En `finally` porque un error a mitad de
-                # lote es justo cuando peor viene dejar 12 GB colgados.
-                ocr_churro.liberar()
-                log("    (modelo CHURRO liberado de memoria)")
-            return salida
-        if ruta == "pero":
-            from core import ocr_pero
-            candidatas = ocr_pero.rutas_config_probables()
-            if not candidatas:
-                raise RuntimeError(
-                    "No se encontró el config.ini de PERO-OCR. Descarga un motor "
-                    "de https://pero-ocr.fit.vutbr.cz")
-            return ocr_pero.ocr_lote([str(p) for p in imagenes],
-                                     candidatas[0], callback=avance)
-        if ruta == "zonas":
-            from core.layout_tesseract import ocr_pagina_con_zonas
-            salida = {}
-            for i, p in enumerate(imagenes):
-                salida[p.stem] = ocr_pagina_con_zonas(str(p)) or ""
-                avance(i + 1, len(imagenes), p.stem, 0.0)
-            return salida
-        # Ruta por defecto: Tesseract página completa
-        from core.ocr_engine import ocr_pagina
-        salida = {}
-        for i, p in enumerate(imagenes):
-            texto, _conf = ocr_pagina(p, lang="spa")
-            salida[p.stem] = texto or ""
-            avance(i + 1, len(imagenes), p.stem, 0.0)
-        return salida
+        from core.benchmark_ocr import correr_ruta
+        return correr_ruta(ruta, imagenes, log, out_dir=ST.out_dir, numero_etq=numero_etq)
 
     def _bench_fin(self, resultados):
         """Vuelca los resultados en la tabla. Solo hilo principal."""

@@ -22,6 +22,13 @@ Rutas ya cargadas en `estampa-1939/salidas/`:
 | `vision_llm` | Pase de IA de visión, `vision_ocr/salida/rev_estampa_mar_1939/` |
 | `candidato_piloto` | Texto candidato del piloto (`_prueba5/03_ocr`), el mismo que vio el juez de IA |
 
+**Limitación de las imágenes del piloto:** están reducidas a ~1063×1500 px
+(se achicaron para el juez de IA). A esa resolución la ruta `zonas` (deskew +
+bloques RLSA) clasifica bloques de texto como fotografía y recupera 1-96
+palabras donde Tesseract de página completa saca ~600: por eso no se cargó.
+Para medir `zonas` en serio hacen falta las imágenes a resolución completa
+(asset del release `vision-ocr-entrada-v1`).
+
 ## Cómo completarlo
 
 1. En `estampa-1939/benchmark.json`, escribe tu nombre en

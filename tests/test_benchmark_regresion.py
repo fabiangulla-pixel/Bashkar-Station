@@ -121,3 +121,56 @@ def test_catalogo_rutas_siempre_ofrece_tesseract_y_declara_estado():
     assert claves[:2] == ["tesseract", "zonas"]
     assert {"churro", "pero"} <= set(claves)
     assert all(len(c) == 3 for c in cat)
+
+
+def test_correr_ruta_tesseract_mide_tiempo_y_usa_stem(tmp_path, monkeypatch):
+    from core import benchmark_ocr, ocr_engine
+    monkeypatch.setattr(ocr_engine, "ocr_pagina", lambda p, lang="spa": (f"txt {p.stem}", 90.0))
+    log = []
+    out = benchmark_ocr.correr_ruta("tesseract", [tmp_path / "p1.jpg"], log.append)
+    assert out == {"p1": "txt p1"}
+    assert log and log[0].strip().startswith("1/1  p1")
+
+
+def test_correr_ruta_desconocida_falla():
+    from core import benchmark_ocr
+    with pytest.raises(ValueError):
+        benchmark_ocr.correr_ruta("magia", [], print)
+
+
+def test_churro_se_libera_aunque_falle_el_lote(tmp_path, monkeypatch):
+    from core import benchmark_ocr, ocr_churro
+    liberado = []
+    monkeypatch.setattr(ocr_churro, "ocr_pagina", lambda p: 1 / 0)
+    monkeypatch.setattr(ocr_churro, "liberar", lambda: liberado.append(True))
+    with pytest.raises(ZeroDivisionError):
+        benchmark_ocr.correr_ruta("churro", [tmp_path / "p1.jpg"], lambda m: None)
+    assert liberado == [True]
+
+
+def test_generar_salidas_escribe_por_page_id(tmp_path, monkeypatch):
+    from core import benchmark_ocr
+    _bench(tmp_path)
+    (tmp_path / "imagenes").mkdir()
+    (tmp_path / "imagenes" / "p1.jpg").write_bytes(b"x")
+    monkeypatch.setattr(benchmark_ocr, "correr_ruta",
+                        lambda ruta, imgs, log: {i.stem: f"{ruta}:{i.stem}" for i in imgs})
+    assert BR.generar_salidas(tmp_path, "zonas") == 1
+    assert (tmp_path / "salidas" / "zonas" / "p1.txt").read_text(encoding="utf-8") == "zonas:p1"
+
+
+def test_ruta_zonas_no_modifica_la_imagen_original(tmp_path, monkeypatch):
+    """El deskew de analizar_pagina_local guarda encima del archivo: la ruta
+    debe trabajar sobre una copia para no alterar imágenes de referencia."""
+    from core import benchmark_ocr, layout_tesseract
+
+    def analizar_que_escribe(ruta, **kw):
+        ruta.write_bytes(b"ENDEREZADA")
+        return ["zona"]
+    monkeypatch.setattr(layout_tesseract, "analizar_pagina_local", analizar_que_escribe)
+    monkeypatch.setattr(layout_tesseract, "ocr_por_zonas",
+                        lambda ruta, zonas: {"texto": "texto por zonas"})
+    img = tmp_path / "p1.jpg"
+    img.write_bytes(b"ORIGINAL")
+    assert benchmark_ocr.correr_ruta("zonas", [img], lambda m: None) == {"p1": "texto por zonas"}
+    assert img.read_bytes() == b"ORIGINAL"

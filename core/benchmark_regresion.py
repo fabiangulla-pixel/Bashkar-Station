@@ -254,26 +254,34 @@ def comparar_con_base(actual: dict, base: dict, tolerancia: float = TOLERANCIA) 
 
 # ── Generar salidas con el pipeline real ──────────────────────────────────────
 
-def generar_salidas_tesseract(carpeta, nombre_ruta: str = "tesseract",
-                              lang: str = "spa") -> int:
-    """Corre ``core.ocr_engine.ocr_pagina`` (la misma función que usa la app)
-    sobre las imágenes del benchmark. Devuelve cuántas páginas escribió."""
-    from core.ocr_engine import ocr_pagina
+def generar_salidas(carpeta, ruta: str = "tesseract", log=print) -> int:
+    """Corre una ruta de OCR (``core.benchmark_ocr.correr_ruta``, el mismo
+    código que usa la app) sobre las imágenes del benchmark y guarda sus
+    salidas en ``salidas/<ruta>/``. Devuelve cuántas páginas escribió."""
+    from core.benchmark_ocr import correr_ruta
     carpeta = Path(carpeta)
     # Producir salidas no requiere referencia: se pueden generar antes de transcribir.
     man = cargar_manifiesto(carpeta, exigir_referencia=False)
-    destino = carpeta / "salidas" / nombre_ruta
-    destino.mkdir(parents=True, exist_ok=True)
-    n = 0
+    imagenes = []
     for caso in man["casos"]:
         img = carpeta / caso.get("imagen", f"imagenes/{caso['page_id']}.jpg")
-        if not img.exists():
-            continue
-        texto, _conf = ocr_pagina(img, lang=lang)
-        (destino / f"{caso['page_id']}.txt").write_text(texto, encoding="utf-8")
-        n += 1
+        if img.exists():
+            imagenes.append((caso["page_id"], img))
+    textos = correr_ruta(ruta, [img for _, img in imagenes], log)
+    destino = carpeta / "salidas" / ruta
+    destino.mkdir(parents=True, exist_ok=True)
+    n = 0
+    for pid, img in imagenes:
+        if img.stem in textos:
+            (destino / f"{pid}.txt").write_text(textos[img.stem], encoding="utf-8")
+            n += 1
     return n
 
+
+def generar_salidas_tesseract(carpeta, nombre_ruta: str = "tesseract",
+                              lang: str = "spa") -> int:
+    """Compatibilidad: equivale a ``generar_salidas(carpeta, "tesseract")``."""
+    return generar_salidas(carpeta, "tesseract")
 
 def tabla_markdown(resultado: dict) -> str:
     filas = ["| Ruta | Págs | CER | WER | Fusión | Fragm. | Cobertura |",

@@ -2,7 +2,7 @@
 
 Uso:
     python scripts/benchmark_ocr_regresion.py evaluar  benchmark/estampa-1939
-    python scripts/benchmark_ocr_regresion.py generar  benchmark/estampa-1939   # corre Tesseract
+    python scripts/benchmark_ocr_regresion.py generar  benchmark/estampa-1939 --ruta zonas
     python scripts/benchmark_ocr_regresion.py base     benchmark/estampa-1939   # congela línea base
     python scripts/benchmark_ocr_regresion.py verificar benchmark/estampa-1939  # sale con 1 si empeora
 
@@ -26,6 +26,8 @@ def main(argv=None) -> int:
     ap.add_argument("accion", choices=["evaluar", "generar", "base", "verificar"])
     ap.add_argument("carpeta", type=Path)
     ap.add_argument("--tolerancia", type=float, default=BR.TOLERANCIA)
+    ap.add_argument("--ruta", default="tesseract",
+                    help="ruta de OCR para 'generar': tesseract, zonas, churro, pero")
     ap.add_argument("--json", action="store_true", help="imprimir el resultado completo")
     a = ap.parse_args(argv)
     for flujo in (sys.stdout, sys.stderr):
@@ -34,8 +36,8 @@ def main(argv=None) -> int:
 
     try:
         if a.accion == "generar":
-            n = BR.generar_salidas_tesseract(a.carpeta)
-            print(f"{n} páginas procesadas con Tesseract")
+            n = BR.generar_salidas(a.carpeta, a.ruta)
+            print(f"{n} páginas procesadas con la ruta '{a.ruta}'")
             return 0
         res = BR.evaluar(a.carpeta)
     except BR.ReferenciaNoHumana as e:
