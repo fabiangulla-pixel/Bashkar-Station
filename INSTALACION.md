@@ -149,6 +149,25 @@ No es una precaución teórica: al migrar al equipo nuevo, pip resolvió
 matplotlib 3.11, que eliminó un argumento que el código usaba, y el gráfico de
 confianza de OCR reventaba con el código intacto.
 
+### Qué ruta usar
+
+| Para… | Instalar con | Por qué |
+|---|---|---|
+| Investigación y publicación | `requirements.lock.txt` | Resultados reproducibles: mismas versiones con que se midió |
+| Compilar el `.exe` | `requirements.lock.txt` | El ejecutable debe empaquetar versiones probadas |
+| CI (GitHub Actions) | `requirements.lock.txt` | Es lo que se verifica en cada push |
+| Desarrollo con librerías recientes | `requirements.txt` | Rangos `>=`; puede romper algo, y la suite lo dirá |
+| Despliegue web (Render) | `requirements.txt` (ver `render.yaml`) | Linux: el lock trae ruedas de Windows |
+
+`python scripts/verificar_dependencias.py` comprueba que los dos archivos no se
+hayan separado: todo paquete de `requirements.txt` debe estar fijado en el
+lock, con una versión dentro de su rango. La CI lo corre en cada push.
+
+Cada manifiesto de proveniencia (`*.proveniencia.json`, `linea_base.json`)
+registra las versiones realmente instaladas y los componentes externos
+(Tesseract, idioma español, Poppler, diccionario), leídos con las mismas rutas
+que usa la aplicación.
+
 Para desarrollar (tests y lint) hace falta además:
 
 ```

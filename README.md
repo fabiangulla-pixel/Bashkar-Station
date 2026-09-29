@@ -174,9 +174,12 @@ se commitea).
 
 ## Arquitectura técnica
 
+Diagramas C4 (contexto, contenedores, componentes y código) y estado medido
+del monolito en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md).
+
 ```
 bashkar_station/
-├── app.py              # Frontend escritorio (Tkinter, ~20.000 líneas)
+├── app.py              # Frontend escritorio (Tkinter, ~21.500 líneas; en extracción)
 ├── ui_redesign.py      # Identidad visual (tokens de color) + panel Inicio
 ├── servidor_web.py     # Frontend web (http.server stdlib, sin frameworks)
 ├── web/                # Frontend web: HTML/CSS/JS vanilla, sin build
@@ -199,7 +202,9 @@ bashkar_station/
 │   └── voice_dictation.py      # Dictado por voz en Normalizar
 ├── datos/              # Capa de datos SQLite
 │   ├── schema.py       # DDL: articulos, ocr, entidades, notas_investigacion…
+│   ├── normalizaciones.py  # Capas OCR / IA / revisión humana + historial
 │   └── repositorio.py  # DAO único punto de acceso
+├── benchmark/          # Benchmark OCR formal (referencias humanas + línea base)
 └── tests/              # 1000+ tests (pytest)
 ```
 
@@ -260,6 +265,16 @@ las compara contra una transcripción de referencia hecha a mano:
 | **s/página** | costo en tiempo | decide qué ruta sirve para el corpus completo y cuál solo para la muestra |
 
 Exporta a CSV o como tabla Markdown lista para pegar en un artículo.
+
+### Benchmark de regresión
+
+`benchmark/` convierte la medición en una prueba repetible: cada caso declara
+su imagen, su transcripción humana y los estratos (revista, año, tipografía,
+calidad de imagen). `scripts/benchmark_ocr_regresion.py verificar` compara
+contra una línea base congelada y sale con error si una ruta empeora. Añade
+dos tasas que el CER esconde: **fusión** de palabras y **fragmentación**. Se
+niega a medir contra referencias que no sean humanas. Ver
+[benchmark/README.md](benchmark/README.md).
 
 ### Rutas comparables
 
@@ -336,6 +351,19 @@ Bashkar Station genera automáticamente un archivo **METHODS.md** con:
 Este documento está diseñado para incluirse directamente en la sección
 de Metodología de papers en revistas de humanidades digitales.
 
+Además:
+
+- **Cada exportación** (TEI, BibTeX, OKF, Excel, PDF buscable, ALTO, PPTX)
+  deja al lado un `<archivo>.proveniencia.json` con las fuentes, el commit del
+  software (`+sucio` si había cambios sin commitear), la versión de Python y de
+  las librerías relevantes, y el aviso de licencias. Lo que no se sabe figura
+  como `desconocido`: nunca se rellena.
+- **El OCR original nunca se sobrescribe.** El texto de cada página tiene tres
+  capas (OCR, corrección automática, revisión humana) y cada cambio queda en
+  un historial de solo inserción con autor, hora y commit.
+- **Las rutas personales** (`C:\Users\<nombre>`) se reemplazan por `~` en
+  los manifiestos.
+
 ---
 
 ## Citación
@@ -387,8 +415,10 @@ python -m pytest tests/test_integration_pipeline.py -v
 python -m pytest tests/test_v11_features.py -v
 ```
 
-**Estado actual:** 1410 tests, 0 fallos (23 se saltan por requerir red o
-dependencias opcionales). Verificado el 26-ago-2026 en Python 3.14.
+**Estado actual:** ver el badge de CI y la última entrada del
+[CHANGELOG](CHANGELOG.md). La CI (`.github/workflows/ci.yml`) instala desde
+cero con el lock, corre la suite completa y falla si corren menos tests de los
+esperados: una suite verde que se salta tests prueba menos, no más.
 
 ---
 
@@ -401,9 +431,16 @@ incluso con fines comerciales, conservando el aviso de copyright y de licencia
 e indicando los cambios que hagas. La licencia incluye una concesión expresa de
 patentes. Se ofrece sin garantías.
 
-El corpus de la revista *Estampa* **no** se distribuye con el software: fue
-digitalizado por la Biblioteca Nacional de Colombia y tiene sus propias
-condiciones de uso. La licencia de este repositorio cubre únicamente el código.
+La licencia de este repositorio cubre **únicamente el código**. Hay tres
+capas con licencias distintas:
+
+| Capa | Licencia | ¿Se distribuye aquí? |
+|---|---|---|
+| Código | Apache 2.0 | Sí |
+| Corpus (*Estampa*, digitalizado por la Biblioteca Nacional de Colombia) | Condiciones de la BNC | No, salvo la muestra de investigación de `ground_truth_piloto/` y los textos OCR de `vision_ocr/salida/` y `benchmark/` |
+| Modelos (spaCy, Tesseract, Kraken/CATMuS, CHURRO, BERT) | Cada uno la suya | No: se descargan aparte |
+
+Las exportaciones repiten este aviso en su manifiesto de proveniencia.
 
 ---
 

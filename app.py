@@ -202,6 +202,17 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 APP_VERSION = "12.3"
 
 
+# Símbolo por capa vigente de una página en el panel Normalizar. La lista
+# distingue lo que revisó una persona de lo que solo corrigió una máquina.
+_SIMBOLOS_ESTADO_NORM = {"revisado": "✓", "corregido_ia": "◐", "ocr": "○",
+                         "sin_datos": "·"}
+
+
+def _simbolo_estado_norm(bloque: dict) -> str:
+    from datos.normalizaciones import estado_epistemico
+    return _SIMBOLOS_ESTADO_NORM[estado_epistemico(bloque)]
+
+
 def _autor_local() -> str:
     """Nombre de la cuenta local, para firmar las revisiones humanas."""
     try:
@@ -8778,7 +8789,10 @@ class BashkarApp(tk.Tk):
         izq.pack_propagate(False)
 
         tk.Label(izq, text="Páginas / bloques", bg=CARD_BG, fg=TXT_PRI,
-                 font=("Segoe UI", 9, "bold")).pack(pady=(8, 4), padx=8, anchor="w")
+                 font=("Segoe UI", 9, "bold")).pack(pady=(8, 0), padx=8, anchor="w")
+        tk.Label(izq, text="✓ revisado  ◐ solo IA  ○ OCR sin revisar",
+                 bg=CARD_BG, fg=TXT_SEC, font=("Segoe UI", 8)).pack(
+                     pady=(0, 4), padx=8, anchor="w")
 
         self._norm_lb = tk.Listbox(izq, bg=CARD_BG, fg=TXT_SEC, selectbackground=AB_SEL,
                                     selectforeground="#E8E5DF", relief="flat",
@@ -8793,6 +8807,13 @@ class BashkarApp(tk.Tk):
         # Panel derecho: 4 vistas
         der = tk.Frame(mid, bg=CONTENT_BG)
         der.pack(side="left", fill="both", expand=True)
+
+        # Qué es el texto vigente de esta página: evidencia (OCR), corrección
+        # de máquina o revisión humana. Una interfaz atractiva no debe borrar
+        # esa diferencia.
+        self._lbl_norm_epistemico = tk.Label(der, text="", bg=CONTENT_BG, fg=TXT_SEC,
+                                             font=("Segoe UI", 9), anchor="w")
+        self._lbl_norm_epistemico.pack(fill="x", pady=(0, 4))
 
         # Fila 1: imagen + OCR crudo
         fila1 = tk.Frame(der, bg=CONTENT_BG)
@@ -8958,7 +8979,7 @@ class BashkarApp(tk.Tk):
         self._norm_lb.delete(0, "end")
         avisos_ocr = getattr(self, "_avisos_ocr", {})
         for b in bloques:
-            estado = "✓" if b["norm_usuario"] else "·"
+            estado = _simbolo_estado_norm(b)
             alerta = " ⚠" if (b["numero"], b["pagina"]) in avisos_ocr else ""
             self._norm_lb.insert("end", f"{estado} {b['pagina']}{alerta}")
 
@@ -9000,8 +9021,28 @@ class BashkarApp(tk.Tk):
         self._norm_txt_ia.delete("1.0", "end")
         self._norm_txt_ia.insert("1.0", b["norm_ia"])
 
+        self._norm_actualizar_epistemico(b)
+
         # Imagen del bloque
         self._norm_mostrar_imagen(b)
+
+    def _norm_actualizar_epistemico(self, b: dict):
+        """Muestra el estado de la página y quién tocó cada capa, y cuándo."""
+        lbl = getattr(self, "_lbl_norm_epistemico", None)
+        if lbl is None:
+            return
+        from datos import normalizaciones as NZ
+        texto = NZ.ETIQUETAS_ESTADO[NZ.estado_epistemico(b)]
+        try:
+            fila = NZ.leer(Path(ST.ruta_db), b["numero"], b["pagina"]) if ST.ruta_db else None
+        except Exception:
+            fila = None
+        if fila:
+            if fila.get("ts_usuario") and (fila.get("norm_usuario") or "").strip():
+                texto += f"  ·  revisión: {fila.get('autor_usuario') or '?'}, {fila['ts_usuario']}"
+            if fila.get("ts_ia") and (fila.get("norm_ia") or "").strip():
+                texto += f"  ·  IA: {fila.get('autor_ia') or '?'}, {fila['ts_ia']}"
+        lbl.config(text=texto)
 
     def _norm_mostrar_imagen(self, bloque: dict):
         """Muestra la imagen de la página SIN bloquear la ventana.
@@ -9976,7 +10017,7 @@ class BashkarApp(tk.Tk):
         """Refresca los indicadores ✓/⚠ en la lista de bloques."""
         avisos_ocr = getattr(self, "_avisos_ocr", {})
         for i, b in enumerate(self._norm_bloques):
-            estado = "✓" if b["norm_usuario"] else "·"
+            estado = _simbolo_estado_norm(b)
             alerta = " ⚠" if (b["numero"], b["pagina"]) in avisos_ocr else ""
             self._norm_lb.delete(i)
             self._norm_lb.insert(i, f"{estado} {b['pagina']}{alerta}")
@@ -11468,30 +11509,8 @@ class BashkarApp(tk.Tk):
 
     def _ocr_contar_paginas_corpus(self) -> int:
         """Cuenta páginas pendientes de OCR en el corpus activo."""
-        if not ST.out_dir or not ST.archivos_sel:
-            return 0
-        total = 0
-        dir_img = ST.out_dir / "02_imagenes"
-        dir_ocr = ST.out_dir / "03_ocr"
-        for pdf in ST.archivos_sel:
-            nombre = pdf.stem
-            img_dir = dir_img / nombre
-            ocr_dir = dir_ocr / nombre
-            if img_dir.exists():
-                imgs = list(img_dir.glob("*.png"))
-                # Contar solo las que aún no tienen .txt
-                if ocr_dir.exists():
-                    hechas = {p.stem for p in ocr_dir.glob("*.txt")}
-                    total += sum(1 for i in imgs if i.stem not in hechas)
-                else:
-                    total += len(imgs)
-            else:
-                # Sin imágenes aún: estimamos por tamaño del PDF (1 pág ≈ 150 KB)
-                try:
-                    total += max(1, pdf.stat().st_size // 150_000)
-                except Exception:
-                    total += 100
-        return total
+        from core.servicios_corpus import contar_paginas_pendientes
+        return contar_paginas_pendientes(ST.out_dir, ST.archivos_sel)
 
     def _ocr_actualizar_estimacion(self, *_):
         """Recalcula y muestra la estimación de tiempo según workers y corpus."""
@@ -12328,38 +12347,10 @@ class BashkarApp(tk.Tk):
     def _reconstruir_corpus_meta_desde_txt(self) -> bool:
         """Construye ST.corpus_meta leyendo los TXT de 03_ocr/ cuando no hay OCR previo.
         Retorna True si encontró archivos, False si no hay nada."""
-        import pandas as pd
-        if not ST.out_dir:
+        from core.servicios_corpus import reconstruir_meta_corpus
+        df = reconstruir_meta_corpus(ST.out_dir)
+        if df is None:
             return False
-        txt_base = Path(ST.out_dir) / "03_ocr"
-        if not txt_base.exists():
-            return False
-        meta_rows = []
-        for num_dir in sorted(txt_base.iterdir()):
-            if not num_dir.is_dir():
-                continue
-            for txt_path in sorted(num_dir.glob("*.txt")):
-                try:
-                    texto = txt_path.read_text(encoding="utf-8", errors="replace")
-                    palabras = len(texto.split())
-                except Exception:
-                    palabras = 0
-                meta_rows.append({
-                    "numero":    num_dir.name,
-                    "pagina":    txt_path.stem,
-                    "txt_path":  str(txt_path),
-                    "palabras":  palabras,
-                    "confianza": None,
-                    "revision":  False,
-                    "metodo":    "conversor",
-                })
-        if not meta_rows:
-            return False
-        df = pd.DataFrame(meta_rows)
-        df["palabras"] = pd.to_numeric(df["palabras"], errors="coerce").fillna(0).astype(int)
-        ad = Path(ST.out_dir) / "04_analisis"
-        ad.mkdir(exist_ok=True)
-        df.to_csv(ad / "ocr_metadatos.csv", index=False)
         ST.corpus_meta = df
         ST.ocr_done    = True
         ST.marcar_etapa("ocr", "ready")
@@ -15030,20 +15021,9 @@ class BashkarApp(tk.Tk):
 
     def _nov_corpus_por_periodo(self) -> dict:
         """Agrupa textos del corpus por número."""
-        from collections import defaultdict
-        por_num = defaultdict(list)
-        articulos = getattr(ST, "articulos", None) or []
-        corpus_txt = getattr(ST, "corpus_txt", None) or []
-        if articulos:
-            for art in articulos:
-                num  = str(art.get("numero", "sin_número"))
-                txt  = art.get("texto", "") or ""
-                if txt.strip():
-                    por_num[num].append(txt)
-        elif corpus_txt:
-            for i, txt in enumerate(corpus_txt):
-                por_num[f"pag_{i:04d}"].append(txt or "")
-        return dict(por_num)
+        from core.servicios_corpus import agrupar_por_numero
+        return agrupar_por_numero(getattr(ST, "articulos", None),
+                                  getattr(ST, "corpus_txt", None))
 
     def _nov_cambio(self):
         from core.novelty_engine import cambio_discursivo

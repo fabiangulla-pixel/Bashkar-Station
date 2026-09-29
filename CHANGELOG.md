@@ -2,6 +2,69 @@
 
 ---
 
+## Sesión 70 — 2026-09-29 — Proveniencia, benchmark formal, CI y primera extracción del monolito
+
+Ejecución del documento de recomendaciones (proveniencia, benchmark,
+reproducibilidad, CI, modularización). Al auditar la proveniencia salió un
+fallo real que destruía evidencia.
+
+### 1. El OCR original se perdía en la segunda sesión de Normalizar (`c91ba99`)
+
+`_norm_guardar` escribe el texto final en el `.txt` de cada página; la sesión
+siguiente releía ese `.txt` como «OCR crudo» y el UPSERT reemplazaba
+`ocr_crudo` en SQLite por la versión corregida. Además `ts_usuario` y `ts_ia`
+recibían siempre la misma hora (verificado: 192/192 filas de Proyecto_04), un
+error de la IA (`"[Error: …]"`) quedaba guardado como capa `norm_ia`, y los
+fallos de escritura se tragaban con `except: pass`.
+
+`datos/normalizaciones.py` congela el OCR crudo en la primera escritura, da a
+cada capa su marca de tiempo y registra cada cambio en
+`normalizaciones_historial` (solo inserción) con autor y commit. Los parches de
+colaboración también quedan en el historial. El panel muestra ahora el estado
+de cada página (✓ revisado · ◐ solo IA · ○ OCR sin revisar) y quién tocó
+cada capa, y cuándo.
+
+### 2. Benchmark OCR formal (`5edd6ac`)
+
+`core/benchmark_regresion.py` + `scripts/benchmark_ocr_regresion.py`: CER,
+WER, fusión, fragmentación y cobertura por ruta y por estrato, línea base con
+manifiesto de ejecución y verificación que sale con 1 ante una regresión.
+**Se niega a medir contra referencias que no sean humanas.** El piloto de
+Estampa no tiene ninguna: sus 46 «juicios» son de un modelo de IA.
+`benchmark/estampa-1939/` queda armado con 47 páginas y tres rutas
+(tesseract, vision_llm, candidato_piloto), a la espera de transcripción.
+
+### 3. Proveniencia y reproducibilidad
+
+- `core/proveniencia.py`: commit (`+sucio` si hay cambios), entorno, versiones,
+  componentes externos con las mismas rutas del runtime, hash de corpus,
+  rutas personales anonimizadas.
+- Los 8 exportadores dejan `<archivo>.proveniencia.json` con fuentes y aviso
+  de licencias.
+- El `.spec` graba `_build_info.json`: el `.exe` sabe qué commit empaqueta.
+- `scripts/verificar_dependencias.py`: `requirements.txt` y el lock no pueden
+  separarse sin que la CI lo note.
+
+### 4. CI (`.github/workflows/ci.yml`)
+
+Ruff, coherencia de dependencias, gitleaks sobre el historial, instalación
+desde cero con el lock en Windows, suite completa con **conteo mínimo de tests
+corridos**, y empaquetado PyInstaller semanal. Test nuevo que importa los 102
+módulos de `core/`, `datos/` y `exportadores/`.
+
+### 5. Monolito
+
+`docs/ARQUITECTURA.md`: diagramas C4 y estado medido de `app.py` (clase única
+de 20.702 líneas y 572 métodos; la pestaña NER sola ocupa 8.214).
+Extraídos con tests de contrato: `datos/normalizaciones.py` y
+`core/servicios_corpus.py` (conteo de páginas pendientes, reconstrucción de
+metadatos, agrupación por número). `app.py` conserva adaptadores delgados.
+
+### Pendiente que no depende del código
+
+- Transcribir referencias humanas en `benchmark/estampa-1939/referencia/`.
+- Decidir si las 47 imágenes de Estampa de `ground_truth_piloto/` deben estar
+  en un repositorio público (el README decía que el corpus no se distribuye).
 ## Sesión 68 — 2026-09-09 (cont.) — Compilación del .exe en MSI + medición de El Gráfico
 
 Continuación del trabajo de migración. El .exe se compiló exitosamente con 
