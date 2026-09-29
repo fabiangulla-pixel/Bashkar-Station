@@ -1,0 +1,139 @@
+name: CI
+
+# Integración continua de Bashkar Station.
+#
+# Por qué Windows para los tests: requirements.lock.txt se generó en Windows
+# (trae colorama y ruedas de torch para win_amd64) y la app es de escritorio
+# con Tk; en Linux habría que montar un display virtual y otro lock.
+#
+# El empaquetado completo con PyInstaller es caro (~15 min, >1 GB de
+# dependencias): corre una vez por semana y a pedido, no en cada push.
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"   # lunes 06:00 UTC: empaquetado completo
+  workflow_dispatch:
+    inputs:
+      empaquetar:
+        description: "Compilar el .exe completo"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Ruff
+        run: |
+          pip install "ruff>=0.6.0"
+          ruff check .
+      - name: Manifiesto de dependencias coherente
+        run: |
+          pip install packaging
+          python scripts/verificar_dependencias.py
+
+  secretos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Gitleaks (historial completo)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  tests:
+    needs: lint
+    runs-on: windows-latest
+    timeout-minutes: 60
+    env:
+      PYTHONIOENCODING: utf-8
+      # Ningún test debe tocar la red para cargar modelos (ver ocr_churro).
+      HF_HUB_OFFLINE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.10"
+          cache: pip
+          cache-dependency-path: requirements.lock.txt
+      - name: Instalación desde cero con el lock
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.lock.txt -r requirements-dev.txt
+          pip check
+      - name: Diccionario español del corrector
+        # Sin él 11 tests se saltan en silencio (sesión 67). Se usa la misma
+        # función del instalador, no una copia.
+        run: python -c "import instalar; instalar.instalar_diccionario_es()"
+      - name: app.py compila
+        run: python -m py_compile app.py servidor_web.py cli.py
+      - name: Tests
+        run: python -m pytest -q -p no:cacheprovider --junitxml=reporte-tests.xml
+      - name: Conteo mínimo de tests
+        # Verde no basta: si una dependencia falta, los tests se saltan y la
+        # suite sigue verde probando menos. Ver feedback "CI verde no prueba".
+        shell: python
+        run: |
+          import xml.etree.ElementTree as ET
+          r = ET.parse("reporte-tests.xml").getroot()
+          s = r if r.tag == "testsuite" else r.find("testsuite")
+          total, saltados = int(s.get("tests")), int(s.get("skipped"))
+          corridos = total - saltados
+          print(f"corridos={corridos} saltados={saltados}")
+          assert corridos >= 1550, f"solo corrieron {corridos} tests: algo se está saltando"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reporte-tests
+          path: reporte-tests.xml
+
+  empaquetado:
+    needs: tests
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.empaquetar)
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.10"
+          cache: pip
+          cache-dependency-path: requirements.lock.txt
+      - name: Dependencias
+        run: |
+          pip install -r requirements.lock.txt pyinstaller
+      - name: Compilar
+        run: pyinstaller --noconfirm --clean bashkar_station.spec
+      - name: Verificar el ejecutable
+        shell: python
+        run: |
+          import json, pathlib, sys
+          exe = next(pathlib.Path("dist").rglob("BashkarStation.exe"))
+          mb = exe.stat().st_size / 1e6
+          print(f"{exe} {mb:.0f} MB")
+          info = next(pathlib.Path("dist").rglob("_build_info.json"), None)
+          assert info, "el .exe no lleva _build_info.json: la proveniencia diría 'desconocido'"
+          print(json.loads(info.read_text()))
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BashkarStation-windows
+          path: dist/
+          retention-days: 14

@@ -14,6 +14,7 @@ import re
 import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
+from core.proveniencia import con_proveniencia
 
 # ── Namespaces ────────────────────────────────────────────────────────────────
 TEI_NS = "http://www.tei-c.org/ns/1.0"
@@ -222,6 +223,7 @@ def articulo_a_tei(
 
 # ── Corpus TEI completo ───────────────────────────────────────────────────────
 
+@con_proveniencia("TEI P5", "ruta", "articulos")
 def exportar_corpus_tei(
     articulos: list[dict],
     ruta: Path,
@@ -289,6 +291,7 @@ def exportar_corpus_tei(
 
 # ── Exportación BibTeX del corpus ─────────────────────────────────────────────
 
+@con_proveniencia("BibTeX", "ruta", "articulos")
 def exportar_bibtex(
     articulos: list[dict],
     ruta: Path,

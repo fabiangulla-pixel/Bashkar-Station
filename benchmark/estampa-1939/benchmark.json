@@ -1,0 +1,483 @@
+{
+  "corpus_id": "estampa-1939",
+  "descripcion": "Estampa (Bogota), numero de marzo de 1939: 47 paginas del piloto.",
+  "referencia": {
+    "tipo": "humana",
+    "transcriptor": "",
+    "prellenado_con": null,
+    "nota": "Llenar transcriptor al empezar. Las referencias estan vacias a proposito: los juicios de ground_truth_piloto/*/juicios son de IA y NO sirven como referencia."
+  },
+  "licencia_imagenes": "Imagenes de Estampa (1939): no se redistribuyen con el software; uso de investigacion.",
+  "casos": [
+    {
+      "page_id": "p0002",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0002.jpg",
+      "referencia": "referencia/p0002.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0003",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0003.jpg",
+      "referencia": "referencia/p0003.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0004",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0004.jpg",
+      "referencia": "referencia/p0004.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0005",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0005.jpg",
+      "referencia": "referencia/p0005.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0006",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0006.jpg",
+      "referencia": "referencia/p0006.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0007",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0007.jpg",
+      "referencia": "referencia/p0007.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0008",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0008.jpg",
+      "referencia": "referencia/p0008.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0009",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0009.jpg",
+      "referencia": "referencia/p0009.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0010",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0010.jpg",
+      "referencia": "referencia/p0010.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0011",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0011.jpg",
+      "referencia": "referencia/p0011.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0012",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0012.jpg",
+      "referencia": "referencia/p0012.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0013",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0013.jpg",
+      "referencia": "referencia/p0013.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0014",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0014.jpg",
+      "referencia": "referencia/p0014.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0015",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0015.jpg",
+      "referencia": "referencia/p0015.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0016",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0016.jpg",
+      "referencia": "referencia/p0016.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0017",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0017.jpg",
+      "referencia": "referencia/p0017.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0018",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0018.jpg",
+      "referencia": "referencia/p0018.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0019",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0019.jpg",
+      "referencia": "referencia/p0019.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0020",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0020.jpg",
+      "referencia": "referencia/p0020.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0021",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0021.jpg",
+      "referencia": "referencia/p0021.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0022",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0022.jpg",
+      "referencia": "referencia/p0022.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0023",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0023.jpg",
+      "referencia": "referencia/p0023.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0024",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0024.jpg",
+      "referencia": "referencia/p0024.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0025",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0025.jpg",
+      "referencia": "referencia/p0025.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0026",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0026.jpg",
+      "referencia": "referencia/p0026.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0027",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0027.jpg",
+      "referencia": "referencia/p0027.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0028",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0028.jpg",
+      "referencia": "referencia/p0028.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0029",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0029.jpg",
+      "referencia": "referencia/p0029.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0030",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0030.jpg",
+      "referencia": "referencia/p0030.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0031",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0031.jpg",
+      "referencia": "referencia/p0031.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0032",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0032.jpg",
+      "referencia": "referencia/p0032.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0033",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0033.jpg",
+      "referencia": "referencia/p0033.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0034",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0034.jpg",
+      "referencia": "referencia/p0034.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0035",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0035.jpg",
+      "referencia": "referencia/p0035.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0036",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0036.jpg",
+      "referencia": "referencia/p0036.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0037",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0037.jpg",
+      "referencia": "referencia/p0037.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0038",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0038.jpg",
+      "referencia": "referencia/p0038.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0039",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0039.jpg",
+      "referencia": "referencia/p0039.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0040",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0040.jpg",
+      "referencia": "referencia/p0040.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0041",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0041.jpg",
+      "referencia": "referencia/p0041.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0042",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0042.jpg",
+      "referencia": "referencia/p0042.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0043",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0043.jpg",
+      "referencia": "referencia/p0043.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0044",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0044.jpg",
+      "referencia": "referencia/p0044.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0045",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0045.jpg",
+      "referencia": "referencia/p0045.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0046",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0046.jpg",
+      "referencia": "referencia/p0046.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0047",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0047.jpg",
+      "referencia": "referencia/p0047.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    },
+    {
+      "page_id": "p0048",
+      "imagen": "../../ground_truth_piloto/rev_estampa_mar_1939/imagenes/p0048.jpg",
+      "referencia": "referencia/p0048.txt",
+      "revista": "Estampa",
+      "anio": 1939,
+      "numero": "rev_estampa_mar_1939",
+      "tipografia": "",
+      "calidad_imagen": ""
+    }
+  ]
+}

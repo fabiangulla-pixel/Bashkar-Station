@@ -10,6 +10,8 @@ __pycache__/
 dist/
 build/
 *.spec.bak
+# Lo escribe bashkar_station.spec al compilar (commit empaquetado)
+_build_info.json
 
 # Datos y bases de datos (proyectos del investigador, nunca al repo)
 *.db

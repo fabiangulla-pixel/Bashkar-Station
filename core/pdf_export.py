@@ -16,8 +16,10 @@ from __future__ import annotations
 import io
 from pathlib import Path
 from typing import Callable
+from core.proveniencia import con_proveniencia
 
 
+@con_proveniencia("PDF buscable", "out_pdf", "paginas")
 def exportar_pdf_buscable(
     paginas: list[dict],
     out_pdf,

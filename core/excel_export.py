@@ -15,6 +15,7 @@ import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import networkx as nx
 import seaborn as sns
+from core.proveniencia import con_proveniencia
 
 # ── Paleta rica con 14 colores claramente distintos ───────────────────────────
 AZUL1, AZUL2, AZUL3, AZUL4 = "#1F3864", "#2E5496", "#4472C4", "#9DC3E6"
@@ -191,6 +192,7 @@ def generar_figuras(datos: dict) -> dict:
     return figs
 
 
+@con_proveniencia("Excel", "output_path")
 def construir_excel(datos: dict, figs: dict, output_path: Path) -> Path:
     """Construye el Excel con 8 hojas y gráficas incrustadas."""
     from openpyxl import Workbook
@@ -568,6 +570,7 @@ def _agregar_hoja_comparativo(wb, datos_comp, figs, HDR, HF, BF, TF, CTR, LFT, B
         ws.add_image(xi)
 
 
+@con_proveniencia("Excel", "output_path")
 def construir_excel_completo(datos: dict, figs: dict, output_path: Path) -> Path:
     """
     Versión extendida de construir_excel con hojas adicionales

@@ -44,6 +44,24 @@ def _datas_diccionario_es():
 
 _datas_dic_es = _datas_diccionario_es()
 
+# Commit del código empaquetado: dentro del .exe no hay git, y sin esto los
+# manifiestos de proveniencia (core/proveniencia.py) dirían "desconocido".
+import json as _json
+import subprocess as _sp
+from datetime import datetime as _dt
+try:
+    _commit = _sp.run(["git", "rev-parse", "--short=12", "HEAD"], cwd=APP_DIR,
+                      capture_output=True, text=True, timeout=10).stdout.strip()
+    if _sp.run(["git", "status", "--porcelain", "--untracked-files=no"], cwd=APP_DIR,
+               capture_output=True, text=True, timeout=20).stdout.strip():
+        _commit += "+sucio"
+except Exception:
+    _commit = ""
+(APP_DIR / "_build_info.json").write_text(_json.dumps({
+    "commit": _commit or "desconocido",
+    "compilado": _dt.now().astimezone().isoformat(timespec="seconds"),
+}), encoding="utf-8")
+
 a = Analysis(
     [str(APP_DIR / 'app.py')],
     pathex=[str(APP_DIR)],
@@ -53,6 +71,7 @@ a = Analysis(
         (str(APP_DIR / 'assets'), 'assets'),
         (str(APP_DIR / 'Logo_Bashkar_Station.png'), '.'),
         (str(APP_DIR / 'logo_sidebar.png'), '.'),
+        (str(APP_DIR / '_build_info.json'), '.'),
         # Datos de la app: gazetteer de coordenadas, stopwords, personajes (JSON/TXT)
         (str(APP_DIR / 'datos' / 'coordenadas_colombia.json'), 'datos'),
         (str(APP_DIR / 'datos' / 'personajes_historicos_co.json'), 'datos'),

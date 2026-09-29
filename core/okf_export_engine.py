@@ -25,6 +25,7 @@ import unicodedata
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
+from core.proveniencia import con_proveniencia
 
 if TYPE_CHECKING:
     from datos.repositorio import Repositorio
@@ -261,6 +262,7 @@ def escribir_index_okf(carpeta: Path, nombre_proyecto: str,
 
 # ── Orquestador ────────────────────────────────────────────────────────────────
 
+@con_proveniencia("OKF", "carpeta_salida")
 def exportar_proyecto_okf(repo: Repositorio, carpeta_salida: str | Path,
                           nombre_proyecto: str = "Corpus") -> dict:
     """

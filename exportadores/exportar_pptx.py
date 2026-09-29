@@ -13,8 +13,10 @@ Genera una presentación .pptx lista para uso académico con:
 from __future__ import annotations
 
 from pathlib import Path
+from core.proveniencia import con_proveniencia
 
 
+@con_proveniencia("PPTX", "ruta")
 def exportar_presentacion(
     datos: dict,
     ruta: Path,

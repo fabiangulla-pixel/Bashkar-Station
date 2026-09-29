@@ -13,6 +13,7 @@ Especificación: https://www.loc.gov/standards/alto/
 from pathlib import Path
 from xml.dom import minidom
 from xml.etree.ElementTree import Element, SubElement, tostring
+from core.proveniencia import con_proveniencia
 
 APP_VERSION = "11"
 ALTO_NS = "http://www.loc.gov/standards/alto/ns-v4#"
@@ -190,6 +191,7 @@ def exportar_pagina_alto(articulo_id: str,
     return ruta_salida
 
 
+@con_proveniencia("ALTO XML", "carpeta_salida", "articulos")
 def exportar_corpus_alto(articulos: list[dict],
                           repo,
                           carpeta_salida: str,

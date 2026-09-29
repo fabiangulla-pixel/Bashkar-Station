@@ -65,3 +65,30 @@ def test_rutas_personales_no_salen_en_el_manifiesto():
     home = str(Path.home())
     assert home not in P.anonimizar_ruta(home + "\\x\\y")
     assert P.anonimizar_ruta("") == ""
+
+
+def test_exportador_decorado_deja_manifiesto_con_fuentes(tmp_path):
+    from core.tei_engine import exportar_bibtex
+    arts = [{"id": "art_0001", "numero": "E17", "titulo": "Crónica", "texto": "x"}]
+    salida = exportar_bibtex(arts, tmp_path / "corpus.bib")
+    man = json.loads((tmp_path / "corpus.bib.proveniencia.json").read_text(encoding="utf-8"))
+    assert Path(salida).exists()
+    assert man["formato"] == "BibTeX"
+    assert man["fuentes"] == ["E17 · art_0001 · Crónica"]
+    assert man["exportador"].endswith("exportar_bibtex")
+
+
+def test_exportador_a_carpeta_deja_manifiesto_dentro(tmp_path):
+    @P.con_proveniencia("prueba", "carpeta")
+    def exportar(carpeta):
+        (carpeta / "a.xml").write_text("<a/>", encoding="utf-8")
+        return carpeta
+    exportar(tmp_path)
+    assert (tmp_path / "proveniencia.json").exists()
+
+
+def test_fallo_del_manifiesto_no_rompe_la_exportacion(tmp_path):
+    @P.con_proveniencia("prueba", "no_existe")
+    def exportar(ruta):
+        return "hecho"
+    assert exportar(tmp_path / "x") == "hecho"

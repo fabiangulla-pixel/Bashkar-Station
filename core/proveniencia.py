@@ -227,7 +227,10 @@ def escribir_manifiesto_exportacion(ruta_producto, *, formato: str,
     Devuelve la ruta escrita (o la que se intentó).
     """
     ruta_producto = Path(ruta_producto)
-    destino = ruta_producto.with_name(ruta_producto.name + ".proveniencia.json")
+    if ruta_producto.is_dir():
+        destino = ruta_producto / "proveniencia.json"
+    else:
+        destino = ruta_producto.with_name(ruta_producto.name + ".proveniencia.json")
     try:
         advert = list(advertencias or [])
         if not fuentes:
@@ -248,3 +251,50 @@ def escribir_manifiesto_exportacion(ruta_producto, *, formato: str,
     except Exception:
         pass
     return destino
+
+
+def _fuentes_de(valor) -> list[str]:
+    """Extrae identificadores de fuente de articulos / paginas, sin inventar."""
+    fuentes = []
+    if isinstance(valor, dict):
+        valor = list(valor.values())
+    for item in valor or []:
+        if not isinstance(item, dict):
+            continue
+        partes = [str(item[k]) for k in ("numero", "id", "pagina", "titulo")
+                  if item.get(k) not in (None, "")]
+        if not partes and item.get("img_path"):
+            partes = [Path(str(item["img_path"])).name]
+        if partes:
+            fuentes.append(" · ".join(partes))
+    return fuentes
+
+
+def con_proveniencia(formato: str, destino: str, fuentes: str | None = None):
+    """Decorador para exportadores: escribe el manifiesto al terminar.
+
+    ``destino`` y ``fuentes`` son NOMBRES de parámetros de la función
+    decorada. Si el destino es una carpeta, el manifiesto va dentro como
+    ``proveniencia.json``. Un fallo del manifiesto nunca rompe la exportación.
+    """
+    import inspect
+
+    def deco(fn):
+        firma = inspect.signature(fn)
+
+        @functools.wraps(fn)
+        def envoltura(*args, **kwargs):
+            resultado = fn(*args, **kwargs)
+            try:
+                ligados = firma.bind(*args, **kwargs)
+                ligados.apply_defaults()
+                ruta = Path(ligados.arguments[destino])
+                lista = _fuentes_de(ligados.arguments.get(fuentes)) if fuentes else []
+                escribir_manifiesto_exportacion(
+                    ruta, formato=formato, fuentes=lista,
+                    extra={"exportador": f"{fn.__module__}.{fn.__name__}"})
+            except Exception:
+                pass
+            return resultado
+        return envoltura
+    return deco
