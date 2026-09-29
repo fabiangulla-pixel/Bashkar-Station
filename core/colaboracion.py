@@ -338,8 +338,10 @@ def _aplicar_normalizaciones(bashkar: dict, entradas: dict, investigador: str,
         con.execute("PRAGMA journal_mode = WAL")
         # Un proyecto que nunca pasó por el panel de Normalizar no tiene la
         # tabla todavía; sin esto el parche reventaba al recibirlo.
-        from datos.schema import SCHEMA_NORMALIZACIONES
-        con.executescript(SCHEMA_NORMALIZACIONES)
+        from core.proveniencia import commit_software
+        from datos.normalizaciones import asegurar_esquema
+        asegurar_esquema(con)
+        commit = commit_software()
         for entrada in entradas.values():
             numero = entrada.get("numero", "")
             pagina = entrada.get("pagina", "")
@@ -366,6 +368,16 @@ def _aplicar_normalizaciones(bashkar: dict, entradas: dict, investigador: str,
                 "  norm_usuario = excluded.norm_usuario, "
                 "  ts_usuario   = excluded.ts_usuario",
                 (numero, pagina, crudo, texto, entrada.get("ts_usuario", "")),
+            )
+            con.execute(
+                "UPDATE normalizaciones SET autor_usuario = ?, commit_software = ? "
+                "WHERE numero = ? AND pagina = ?", (investigador, commit, numero, pagina))
+            con.execute(
+                "INSERT INTO normalizaciones_historial "
+                "(numero, pagina, capa, texto, autor, commit_software, ts) "
+                "VALUES (?, ?, 'norm_usuario', ?, ?, ?, ?)",
+                (numero, pagina, texto, f"parche:{investigador}", commit,
+                 entrada.get("ts_usuario", "") or "desconocido"),
             )
             aplicadas += 1
             log(f"OCR ~{numero} {pagina} [{investigador}]")

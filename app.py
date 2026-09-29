@@ -200,6 +200,15 @@ import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 APP_VERSION = "12.3"
+
+
+def _autor_local() -> str:
+    """Nombre de la cuenta local, para firmar las revisiones humanas."""
+    try:
+        import getpass
+        return getpass.getuser() or "investigador"
+    except Exception:
+        return "investigador"
 APP_NAME    = "Bashkar Station"
 
 # ── Identidad visual — grafito, cobre y teal ──────────────────────────────────
@@ -8933,11 +8942,13 @@ class BashkarApp(tk.Tk):
                 ocr_crudo = txt_path.read_text(encoding="utf-8", errors="replace")
             except Exception:
                 ocr_crudo = ""
-            norm_usuario, norm_ia = self._norm_leer_db(db_path, num, pagina)
+            norm_usuario, norm_ia, crudo_db = self._norm_leer_db(db_path, num, pagina)
             bloques.append({
                 "numero":       num,
                 "pagina":       pagina,
-                "ocr_crudo":    ocr_crudo,
+                # El .txt ya contiene el texto final tras el primer guardado:
+                # el OCR original vive en SQLite y manda sobre el archivo.
+                "ocr_crudo":    crudo_db or ocr_crudo,
                 "norm_usuario": norm_usuario or "",
                 "norm_ia":      norm_ia or "",
                 "txt_path":     str(txt_path),
@@ -9411,7 +9422,7 @@ class BashkarApp(tk.Tk):
         self._norm_guardar_bloque_actual()
         db_path = Path(ST.ruta_db) if ST.ruta_db else None
         ver     = getattr(ST, "norm_version", "manual")
-        guardados = n_crudo = n_manual = n_ia = 0
+        guardados = n_crudo = n_manual = n_ia = fallos_db = 0
 
         for b in self._norm_bloques:
             texto_final = self._norm_texto_para_pipeline(b)
@@ -9428,9 +9439,11 @@ class BashkarApp(tk.Tk):
             except Exception:
                 pass
             # Persistir todas las versiones en SQLite para no perder nada
-            if db_path:
-                self._norm_escribir_db(db_path, b["numero"], b["pagina"],
-                                       b["ocr_crudo"], b["norm_usuario"], b["norm_ia"])
+            if db_path and not self._norm_escribir_db(
+                    db_path, b["numero"], b["pagina"],
+                    b["ocr_crudo"], b["norm_usuario"], b["norm_ia"],
+                    b.get("autor_ia", "")):
+                fallos_db += 1
 
         ST.norm_done   = True
         ST.norm_version = ver
@@ -9440,6 +9453,8 @@ class BashkarApp(tk.Tk):
 
         _etiq = {"crudo": "crudo", "manual": "manual", "ia": "IA"}
         detalle = f"  ({n_manual} manual · {n_ia} IA · {n_crudo} crudo)"
+        if fallos_db:
+            detalle += f"  ⚠ {fallos_db} sin registrar en la base (ver consola)"
         self._lbl_norm_estado.config(
             text=f"✅ {guardados} páginas guardadas como {_etiq[ver]}{detalle}")
 
@@ -9890,8 +9905,8 @@ class BashkarApp(tk.Tk):
         if not api_key:
             messagebox.showwarning("Sin API key",
                 "No hay clave de API configurada.\n\n"
-                "Andá a ⚙ Configuración → claves de API\n"
-                "y pegá tu clave de Anthropic, OpenAI o Gemini.")
+                "Ve a ⚙ Configuración → claves de API\n"
+                "y pega tu clave de Anthropic, OpenAI o Gemini.")
             return
 
         def _run():
@@ -9899,10 +9914,13 @@ class BashkarApp(tk.Tk):
                 from core.ocr_llm import corregir_texto
                 sugerencia = corregir_texto(texto_base, api_key)
             except Exception as exc:
-                sugerencia = f"[Error: {exc}]"
+                # Un error NO es una capa de corrección: antes el texto
+                # "[Error: ...]" quedaba guardado como norm_ia en SQLite.
                 self.after(0, lambda m=str(exc): messagebox.showerror(
                     "Error IA", f"No se pudo obtener sugerencia:\n{m}"))
+                return
             b["norm_ia"] = sugerencia
+            b["autor_ia"] = "core.ocr_llm.corregir_texto"
             self.after(0, lambda: (
                 self._norm_txt_ia.delete("1.0", "end"),
                 self._norm_txt_ia.insert("1.0", sugerencia),
@@ -9967,45 +9985,37 @@ class BashkarApp(tk.Tk):
             self._norm_mostrar_bloque(self._norm_idx_actual)
 
     def _norm_leer_db(self, db_path, numero: str, pagina: str):
-        """Lee norm_usuario y norm_ia de SQLite. Retorna (None, None) si no existe."""
-        if not db_path or not db_path.exists():
-            return None, None
+        """Lee (norm_usuario, norm_ia, ocr_crudo) de SQLite; Nones si no existe."""
+        from datos import normalizaciones as NZ
         try:
-            import sqlite3
-            con = sqlite3.connect(str(db_path))
-            cur = con.execute(
-                "SELECT norm_usuario, norm_ia FROM normalizaciones "
-                "WHERE numero=? AND pagina=? LIMIT 1", (numero, pagina))
-            row = cur.fetchone()
-            con.close()
-            return (row[0], row[1]) if row else (None, None)
-        except Exception:
-            return None, None
+            fila = NZ.leer(db_path, numero, pagina)
+        except Exception as e:
+            print(f"[normalizar] no se pudo leer {numero} {pagina}: {e}")
+            fila = None
+        if not fila:
+            return None, None, None
+        return fila.get("norm_usuario"), fila.get("norm_ia"), fila.get("ocr_crudo")
 
     def _norm_escribir_db(self, db_path, numero: str, pagina: str,
-                           ocr_crudo: str, norm_usuario: str, norm_ia: str):
-        """Inserta o actualiza la fila en la tabla normalizaciones de SQLite."""
+                           ocr_crudo: str, norm_usuario: str, norm_ia: str,
+                           autor_ia: str = "") -> bool:
+        """Guarda las capas de la página con historial. Devuelve False si falló.
+
+        La lógica vive en datos/normalizaciones.py: el OCR crudo no se
+        sobrescribe nunca y cada capa lleva su propia marca de tiempo.
+        """
+        from core.proveniencia import commit_software
+        from datos import normalizaciones as NZ
         try:
-            import sqlite3
-            con = sqlite3.connect(str(db_path))
-            from datos.schema import SCHEMA_NORMALIZACIONES
-            con.executescript(SCHEMA_NORMALIZACIONES)
-            from datetime import datetime
-            ts = datetime.now().isoformat(timespec="seconds")
-            con.execute("""INSERT INTO normalizaciones
-                (numero, pagina, ocr_crudo, norm_usuario, norm_ia, ts_usuario, ts_ia)
-                VALUES (?,?,?,?,?,?,?)
-                ON CONFLICT(numero, pagina) DO UPDATE SET
-                    ocr_crudo=excluded.ocr_crudo,
-                    norm_usuario=excluded.norm_usuario,
-                    norm_ia=excluded.norm_ia,
-                    ts_usuario=excluded.ts_usuario,
-                    ts_ia=excluded.ts_ia
-            """, (numero, pagina, ocr_crudo, norm_usuario, norm_ia, ts, ts))
-            con.commit()
-            con.close()
-        except Exception:
-            pass
+            NZ.guardar(db_path, numero, pagina, ocr_crudo=ocr_crudo,
+                       norm_usuario=norm_usuario, norm_ia=norm_ia,
+                       autor_usuario=_autor_local(),
+                       autor_ia=autor_ia or "ia",
+                       commit_software=commit_software())
+            return True
+        except Exception as e:
+            print(f"[normalizar] no se pudo guardar {numero} {pagina}: {e}")
+            return False
 
     # ══════════════════════════════════════════════════════════════════════════
     # TAB 3: SEGMENTACIÓN DE ARTÍCULOS
