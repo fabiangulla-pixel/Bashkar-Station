@@ -84,6 +84,19 @@ class Anotacion:
     id:           int | None = None
 
 
+def ruta_anotaciones(ruta_db_proyecto: str | Path | None) -> Path:
+    """Base de anotaciones de un proyecto: ``<proyecto>_anotaciones.db`` al lado.
+
+    Sin proyecto abierto, una base global en ``~/.bashkar/``. Antes se hacía
+    ``ruta.replace(".db", "_anotaciones.db")``, que también reemplazaba un
+    ".db" en el nombre de una carpeta.
+    """
+    if ruta_db_proyecto:
+        r = Path(ruta_db_proyecto)
+        return r.with_name(f"{r.stem}_anotaciones.db")
+    return Path.home() / ".bashkar" / "anotaciones.db"
+
+
 class GestorAnotaciones:
     """Gestiona anotaciones semánticas con historial de cambios."""
 
@@ -140,6 +153,22 @@ class GestorAnotaciones:
             sql += " AND estado = ?"
             params.append(estado)
         sql += " ORDER BY inicio_char"
+        with self._conexion() as con:
+            return [dict(r) for r in con.execute(sql, params).fetchall()]
+
+    def listar(self, categoria: str | None = None, estado: str | None = None,
+               limite: int = 500) -> list[dict]:
+        """Todas las anotaciones con filtros opcionales, las más nuevas primero."""
+        sql = "SELECT * FROM anotaciones WHERE 1=1"
+        params: list = []
+        if categoria:
+            sql += " AND categoria = ?"
+            params.append(categoria)
+        if estado:
+            sql += " AND estado = ?"
+            params.append(estado)
+        sql += " ORDER BY id DESC LIMIT ?"
+        params.append(int(limite))
         with self._conexion() as con:
             return [dict(r) for r in con.execute(sql, params).fetchall()]
 

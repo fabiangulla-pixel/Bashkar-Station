@@ -14800,15 +14800,17 @@ class BashkarApp(tk.Tk):
         self._anot_db_ruta = None
 
     def _anot_gestor_activo(self):
-        from core.annotation_engine import GestorAnotaciones
-        if self._anot_gestor is None:
-            ruta = getattr(ST, "ruta_db", "") or ""
-            if ruta:
-                db = ruta.replace(".db", "_anotaciones.db")
-            else:
-                db = str(Path.home() / ".bashkar" / "anotaciones.db")
-            Path(db).parent.mkdir(parents=True, exist_ok=True)
-            self._anot_db_ruta = db
+        """Gestor de anotaciones del proyecto ABIERTO AHORA.
+
+        Antes se cacheaba el primero y nunca se renovaba: al abrir otro
+        proyecto, las anotaciones seguían escribiéndose en la base del
+        anterior (o en la global, si la pestaña se abrió sin proyecto).
+        """
+        from core.annotation_engine import GestorAnotaciones, ruta_anotaciones
+        db = ruta_anotaciones(getattr(ST, "ruta_db", "") or None)
+        if self._anot_gestor is None or self._anot_db_ruta != str(db):
+            db.parent.mkdir(parents=True, exist_ok=True)
+            self._anot_db_ruta = str(db)
             self._anot_gestor = GestorAnotaciones(db)
         return self._anot_gestor
 
@@ -14840,24 +14842,8 @@ class BashkarApp(tk.Tk):
         g = self._anot_gestor_activo()
         cat    = self._var_anot_cat.get()
         estado = self._var_anot_estado.get()
-        rows   = g.por_articulo(
-            art_id="",  # truco: buscar todas
-            categoria=None if cat == "Todas" else cat,
-            estado=None if estado == "Todos" else estado,
-        ) if False else []
-        # Consulta directa para todas las anotaciones con filtros
-        import sqlite3
-        con = sqlite3.connect(self._anot_db_ruta or ":memory:")
-        con.row_factory = sqlite3.Row
-        sql = "SELECT * FROM anotaciones WHERE 1=1"
-        params = []
-        if cat != "Todas":
-            sql += " AND categoria=?"; params.append(cat)
-        if estado != "Todos":
-            sql += " AND estado=?"; params.append(estado)
-        sql += " ORDER BY id DESC LIMIT 500"
-        rows = [dict(r) for r in con.execute(sql, params).fetchall()]
-        con.close()
+        rows = g.listar(categoria=None if cat == "Todas" else cat,
+                        estado=None if estado == "Todos" else estado)
 
         for row in self._tv_anot.get_children():
             self._tv_anot.delete(row)
@@ -15541,24 +15527,17 @@ class BashkarApp(tk.Tk):
                          args=(repo,), daemon=True).start()
 
     def _worker_can_menciones(self, repo):
-        import sqlite3
         try:
-            con = sqlite3.connect(ST.ruta_db)
-            con.row_factory = sqlite3.Row
-            filas = con.execute(
-                "SELECT mc.canonica_id AS cid, e.articulo_id AS art "
-                "FROM menciones_canonicas mc JOIN entidades e ON e.id = mc.mencion_id"
-            ).fetchall()
-            con.close()
+            filas = repo.menciones_canonicas_por_articulo()
             if not filas:
                 self.after(0, lambda: messagebox.showinfo(
                     "Sin menciones",
                     "Funde primero las menciones en entidades canónicas."))
                 return
             n = 0
-            for f in filas:
-                repo.guardar_relacion(f["cid"], "mencionado_en",
-                                      destino_pagina=f["art"], evidencia=f["art"],
+            for cid, art in filas:
+                repo.guardar_relacion(cid, "mencionado_en",
+                                      destino_pagina=art, evidencia=art,
                                       fuente="ner")
                 n += 1
         except Exception as e:

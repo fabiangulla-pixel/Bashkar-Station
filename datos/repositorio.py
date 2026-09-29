@@ -521,6 +521,13 @@ class Repositorio:
             ).fetchone()[0]
         return {"canonicas": n_can, "menciones_vinculadas": n_vinc}
 
+    def menciones_canonicas_por_articulo(self) -> list[tuple[str, str]]:
+        """Pares (canonica_id, articulo_id) de cada mención fundida."""
+        with self._conn() as conn:
+            return [(r["cid"], r["art"]) for r in conn.execute(
+                "SELECT mc.canonica_id AS cid, e.articulo_id AS art "
+                "FROM menciones_canonicas mc JOIN entidades e ON e.id = mc.mencion_id")]
+
     def guardar_relacion(self, origen_id: str, predicado: str,
                          destino_id: str = None, destino_pagina: str = None,
                          evidencia: str = None, confianza: float = 1.0,
