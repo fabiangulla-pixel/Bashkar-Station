@@ -402,6 +402,22 @@ y la ficha de GitHub dirán versiones distintas.
 
 ---
 
+## Si algo falla sin aviso
+
+Todo error que ocurra dentro de la interfaz o de un proceso en segundo plano
+queda en el registro de errores, con las rutas personales anonimizadas, y la
+app muestra un aviso en la esquina inferior derecha:
+
+- Windows: `%LOCALAPPDATA%\BashkarStation\logs\errores.log`
+- macOS: `~/Library/Application Support/BashkarStation/logs/errores.log`
+- Linux: `~/.local/share/BashkarStation/logs/errores.log`
+
+Adjunta ese archivo al reportar un problema. Antes de la sesión 70 el `.exe`
+(sin consola) perdía estos errores: así pasó inadvertido que la bitácora no
+guardaba notas.
+
+---
+
 ## Tests
 
 ```bash

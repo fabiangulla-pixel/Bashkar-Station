@@ -213,6 +213,11 @@ def _simbolo_estado_norm(bloque: dict) -> str:
     return _SIMBOLOS_ESTADO_NORM[estado_epistemico(bloque)]
 
 
+def _registrar_error(mensaje: str, exc: BaseException | None = None) -> None:
+    from core.registro_errores import registrar
+    registrar(mensaje, exc)
+
+
 def _autor_local() -> str:
     """Nombre de la cuenta local, para firmar las revisiones humanas."""
     try:
@@ -817,6 +822,9 @@ class BashkarApp(tk.Tk):
 
     def __init__(self):
         super().__init__()
+        # Sin consola en el .exe: todo error de callback/hilo va al registro.
+        from core import registro_errores
+        registro_errores.instalar(self)
         self.title(f"{APP_NAME} v{APP_VERSION} — Análisis Editorial Computacional")
         self.geometry("1280x820")
         self.minsize(1024, 680)
@@ -2724,7 +2732,7 @@ class BashkarApp(tk.Tk):
                 self._bitacora_eng_cache = BitacoraEngine(ST.ruta_db)
                 self._bitacora_eng_db = ST.ruta_db
             except Exception as e:
-                print(f"[bitácora] no se pudo abrir {ST.ruta_db}: {e}")
+                _registrar_error(f"bitácora: no se pudo abrir {ST.ruta_db}", e)
                 return None
         return self._bitacora_eng_cache
 
@@ -9503,7 +9511,7 @@ class BashkarApp(tk.Tk):
         _etiq = {"crudo": "crudo", "manual": "manual", "ia": "IA"}
         detalle = f"  ({n_manual} manual · {n_ia} IA · {n_crudo} crudo)"
         if fallos_db:
-            detalle += f"  ⚠ {fallos_db} sin registrar en la base (ver consola)"
+            detalle += f"  ⚠ {fallos_db} sin registrar en la base (ver registro de errores)"
         self._lbl_norm_estado.config(
             text=f"✅ {guardados} páginas guardadas como {_etiq[ver]}{detalle}")
 
@@ -10039,7 +10047,7 @@ class BashkarApp(tk.Tk):
         try:
             fila = NZ.leer(db_path, numero, pagina)
         except Exception as e:
-            print(f"[normalizar] no se pudo leer {numero} {pagina}: {e}")
+            _registrar_error(f"normalizar: no se pudo leer {numero} {pagina}", e)
             fila = None
         if not fila:
             return None, None, None
@@ -10063,7 +10071,7 @@ class BashkarApp(tk.Tk):
                        commit_software=commit_software())
             return True
         except Exception as e:
-            print(f"[normalizar] no se pudo guardar {numero} {pagina}: {e}")
+            _registrar_error(f"normalizar: no se pudo guardar {numero} {pagina}", e)
             return False
 
     # ══════════════════════════════════════════════════════════════════════════
