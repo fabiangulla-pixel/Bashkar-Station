@@ -1114,7 +1114,11 @@ class BashkarApp(tk.Tk):
         self._btn_bitacora.bind("<Leave>",
             lambda e: self._btn_bitacora.config(fg=TXT_SEC))
         self._bitacora_win = None   # referencia a la ventana flotante
-        self._bitacora_engine = None  # BitacoraEngine (se inicializa al abrir)
+        # Caché del BitacoraEngine y la base a la que apunta. NO llamarlo
+        # _bitacora_engine: así se llama el método, y el atributo lo tapaba
+        # (la bitácora fallaba con TypeError en cada uso).
+        self._bitacora_eng_cache = None
+        self._bitacora_eng_db = None
 
         # Botón Command Palette
         self._btn_cp = tk.Label(
@@ -2712,13 +2716,17 @@ class BashkarApp(tk.Tk):
         """Retorna instancia de BitacoraEngine para el proyecto activo."""
         if not ST.ruta_db:
             return None
-        if self._bitacora_engine is None:
+        # Se renueva al cambiar de proyecto: si no, las notas irían a la base
+        # del primer proyecto abierto en la sesión.
+        if self._bitacora_eng_cache is None or self._bitacora_eng_db != ST.ruta_db:
             try:
                 from core.bitacora_engine import BitacoraEngine
-                self._bitacora_engine = BitacoraEngine(ST.ruta_db)
-            except Exception:
+                self._bitacora_eng_cache = BitacoraEngine(ST.ruta_db)
+                self._bitacora_eng_db = ST.ruta_db
+            except Exception as e:
+                print(f"[bitácora] no se pudo abrir {ST.ruta_db}: {e}")
                 return None
-        return self._bitacora_engine
+        return self._bitacora_eng_cache
 
     def _bitacora_abrir(self):
         """Abre (o trae al frente) la ventana flotante de bitácora."""
