@@ -60,6 +60,28 @@ Extraídos con tests de contrato: `datos/normalizaciones.py` y
 `core/servicios_corpus.py` (conteo de páginas pendientes, reconstrucción de
 metadatos, agrupación por número). `app.py` conserva adaptadores delgados.
 
+### 6. Segunda tanda: cinco fallos más, todos destapados al extraer código de app.py
+
+| Commit | Fallo | Desde |
+|---|---|---|
+| `9b9200e` | El paquete de publicación nunca incluyó `corpus.xml` (`exportar_corpus_tei` con argumentos inexistentes) y METHODS.md contaba PDF como páginas y 0 palabras | — |
+| `4603735` | El GEXF se rompía con comillas en el nombre de una entidad | — |
+| `10c4887` | La ruta de benchmark «Tesseract por zonas» fallaba siempre con TypeError; al arreglarla, el deskew habría sobrescrito las imágenes de referencia | commit inicial |
+| `30e0bb0` | Las anotaciones se guardaban en la base del primer proyecto abierto en la sesión | — |
+| `d543325` | **La bitácora no guardaba ninguna nota**: un atributo tapaba al método del mismo nombre | commit inicial |
+
+Causa común de que sobrevivieran: el `.exe` corre sin consola y los errores
+de callbacks de Tk se perdían. `fde83ad` agrega `core/registro_errores.py`
+(registro rotativo + aviso en pantalla) y un test estático impide que un
+atributo vuelva a tapar un método.
+
+El paquete de publicación lista ahora lo que de verdad contiene y avisa de
+las piezas sin datos. Verificado de punta a punta: primer paquete completo.
+
+Al final de la sesión: 1.750 tests pasan, 27 se saltan, 0 fallan.
+`app.py` bajó de 21.469 a ~21.370 líneas; lo importante no es la cifra sino
+que cada bloque extraído ahora tiene tests.
+
 ### Pendiente que no depende del código
 
 - Transcribir referencias humanas en `benchmark/estampa-1939/referencia/`.

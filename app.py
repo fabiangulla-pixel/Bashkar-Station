@@ -18732,6 +18732,7 @@ class BashkarApp(tk.Tk):
 
         tmp = _PPath(tempfile.mkdtemp(prefix="bashkar_pub_"))
         errores = []
+        contenido: list[str] = []   # lo que de verdad quedó en el ZIP
 
         def _log(msg):
             self.after(0, lambda m=msg: self._lbl_excel.config(text=f"⏳ {m}"))
@@ -18824,11 +18825,19 @@ class BashkarApp(tk.Tk):
                 for f in tmp.rglob("*"):
                     if f.is_file():
                         zf.write(f, f.relative_to(tmp))
+                        if not f.name.endswith(".proveniencia.json"):
+                            contenido.append(f.relative_to(tmp).as_posix())
 
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
         def _fin():
+            esperados = {"corpus.xml", "corpus.bib", "entidades.csv",
+                         "bitacora.md", "METHODS.md", "metadatos.json"}
+            faltan = sorted(esperados - set(contenido))
+            if faltan and not errores:
+                # Nada falló, pero no había datos para esas piezas: decirlo.
+                errores.append("Sin datos para: " + ", ".join(faltan))
             if errores:
                 self._lbl_excel.config(
                     text=f"⚠ Paquete con {len(errores)} advertencias")
@@ -18841,8 +18850,7 @@ class BashkarApp(tk.Tk):
                 messagebox.showinfo(
                     "Paquete listo ✅",
                     f"Paquete generado exitosamente:\n{dest_zip}\n\n"
-                    f"Contiene: corpus.xml · corpus.bib · entidades.csv · "
-                    f"bitacora.md · METHODS.md · metadatos.json")
+                    "Contiene: " + " · ".join(sorted(contenido)))
             plataforma.abrir_en_sistema(Path(dest_zip).parent)
         self.after(0, _fin)
 
