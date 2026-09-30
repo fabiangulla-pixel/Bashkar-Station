@@ -17,7 +17,8 @@ Rasgos observados a replicar:
   objetivo exige MLA). Lo que cambia al escribir la prosa:
   - En texto: `(Apellido 23)` — apellido y número de página, **sin coma y sin año**.
     Con el apellido ya nombrado en la frase, solo el número: "Bhaskar sostiene (23)".
-    Dos autores: `(Rodríguez Morales y Sierra Restrepo 5)`. Tres o más: `(Apellido et al. 5)`.
+    Dos autores: `(Apellido y Apellido 5)`. Tres o más: `(Apellido et al. 5)`.
+    Ejemplo real de este artículo: `(Rodríguez Morales 5)`.
     Dos obras del mismo autor: `(Apellido, *Título abreviado* 23)`.
   - Sin fuente paginada (sitio, base de datos, salida de software): solo `(Apellido)`.
   - La lista final se rotula **Obras citadas**, no "Referencias", en orden
@@ -40,8 +41,7 @@ Enrique Gaviria, Abel Botero, Jorge Zalamea, León de Greiff, Francisco Umaña
 Bernal, José Mar, Manuel García Herreros, Luis Vidales; influencia de "Ariel"
 de Rodó y de las ideas socialistas de posguerra; reacción contra el modernismo
 y la generación centenarista). Fuente académica a citar:
-Rodríguez Morales, [nombre de pila], y [nombre de pila] Sierra Restrepo. "Los Nuevos: entre la
-tradición y la vanguardia". *Boletín Cultural y Bibliográfico*, vol. 42, no. 69,
+Rodríguez Morales, Ricardo. "Los Nuevos: entre la tradición y la vanguardia". *Boletín Cultural y Bibliográfico*, vol. 42, no. 69,
 2005, pp. 2-23,
 https://publicaciones.banrepcultural.org/index.php/boletin_cultural/article/view/707
 (también indexado en Dialnet y en la Biblioteca Virtual Miguel de Cervantes;
@@ -244,11 +244,18 @@ mencionar que los libros de LON... fueron fuertemente criticados"), este
 artículo debería ser igual de explícito sobre los límites del método
 computacional:
 
-- Ground truth de OCR: juicio de un evaluador (LLM) sobre una muestra,
-  accuracy real medida 0.69 (46/47 páginas evaluadas) — cifra a citar con su
-  método de validación (Kappa de Cohen disponible en `validacion_engine.py`
-  para codificación inter-anotador, si se hizo o se planea hacer con un
-  segundo codificador humano).
+- ⚠️ **Corregido 29-sep-2026 — NO citar "accuracy 0.69" como calidad del
+  OCR.** Esa cifra es el juicio de un modelo de lenguaje sobre 46 de 47
+  páginas: no es verdad de referencia, y un CER calculado contra ella tendría
+  apariencia de rigor sin serlo. Lo defendible: (a) declarar que la calidad
+  del OCR **no está medida todavía contra transcripción humana**, o (b)
+  transcribir la muestra de `benchmark/estampa-1939/` (47 páginas, tres rutas
+  de OCR ya cargadas) y citar CER/WER con su intervalo. Con menos de ~20
+  páginas la herramienta misma advierte que la diferencia entre rutas puede
+  ser ruido. El juicio del LLM puede mencionarse como exploración, no como
+  medida.
+- Kappa de Cohen (`validacion_engine.py`) solo si hay un segundo codificador
+  humano de la NER.
 - Limitaciones conocidas y declaradas: bylines con iniciales ("Por JGS") no
   resolubles a nombre completo sin fuente externa; corpus mayoritariamente
   anónimo (~74-92% según el número); fechas/obras/eventos históricos con
@@ -259,6 +266,39 @@ computacional:
   segmentación mal calibradas) — es información legítima sobre la fiabilidad
   de cualquier resultado cuantitativo que el artículo cite, y coincide con el
   tipo de transparencia metodológica que ya practicas en la tesis de 2018.
+
+### Material para la sección 4 — sesión 70 (29-sep-2026)
+
+*(Hechos verificados, para escoger. La prosa es tuya.)*
+
+- **Capas de texto separadas.** Cada página conserva tres capas: salida del
+  OCR (congelada: no se sobrescribe nunca), corrección automática y revisión
+  del investigador, con un historial de solo inserción que registra autor,
+  fecha y versión del software de cada cambio. Distinguir evidencia,
+  corrección de máquina e intervención humana es el tipo de distinción que la
+  crítica textual hace con los testimonios; aquí queda registrada por diseño.
+- **Proveniencia de cada producto.** Toda exportación (TEI, BibTeX, ALTO,
+  OKF, Excel, PDF, GEXF/RDF) lleva un manifiesto con fuentes, commit del
+  software, versiones de las librerías y el aviso de que el corpus tiene sus
+  propias condiciones de uso. METHODS.md declara qué porcentaje de las
+  páginas tuvo revisión humana y sus limitaciones.
+- **Honestidad metodológica, con datos.** La auditoría de la sesión 70
+  encontró que partes del software fallaban en silencio: la corrección
+  manual de OCR podía perder el texto original en la segunda sesión de
+  trabajo; la bitácora de investigación no había guardado ninguna nota desde
+  la primera versión; el paquete de publicación nunca incluyó el XML-TEI; y
+  el enderezado automático de páginas dejó de aplicarse al actualizar una
+  librería (OpenCV 5). El hecho sostiene el argumento de la sección: **una
+  herramienta de humanidades digitales es un instrumento que también hay que
+  calibrar y auditar**, igual que se critica la materialidad de una edición.
+  *(Abierto, sin verificar: si alguna cifra ya citada arriba —corpus completo
+  del 30-ago— pasó por alguna de esas funciones. Comprobarlo antes de
+  afirmar que no les afecta.)*
+- **Límite medido de la segmentación automática por zonas:** a 300 DPI, en
+  páginas derechas de *Estampa* la heurística RLSA clasifica el cuerpo de
+  texto como fotografía (0 y 41 palabras recuperadas frente a 612 y 156 de
+  Tesseract de página completa). Justifica por qué el proyecto etiqueta zonas
+  a mano en vez de confiar en la segmentación automática.
 
 ## Conclusiones: [subtítulo temático a definir]
 
@@ -272,20 +312,29 @@ uses; **no fabricar ninguna**. Las dos entradas de abajo son las únicas ya
 verificadas del esqueleto; el resto lleva marcador `[ ]` hasta que se compruebe
 el dato contra la fuente.)*
 
+Bhaskar, Michael. *La máquina de contenido: hacia una teoría de la edición
+  desde la imprenta hasta la red digital*. Fondo de Cultura Económica, 2014.
+
 Gullaván Vera, Fabián Andrés. *La Biblioteca de Literatura Colombiana de la
   editorial La Oveja Negra. Contribuciones para el estudio bibliográfico de
   colecciones editoriales*. 2018. Instituto Caro y Cuervo, trabajo de grado,
   https://bibliotecadigital.caroycuervo.gov.co/id/eprint/1337/.
 
-Rodríguez Morales, [nombre de pila], y [nombre de pila] Sierra Restrepo. "Los
-  Nuevos: entre la tradición y la vanguardia". *Boletín Cultural y
+Rodríguez Morales, Ricardo. "Los Nuevos: entre la tradición y la
+  vanguardia". *Boletín Cultural y
   Bibliográfico*, vol. 42, no. 69, 2005, pp. 2-23,
   https://publicaciones.banrepcultural.org/index.php/boletin_cultural/article/view/707.
 
-*(Pendientes de verificar antes de redactar: Bhaskar — la tesis de 2018 lo cita
-como 2014, falta el título y la editorial exactos de la edición usada; Mollier
-2017, ídem. En MLA el año va después del título, así que la ficha APA de la
-tesis no se puede convertir sin tener el registro completo delante.)*
+Mollier, Jean-Yves. "Prólogo". *La colección: auge y consolidación de un
+  objeto editorial*, compilado por Christine Rivalan Guégo y Miriam Nicoli,
+  Universidad de los Andes / Universidad Nacional de Colombia, 2017, pp. [ ].
+
+*(Bhaskar y Mollier resueltos 29-sep-2026: las fichas salen de la bibliografía
+de la tesis de 2018 —PDF del repositorio del Caro y Cuervo— y los nombres
+completos se verificaron en el catálogo del FCE/ELEM y en Ediciones Uniandes.
+Quedan dos datos que solo da el libro en mano: el rango de páginas del prólogo
+de Mollier (la tesis cita la p. 16) y, si se quiere consignar, el traductor de
+la edición en español de Bhaskar.)*
 
 *(Si el artículo cita el software como fuente, la entrada MLA del depósito
 Zenodo es la vía correcta — DOI de concepto `10.5281/zenodo.21939404` —, no una
@@ -347,14 +396,19 @@ anteriores, no de la corrida completa más reciente.
    "Obras citadas" con las dos fuentes ya verificadas convertidas, el resumen
    bajó de 250 a 150 palabras y se añadieron los bloques de Abstract/Keywords
    y Resumo/Palavras-chave. Queda abierto solo lo que exige consultar fuentes:
-   los nombres de pila de Rodríguez Morales y Sierra Restrepo, y las fichas
+   ~~los nombres de pila de Rodríguez Morales y Sierra Restrepo~~ — **resuelto
+   29-sep-2026 contra la página del artículo en publicaciones.banrepcultural.org:
+   el autor es uno solo, Ricardo Rodríguez Morales; "Sierra Restrepo" no figura
+   como coautor** y se retiró de la ficha. ~~Quedan las fichas
    completas de Bhaskar y Mollier (MLA pone el año tras el título, así que la
-   ficha APA de la tesis de 2018 no basta para convertirlas).
+   ficha APA de la tesis de 2018 no basta para convertirlas).~~ **Resuelto
+   29-sep-2026**, ver "Obras citadas"; solo falta el rango de páginas del
+   prólogo de Mollier.
 2. ~~Recorrer el pipeline completo sobre el corpus actual~~ — **HECHO
    30-ago-2026**, cifras finales ya incorporadas arriba (7.652 entidades,
    red 300 nodos/0.218 modularidad, IPA 0.594, encuadres, 99.8% anónimo).
 3. ~~Definir marco teórico secundario y veta central~~ — **HECHO
-   2-sep-2026**: Los Nuevos (Rodríguez Morales y Sierra Restrepo, 2005) +
+   2-sep-2026**: Los Nuevos (Rodríguez Morales 2005) +
    campo literario. Falta todavía el argumento histórico completo (la
    relación Los Nuevos↔*Estampa* es una pista real, no una tesis redactada).
 4. Redactar la prosa final en tu voz sobre esta estructura (yo puedo ayudar

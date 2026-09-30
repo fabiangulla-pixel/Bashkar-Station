@@ -20,7 +20,7 @@ contraste principal del plan de la beca. Medición de muestra en progreso.
 
 ~~Convertir las citas del paper de APA a MLA y ampliar el resumen a tres
 lenguas~~ — **HECHO el 9-sep-2026**. Del paper queda solo lo que exige
-consultar fuentes: los nombres de pila de Rodríguez Morales y Sierra Restrepo,
+consultar fuentes: ~~los nombres de pila de Rodríguez Morales y Sierra Restrepo~~ (resuelto: autor único, Ricardo Rodríguez Morales),
 y las fichas completas de Bhaskar y Mollier (en MLA el año va después del
 título, así que la ficha APA de la tesis no basta). Revista objetivo confirmada
 por Fabián el 2-sep-2026:
