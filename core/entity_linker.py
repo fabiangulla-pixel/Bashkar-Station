@@ -56,6 +56,8 @@ _ALGO_VERSION = 4
 # inferior de 1700 (usada hasta sesión 64) los excluía a todos por error real,
 # verificado sobre el corpus de Estampa (Bogotá, el lugar más mencionado del
 # corpus, no enlazaba con Wikidata por esta causa).
+# Valor histórico (Estampa). La ventana real sale de PerfilCorpus.anio_fin;
+# se conserva el nombre por compatibilidad con código y tests que lo importan.
 _ANIO_CORPUS_FIN = 1945    # margen sobre 1940 para no excluir contemporáneos
 
 # Longitud mínima de una entidad para intentar enlazarla. Fragmentos OCR muy
@@ -309,7 +311,7 @@ _P31_VALIDOS = {
 
 
 def _puntuar_candidato(candidato: dict, texto: str, categoria: str,
-                       contexto: str = "") -> float:
+                       contexto: str = "", perfil=None) -> float:
     """
     Puntúa un candidato de Wikidata. El criterio dominante es el RANGO de
     Wikidata (orden por relevancia/enlaces): la primera acepción es casi
@@ -369,8 +371,10 @@ def _puntuar_candidato(candidato: dict, texto: str, categoria: str,
             score += 0.6
             break
 
-    # Desempate suave por relación con el corpus (NO debe dominar al rango)
-    if "colombia" in desc or "colombiano" in desc or "colombiana" in desc:
+    # Desempate suave por relación con el corpus (NO debe dominar al rango).
+    # El país sale del perfil del corpus (por defecto, Colombia: Estampa).
+    from core.perfil_corpus import POR_DEFECTO
+    if any(t in desc for t in (perfil or POR_DEFECTO).terminos_pais):
         score += 0.4
 
     return score
@@ -382,6 +386,7 @@ def enlazar_entidad(
     ruta_cache: str | None = None,
     sin_red: bool = False,
     contexto: str = "",
+    perfil=None,
 ) -> dict | None:
     """
     Enlaza una entidad nombrada con su entrada en Wikidata.
@@ -394,6 +399,8 @@ def enlazar_entidad(
         contexto:    Texto del artículo donde aparece la entidad. Se usa para
                      desambiguar homónimos por contexto (ej. "Alfonso López"
                      presidente vs. deportista). Opcional. (#1)
+        perfil:      core.perfil_corpus.PerfilCorpus (país y período del
+                     corpus). None = el de Estampa, comportamiento histórico.
 
     Returns:
         dict con {id, label, description, url, confianza} o None si no se encontró.
@@ -413,10 +420,16 @@ def enlazar_entidad(
     if len(texto) < _MIN_LEN_ENTIDAD or not any(c.isalpha() for c in texto):
         return None
 
+    from core.perfil_corpus import POR_DEFECTO
+    perfil = perfil or POR_DEFECTO
     cache = _obtener_cache(ruta_cache)
+    # El resultado depende del perfil: con el de Estampa la clave es la de
+    # siempre (las cachés existentes siguen valiendo); con otro, se separa
+    # para que un corpus no herede los enlaces decididos para otro.
+    clave = categoria if perfil.es_por_defecto() else f"{categoria}|{perfil.firma()}"
 
     # Consultar caché primero (sólo entradas del algoritmo actual; #4)
-    cached = cache.obtener(texto, categoria)
+    cached = cache.obtener(texto, clave)
     if cached is not None:
         return cached if cached else None  # {} → None (no encontrado)
 
@@ -433,12 +446,12 @@ def enlazar_entidad(
         candidatos = _llamar_wikidata(texto, categoria, lang="en")
 
     if not candidatos:
-        cache.guardar(texto, categoria, None)
+        cache.guardar(texto, clave, None)
         return None
 
     # Puntuar y ordenar (con contexto del artículo si lo hay; #1)
     puntuados = [
-        (c, _puntuar_candidato(c, texto, categoria, contexto))
+        (c, _puntuar_candidato(c, texto, categoria, contexto, perfil))
         for c in candidatos
     ]
     puntuados.sort(key=lambda x: -x[1])
@@ -463,13 +476,13 @@ def enlazar_entidad(
             # Descartar homónimos modernos (nacidos/fundados tras el corpus). (#3)
             time.sleep(_PAUSA_ENTRE_LLAMADAS)
             anio = _obtener_fecha_relevante(cand["id"])
-            if anio is not None and anio > _ANIO_CORPUS_FIN:
+            if anio is not None and anio > perfil.anio_fin:
                 continue
         mejor, mejor_score = cand, sc
         break
 
     if mejor is None:
-        cache.guardar(texto, categoria, None)
+        cache.guardar(texto, clave, None)
         return None
 
     # Normalizar confianza a [0, 1]. El score máximo ronda ~4.8 (rango 0 + label
@@ -479,7 +492,7 @@ def enlazar_entidad(
     # Umbral de confianza (#2): por debajo, el enlace es demasiado dudoso y se
     # trata como "no encontrado" para no contaminar el corpus con enlaces malos.
     if confianza < _CONF_MINIMA:
-        cache.guardar(texto, categoria, None)
+        cache.guardar(texto, clave, None)
         return None
 
     resultado = {
@@ -489,7 +502,7 @@ def enlazar_entidad(
         "url":         mejor["url"],
         "confianza":   round(confianza, 3),
     }
-    cache.guardar(texto, categoria, resultado)
+    cache.guardar(texto, clave, resultado)
     return resultado
 
 
@@ -499,6 +512,7 @@ def enlazar_indice_ner(
     sin_red: bool = False,
     callback=None,
     textos_articulos: dict | None = None,
+    perfil=None,
 ) -> dict:
     """
     Enlaza todas las entidades de un índice NER completo.
@@ -528,7 +542,8 @@ def enlazar_indice_ner(
                 # (cota de tamaño para no inflar el solapamiento).
                 trozos = [textos_articulos.get(a, "") for a in (art_ids or [])]
                 contexto = " ".join(t for t in trozos if t)[:4000]
-            enlace = enlazar_entidad(texto, categoria, ruta_cache, sin_red, contexto)
+            enlace = enlazar_entidad(texto, categoria, ruta_cache, sin_red, contexto,
+                                     perfil=perfil)
             resultado[categoria][texto] = enlace
             n += 1
             if callback:
@@ -544,6 +559,7 @@ def enlazar_lista_entidades(
     entidades: list[dict],
     ruta_cache: str | None = None,
     sin_red: bool = False,
+    perfil=None,
 ) -> list[dict]:
     """
     Enlaza una lista de entidades NER (formato de ner_roberta / pipeline_ner).
@@ -565,6 +581,7 @@ def enlazar_lista_entidades(
             ent.get("categoria", ""),
             ruta_cache,
             sin_red,
+            perfil=perfil,
         )
         ent_copia["wikidata"] = enlace
         enriquecidas.append(ent_copia)

@@ -402,6 +402,33 @@ y la ficha de GitHub dirán versiones distintas.
 
 ---
 
+## Usar Bashkar con otro corpus
+
+La herramienta se calibró sobre *Estampa* (Bogotá, 1938-1940). Las suposiciones
+sobre el corpus que afectan resultados se declaran en el proyecto, en la
+clave `config.perfil_corpus` del `.bashkar`:
+
+```json
+"perfil_corpus": {
+  "id": "caras-y-caretas",
+  "terminos_pais": ["argentina", "argentino", "argentina"],
+  "anio_fin": 1940
+}
+```
+
+- `terminos_pais`: al enlazar entidades con Wikidata, un candidato cuya
+  descripción mencione el país del corpus gana un desempate suave.
+- `anio_fin`: entidades nacidas o fundadas después se descartan como
+  homónimos modernos.
+
+Sin la clave rige el perfil de *Estampa* (Colombia, 1945), el comportamiento
+de siempre. Los enlaces de cada perfil se guardan aparte en la caché. Siguen
+calibradas para *Estampa* —y documentadas en `docs/DECISIONS.md`— las listas
+del normalizador y de la morfología histórica; la abstención por calidad de
+OCR (sesión 69) sí se validó sobre nueve publicaciones de la BNC.
+
+---
+
 ## Si algo falla sin aviso
 
 Todo error que ocurra dentro de la interfaz o de un proceso en segundo plano

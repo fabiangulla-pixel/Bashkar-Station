@@ -186,6 +186,9 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
         # multi-proveedor" más abajo y core/user_prefs.py.
         "max_ia":         getattr(st, "max_ia", 15),
         "campos_semillas": getattr(st, "campos_semillas", {}),
+        # Suposiciones sobre el corpus (país, período): ver core/perfil_corpus.
+        # Vacío = perfil de Estampa, el comportamiento histórico.
+        "perfil_corpus":  getattr(st, "perfil_corpus", None) or {},
     }
 
     # ── Progreso ──────────────────────────────────────────────────────────────
@@ -381,6 +384,7 @@ def cargar_proyecto(ruta: Path, st):
 
     st.publicacion  = config.get("publicacion", "Mi publicación")
     st.periodo      = config.get("periodo", "")
+    st.perfil_corpus = config.get("perfil_corpus") or {}
     pdf_dir         = config.get("pdf_dir", "")
     st.pdf_dir      = _P(pdf_dir) if pdf_dir else None
     out_dir         = config.get("out_dir", "")

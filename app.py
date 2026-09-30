@@ -13803,11 +13803,13 @@ class BashkarApp(tk.Tk):
                 textos_articulos = {}
 
             try:
+                from core.perfil_corpus import PerfilCorpus
                 resultado = enlazar_indice_ner(
                     ST.indice_ner_global,
                     sin_red=False,
                     callback=_cb,
                     textos_articulos=textos_articulos or None,
+                    perfil=PerfilCorpus.desde_dict(getattr(ST, "perfil_corpus", None)),
                 )
                 # Guardar resultado en ST y mostrar resumen
                 ST.wikidata_enlaces = resultado
