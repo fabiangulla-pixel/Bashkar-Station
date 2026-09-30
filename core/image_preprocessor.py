@@ -13,6 +13,18 @@ Diseñado para prensa colombiana de los años 30 digitalizada por la BNC.
 import math
 
 
+def _segmentos(lines):
+    """Segmentos (x1, y1, x2, y2) de ``cv2.HoughLinesP`` en cualquier versión.
+
+    OpenCV 4 devuelve forma (N, 1, 4) y OpenCV 5 (N, 4). El código asumía la
+    primera (``line[0]``) y con OpenCV 5 cada llamada fallaba con "cannot
+    unpack non-iterable numpy.int32": el enderezado de página no se aplicaba
+    nunca y el error quedaba tragado como "Deskew omitido".
+    """
+    import numpy as np
+    return np.asarray(lines).reshape(-1, 4).tolist()
+
+
 def deskew(img, max_angle: float = 10.0):
     """
     Corrige la inclinación de una imagen de página.
@@ -66,8 +78,7 @@ def deskew(img, max_angle: float = 10.0):
 
     # Calcular ángulo de cada línea detectada
     angles = []
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
+    for x1, y1, x2, y2 in _segmentos(lines):
         if x2 != x1:
             angle = math.degrees(math.atan2(y2 - y1, x2 - x1))
             # Solo ángulos cercanos a horizontal
@@ -270,8 +281,7 @@ def detectar_angulo_pagina(img) -> float:
         return 0.0
 
     angles = []
-    for line in lines:
-        x1, y1, x2, y2 = line[0]
+    for x1, y1, x2, y2 in _segmentos(lines):
         if x2 != x1:
             a = math.degrees(math.atan2(y2 - y1, x2 - x1))
             if abs(a) <= 10.0:

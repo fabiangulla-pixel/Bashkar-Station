@@ -402,6 +402,11 @@ def _candidatos_poppler() -> list[Path]:
             valor = os.environ.get(var)
             if valor:
                 rutas.append(Path(valor) / "poppler")
+        # Donde lo descomprime instalar.py. Sin esto, perdido poppler_path.txt
+        # (se sacó del repo en la sesión 68), Poppler instalado por el propio
+        # instalador de Bashkar era invisible para el diagnóstico y el OCR.
+        if os.environ.get("LOCALAPPDATA"):
+            rutas.append(Path(os.environ["LOCALAPPDATA"]) / "bashkar_poppler")
         return configurados + rutas
     if es_macos():
         # `brew install poppler`: binarios sueltos en el bin del prefijo.

@@ -555,6 +555,14 @@ class TestDirPoppler:
         monkeypatch.setattr(plataforma, "_dirs_binarios_tipicos", list)
         assert plataforma.dir_poppler() == ""
 
+    def test_encuentra_la_carpeta_donde_lo_deja_instalar_py(self, monkeypatch, tmp_path):
+        """instalar.py descomprime en %LOCALAPPDATA%/bashkar_poppler; sin
+        poppler_path.txt nadie lo buscaba ahí (sesión 70)."""
+        simular(monkeypatch, "windows")
+        monkeypatch.setenv("LOCALAPPDATA", str(tmp_path))
+        monkeypatch.setattr(plataforma, "_ruta_configurada_poppler", lambda: None)
+        assert tmp_path / "bashkar_poppler" in plataforma._candidatos_poppler()
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Integración: el resto de la app usa esta capa y respeta la prioridad previa

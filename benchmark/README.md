@@ -26,8 +26,13 @@ Rutas ya cargadas en `estampa-1939/salidas/`:
 (se achicaron para el juez de IA). A esa resolución la ruta `zonas` (deskew +
 bloques RLSA) clasifica bloques de texto como fotografía y recupera 1-96
 palabras donde Tesseract de página completa saca ~600: por eso no se cargó.
-Para medir `zonas` en serio hacen falta las imágenes a resolución completa
-(asset del release `vision-ocr-entrada-v1`).
+Medido después a 300 DPI sobre 3 páginas de abril de 1939: la resolución
+no era la causa. Con el enderezado reparado (OpenCV 5, commit de la sesión
+70) una página inclinada pasó de 0 a 834 palabras, a la par de Tesseract de
+página completa (808); pero en páginas derechas la segmentación RLSA sigue
+clasificando el cuerpo de texto como fotografía (0 y 41 palabras frente a
+612 y 156). Es un problema de calibración de la heurística: ajustarla exige
+referencias humanas, no más ensayo y error.
 
 Las imágenes (`ground_truth_piloto/*/imagenes/`) **no están en el repositorio**
 por las condiciones de uso de la BNC: quien clone el proyecto debe obtenerlas
