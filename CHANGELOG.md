@@ -82,6 +82,29 @@ Al final de la sesión: 1.750 tests pasan, 27 se saltan, 0 fallan.
 `app.py` bajó de 21.469 a ~21.370 líneas; lo importante no es la cifra sino
 que cada bloque extraído ahora tiene tests.
 
+### 7. Tercera tanda (misma sesión, tarde)
+
+- **La sesión 69 estaba huérfana.** Trabajó en `C:\devashkar_station` y
+  nunca subió sus 4 commits (abstención por fragmentación, ruta por página,
+  `pagina_inicio` NULL, ruta 2). Se integraron por cherry-pick; la copia de
+  `C:\dev` quedó en `origin/main` con los originales en la rama
+  `respaldo-sesion69-sin-integrar`.
+- **Poppler invisible** (`5e41758`): `instalar.py` lo deja en
+  `%LOCALAPPDATA%ashkar_poppler` y nadie buscaba ahí sin `poppler_path.txt`.
+- **Enderezado de página roto con OpenCV 5** (mismo commit): `HoughLinesP`
+  cambió de forma; el deskew no se aplicaba nunca con el lock actual. Una
+  página inclinada pasa de 0 a 834 palabras por la ruta de zonas.
+- **Perfil de corpus** (`5a54f87`): el enlazador con Wikidata deja de suponer
+  Colombia y 1945; el proyecto declara país y período.
+- Extraídos `textos_corpus` y `articulos_para_pipeline` (`d691ed0`).
+- Paper: el esqueleto citaba el juicio de un LLM como *ground truth*; un
+  coautor inexistente («Sierra Restrepo») y fichas de Bhaskar/Mollier
+  resueltas contra la bibliografía de la tesis de 2018. Discrepa de la
+  sesión 69 (que fijó Bhaskar en Anthem 2013): la tesis usó la traducción
+  del FCE de 2014.
+
+Suite: 1.818 pasan, 28 se saltan, 0 fallan. CI verde en GitHub.
+
 ### Pendiente que no depende del código
 
 - Transcribir referencias humanas en `benchmark/estampa-1939/referencia/`.

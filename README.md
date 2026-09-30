@@ -411,7 +411,7 @@ clave `config.perfil_corpus` del `.bashkar`:
 ```json
 "perfil_corpus": {
   "id": "caras-y-caretas",
-  "terminos_pais": ["argentina", "argentino", "argentina"],
+  "terminos_pais": ["argentina", "argentino"],
   "anio_fin": 1940
 }
 ```
