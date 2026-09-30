@@ -52,3 +52,26 @@ def test_agrupar_prefiere_articulos_y_omite_vacios():
     assert SC.agrupar_por_numero(arts, ["ignorado"]) == {"E17": ["a"], "18": ["b"]}
     assert SC.agrupar_por_numero([], ["x", None]) == {"pag_0000": ["x"], "pag_0001": [""]}
     assert SC.agrupar_por_numero() == {}
+
+
+def test_textos_corpus_prioridad_de_fuentes(tmp_path):
+    (tmp_path / "a.txt").write_text("desde disco", encoding="utf-8")
+    meta = pd.DataFrame({"txt_path": [str(tmp_path / "a.txt"), str(tmp_path / "no.txt")]})
+    arts = pd.DataFrame({"texto": ["segmentado", None]})
+    assert SC.textos_corpus(["ya hecho"], arts, meta) == ["ya hecho"]
+    assert SC.textos_corpus([], arts, meta) == ["segmentado"]
+    assert SC.textos_corpus([], None, meta) == ["desde disco"]
+    adhoc = {"E17": {"articulos": [{"texto": "t1"}, {"contenido": "t2"}, {"texto": ""}]}}
+    assert SC.textos_corpus(None, None, adhoc) == ["t1", "t2"]
+    assert SC.textos_corpus() == []
+
+
+def test_articulos_para_pipeline(tmp_path):
+    (tmp_path / "p1.txt").write_text("texto p1", encoding="utf-8")
+    meta = pd.DataFrame({"numero": ["E17"], "pagina": ["p1"],
+                         "txt_path": [str(tmp_path / "p1.txt")]})
+    arts = SC.articulos_para_pipeline(["ignorado"], meta)
+    assert arts[0]["id"] == "E17_p1" and arts[0]["texto"] == "texto p1"
+    assert SC.articulos_para_pipeline(["a", None])[1] == {
+        "id": "art_0001", "texto": "", "titulo": None, "autor": None,
+        "fecha": None, "ner": {}}

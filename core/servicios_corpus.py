@@ -111,3 +111,65 @@ def agrupar_por_numero(articulos=None, corpus_txt=None) -> dict[str, list[str]]:
         for i, txt in enumerate(corpus_txt):
             por_num[f"pag_{i:04d}"].append(txt or "")
     return dict(por_num)
+
+
+def textos_corpus(corpus_txt=None, df_articulos=None, corpus_meta=None) -> list[str]:
+    """El corpus como lista de textos planos, de la mejor fuente disponible.
+
+    Prioridad: ``corpus_txt`` ya construido → columna ``texto`` de los
+    artículos segmentados → ``corpus_meta`` (DataFrame con ``txt_path``, que
+    se leen de disco, o dict del modo ad-hoc). Extraído de
+    ``app._ling_corpus_txt`` (sesión 70); lo usan 11 paneles de análisis.
+    """
+    if corpus_txt:
+        return corpus_txt
+    try:
+        import pandas as pd
+    except ImportError:
+        pd = None
+    if df_articulos is not None and hasattr(df_articulos, "columns") \
+            and "texto" in df_articulos.columns:
+        return df_articulos["texto"].dropna().tolist()
+    if corpus_meta is None:
+        return []
+    txts: list[str] = []
+    if pd is not None and isinstance(corpus_meta, pd.DataFrame):
+        if "txt_path" in corpus_meta.columns:
+            for ruta in corpus_meta["txt_path"].dropna():
+                try:
+                    txts.append(Path(ruta).read_text(encoding="utf-8", errors="replace"))
+                except OSError:
+                    pass
+    elif isinstance(corpus_meta, dict):
+        for num_data in corpus_meta.values():
+            if isinstance(num_data, dict):
+                for art in num_data.get("articulos", []):
+                    t = art.get("texto", "") or art.get("contenido", "")
+                    if t:
+                        txts.append(str(t))
+    return txts
+
+
+def articulos_para_pipeline(corpus_txt=None, corpus_meta=None) -> list[dict]:
+    """Artículos mínimos {id, texto, titulo, autor, fecha, ner} para el
+    pipeline maestro. Extraído de ``app._pipeline_maestro_articulos``.
+
+    Con ``corpus_meta`` tabular el id es ``<numero>_<pagina>``; si no,
+    ``art_%04d``. ``ner`` sale vacío: los ids de página no coinciden con los
+    del índice NER global (contrato A1, sesión 66), así que no se inventa
+    una correspondencia.
+    """
+    if corpus_meta is not None and hasattr(corpus_meta, "iterrows"):
+        articulos = []
+        for _, row in corpus_meta.iterrows():
+            texto = ""
+            txt_path = row.get("txt_path", "")
+            if txt_path and Path(str(txt_path)).exists():
+                texto = Path(str(txt_path)).read_text("utf-8", errors="replace")
+            articulos.append({"id": f"{row.get('numero', '?')}_{row.get('pagina', '?')}",
+                              "texto": texto, "titulo": None, "autor": None,
+                              "fecha": None, "ner": {}})
+        return articulos
+    return [{"id": f"art_{i:04d}", "texto": t or "", "titulo": None, "autor": None,
+             "fecha": None, "ner": {}} for i, t in enumerate(corpus_txt or [])]
+

@@ -18324,43 +18324,10 @@ class BashkarApp(tk.Tk):
         pm.ejecutar_en_hilo(articulos_existentes=articulos if articulos else None)
 
     def _pipeline_maestro_articulos(self) -> list:
-        """Construye lista de artículos desde el estado actual del proyecto."""
-        articulos = []
-        corpus_txt = getattr(ST, "corpus_txt", []) or []
-        corpus_meta = getattr(ST, "corpus_meta", None)
-        if corpus_meta is None:
-            corpus_meta = {}
-        ner_global = getattr(ST, "indice_ner_global", {}) or {}
-
-        if hasattr(corpus_meta, "iterrows"):
-            for _, row in corpus_meta.iterrows():
-                art_id = str(row.get("numero", "?")) + "_" + str(row.get("pagina", "?"))
-                txt_path = row.get("txt_path", "")
-                texto = ""
-                if txt_path:
-                    from pathlib import Path as _PPath
-                    p = _PPath(str(txt_path))
-                    if p.exists():
-                        texto = p.read_text("utf-8", errors="replace")
-                articulos.append({
-                    "id": art_id,
-                    "texto": texto,
-                    "titulo": None,
-                    "autor": None,
-                    "fecha": None,
-                    "ner": {},
-                })
-        elif corpus_txt:
-            for i, t in enumerate(corpus_txt):
-                articulos.append({
-                    "id": f"art_{i:04d}",
-                    "texto": t or "",
-                    "titulo": None,
-                    "autor": None,
-                    "fecha": None,
-                    "ner": {},
-                })
-        return articulos
+        """Artículos desde el estado actual. Ver core.servicios_corpus."""
+        from core.servicios_corpus import articulos_para_pipeline
+        return articulos_para_pipeline(getattr(ST, "corpus_txt", []) or [],
+                                       getattr(ST, "corpus_meta", None))
 
     # ══════════════════════════════════════════════════════════════════════════
     # «GUARDAR COMO…» — presets de exportación estilo ABBYY FineReader
@@ -20132,47 +20099,11 @@ class BashkarApp(tk.Tk):
         self._txt_ling_log.config(state="disabled")
 
     def _ling_corpus_txt(self) -> list[str]:
-        """Devuelve el corpus como lista de textos planos (3 fuentes, en orden de prioridad)."""
-        # 1. Ya construido por _worker_seg o modo ad-hoc
-        if getattr(ST, "corpus_txt", None):
-            return ST.corpus_txt
-        # 2. df_articulos tiene columna "texto"
-        df_art = getattr(ST, "df_articulos", None)
-        if df_art is not None:
-            try:
-                import pandas as pd
-                if "texto" in df_art.columns:
-                    return df_art["texto"].dropna().tolist()
-            except Exception:
-                pass
-        # 3. corpus_meta — puede ser DataFrame (OCR normal) o dict (modo ad-hoc)
-        cm = getattr(ST, "corpus_meta", None)
-        if cm is not None:
-            txts = []
-            try:
-                import pandas as pd
-                if isinstance(cm, pd.DataFrame):
-                    # corpus_meta DataFrame tiene columna txt_path; leer TXTs desde disco
-                    if "txt_path" in cm.columns:
-                        from pathlib import Path
-                        for p in cm["txt_path"].dropna():
-                            try:
-                                txts.append(Path(p).read_text(encoding="utf-8",
-                                                               errors="replace"))
-                            except Exception:
-                                pass
-                elif isinstance(cm, dict):
-                    for num_data in cm.values():
-                        if isinstance(num_data, dict):
-                            for art in num_data.get("articulos", []):
-                                t = art.get("texto", "") or art.get("contenido", "")
-                                if t:
-                                    txts.append(str(t))
-            except Exception:
-                pass
-            if txts:
-                return txts
-        return []
+        """Corpus como lista de textos planos. Ver core.servicios_corpus.textos_corpus."""
+        from core.servicios_corpus import textos_corpus
+        return textos_corpus(getattr(ST, "corpus_txt", None),
+                             getattr(ST, "df_articulos", None),
+                             getattr(ST, "corpus_meta", None))
 
     # ── Concordancias sintácticas ─────────────────────────────────────────────
 
