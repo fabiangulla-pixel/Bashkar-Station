@@ -13,15 +13,18 @@ tomada solo al importar se quedaría con los viejos.
 
 from __future__ import annotations
 
-import importlib
-import pkgutil
 import sys
 
 
 def modulos() -> list:
-    paquete = sys.modules[__name__]
-    return [importlib.import_module(f"{__name__}.{m.name}")
-            for m in pkgutil.iter_modules(paquete.__path__)]
+    """Los paneles ya importados (app.py importa todos al definir BashkarApp).
+
+    No se usa pkgutil.iter_modules: dentro del .exe de PyInstaller el
+    descubrimiento de submódulos no es fiable, y un panel sin sincronizar
+    fallaría con NameError solo en la versión compilada.
+    """
+    prefijo = __name__ + "."
+    return [m for n, m in list(sys.modules.items()) if n.startswith(prefijo) and m]
 
 
 def sincronizar(globales: dict) -> None:

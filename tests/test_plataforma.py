@@ -653,6 +653,9 @@ class TestNadaDependeYaDeWindowsDirectamente:
         fuentes += [f for f in sorted((_RAIZ / "core").glob("*.py"))
                     if f.name != "plataforma.py"]
         fuentes += sorted((_RAIZ / "exportadores").glob("*.py"))
+        # La GUI ya no vive solo en app.py: sin esto el test pasaría en falso
+        # sobre los métodos movidos a paneles/ (sesión 71).
+        fuentes += sorted((_RAIZ / "paneles").glob("*.py"))
         culpables = [f.name for f in fuentes
                      if f.exists() and "os.startfile" in f.read_text(encoding="utf-8")]
         assert culpables == []

@@ -31,8 +31,15 @@ RAIZ = Path(__file__).resolve().parent.parent
 APP = RAIZ / "app.py"
 
 
+def _fuente():
+    # app.py + paneles/*.py: la GUI ya no vive en un solo archivo (sesión 71).
+    from tests._gui_fuente import fuente_gui
+    return fuente_gui()
+
+
 def _arbol_app():
-    return ast.parse(APP.read_text(encoding="utf-8"))
+    from tests._gui_fuente import fuente_clase_app
+    return ast.parse(fuente_clase_app())
 
 
 def test_app_no_define_su_propio_ocr_de_vision():
@@ -47,7 +54,7 @@ def test_app_no_define_su_propio_ocr_de_vision():
 def test_app_no_arma_peticiones_de_vision_a_mano():
     """Ninguna función de app.py debe construir el cuerpo de una petición de
     visión: eso es lo que hacía la copia, y es por donde diverge el prompt."""
-    fuente = APP.read_text(encoding="utf-8")
+    fuente = _fuente()
     sospechosos = [
         '"type": "image"',
         '"image_url"',
@@ -62,7 +69,7 @@ def test_app_no_arma_peticiones_de_vision_a_mano():
 
 
 def test_app_no_lleva_su_propio_prompt_de_ocr():
-    fuente = APP.read_text(encoding="utf-8")
+    fuente = _fuente()
     assert not re.search(r"Transcribe .{0,80}texto .{0,80}imagen", fuente, re.S), (
         "Hay un prompt de transcripción en app.py. El prompt de visión es uno "
         "solo y vive en core/ocr_llm.py (_PROMPT_VISION), calibrado contra el "
@@ -71,7 +78,7 @@ def test_app_no_lleva_su_propio_prompt_de_ocr():
 
 
 def test_la_ruta_2_llama_a_core_ocr_llm():
-    fuente = APP.read_text(encoding="utf-8")
+    fuente = _fuente()
     assert "from core.ocr_llm import ocr_con_vision" in fuente
     assert "ocr_con_vision(" in fuente
 

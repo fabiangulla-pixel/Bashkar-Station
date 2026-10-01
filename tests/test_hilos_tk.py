@@ -34,11 +34,9 @@ def _rango(nodo: ast.AST) -> set[int]:
 
 @pytest.fixture(scope="module")
 def clase_app() -> ast.ClassDef:
-    arbol = ast.parse(APP.read_text(encoding="utf-8-sig"))
-    for n in ast.walk(arbol):
-        if isinstance(n, ast.ClassDef) and "App" in n.name:
-            return n
-    pytest.fail("no se encontró la clase de la aplicación en app.py")
+    # BashkarApp + los métodos de sus paneles (paneles/*.py), como una sola clase.
+    from tests._gui_fuente import clase_app as _compuesta
+    return _compuesta()
 
 
 def _workers(cls: ast.ClassDef) -> dict[str, ast.FunctionDef]:

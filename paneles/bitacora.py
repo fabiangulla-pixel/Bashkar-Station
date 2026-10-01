@@ -5,6 +5,8 @@ original; los nombres globales (ST, colores, tk…) los inyecta
 paneles.sincronizar() desde app.py.
 """
 
+from __future__ import annotations
+
 # ruff: noqa: F821
 
 

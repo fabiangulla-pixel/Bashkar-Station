@@ -370,8 +370,8 @@ class TestGuiNerEvitaSegfault:
     kwarg sigue respetando esa elección."""
 
     def test_ambos_sitios_de_gui_respetan_spacy_fallback_explicito(self):
-        raiz = __import__("pathlib").Path(__file__).resolve().parent.parent
-        app_src = (raiz / "app.py").read_text(encoding="utf-8")
+        from tests._gui_fuente import fuente_gui
+        app_src = fuente_gui()   # app.py + paneles/*.py
         llamadas = [
             app_src[m.start():m.start() + 400]
             for m in __import__("re").finditer(r"pipeline_ner\(", app_src)
