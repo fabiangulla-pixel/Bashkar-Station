@@ -169,7 +169,7 @@ def test_ruta_zonas_no_modifica_la_imagen_original(tmp_path, monkeypatch):
         return ["zona"]
     monkeypatch.setattr(layout_tesseract, "analizar_pagina_local", analizar_que_escribe)
     monkeypatch.setattr(layout_tesseract, "ocr_por_zonas",
-                        lambda ruta, zonas: {"texto": "texto por zonas"})
+                        lambda ruta, zonas, **kw: {"texto": "texto por zonas"})
     img = tmp_path / "p1.jpg"
     img.write_bytes(b"ORIGINAL")
     assert benchmark_ocr.correr_ruta("zonas", [img], lambda m: None) == {"p1": "texto por zonas"}
