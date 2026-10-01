@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from ui_redesign import Theme as _T
 
-APP_VERSION = "12.6"
+APP_VERSION = "12.7"
 
 
 class _Tema:

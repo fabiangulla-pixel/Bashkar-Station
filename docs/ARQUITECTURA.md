@@ -116,7 +116,7 @@ sequenceDiagram
 |---|---:|---:|
 | `app.py` | 21.469 líneas | **6.640 líneas** |
 | Métodos en `BashkarApp` (app.py) | 572 | 154 |
-| Métodos en `paneles/` | — | 420, en 8 módulos |
+| Métodos en `paneles/` | — | 420, en 8 módulos (imports explícitos) |
 
 ### Dos capas de separación
 
@@ -143,53 +143,36 @@ usan `global`, `nonlocal` o `super()` (moverlos a un mixin cambiaría su
 significado).
 
 **Cómo funcionan los paneles.** Los métodos se movieron con copia literal
-(`scripts/_herramientas/extraer_panel.py`): siguen usando `ST`, `tk` y los
-colores sin importarlos. `paneles.sincronizar(globals())` refleja esos
-nombres en cada panel al cargar `app.py` y cada vez que cambia el tema (que
-reescribe los colores en caliente). Como ruff no puede verlos (F821
-desactivado en `paneles/`), `tests/test_paneles.py` comprueba desde el
-bytecode que todo nombre global que use un panel exista en `app.py`.
+(`scripts/_herramientas/extraer_panel.py`). Cada panel importa explícitamente
+lo que usa: lo compartido con `app.py` vive en `gui_comun.py` (`ST`,
+`APP_VERSION`, ayudas) y los colores en `gui_comun.TEMA`, que se lee en cada
+uso porque el tema cambia en caliente (`_aplicar_paleta` lo actualiza). Ruff
+F821 comprueba los paneles como cualquier otro módulo, y
+`tests/test_paneles.py` vigila en ejecución lo que ruff no ve: herencia,
+métodos duplicados entre paneles y que ningún color se use sin `TEMA.`.
 
-**Siguiente paso natural:** que cada panel importe explícitamente lo que usa
-en lugar de recibirlo por sincronización. Es mecánico (el test anterior da la
-lista exacta por panel) pero toca los colores del tema, que hoy son globales
-mutables: conviene hacerlo junto con convertir la paleta en un objeto.
+Un panel no puede importar de `app`: ejecutado como `python app.py`, el módulo
+se llama `__main__`, e `import app` crearía una segunda copia con otro `ST`.
+Por eso existe `gui_comun.py`.
 
-### Estrategia de extracción
+**Proveniencia de cada página OCR.** El worker de OCR registra en
+`ocr_metadatos.csv` el motor que de verdad produjo cada texto (también cuando
+fue un respaldo), su versión y la confianza solo si el motor la mide
+(`core/ocr/procedencia.py`); Normalizar lo lleva a `normalizaciones`.
 
-No se reescribe. Cada paso:
-
-1. Elegir un bloque cuya lógica no toque widgets.
-2. Escribir tests de contrato contra el comportamiento actual.
-3. Moverlo a `core/` o `datos/` con una API pequeña.
-4. Dejar en `app.py` un método delgado que delega (adaptador), para no tocar
-   los llamadores.
-5. Suite completa en verde y commit por bloque.
-
-Hechos:
-
-- `datos/normalizaciones.py` ← `_norm_leer_db` / `_norm_escribir_db`
-  (sesión 70). La extracción destapó que el OCR original se perdía.
-- `core/servicios_corpus.py` ← conteo de páginas, reconstrucción de metadatos
-  del corpus y agrupación por período (sesión 70).
-
-- `core/servicios_exportacion.py` ← configuración y estadísticas de
-  METHODS.md (duplicadas en dos sitios, ambas con cifras falsas) y artículos
-  TEI. Destapó que el paquete de publicación nunca incluía `corpus.xml`.
-- `core/exploradores.exportar_gexf` ← `_can_escribir_gexf` (el GEXF se rompía
-  con comillas en un nombre de entidad).
-- `core/benchmark_ocr.catalogo_rutas` ← `_bench_catalogo_rutas`.
-
-Tres de las cinco extracciones destaparon un fallo real. Es el argumento
-práctico a favor de seguir: la lógica escondida en la GUI no tenía tests.
+**SQLite.** La GUI ya no abre conexiones: todo pasa por `datos/` o por los
+motores de `core/` (el último caso, la cola de revisión NER, se movió a
+`core/revision_engine`).
 
 Siguientes (lógica que sigue dentro de los paneles), por orden:
 
-1. Worker de OCR de `paneles/ocr.py`: que elija el motor por el registro
-   `core.ocr` (hoy repite cadenas de `if` por ruta) y guarde `motor` y
-   `version` en la proveniencia de cada página.
-2. Paneles de entidades: lectura/escritura en SQLite a `datos/repositorio.py`.
-3. Etiquetador de zonas: separar render de PDF y persistencia de zonas.
+1. Worker de OCR de `paneles/ocr.py`: la procedencia ya es fiel, pero cada
+   ruta sigue en su propia rama de `if`; unificarlas sobre el registro
+   `core.ocr` exige antes un adaptador por lotes para Kraken y Ollama, que hoy
+   procesan en paralelo con su propia API.
+2. Etiquetador de zonas: separar render de PDF y persistencia de zonas.
+3. Los colores de `app.py` siguen siendo globales mutables (los paneles ya
+   leen `TEMA`); migrar `app.py` a `TEMA` cerraría el patrón.
 
 Meta: `app.py` como punto de composición (construye ventanas y conecta
 señales). No hay fecha, pero sí un indicador: la tabla de arriba, regenerada
