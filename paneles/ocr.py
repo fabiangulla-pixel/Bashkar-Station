@@ -2104,10 +2104,16 @@ class PanelOCR:
                                 texto=f"  ❌ Ruta 2 requiere API key de {prov}. Configúrala en ⚙ Configuración.")
                             errores.append(archivo.name); continue
 
+                        from core.ocr.procedencia import fila_meta, version_de
+                        _ver_vis = version_de("vision_llm", proveedor=prov,
+                                              modelo=model or _MODELO_VISION_DEFECTO)
+                        _ver_tes = version_de("tesseract", lang=lang)
                         for pi, ip in enumerate(imgs):
                             tp = txt_dir/(ip.stem+".txt")
+                            # La IA de visión no da confianza: None, no 95.0.
+                            motor_pag, ver_pag, respaldo = f"vision_{prov}", _ver_vis, None
                             if tp.exists():
-                                texto = tp.read_text("utf-8", errors="replace"); conf = 95.0
+                                texto = tp.read_text("utf-8", errors="replace"); conf = None
                             else:
                                 try:
                                     # core.ocr_llm es la ÚNICA implementación
@@ -2122,15 +2128,16 @@ class PanelOCR:
                                         ip, api_key=api_key,
                                         modelo=model or _MODELO_VISION_DEFECTO,
                                         proveedor=prov)
-                                    conf  = 95.0
+                                    conf  = None
                                 except Exception as ec:
                                     self._put(tipo="log",
                                         texto=f"    ⚠ {prov} falló en {ip.stem}: {ec}. Usando Tesseract.")
                                     texto, conf = ocr_pagina(ip, lang=lang)
+                                    motor_pag, ver_pag, respaldo = "tesseract", _ver_tes, f"vision_{prov}"
                                 tp.write_text(texto, "utf-8")
-                            meta_rows.append({"numero":nombre,"pagina":ip.stem,"txt_path":str(tp),
-                                              "palabras":len(texto.split()),"confianza":conf,
-                                              "revision":False,"metodo":f"vision_{prov}"})
+                            meta_rows.append(fila_meta(nombre, ip.stem, tp, texto,
+                                                       motor=motor_pag, version=ver_pag,
+                                                       confianza=conf, respaldo_de=respaldo))
                             pct=int(((idx*np_total+pi+1)/(total*max(np_total,1)))*100)
                             self._put(tipo="prog",val=pct,txt=f"{nombre}·pg{pi+1}/{np_total}")
                         self._put(tipo="log",texto=f"  ✅ {np_total} pág · {prov}/{model}")
@@ -2157,8 +2164,13 @@ class PanelOCR:
                                 val=int(((idx*t+i)/(total*max(t,1)))*100),
                                 txt=f"{nombre}·pg{i}/{t}")
                         )
+                        from core.ocr.procedencia import fila_meta, version_de
+                        _ver_kr = (f"kraken modelo={Path(modelo_k).name}" if modelo_k
+                                   else version_de("kraken"))
+                        _ver_tes = version_de("tesseract", lang=lang)
                         for pi, (ip, res_k) in enumerate(zip(imgs, resultados_k)):
                             tp = txt_dir/(ip.stem+".txt")
+                            motor_pag, ver_pag, respaldo = "kraken", _ver_kr, None
                             if res_k["ok"]:
                                 texto = res_k["texto"]; conf = round(res_k["confianza"]*100, 1)
                                 tp.write_text(texto, "utf-8")
@@ -2169,14 +2181,18 @@ class PanelOCR:
                                 try:
                                     texto, conf = ocr_pagina(ip, lang=lang)
                                     tp.write_text(texto, "utf-8")
+                                    motor_pag, ver_pag, respaldo = "tesseract", _ver_tes, "kraken"
                                     self._put(tipo="log", texto="      → Tesseract usado como respaldo")
                                 except Exception as ef:
-                                    texto, conf = "", 0.0
+                                    # Antes conf=0.0 y bool(0.0) es False: la página
+                                    # vacía quedaba SIN marca de revisión.
+                                    texto, conf = "", None
                                     tp.write_text("", "utf-8")
+                                    motor_pag, ver_pag, respaldo = "ninguno", "", "kraken"
                                     self._put(tipo="log", texto=f"      → Sin respaldo disponible ({ef}). Página marcada para revisión manual.")
-                            meta_rows.append({"numero":nombre,"pagina":ip.stem,"txt_path":str(tp),
-                                              "palabras":len(texto.split()),"confianza":conf,
-                                              "revision":bool(conf and conf<60),"metodo":"kraken"})
+                            meta_rows.append(fila_meta(nombre, ip.stem, tp, texto,
+                                                       motor=motor_pag, version=ver_pag,
+                                                       confianza=conf, respaldo_de=respaldo))
                         self._put(tipo="log",texto=f"  ✅ {np_total} pág · Kraken CATMuS-Print")
 
                     elif ruta_ocr == "ollama":
@@ -2192,8 +2208,11 @@ class PanelOCR:
                                 val=int(((idx*t+i)/(total*max(t,1)))*100),
                                 txt=f"{nombre}·pg{i}/{t}")
                         )
+                        from core.ocr.procedencia import fila_meta, version_de
+                        _ver_tes = version_de("tesseract", lang=lang)
                         for pi, (ip, res_o) in enumerate(zip(imgs, resultados_o)):
                             tp = txt_dir/(ip.stem+".txt")
+                            motor_pag, ver_pag, respaldo = "ollama", f"ollama:{modelo_o}", None
                             if res_o["ok"]:
                                 texto = res_o["texto"]; conf = round(res_o["confianza"]*100, 1)
                                 tp.write_text(texto, "utf-8")
@@ -2201,9 +2220,10 @@ class PanelOCR:
                                 self._put(tipo="log", texto=f"    ⚠ Ollama falló en {ip.stem}: {res_o['error']}. Usando Tesseract.")
                                 texto, conf = ocr_pagina(ip, lang=lang)
                                 tp.write_text(texto, "utf-8")
-                            meta_rows.append({"numero":nombre,"pagina":ip.stem,"txt_path":str(tp),
-                                              "palabras":len(texto.split()),"confianza":conf,
-                                              "revision":bool(conf and conf<60),"metodo":"ollama"})
+                                motor_pag, ver_pag, respaldo = "tesseract", _ver_tes, "ollama"
+                            meta_rows.append(fila_meta(nombre, ip.stem, tp, texto,
+                                                       motor=motor_pag, version=ver_pag,
+                                                       confianza=conf, respaldo_de=respaldo))
                         self._put(tipo="log",texto=f"  ✅ {np_total} pág · Ollama Vision")
 
                     else:
@@ -2211,6 +2231,8 @@ class PanelOCR:
                         # Si la página tiene zonas etiquetadas (05_etiquetas/),
                         # se OCR-ea por zonas en orden de lectura (estilo FineReader).
                         from core.layout_tesseract import ocr_pagina_con_zonas
+                        from core.ocr.procedencia import fila_meta, version_de
+                        _ver_tes = version_de("tesseract", lang=lang)
                         n_zonal = 0
                         for pi, ip in enumerate(imgs):
                             tp = txt_dir/(ip.stem+".txt")
@@ -2244,9 +2266,9 @@ class PanelOCR:
                                 tp.write_text(texto,"utf-8")
                                 if con_z:
                                     metodo_pag = "ocr_zonas"; n_zonal += 1
-                            meta_rows.append({"numero":nombre,"pagina":ip.stem,"txt_path":str(tp),
-                                              "palabras":len(texto.split()),"confianza":conf,
-                                              "revision":bool(conf and conf<60),"metodo":metodo_pag})
+                            meta_rows.append(fila_meta(nombre, ip.stem, tp, texto,
+                                                       motor=metodo_pag, version=_ver_tes,
+                                                       confianza=conf))
                             pct=int(((idx*np_total+pi+1)/(total*max(np_total,1)))*100)
                             self._put(tipo="prog",val=pct,txt=f"{nombre}·pg{pi+1}/{np_total}")
                         extra_z = f" ({n_zonal} por zonas)" if n_zonal else ""
@@ -2326,7 +2348,11 @@ class PanelOCR:
             if c not in df.columns: df[c]=None
         df["palabras"]=pd.to_numeric(df["palabras"],errors="coerce").fillna(0).astype(int)
         df["confianza"]=pd.to_numeric(df["confianza"],errors="coerce")
-        df["revision"]=df["confianza"].apply(lambda c: bool(pd.notna(c) and c<60))
+        # Baja confianza O marca previa (p. ej. página que salió de un respaldo
+        # porque su motor falló: core.ocr.procedencia). Antes se recalculaba
+        # solo con la confianza y la marca del respaldo se perdía.
+        _rev_prev = df["revision"].fillna(False).astype(bool)
+        df["revision"]=df["confianza"].apply(lambda c: bool(pd.notna(c) and c<60)) | _rev_prev
         ad=out/"04_analisis"; ad.mkdir(exist_ok=True)
         df.to_csv(ad/"ocr_metadatos.csv", index=False)
         ST.corpus_meta=df; ST.ocr_done=True

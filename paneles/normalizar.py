@@ -1378,12 +1378,16 @@ class PanelNormalizar:
         sobrescribe nunca y cada capa lleva su propia marca de tiempo.
         """
         from core.proveniencia import commit_software
+        from core.servicios_corpus import procedencia_pagina
         from datos import normalizaciones as NZ
+        # Con qué motor y versión se produjo el OCR crudo (ocr_metadatos.csv).
+        motor, version = procedencia_pagina(getattr(ST, "corpus_meta", None), numero, pagina)
         try:
             NZ.guardar(db_path, numero, pagina, ocr_crudo=ocr_crudo,
                        norm_usuario=norm_usuario, norm_ia=norm_ia,
                        autor_usuario=_autor_local(),
                        autor_ia=autor_ia or "ia",
+                       ocr_motor=motor, ocr_version=version,
                        commit_software=commit_software())
             return True
         except Exception as e:

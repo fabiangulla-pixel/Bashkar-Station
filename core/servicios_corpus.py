@@ -173,3 +173,24 @@ def articulos_para_pipeline(corpus_txt=None, corpus_meta=None) -> list[dict]:
     return [{"id": f"art_{i:04d}", "texto": t or "", "titulo": None, "autor": None,
              "fecha": None, "ner": {}} for i, t in enumerate(corpus_txt or [])]
 
+
+
+def procedencia_pagina(corpus_meta, numero: str, pagina: str) -> tuple[str, str]:
+    """(motor, versión) con que se produjo el OCR de una página, según
+    ``ocr_metadatos`` (columnas ``metodo`` y ``motor_version``). Cadenas
+    vacías si no se sabe: proyectos anteriores a la sesión 71 no tienen
+    ``motor_version`` y no se inventa.
+    """
+    if corpus_meta is None or not hasattr(corpus_meta, "columns") \
+            or "numero" not in corpus_meta.columns or "pagina" not in corpus_meta.columns:
+        return "", ""
+    fila = corpus_meta[(corpus_meta["numero"].astype(str) == str(numero))
+                       & (corpus_meta["pagina"].astype(str) == str(pagina))]
+    if fila.empty:
+        return "", ""
+    fila = fila.iloc[0]
+
+    def _txt(col):
+        v = fila.get(col, "") if col in fila.index else ""
+        return "" if v is None or (isinstance(v, float) and v != v) else str(v)
+    return _txt("metodo"), _txt("motor_version")
