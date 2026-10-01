@@ -179,7 +179,9 @@ del monolito en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md).
 
 ```
 bashkar_station/
-├── app.py              # Frontend escritorio (Tkinter, ~21.500 líneas; en extracción)
+├── app.py              # Frontend escritorio: arranque, navegación, tema (~6.600 líneas)
+├── paneles/            # Cada pestaña del escritorio como mixin de BashkarApp
+├── gui_comun.py        # Lo compartido por app.py y los paneles (ST, TEMA, versión)
 ├── ui_redesign.py      # Identidad visual (tokens de color) + panel Inicio
 ├── servidor_web.py     # Frontend web (http.server stdlib, sin frameworks)
 ├── web/                # Frontend web: HTML/CSS/JS vanilla, sin build

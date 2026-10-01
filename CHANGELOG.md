@@ -2,6 +2,74 @@
 
 ---
 
+## Sesión 71 — 2026-09-30 — El monolito se desarma: de 21.282 a 6.640 líneas
+
+Seguimiento de las recomendaciones de arquitectura (pasos 3, 4 y 7: servicios,
+interfaces para los motores OCR, `app.py` como punto de composición). Cinco
+fallos reales salieron al extraer código; tres de ellos falseaban datos que
+terminan en una publicación.
+
+### 1. Contrato común para los motores de OCR (`04c34a7`)
+
+`core/ocr/`: `MotorOCR` (nombre, disponibilidad, versión, reconocer, liberar)
+y `ResultadoOCR` (texto, motor, versión, confianza 0-100 o `None`). Seis
+adaptadores (tesseract, zonas, churro, pero, kraken, vision_llm) sobre los
+módulos existentes, sin tocarlos. El benchmark elige motor por el registro.
+Sobre una página real, el adaptador de Tesseract produce texto idéntico al
+original, carácter por carácter.
+
+### 2. Servicio de entidades; la validación inventaba confianza (`7487ab8`)
+
+El semáforo de validación pasaba `llm_conf = conf + 0.05` —una confianza de
+LLM que ningún modelo calculó, con el 45 % del puntaje— y, desde el índice en
+memoria, rellenaba la confianza del NER con 0.75. `score_ner_entidad` acepta
+`None` y reparte el peso entre las señales reales. Consecuencia visible: sin
+respaldo, una entidad sale en rojo («validar»), no en amarillo. La búsqueda
+léxica buscaba por subcadena («ley» encontraba «leyenda»): ahora palabra
+completa o plural.
+
+### 3. Ocho pestañas a `paneles/` (`a82ce4b`, `7a28d73`, `7d465c8`)
+
+420 métodos movidos con copia literal (`scripts/_herramientas/extraer_panel.py`)
+a ocho mixins: análisis, entidades, etiquetador de zonas, normalizar,
+lingüística, OCR, resultados y bitácora. `app.py` conserva la infraestructura.
+Lo compartido vive en `gui_comun.py` (`ST`, `APP_VERSION`, ayudas) y los
+colores en `gui_comun.TEMA`, que se actualiza al cambiar de tema; los paneles
+importan explícitamente y ruff F821 los comprueba. `tests/test_paneles.py`
+vigila herencia, métodos duplicados y colores sin `TEMA.`. Cuatro tests
+estáticos que leían solo `app.py` ahora leen también `paneles/`: dos habrían
+pasado en falso.
+
+### 4. Procedencia del OCR fiel (`5c9bbd7`)
+
+Si la IA de visión, Kraken u Ollama fallaban en una página, Tesseract la leía
+de respaldo pero la fila seguía diciendo el motor caído; la ruta de visión
+anotaba confianza 95.0 en cada página (inflaba la «confianza OCR media» de
+METHODS.md); una página vacía de Kraken quedaba sin marca de revisión.
+`core/ocr/procedencia.fila_meta` registra el motor real
+(`tesseract_respaldo_de_vision_claude`), su versión y la confianza solo si se
+midió. Normalizar llena `ocr_motor`/`ocr_version`. Verificado ejecutando el
+worker real en los tres casos.
+
+### 5. Menores
+
+- La GUI ya no abre SQLite: la cola de revisión NER (la conexión no se
+  cerraba si algo fallaba) pasó a `core/revision_engine`.
+- El exportador ALTO declaraba `softwareVersion` «11» fijo en cada XML.
+- `APP_VERSION` vive en `gui_comun.py` (el splash sigue en `app.py`).
+
+Suite: 1.865 pasan, 27 se saltan, 0 fallan. CI verde. `.exe` v12.7.
+
+### Pendiente
+
+1. Transcribir las referencias humanas de `benchmark/estampa-1939/`.
+2. Unificar las rutas del worker de OCR sobre `core.ocr` (antes, adaptador
+   por lotes para Kraken y Ollama).
+3. Etiquetador de zonas: separar render de PDF y persistencia de zonas.
+4. Pasar los colores que aún usa `app.py` a `TEMA`.
+
+---
+
 ## Sesión 70 — 2026-09-29 — Proveniencia, benchmark formal, CI y primera extracción del monolito
 
 Ejecución del documento de recomendaciones (proveniencia, benchmark,
