@@ -1,13 +1,22 @@
 """paneles/etiquetador_zonas.py — Métodos de BashkarApp extraídos de app.py.
 
 Mixin: BashkarApp hereda de PanelEtiquetadorZonas. Los cuerpos son copia literal del
-original; los nombres globales (ST, colores, tk…) los inyecta
-paneles.sincronizar() desde app.py.
+original. Importa explícitamente lo que usa; los colores del tema se
+leen de gui_comun.TEMA porque cambian en caliente.
 """
 
 from __future__ import annotations
 
-# ruff: noqa: F821
+import threading
+import tkinter as tk
+from pathlib import Path
+from tkinter import messagebox, scrolledtext, ttk
+
+from core import plataforma
+from gui_comun import (
+    ST,
+    TEMA,
+)
 
 
 class PanelEtiquetadorZonas:
@@ -312,7 +321,7 @@ class PanelEtiquetadorZonas:
         # Layout FineReader: [Páginas 160px] | [Imagen central] | [Texto OCR 220px]
         body_paned = tk.PanedWindow(f, orient="horizontal",
                                      sashwidth=4, sashpad=0,
-                                     bg=CARD_BOR, relief="flat",
+                                     bg=TEMA.CARD_BOR, relief="flat",
                                      handlesize=0)
         body_paned.pack(fill="both", expand=True)
 
@@ -321,7 +330,7 @@ class PanelEtiquetadorZonas:
         pages_frm.pack_propagate(False)
         body_paned.add(pages_frm, minsize=120, width=160)
 
-        tk.Label(pages_frm, text="PÁGINAS", bg="#101316", fg=TXT_DIM,
+        tk.Label(pages_frm, text="PÁGINAS", bg="#101316", fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=8, pady=(8, 4))
 
         # Canvas scrollable para miniaturas
@@ -352,7 +361,7 @@ class PanelEtiquetadorZonas:
 
         # Sub-PanedWindow vertical: imagen arriba | zoom inferior
         center_paned = tk.PanedWindow(center_frm, orient="vertical",
-                                       sashwidth=4, bg=CARD_BOR,
+                                       sashwidth=4, bg=TEMA.CARD_BOR,
                                        relief="flat", handlesize=0)
         center_paned.pack(fill="both", expand=True)
 
@@ -366,10 +375,10 @@ class PanelEtiquetadorZonas:
         img_tb.pack_propagate(False)
         tk.Label(img_tb, text="Ctrl+rueda: zoom  ·  Rueda: scroll  ·  "
                               "Medio/Space+drag: pan  ·  Clic der: menú",
-                 bg="#101316", fg=TXT_DIM,
+                 bg="#101316", fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 7)).pack(side="left", padx=8)
         self._etz_lbl_zoom = tk.Label(img_tb, text="100%",
-                                       bg="#101316", fg=TXT_SEC,
+                                       bg="#101316", fg=TEMA.TXT_SEC,
                                        font=("Segoe UI", 7, "bold"))
         self._etz_lbl_zoom.pack(side="right", padx=8)
 
@@ -413,7 +422,7 @@ class PanelEtiquetadorZonas:
         zoom_frm = tk.Frame(center_paned, bg="#101316", height=120)
         center_paned.add(zoom_frm, minsize=80, height=120)
 
-        tk.Label(zoom_frm, text="DETALLE (Zoom Pane)", bg="#101316", fg=TXT_DIM,
+        tk.Label(zoom_frm, text="DETALLE (Zoom Pane)", bg="#101316", fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=8, pady=(4, 2))
         self._etz_zoom_canvas = tk.Canvas(zoom_frm, bg="#12171B",
                                            highlightthickness=0, height=90)
@@ -427,7 +436,7 @@ class PanelEtiquetadorZonas:
 
         # Sub-PanedWindow vertical: texto OCR arriba | zonas abajo
         right_paned = tk.PanedWindow(right_frm, orient="vertical",
-                                      sashwidth=4, bg=CARD_BOR,
+                                      sashwidth=4, bg=TEMA.CARD_BOR,
                                       relief="flat", handlesize=0)
         right_paned.pack(fill="both", expand=True)
 
@@ -435,7 +444,7 @@ class PanelEtiquetadorZonas:
         txt_frm = tk.Frame(right_paned, bg="#101316")
         right_paned.add(txt_frm, minsize=120)
 
-        tk.Label(txt_frm, text="TEXTO OCR", bg="#101316", fg=TXT_DIM,
+        tk.Label(txt_frm, text="TEXTO OCR", bg="#101316", fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=8, pady=(6, 2))
         self._etz_txt_ocr = scrolledtext.ScrolledText(
             txt_frm, font=("Consolas", 8),
@@ -453,7 +462,7 @@ class PanelEtiquetadorZonas:
         zones_frm = tk.Frame(right_paned, bg="#101316")
         right_paned.add(zones_frm, minsize=100)
 
-        tk.Label(zones_frm, text="ZONAS", bg="#101316", fg=TXT_DIM,
+        tk.Label(zones_frm, text="ZONAS", bg="#101316", fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 7, "bold")).pack(anchor="w", padx=8, pady=(6, 2))
 
         zona_list_frame = tk.Frame(zones_frm, bg="#101316")
@@ -477,7 +486,7 @@ class PanelEtiquetadorZonas:
 
         # Estado
         self._etz_lbl_estado = tk.Label(zones_frm, text="—",
-                                         bg="#101316", fg=TXT_SEC,
+                                         bg="#101316", fg=TEMA.TXT_SEC,
                                          font=("Segoe UI", 7),
                                          wraplength=200, justify="left")
         self._etz_lbl_estado.pack(anchor="w", padx=8, pady=(2, 4))
@@ -487,7 +496,7 @@ class PanelEtiquetadorZonas:
         status_bar.pack(fill="x", side="bottom")
         status_bar.pack_propagate(False)
         self._etz_lbl_coords = tk.Label(status_bar, text="x:— y:—",
-                                         bg="#101316", fg=TXT_DIM,
+                                         bg="#101316", fg=TEMA.TXT_DIM,
                                          font=("Segoe UI", 7))
         self._etz_lbl_coords.pack(side="left", padx=8)
         self._etz_lbl_tipo_activo = tk.Label(status_bar, text="",
@@ -496,7 +505,7 @@ class PanelEtiquetadorZonas:
         self._etz_lbl_tipo_activo.pack(side="left", padx=16)
         tk.Label(status_bar,
                  text="Dibuja: clic+arrastre  ·  Mover: Ctrl+arrastre  ·  Eliminar: clic der",
-                 bg="#101316", fg=TXT_DIM, font=("Segoe UI", 7)).pack(side="right", padx=8)
+                 bg="#101316", fg=TEMA.TXT_DIM, font=("Segoe UI", 7)).pack(side="right", padx=8)
 
         # Inicializar
         self._etz_sel_tipo("articulo")
@@ -757,24 +766,24 @@ class PanelEtiquetadorZonas:
         win = tk.Toplevel(self)
         win.title("Nuevo tipo de zona")
         win.geometry("380x280")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
         win.grab_set()
         win.resizable(False, False)
 
-        tk.Label(win, text="Nuevo tipo de zona", bg=CONTENT_BG, fg=TXT_PRI,
+        tk.Label(win, text="Nuevo tipo de zona", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 11, "bold")).pack(pady=(16, 8))
         tk.Label(win, text="El tipo quedará disponible en todos los proyectos futuros.",
-                 bg=CONTENT_BG, fg=TXT_SEC, font=("Segoe UI", 8)).pack()
+                 bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC, font=("Segoe UI", 8)).pack()
 
-        frm = tk.Frame(win, bg=CONTENT_BG)
+        frm = tk.Frame(win, bg=TEMA.CONTENT_BG)
         frm.pack(fill="x", padx=24, pady=12)
 
         def _fila(label, var, row):
-            tk.Label(frm, text=label, bg=CONTENT_BG, fg=TXT_SEC,
+            tk.Label(frm, text=label, bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                      font=("Segoe UI", 9), width=10, anchor="e").grid(
                      row=row, column=0, sticky="e", padx=(0, 8), pady=4)
             tk.Entry(frm, textvariable=var, width=24,
-                     bg=CARD_BG, fg=TXT_PRI, insertbackground=TXT_PRI,
+                     bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, insertbackground=TEMA.TXT_PRI,
                      relief="solid", bd=1, font=("Segoe UI", 9)).grid(
                      row=row, column=1, sticky="w")
 
@@ -787,13 +796,13 @@ class PanelEtiquetadorZonas:
         _fila("Etiqueta:",   var_label, 1)
 
         # Color picker
-        tk.Label(frm, text="Color:", bg=CONTENT_BG, fg=TXT_SEC,
+        tk.Label(frm, text="Color:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9), width=10, anchor="e").grid(
                  row=2, column=0, sticky="e", padx=(0, 8), pady=4)
-        color_frm = tk.Frame(frm, bg=CONTENT_BG)
+        color_frm = tk.Frame(frm, bg=TEMA.CONTENT_BG)
         color_frm.grid(row=2, column=1, sticky="w")
         color_entry = tk.Entry(color_frm, textvariable=var_color, width=10,
-                               bg=CARD_BG, fg=TXT_PRI, insertbackground=TXT_PRI,
+                               bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, insertbackground=TEMA.TXT_PRI,
                                relief="solid", bd=1, font=("Segoe UI", 9))
         color_entry.pack(side="left")
         color_preview = tk.Label(color_frm, text="   ", bg=var_color.get(),
@@ -807,12 +816,12 @@ class PanelEtiquetadorZonas:
                 var_color.set(res[1])
                 color_preview.config(bg=res[1])
         tk.Button(color_frm, text="…", command=_pick_color,
-                  font=("Segoe UI", 8), bg=CARD_BOR, fg=TXT_PRI,
+                  font=("Segoe UI", 8), bg=TEMA.CARD_BOR, fg=TEMA.TXT_PRI,
                   relief="flat").pack(side="left", padx=2)
         var_color.trace_add("write", lambda *_: color_preview.config(
-            bg=var_color.get() if var_color.get().startswith("#") else CARD_BG))
+            bg=var_color.get() if var_color.get().startswith("#") else TEMA.CARD_BG))
 
-        tk.Label(frm, text="Procesar OCR:", bg=CONTENT_BG, fg=TXT_SEC,
+        tk.Label(frm, text="Procesar OCR:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9), width=10, anchor="e").grid(
                  row=3, column=0, sticky="e", padx=(0, 8), pady=4)
         ttk.Checkbutton(frm, variable=var_ocr,
@@ -836,7 +845,7 @@ class PanelEtiquetadorZonas:
             messagebox.showinfo("Tipo creado",
                 f"Tipo '{label}' creado y disponible en todos los proyectos.")
 
-        btn_frm = tk.Frame(win, bg=CONTENT_BG)
+        btn_frm = tk.Frame(win, bg=TEMA.CONTENT_BG)
         btn_frm.pack(pady=12)
         ttk.Button(btn_frm, text="✓ Crear tipo", style="P.TButton",
                    command=_guardar).pack(side="left", padx=8)
@@ -901,36 +910,36 @@ class PanelEtiquetadorZonas:
         win = tk.Toplevel(self)
         win.title(f"Estadísticas de etiquetas — {numero}")
         win.geometry("480x520")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
         win.resizable(False, True)
 
         self._page_header(win, f"Etiquetas — {numero}",
                           f"{len(etiquetadas)} páginas · {total_zonas} zonas totales",
                           "📊")
 
-        pad = tk.Frame(win, bg=CONTENT_BG, padx=20, pady=10)
+        pad = tk.Frame(win, bg=TEMA.CONTENT_BG, padx=20, pady=10)
         pad.pack(fill="both", expand=True)
 
         # Resumen de páginas
-        res_f = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1)
+        res_f = tk.Frame(pad, bg=TEMA.CARD_BG, relief="solid", bd=1)
         res_f.pack(fill="x", pady=(0, 12))
-        ri = tk.Frame(res_f, bg=CARD_BG, padx=12, pady=8)
+        ri = tk.Frame(res_f, bg=TEMA.CARD_BG, padx=12, pady=8)
         ri.pack(fill="x")
         for txt, val, color in [
-            ("Páginas etiquetadas:",   len(etiquetadas),  TXT_PRI),
-            ("  · Manuales:",          conteo_manual,     VERDE),
-            ("  · Predichas (IA):",    conteo_pred,       AZ4),
-            ("Zonas totales:",         total_zonas,       TXT_PRI),
+            ("Páginas etiquetadas:",   len(etiquetadas),  TEMA.TXT_PRI),
+            ("  · Manuales:",          conteo_manual,     TEMA.VERDE),
+            ("  · Predichas (IA):",    conteo_pred,       TEMA.AZ4),
+            ("Zonas totales:",         total_zonas,       TEMA.TXT_PRI),
         ]:
-            fila = tk.Frame(ri, bg=CARD_BG)
+            fila = tk.Frame(ri, bg=TEMA.CARD_BG)
             fila.pack(fill="x", pady=1)
-            tk.Label(fila, text=txt, bg=CARD_BG, fg=TXT_SEC,
+            tk.Label(fila, text=txt, bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC,
                      font=("Segoe UI", 9), width=24, anchor="w").pack(side="left")
-            tk.Label(fila, text=str(val), bg=CARD_BG, fg=color,
+            tk.Label(fila, text=str(val), bg=TEMA.CARD_BG, fg=color,
                      font=("Segoe UI", 9, "bold")).pack(side="left")
 
         # Desglose por tipo
-        tk.Label(pad, text="Zonas por tipo:", bg=CONTENT_BG, fg=TXT_PRI,
+        tk.Label(pad, text="Zonas por tipo:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(0, 4))
 
         cols_s = ("tipo", "label", "cantidad", "porcentaje")
@@ -952,7 +961,7 @@ class PanelEtiquetadorZonas:
             if tipo not in conteo_tipo:
                 tv.insert("", "end", values=(tipo, info.get("label", tipo), 0, "0%"),
                           tags=("vacio",))
-        tv.tag_configure("vacio", foreground=TXT_DIM)
+        tv.tag_configure("vacio", foreground=TEMA.TXT_DIM)
 
         sb = ttk.Scrollbar(pad, orient="vertical", command=tv.yview)
         tv.configure(yscrollcommand=sb.set)
@@ -960,7 +969,7 @@ class PanelEtiquetadorZonas:
         tv.pack(fill="both", expand=True)
 
         # Botón para ir al módulo de descripción de imágenes
-        btn_f = tk.Frame(win, bg=CONTENT_BG)
+        btn_f = tk.Frame(win, bg=TEMA.CONTENT_BG)
         btn_f.pack(fill="x", padx=20, pady=(6, 12))
         ttk.Button(btn_f, text="🎨  Ir a Descripción de imágenes",
                    style="S.TButton",
@@ -989,13 +998,13 @@ class PanelEtiquetadorZonas:
         win = tk.Toplevel(self)
         win.title(f"Descripción de imágenes — {numero}")
         win.geometry("1100x680")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
 
         # ── Barra de control ─────────────────────────────────────────────────
-        ctrl = tk.Frame(win, bg=CONTENT_BG)
+        ctrl = tk.Frame(win, bg=TEMA.CONTENT_BG)
         ctrl.pack(fill="x", padx=12, pady=(10, 4))
 
-        tk.Label(ctrl, text="Proveedor:", bg=CONTENT_BG, fg=TXT_SEC,
+        tk.Label(ctrl, text="Proveedor:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9)).pack(side="left")
         var_prov  = tk.StringVar(value="claude")
         var_model = tk.StringVar(value="claude-haiku-4-5-20251001")
@@ -1015,7 +1024,7 @@ class PanelEtiquetadorZonas:
         var_prov.trace_add("write", _on_prov)
         _on_prov()
 
-        lbl_estado = tk.Label(ctrl, text="", bg=CONTENT_BG, fg=VERDE,
+        lbl_estado = tk.Label(ctrl, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                font=("Segoe UI", 9, "bold"))
         lbl_estado.pack(side="left")
 
@@ -1028,11 +1037,11 @@ class PanelEtiquetadorZonas:
                    command=lambda: _cargar_db()).pack(side="right")
 
         # ── Split: tabla izquierda + detalle derecha ─────────────────────────
-        split = tk.Frame(win, bg=CONTENT_BG)
+        split = tk.Frame(win, bg=TEMA.CONTENT_BG)
         split.pack(fill="both", expand=True, padx=12, pady=(4, 8))
 
         # Tabla
-        izq = tk.Frame(split, bg=CONTENT_BG, width=500)
+        izq = tk.Frame(split, bg=TEMA.CONTENT_BG, width=500)
         izq.pack(side="left", fill="both", expand=True, padx=(0, 8))
 
         cols = ("pagina", "descripcion", "categorias", "texto_visible")
@@ -1047,36 +1056,36 @@ class PanelEtiquetadorZonas:
         tv.pack(fill="both", expand=True)
 
         # Panel derecho: recorte + detalle + búsqueda similitud
-        der = tk.Frame(split, bg=CARD_BG, width=340, relief="solid", bd=1)
+        der = tk.Frame(split, bg=TEMA.CARD_BG, width=340, relief="solid", bd=1)
         der.pack(side="right", fill="y")
         der.pack_propagate(False)
 
         cv_recorte = tk.Canvas(der, bg="#000", height=200, highlightthickness=0)
         cv_recorte.pack(fill="x", padx=6, pady=6)
 
-        lbl_desc  = tk.Label(der, text="", bg=CARD_BG, fg=TXT_PRI,
+        lbl_desc  = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                               font=("Segoe UI", 9), wraplength=310, justify="left")
         lbl_desc.pack(anchor="w", padx=8, pady=(0, 4))
 
-        lbl_cats  = tk.Label(der, text="", bg=CARD_BG, fg=AZ4,
+        lbl_cats  = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.AZ4,
                               font=("Segoe UI", 8), wraplength=310, justify="left")
         lbl_cats.pack(anchor="w", padx=8)
 
-        lbl_txt   = tk.Label(der, text="", bg=CARD_BG, fg=TXT_SEC,
+        lbl_txt   = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC,
                               font=("Courier New", 8), wraplength=310, justify="left")
         lbl_txt.pack(anchor="w", padx=8, pady=(0, 4))
 
-        lbl_ctx   = tk.Label(der, text="", bg=CARD_BG, fg=TXT_DIM,
+        lbl_ctx   = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                               font=("Segoe UI", 8, "italic"), wraplength=310, justify="left")
         lbl_ctx.pack(anchor="w", padx=8, pady=(0, 8))
 
         # Búsqueda por similitud
-        tk.Frame(der, bg=CARD_BOR, height=1).pack(fill="x", padx=6, pady=4)
+        tk.Frame(der, bg=TEMA.CARD_BOR, height=1).pack(fill="x", padx=6, pady=4)
         tk.Label(der, text="🔍 Buscar imágenes similares:",
-                 bg=CARD_BG, fg=TXT_PRI, font=("Segoe UI", 8, "bold")).pack(anchor="w", padx=8)
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, font=("Segoe UI", 8, "bold")).pack(anchor="w", padx=8)
         var_busqueda = tk.StringVar()
         ttk.Entry(der, textvariable=var_busqueda, width=36).pack(padx=8, pady=4, fill="x")
-        lbl_sim = tk.Label(der, text="", bg=CARD_BG, fg=TXT_SEC,
+        lbl_sim = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC,
                             font=("Segoe UI", 8), wraplength=310, justify="left")
         lbl_sim.pack(anchor="w", padx=8)
 
@@ -1172,20 +1181,20 @@ class PanelEtiquetadorZonas:
                 self.after(0, lambda: (
                     _poblar_tv(descs),
                     btn_run.config(state="normal"),
-                    lbl_estado.config(text=f"✅ {len(descs)} fotos descritas", fg=VERDE),
+                    lbl_estado.config(text=f"✅ {len(descs)} fotos descritas", fg=TEMA.VERDE),
                 ))
             threading.Thread(target=_worker, daemon=True).start()
 
         def _cargar_db():
             db = Path(ST.ruta_db) if ST.ruta_db else None
             if not db or not db.exists():
-                lbl_estado.config(text="⚠ Sin base de datos", fg=ROJO)
+                lbl_estado.config(text="⚠ Sin base de datos", fg=TEMA.ROJO)
                 return
             descs = cargar_descripciones_db(db, numero)
             if descs:
                 _poblar_tv(descs)
             else:
-                lbl_estado.config(text="Sin descripciones guardadas aún", fg=TXT_SEC)
+                lbl_estado.config(text="Sin descripciones guardadas aún", fg=TEMA.TXT_SEC)
 
         # Cargar automáticamente si ya hay descripciones guardadas
         win.after(200, _cargar_db)
@@ -1256,7 +1265,7 @@ class PanelEtiquetadorZonas:
         win = tk.Toplevel(self)
         win.title("Análisis tipográfico — DeepFont")
         win.geometry("440x300")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
 
         # Resultado principal
         res_frm = tk.Frame(win, bg=color, pady=12)
@@ -1272,24 +1281,24 @@ class PanelEtiquetadorZonas:
         if isinstance(scores, dict) and scores and all(
                 isinstance(v, float) for v in scores.values()):
             tk.Label(win, text="Distribución de probabilidades:",
-                     bg=CONTENT_BG, fg=TXT_SEC,
+                     bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                      font=("Segoe UI", 8, "bold")).pack(anchor="w", padx=16, pady=(12, 4))
             from core.deepfont import CATEGORIAS_TIPOGRAFIA
             for c in CATEGORIAS_TIPOGRAFIA:
                 pct = scores.get(c, 0.0)
-                row = tk.Frame(win, bg=CONTENT_BG)
+                row = tk.Frame(win, bg=TEMA.CONTENT_BG)
                 row.pack(fill="x", padx=16, pady=1)
                 tk.Label(row, text=ETIQUETAS_ES.get(c, c)[:35],
-                         bg=CONTENT_BG, fg=TXT_PRI if c == cat else TXT_SEC,
+                         bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI if c == cat else TEMA.TXT_SEC,
                          font=("Segoe UI", 8,
                                "bold" if c == cat else "normal"),
                          width=38, anchor="w").pack(side="left")
-                bar_frm = tk.Frame(row, bg=CARD_BOR, width=160, height=10)
+                bar_frm = tk.Frame(row, bg=TEMA.CARD_BOR, width=160, height=10)
                 bar_frm.pack(side="left", padx=4)
                 bar_frm.pack_propagate(False)
                 tk.Frame(bar_frm, bg=COLORES.get(c, "#777F84"),
                          width=int(pct * 160), height=10).pack(side="left")
-                tk.Label(row, text=f"{pct:.0%}", bg=CONTENT_BG, fg=TXT_SEC,
+                tk.Label(row, text=f"{pct:.0%}", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                          font=("Segoe UI", 7)).pack(side="left", padx=2)
 
         ttk.Button(win, text="Cerrar", style="S.TButton",
@@ -1303,7 +1312,7 @@ class PanelEtiquetadorZonas:
             if zc:
                 zc.delete("all")
                 zc.create_text(80, 40, text="Carga una página para ver el detalle",
-                               fill=TXT_DIM, font=("Segoe UI", 8), anchor="w")
+                               fill=TEMA.TXT_DIM, font=("Segoe UI", 8), anchor="w")
             return
         try:
             from PIL import Image, ImageTk
@@ -1351,7 +1360,7 @@ class PanelEtiquetadorZonas:
             frm.pack(fill="x", padx=4, pady=1)
 
             # Número de página
-            lbl = tk.Label(frm, text=pag, bg="#101316", fg=TXT_SEC,
+            lbl = tk.Label(frm, text=pag, bg="#101316", fg=TEMA.TXT_SEC,
                            font=("Segoe UI", 7), anchor="w")
             lbl.pack(fill="x", padx=4)
 
@@ -1359,7 +1368,7 @@ class PanelEtiquetadorZonas:
             # Se pinta apagado y se corrige después desde un hilo: leer el JSON
             # de zonas de CADA página aquí significaba una lectura de disco por
             # página (decenas, y sobre Google Drive), con la ventana congelada.
-            dot = tk.Label(frm, text="●", bg="#101316", fg=TXT_DIM,
+            dot = tk.Label(frm, text="●", bg="#101316", fg=TEMA.TXT_DIM,
                            font=("Segoe UI", 7))
             dot.pack(side="right", padx=4)
             self._etz_thumb_dots[pag] = dot
@@ -2549,18 +2558,18 @@ class PanelEtiquetadorZonas:
         win = tk.Toplevel(self)
         win.title(f"Corregir inclinación — {pagina}")
         win.geometry("820x640")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
         win.grab_set()
 
         # Encabezado
-        hdr = tk.Frame(win, bg=CONTENT_BG)
+        hdr = tk.Frame(win, bg=TEMA.CONTENT_BG)
         hdr.pack(fill="x", padx=12, pady=(10, 0))
         tk.Label(hdr, text="Corrección de inclinación",
-                 bg=CONTENT_BG, fg="#E8E5DF",
+                 bg=TEMA.CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 10, "bold")).pack(side="left")
         lbl_angulo = tk.Label(hdr,
                               text=f"Ángulo detectado: {angulo_detectado:+.2f}°",
-                              bg=CONTENT_BG, fg="#E6A64C" if abs(angulo_detectado) > 0.3 else "#6EC69A",
+                              bg=TEMA.CONTENT_BG, fg="#E6A64C" if abs(angulo_detectado) > 0.3 else "#6EC69A",
                               font=("Segoe UI", 9))
         lbl_angulo.pack(side="left", padx=12)
 
@@ -2609,17 +2618,17 @@ class PanelEtiquetadorZonas:
             _render_preview(a)
 
         # Panel de controles
-        ctrl = tk.Frame(win, bg=CONTENT_BG)
+        ctrl = tk.Frame(win, bg=TEMA.CONTENT_BG)
         ctrl.pack(fill="x", padx=12, pady=(0, 4))
 
-        tk.Label(ctrl, text="Ajuste fino:", bg=CONTENT_BG, fg="#E8E5DF",
+        tk.Label(ctrl, text="Ajuste fino:", bg=TEMA.CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
 
         slider = tk.Scale(ctrl, from_=-15.0, to=15.0, resolution=0.1,
                           orient="horizontal", length=400,
                           variable=_state["angulo"],
                           command=_on_slider,
-                          bg=CONTENT_BG, fg="#E8E5DF",
+                          bg=TEMA.CONTENT_BG, fg="#E8E5DF",
                           highlightthickness=0, troughcolor="#E8E5DF",
                           font=("Segoe UI", 7))
         slider.pack(side="left", padx=(6, 12))
@@ -2638,12 +2647,12 @@ class PanelEtiquetadorZonas:
                   font=("Segoe UI", 8), bg="#171C20").pack(side="left", padx=4)
 
         # Botones finales
-        btn_frame = tk.Frame(win, bg=CONTENT_BG)
+        btn_frame = tk.Frame(win, bg=TEMA.CONTENT_BG)
         btn_frame.pack(fill="x", padx=12, pady=(0, 12))
 
         lbl_aviso = tk.Label(btn_frame,
                              text="La imagen original se preserva. La versión corregida se guarda en 02_imagenes_ocr/.",
-                             bg=CONTENT_BG, fg=TXT_SEC, font=("Segoe UI", 8))
+                             bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC, font=("Segoe UI", 8))
         lbl_aviso.pack(side="left")
 
         def _aplicar():
@@ -2695,22 +2704,22 @@ class PanelEtiquetadorZonas:
         win.grab_set()
 
         tk.Label(prompt_content, text="Prompt enviado a la IA de visión para detectar zonas",
-                 bg=CONTENT_BG, fg=TXT_PRI,
+                 bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(anchor="w", padx=12, pady=(12, 0))
         tk.Label(prompt_content,
                  text="Incluye automáticamente los tipos personalizados de tu proyecto (★). "
                       "Edita para ajustar instrucciones específicas de Estampa.",
-                 bg=CONTENT_BG, fg=TXT_SEC,
+                 bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 8), wraplength=680, justify="left").pack(
                      anchor="w", padx=12, pady=(2, 6))
 
-        frame_txt = tk.Frame(prompt_content, bg=CONTENT_BG)
+        frame_txt = tk.Frame(prompt_content, bg=TEMA.CONTENT_BG)
         frame_txt.pack(fill="both", expand=True, padx=12, pady=(0, 6))
         scroll = tk.Scrollbar(frame_txt)
         scroll.pack(side="right", fill="y")
         txt = tk.Text(frame_txt, wrap="word", font=("Consolas", 9),
-                      bg=CARD_BG, fg=TXT_PRI,
-                      insertbackground=TXT_PRI,
+                      bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
+                      insertbackground=TEMA.TXT_PRI,
                       yscrollcommand=scroll.set,
                       relief="solid", bd=1)
         txt.pack(fill="both", expand=True)
@@ -2720,7 +2729,7 @@ class PanelEtiquetadorZonas:
         prompt_generado = construir_prompt_deteccion(ST.prompt_deteccion)
         txt.insert("1.0", prompt_generado)
 
-        btn_frame = tk.Frame(prompt_content, bg=CONTENT_BG)
+        btn_frame = tk.Frame(prompt_content, bg=TEMA.CONTENT_BG)
         btn_frame.pack(fill="x", padx=12, pady=(0, 12))
 
         def _restaurar():

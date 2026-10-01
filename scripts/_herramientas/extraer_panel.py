@@ -6,9 +6,12 @@ Uso:
 Un método pertenece a un grupo según su nombre: ``_etz_x`` → "etz";
 ``_build_etz`` / ``_worker_etz_y`` → "etz" (el verbo inicial se ignora).
 El cuerpo de cada método se copia LITERALMENTE (mismas líneas, misma
-sangría): la extracción es mecánica y no cambia comportamiento. Los nombres
-globales de app.py llegan al módulo por ``paneles.sincronizar`` (ver
-paneles/__init__.py).
+sangría): la extracción es mecánica y no cambia comportamiento.
+
+Después de extraer: escribir ``TEMA.`` delante de los colores (el tema cambia
+en caliente) y añadir los imports que pida ``ruff check paneles --select F821``
+(lo compartido con app.py está en gui_comun). tests/test_paneles.py vigila
+ambas cosas.
 
 Se niega a mover métodos que usan ``global`` o ``super()``: en un mixin
 cambiarían de significado.
@@ -79,9 +82,9 @@ def extraer(modulo: str, clase: str, grupos: set[str]) -> int:
         nuevo = (
             f'"""paneles/{modulo}.py — Métodos de BashkarApp extraídos de app.py.\n\n'
             f"Mixin: BashkarApp hereda de {clase}. Los cuerpos son copia literal del\n"
-            "original; los nombres globales (ST, colores, tk…) los inyecta\n"
-            "paneles.sincronizar() desde app.py.\n"
-            '"""\n\n# ruff: noqa: F821\n\n\n'
+            "original. Importa explícitamente lo que usa; los colores del tema se\n"
+            "leen de gui_comun.TEMA porque cambian en caliente.\n"
+            '"""\n\nfrom __future__ import annotations\n\n\n'
             f"class {clase}:\n" + "\n".join(cuerpo)
         )
     destino.write_text(nuevo, encoding="utf-8")

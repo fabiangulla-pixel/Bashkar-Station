@@ -1,13 +1,26 @@
 """paneles/normalizar.py — Métodos de BashkarApp extraídos de app.py.
 
 Mixin: BashkarApp hereda de PanelNormalizar. Los cuerpos son copia literal del
-original; los nombres globales (ST, colores, tk…) los inyecta
-paneles.sincronizar() desde app.py.
+original. Importa explícitamente lo que usa; los colores del tema se
+leen de gui_comun.TEMA porque cambian en caliente.
 """
 
 from __future__ import annotations
 
-# ruff: noqa: F821
+import queue
+import threading
+import tkinter as tk
+from pathlib import Path
+from tkinter import filedialog, messagebox, scrolledtext, ttk
+
+from gui_comun import (
+    ST,
+    TEMA,
+    _autor_local,
+    _registrar_error,
+    _resolver_api_key_modelo,
+    _simbolo_estado_norm,
+)
 
 
 class PanelNormalizar:
@@ -20,7 +33,7 @@ class PanelNormalizar:
                           "Revisa y edita el texto OCR antes de analizar · 4 vistas por bloque", "📝")
 
         # ── Barra de acciones ─────────────────────────────────────────────────
-        bbar = tk.Frame(f, bg=CONTENT_BG)
+        bbar = tk.Frame(f, bg=TEMA.CONTENT_BG)
         bbar.pack(fill="x", padx=24, pady=(0, 6))
 
         self._norm_var_numero = tk.StringVar()
@@ -62,7 +75,7 @@ class PanelNormalizar:
         ttk.Button(bbar, text="📓 Nota", style="S.TButton",
                    command=lambda: self._bitacora_nueva_nota("norm")).pack(side="right", padx=(0, 4))
 
-        self._lbl_norm_estado = tk.Label(bbar, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_norm_estado = tk.Label(bbar, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                           font=("Segoe UI", 9, "bold"))
         self._lbl_norm_estado.pack(side="right", padx=8)
 
@@ -72,7 +85,7 @@ class PanelNormalizar:
 
         tk.Label(vbar,
                  text="Versión que pasa al análisis:",
-                 bg="#0E1114", fg=TXT_SEC,
+                 bg="#0E1114", fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 12))
 
         self._norm_var_version = tk.StringVar(
@@ -104,7 +117,7 @@ class PanelNormalizar:
             self._mk_ayuda_bg(vbar, ayuda, bg="#0E1114")
 
         self._norm_lbl_version_info = tk.Label(
-            vbar, text="", bg="#0E1114", fg=TXT_DIM,
+            vbar, text="", bg="#0E1114", fg=TEMA.TXT_DIM,
             font=("Segoe UI", 8, "italic"))
         self._norm_lbl_version_info.pack(side="right", padx=8)
 
@@ -118,21 +131,21 @@ class PanelNormalizar:
             bg="#0E1114")
 
         # ── Selector de bloque (listbox de bloques de la página) ─────────────
-        mid = tk.Frame(f, bg=CONTENT_BG)
+        mid = tk.Frame(f, bg=TEMA.CONTENT_BG)
         mid.pack(fill="both", expand=True, padx=24, pady=(0, 12))
 
         # Panel izquierdo: lista de páginas y bloques
-        izq = tk.Frame(mid, bg=CARD_BG, relief="solid", bd=1, width=220)
+        izq = tk.Frame(mid, bg=TEMA.CARD_BG, relief="solid", bd=1, width=220)
         izq.pack(side="left", fill="y", padx=(0, 8))
         izq.pack_propagate(False)
 
-        tk.Label(izq, text="Páginas / bloques", bg=CARD_BG, fg=TXT_PRI,
+        tk.Label(izq, text="Páginas / bloques", bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(pady=(8, 0), padx=8, anchor="w")
         tk.Label(izq, text="✓ revisado  ◐ solo IA  ○ OCR sin revisar",
-                 bg=CARD_BG, fg=TXT_SEC, font=("Segoe UI", 8)).pack(
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, font=("Segoe UI", 8)).pack(
                      pady=(0, 4), padx=8, anchor="w")
 
-        self._norm_lb = tk.Listbox(izq, bg=CARD_BG, fg=TXT_SEC, selectbackground=AB_SEL,
+        self._norm_lb = tk.Listbox(izq, bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, selectbackground=TEMA.AB_SEL,
                                     selectforeground="#E8E5DF", relief="flat",
                                     font=("Segoe UI", 9), activestyle="none",
                                     exportselection=False)
@@ -143,43 +156,43 @@ class PanelNormalizar:
         self._norm_lb.bind("<<ListboxSelect>>", lambda e: self._norm_seleccionar_bloque())
 
         # Panel derecho: 4 vistas
-        der = tk.Frame(mid, bg=CONTENT_BG)
+        der = tk.Frame(mid, bg=TEMA.CONTENT_BG)
         der.pack(side="left", fill="both", expand=True)
 
         # Qué es el texto vigente de esta página: evidencia (OCR), corrección
         # de máquina o revisión humana. Una interfaz atractiva no debe borrar
         # esa diferencia.
-        self._lbl_norm_epistemico = tk.Label(der, text="", bg=CONTENT_BG, fg=TXT_SEC,
+        self._lbl_norm_epistemico = tk.Label(der, text="", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                                              font=("Segoe UI", 9), anchor="w")
         self._lbl_norm_epistemico.pack(fill="x", pady=(0, 4))
 
         # Fila 1: imagen + OCR crudo
-        fila1 = tk.Frame(der, bg=CONTENT_BG)
+        fila1 = tk.Frame(der, bg=TEMA.CONTENT_BG)
         fila1.pack(fill="both", expand=True, pady=(0, 6))
 
         # Vista 1: imagen de la página con zoom/pan
         v1 = tk.LabelFrame(fila1, text=" 🖼  Imagen original ",
-                            bg=CARD_BG, fg=TXT_PRI, font=("Segoe UI", 9, "bold"),
+                            bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, font=("Segoe UI", 9, "bold"),
                             relief="solid", bd=1)
         v1.pack(side="left", fill="both", expand=True, padx=(0, 6))
 
         # Toolbar de zoom
-        v1_tb = tk.Frame(v1, bg=CARD_BG)
+        v1_tb = tk.Frame(v1, bg=TEMA.CARD_BG)
         v1_tb.pack(fill="x", padx=6, pady=(4, 0))
         self._norm_zoom = 1.0
         self._norm_img_orig_full = None   # PIL Image a resolución original
         self._norm_pan_start     = None
 
         for txt, delta in [("−", -1), ("+", 1)]:
-            tk.Button(v1_tb, text=txt, bg=CARD_BG, fg=TXT_SEC, relief="flat",
+            tk.Button(v1_tb, text=txt, bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, relief="flat",
                       font=("Segoe UI", 10, "bold"), width=2, cursor="hand2",
                       command=lambda d=delta: self._norm_zoom_step(d)
                       ).pack(side="left", padx=1)
-        self._norm_lbl_zoom = tk.Label(v1_tb, text="100%", bg=CARD_BG, fg=TXT_DIM,
+        self._norm_lbl_zoom = tk.Label(v1_tb, text="100%", bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                                         font=("Segoe UI", 8))
         self._norm_lbl_zoom.pack(side="left", padx=6)
         tk.Label(v1_tb, text="Ctrl+rueda: zoom  ·  Arrastrar: pan",
-                 bg=CARD_BG, fg=TXT_DIM, font=("Segoe UI", 7)).pack(side="right")
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 7)).pack(side="right")
 
         # Canvas con scrollbars
         v1_wrap = tk.Frame(v1, bg="#000000")
@@ -204,7 +217,7 @@ class PanelNormalizar:
 
         # Vista 2: OCR crudo (solo lectura)
         v2 = tk.LabelFrame(fila1, text=" 📄  OCR crudo (solo lectura) ",
-                            bg=CARD_BG, fg=TXT_PRI, font=("Segoe UI", 9, "bold"),
+                            bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, font=("Segoe UI", 9, "bold"),
                             relief="solid", bd=1)
         v2.pack(side="left", fill="both", expand=True)
         self._norm_txt_ocr = scrolledtext.ScrolledText(
@@ -213,24 +226,24 @@ class PanelNormalizar:
         self._norm_txt_ocr.pack(fill="both", expand=True, padx=6, pady=6)
 
         # Fila 2: normalizado usuario + normalizado IA
-        fila2 = tk.Frame(der, bg=CONTENT_BG)
+        fila2 = tk.Frame(der, bg=TEMA.CONTENT_BG)
         fila2.pack(fill="both", expand=True)
 
         # Vista 3: edición manual del usuario
         v3 = tk.LabelFrame(fila2, text=" ✏️  Normalizado por usuario ",
-                            bg=CARD_BG, fg=TXT_PRI, font=("Segoe UI", 9, "bold"),
+                            bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, font=("Segoe UI", 9, "bold"),
                             relief="solid", bd=1)
         v3.pack(side="left", fill="both", expand=True, padx=(0, 6))
 
         # Barra de herramientas del panel de usuario (dictado)
-        v3_bar = tk.Frame(v3, bg=CARD_BG)
+        v3_bar = tk.Frame(v3, bg=TEMA.CARD_BG)
         v3_bar.pack(fill="x", padx=6, pady=(4, 0))
         self._btn_dictar = ttk.Button(v3_bar, text="🎙 Dictar",
                                        style="S.TButton",
                                        command=self._norm_dictar_toggle)
         self._btn_dictar.pack(side="left")
-        self._lbl_dictar_estado = tk.Label(v3_bar, text="", bg=CARD_BG,
-                                            fg=TXT_DIM, font=("Segoe UI", 8))
+        self._lbl_dictar_estado = tk.Label(v3_bar, text="", bg=TEMA.CARD_BG,
+                                            fg=TEMA.TXT_DIM, font=("Segoe UI", 8))
         self._lbl_dictar_estado.pack(side="left", padx=(8, 0))
         self._dictar_session = None   # DictadoSession activa o None
 
@@ -241,7 +254,7 @@ class PanelNormalizar:
 
         # Vista 4: sugerencia de IA (revisable)
         v4 = tk.LabelFrame(fila2, text=" 🤖  Normalizado por IA (revisable) ",
-                            bg=CARD_BG, fg=TXT_PRI, font=("Segoe UI", 9, "bold"),
+                            bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, font=("Segoe UI", 9, "bold"),
                             relief="solid", bd=1)
         v4.pack(side="left", fill="both", expand=True)
         self._norm_txt_ia = scrolledtext.ScrolledText(
@@ -591,12 +604,12 @@ class PanelNormalizar:
         self._verif_q = queue.Queue()
 
         info = tk.Label(content, text="Analizando palabras de baja confianza…",
-                         bg=CONTENT_BG, fg=TXT_SEC, font=("Segoe UI", 10))
+                         bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC, font=("Segoe UI", 10))
         info.pack(pady=40)
         self._verif_lbl_info = info
 
         # Layout principal (se puebla cuando el worker entrega resultados)
-        cuerpo = tk.Frame(content, bg=CONTENT_BG)
+        cuerpo = tk.Frame(content, bg=TEMA.CONTENT_BG)
         cuerpo.pack(fill="both", expand=True, padx=16, pady=(0, 12))
         self._verif_cuerpo = cuerpo
 
@@ -606,9 +619,9 @@ class PanelNormalizar:
         self._verif_lbl_img = tk.Label(img_frame, bg="#0E1114")
         self._verif_lbl_img.pack(expand=True)
 
-        fila_txt = tk.Frame(cuerpo, bg=CONTENT_BG)
+        fila_txt = tk.Frame(cuerpo, bg=TEMA.CONTENT_BG)
         fila_txt.pack(fill="x", pady=(0, 8))
-        tk.Label(fila_txt, text="Corrección:", bg=CONTENT_BG, fg=TXT_PRI,
+        tk.Label(fila_txt, text="Corrección:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(side="left")
         self._verif_var_texto = tk.StringVar()
         entry = tk.Entry(fila_txt, textvariable=self._verif_var_texto,
@@ -618,13 +631,13 @@ class PanelNormalizar:
         self._verif_entry = entry
 
         tk.Label(cuerpo, text="Sugerencias (doble clic para usar):",
-                 bg=CONTENT_BG, fg=TXT_DIM, font=("Segoe UI", 8)).pack(anchor="w")
+                 bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(anchor="w")
         self._verif_lb_sug = tk.Listbox(cuerpo, height=4, bg="#0E1114", fg="#E8E5DF",
                                          relief="solid", bd=1, font=("Segoe UI", 9))
         self._verif_lb_sug.pack(fill="x", pady=(2, 10))
         self._verif_lb_sug.bind("<Double-Button-1>", lambda e: self._verif_usar_sugerencia())
 
-        botones = tk.Frame(cuerpo, bg=CONTENT_BG)
+        botones = tk.Frame(cuerpo, bg=TEMA.CONTENT_BG)
         botones.pack(fill="x", pady=(0, 8))
         ttk.Button(botones, text="Omitir", style="S.TButton",
                    command=self._verif_omitir).pack(side="left", padx=(0, 6))
@@ -637,9 +650,9 @@ class PanelNormalizar:
         ttk.Button(botones, text="📖 Agregar a diccionario", style="S.TButton",
                    command=self._verif_agregar_diccionario).pack(side="left", padx=(0, 6))
 
-        pie = tk.Frame(cuerpo, bg=CONTENT_BG)
+        pie = tk.Frame(cuerpo, bg=TEMA.CONTENT_BG)
         pie.pack(fill="x")
-        self._verif_lbl_contador = tk.Label(pie, text="", bg=CONTENT_BG, fg=TXT_DIM,
+        self._verif_lbl_contador = tk.Label(pie, text="", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                                              font=("Segoe UI", 9))
         self._verif_lbl_contador.pack(side="left")
         ttk.Button(pie, text="✅ Terminar y guardar", style="P.TButton",
@@ -688,7 +701,7 @@ class PanelNormalizar:
 
         self._verif_lbl_info.pack_forget()
         if tipo == "error":
-            tk.Label(win, text=f"Error: {payload}", bg=CONTENT_BG, fg="#D96B6B",
+            tk.Label(win, text=f"Error: {payload}", bg=TEMA.CONTENT_BG, fg="#D96B6B",
                      font=("Segoe UI", 9)).pack(pady=20)
             return
 
@@ -877,12 +890,12 @@ class PanelNormalizar:
                 self.after(0, lambda: (
                     self._norm_mostrar_bloque(idx),
                     self._lbl_norm_estado.config(
-                        text=f"✅ {pagina} re-extraído (conf: {conf}%{_modo})", fg=VERDE),
+                        text=f"✅ {pagina} re-extraído (conf: {conf}%{_modo})", fg=TEMA.VERDE),
                     self._norm_refrescar_lista(),
                 ))
             except Exception as e:
                 self.after(0, lambda err=str(e): self._lbl_norm_estado.config(
-                    text=f"⚠ Error: {err}", fg=ROJO))
+                    text=f"⚠ Error: {err}", fg=TEMA.ROJO))
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -933,12 +946,12 @@ class PanelNormalizar:
 
                 self.after(0, lambda: (
                     self._lbl_norm_estado.config(
-                        text=f"✅ {len(imgs)} imágenes regeneradas — {num}", fg=VERDE),
+                        text=f"✅ {len(imgs)} imágenes regeneradas — {num}", fg=TEMA.VERDE),
                     self._norm_mostrar_bloque(self._norm_idx_actual),
                 ))
             except Exception as e:
                 self.after(0, lambda err=str(e): self._lbl_norm_estado.config(
-                    text=f"⚠ Error: {err}", fg=ROJO))
+                    text=f"⚠ Error: {err}", fg=TEMA.ROJO))
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -987,7 +1000,7 @@ class PanelNormalizar:
             self.after(0, lambda: (
                 self._norm_cargar_numero(),
                 self._lbl_norm_estado.config(
-                    text=f"✅ {ok}/{total} páginas re-extraídas con Tesseract", fg=VERDE),
+                    text=f"✅ {ok}/{total} páginas re-extraídas con Tesseract", fg=TEMA.VERDE),
             ))
 
         threading.Thread(target=_run, daemon=True).start()
@@ -1026,7 +1039,7 @@ class PanelNormalizar:
         self._norm_mostrar_bloque(idx)
         self._lbl_norm_estado.config(
             text=f"✅ Texto importado en {b['pagina']} ({len(texto.split())} palabras)",
-            fg=VERDE)
+            fg=TEMA.VERDE)
 
     def _norm_importar_txt_numero(self):
         """
@@ -1085,7 +1098,7 @@ class PanelNormalizar:
         self._norm_cargar_numero()
         self._lbl_norm_estado.config(
             text=f"✅ {importados}/{len(self._norm_bloques)} páginas importadas desde carpeta",
-            fg=VERDE)
+            fg=TEMA.VERDE)
 
     def _norm_reconstruir_columnas(self):
         """
@@ -1116,7 +1129,7 @@ class PanelNormalizar:
             palabras = len(reconstruido.split())
             self._lbl_norm_estado.config(
                 text=f"✅ Columnas reconstruidas en {b['pagina']} ({palabras} palabras)",
-                fg=VERDE)
+                fg=TEMA.VERDE)
         else:
             n = 0
             for b in self._norm_bloques:
@@ -1127,7 +1140,7 @@ class PanelNormalizar:
             self._norm_refrescar_lista()
             self._lbl_norm_estado.config(
                 text=f"✅ Columnas reconstruidas en {n} páginas",
-                fg=VERDE)
+                fg=TEMA.VERDE)
 
     def _norm_diccionario_corpus(self):
         """Construye el diccionario de frecuencias del corpus completo y lo guarda en JSON."""
@@ -1148,11 +1161,11 @@ class PanelNormalizar:
         def _run():
             from core.ocr_normalizer import construir_diccionario_corpus
             self.after(0, lambda: self._lbl_norm_estado.config(
-                text="⏳ Construyendo diccionario de corpus…", fg=TXT_SEC))
+                text="⏳ Construyendo diccionario de corpus…", fg=TEMA.TXT_SEC))
 
             def _cb(n, total, nombre):
                 self.after(0, lambda: self._lbl_norm_estado.config(
-                    text=f"⏳ Procesando {n}/{total}: {nombre}", fg=TXT_SEC))
+                    text=f"⏳ Procesando {n}/{total}: {nombre}", fg=TEMA.TXT_SEC))
 
             try:
                 dic = construir_diccionario_corpus(
@@ -1162,7 +1175,7 @@ class PanelNormalizar:
                 top5_str = ", ".join(f"{p}({f})" for p, f in top5)
                 self.after(0, lambda: self._lbl_norm_estado.config(
                     text=f"✅ Diccionario listo: {n_palabras:,} palabras · top: {top5_str}",
-                    fg=VERDE))
+                    fg=TEMA.VERDE))
                 self.after(0, lambda: messagebox.showinfo(
                     "Diccionario de corpus",
                     f"Diccionario construido con {n_palabras:,} palabras (freq ≥ 3).\n\n"
@@ -1181,7 +1194,7 @@ class PanelNormalizar:
             self._dictar_session.detener()
             self._dictar_session = None
             self._btn_dictar.config(text="🎙 Dictar")
-            self._lbl_dictar_estado.config(text="", fg=TXT_DIM)
+            self._lbl_dictar_estado.config(text="", fg=TEMA.TXT_DIM)
             return
 
         try:
@@ -1194,7 +1207,7 @@ class PanelNormalizar:
             return
 
         self._btn_dictar.config(text="⏹ Detener")
-        self._lbl_dictar_estado.config(text="⏳ Iniciando micrófono…", fg=TXT_SEC)
+        self._lbl_dictar_estado.config(text="⏳ Iniciando micrófono…", fg=TEMA.TXT_SEC)
 
         def _on_texto(texto: str):
             # Llamado desde hilo de audio — usar after() para acceder a tkinter
@@ -1240,7 +1253,7 @@ class PanelNormalizar:
                 self._lbl_dictar_estado.config(text="🔴 Escuchando…", fg="#D96B6B")
             elif estado == "detenido":
                 self._btn_dictar.config(text="🎙 Dictar")
-                self._lbl_dictar_estado.config(text="", fg=TXT_DIM)
+                self._lbl_dictar_estado.config(text="", fg=TEMA.TXT_DIM)
                 self._dictar_session = None
                 return
             elif estado.startswith("error:"):
@@ -1418,7 +1431,7 @@ class PanelNormalizar:
             f"🔍 Cambios — {b.get('pagina', '')}", ancho=700, alto=500)
 
         txt = scrolledtext.ScrolledText(
-            diff_content, bg="#0E1114", fg=TXT_PRI, font=("Courier New", 9),
+            diff_content, bg="#0E1114", fg=TEMA.TXT_PRI, font=("Courier New", 9),
             relief="flat", wrap="none")
         txt.pack(fill="both", expand=True, padx=8, pady=8)
         txt.tag_configure("add", foreground="#6EC69A", background="#15251F")
@@ -1457,19 +1470,19 @@ class PanelNormalizar:
         img_dir = Path(ST.out_dir) / "02_imagenes" / numero
         out_dir = Path(dest) / f"ground_truth_{numero}"
 
-        self._lbl_norm_estado.config(text="⏳ Exportando dataset HTR…", fg=TXT_SEC)
+        self._lbl_norm_estado.config(text="⏳ Exportando dataset HTR…", fg=TEMA.TXT_SEC)
 
         def _run():
             from core.kraken_trainer import exportar_ground_truth
             def _cb(n, total, msg):
                 self.after(0, lambda: self._lbl_norm_estado.config(
-                    text=f"⏳ {n}/{total}: {msg}", fg=TXT_SEC))
+                    text=f"⏳ {n}/{total}: {msg}", fg=TEMA.TXT_SEC))
             try:
                 res = exportar_ground_truth(txt_dir, img_dir, out_dir, callback=_cb)
                 self.after(0, lambda r=res: (
                     self._lbl_norm_estado.config(
                         text=f"✅ {r['pares']} pares exportados a {r['out_dir']}",
-                        fg=VERDE),
+                        fg=TEMA.VERDE),
                     messagebox.showinfo(
                         "Dataset HTR exportado",
                         f"Pares exportados: {r['pares']}\n"

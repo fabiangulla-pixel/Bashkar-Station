@@ -189,3 +189,49 @@ def estadisticas(con) -> dict:
         "descartadas": por.get(DESCARTADA, 0),
         "renombradas": por.get(RENOMBRADA, 0),
     }
+
+
+# ── Operaciones completas para la GUI (sesión 71) ────────────────────────────
+# El panel de lingüística abría la conexión SQLite él mismo y la cerraba al
+# final del try: si algo fallaba en medio, quedaba abierta (en Windows eso
+# bloquea el .db). Aquí cada operación abre, hace y cierra siempre.
+
+def ruta_db_revision(ruta_db: str = "", out_dir=None) -> str:
+    """La base del proyecto o, sin proyecto, ``revision_ner.db`` junto a la salida."""
+    if ruta_db:
+        return str(ruta_db)
+    from pathlib import Path
+    return str(Path(out_dir or Path.cwd()) / "revision_ner.db")
+
+
+def _conectar(ruta: str):
+    import sqlite3
+    con = sqlite3.connect(ruta, timeout=30)
+    con.row_factory = sqlite3.Row
+    return con
+
+
+def construir_y_guardar(ruta: str, indice_global: dict) -> list[dict]:
+    """Arma la cola de revisión desde el índice NER, la persiste y devuelve
+    las entidades pendientes."""
+    con = _conectar(ruta)
+    try:
+        guardar_cola(con, construir_cola(indice_global))
+        return pendientes(con)
+    finally:
+        con.close()
+
+
+def decidir_y_aplicar(ruta: str, nombre: str, categoria: str, decision: str,
+                      indice_global: dict | None, nombre_nuevo: str | None = None) -> list[dict]:
+    """Registra una decisión, re-aplica TODAS las decisiones al índice en
+    memoria (descarta lo rechazado, fusiona renombres) y devuelve pendientes."""
+    con = _conectar(ruta)
+    try:
+        kwargs = {"nombre_nuevo": nombre_nuevo} if nombre_nuevo else {}
+        decidir(con, nombre, categoria, decision, **kwargs)
+        aplicar_revisiones(indice_global if indice_global is not None else {},
+                           cargar_decisiones(con))
+        return pendientes(con)
+    finally:
+        con.close()

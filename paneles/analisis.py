@@ -1,13 +1,31 @@
 """paneles/analisis.py — Métodos de BashkarApp extraídos de app.py.
 
 Mixin: BashkarApp hereda de PanelAnalisis. Los cuerpos son copia literal del
-original; los nombres globales (ST, colores, tk…) los inyecta
-paneles.sincronizar() desde app.py.
+original. Importa explícitamente lo que usa; los colores del tema se
+leen de gui_comun.TEMA porque cambian en caliente.
 """
 
 from __future__ import annotations
 
-# ruff: noqa: F821
+import gc
+import threading
+import tkinter as tk
+from pathlib import Path
+from tkinter import filedialog, messagebox, scrolledtext, ttk
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+from core import plataforma
+from gui_comun import (
+    CAMPOS_DEFAULT,
+    PALETTE,
+    ST,
+    TEMA,
+    _resolver_api_key_modelo,
+)
 
 
 class PanelAnalisis:
@@ -19,17 +37,17 @@ class PanelAnalisis:
         self._page_header(f, "Segmentación de artículos",
                           "Identifica artículos y asigna autoría por bylines y firmas", "📝")
         self._build_ai_panel(f, "seg")
-        pad = tk.Frame(f, bg=CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=16)
+        pad = tk.Frame(f, bg=TEMA.CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=16)
 
         # ── Barra de acción fija (siempre visible) ────────────────────────────
-        bf = tk.Frame(pad, bg=CONTENT_BG); bf.pack(fill="x", pady=(0, 8))
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG); bf.pack(fill="x", pady=(0, 8))
         self._btn_seg = ttk.Button(bf, text="▶  Segmentar artículos",
                                     style="P.TButton", command=self._start_seg)
         self._btn_seg.pack(side="left", padx=(0,12))
         self._var_seg_v2 = tk.BooleanVar(value=True)
         ttk.Checkbutton(bf, text="Segmentador avanzado (v2)",
                         variable=self._var_seg_v2).pack(side="left", padx=(0, 12))
-        self._lbl_seg_n = tk.Label(bf, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_seg_n = tk.Label(bf, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                     font=("Segoe UI",10,"bold"))
         self._lbl_seg_n.pack(side="left", padx=8)
         ttk.Button(bf, text="💾 Exportar CSV", style="S.TButton",
@@ -37,24 +55,24 @@ class PanelAnalisis:
         ttk.Button(bf, text="📄 Exportar DOCX (con costura)", style="S.TButton",
                    command=self._export_seg_docx_costura).pack(side="left", padx=4)
         tk.Label(bf, text="⚠  Requiere extracción completada",
-                 bg=CONTENT_BG, fg=ACENT, font=("Segoe UI",9)).pack(side="left", padx=8)
+                 bg=TEMA.CONTENT_BG, fg=TEMA.ACENT, font=("Segoe UI",9)).pack(side="left", padx=8)
         ttk.Button(bf, text="📓 Nota", style="S.TButton",
                    command=lambda: self._bitacora_nueva_nota("seg")).pack(side="right")
 
         # Progressive disclosure — opciones avanzadas de segmentación
         def _build_seg_avanzado(f):
-            row1 = tk.Frame(f, bg=CONTENT_BG); row1.pack(fill="x", pady=2)
-            tk.Label(row1, text="Umbral confianza autoría:", bg=CONTENT_BG,
-                     fg=TXT_SEC, font=("Segoe UI",8)).pack(side="left")
+            row1 = tk.Frame(f, bg=TEMA.CONTENT_BG); row1.pack(fill="x", pady=2)
+            tk.Label(row1, text="Umbral confianza autoría:", bg=TEMA.CONTENT_BG,
+                     fg=TEMA.TXT_SEC, font=("Segoe UI",8)).pack(side="left")
             self._var_seg_umbral = tk.DoubleVar(value=0.4)
             ttk.Scale(row1, from_=0.1, to=0.9, variable=self._var_seg_umbral,
                       orient="horizontal", length=120).pack(side="left", padx=6)
-            tk.Label(row1, textvariable=self._var_seg_umbral, bg=CONTENT_BG,
-                     fg=TXT_SEC, font=("Segoe UI",8), width=4).pack(side="left")
-            row2 = tk.Frame(f, bg=CONTENT_BG); row2.pack(fill="x", pady=2)
+            tk.Label(row1, textvariable=self._var_seg_umbral, bg=TEMA.CONTENT_BG,
+                     fg=TEMA.TXT_SEC, font=("Segoe UI",8), width=4).pack(side="left")
+            row2 = tk.Frame(f, bg=TEMA.CONTENT_BG); row2.pack(fill="x", pady=2)
             self._var_seg_max_art = tk.IntVar(value=0)
             tk.Label(row2, text="Máx. artículos por número (0=sin límite):",
-                     bg=CONTENT_BG, fg=TXT_SEC, font=("Segoe UI",8)).pack(side="left")
+                     bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC, font=("Segoe UI",8)).pack(side="left")
             ttk.Spinbox(row2, from_=0, to=200, textvariable=self._var_seg_max_art,
                         width=5).pack(side="left", padx=6)
         self._mk_avanzado(pad, "Opciones avanzadas de segmentación", _build_seg_avanzado)
@@ -62,7 +80,7 @@ class PanelAnalisis:
         cols = ("Número", "Título", "Autor", "Confianza", "Sección", "Páginas", "Palabras")
         anchos = {"Número":140,"Título":340,"Autor":180,"Confianza":75,
                   "Sección":110,"Páginas":110,"Palabras":75}
-        tv_outer = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1)
+        tv_outer = tk.Frame(pad, bg=TEMA.CARD_BG, relief="solid", bd=1)
         tv_outer.pack(fill="both", expand=True)
         self._tv_seg_outer = tv_outer   # para skeleton
         self._seg_skeleton = None
@@ -85,21 +103,21 @@ class PanelAnalisis:
         self._tv_seg.bind("<<TreeviewSelect>>", self._on_seg_select)
         self._tv_seg_sort_rev = {c: False for c in cols}
 
-        ley_f = tk.Frame(pad, bg=CONTENT_BG); ley_f.pack(anchor="w", pady=(4, 0))
+        ley_f = tk.Frame(pad, bg=TEMA.CONTENT_BG); ley_f.pack(anchor="w", pady=(4, 0))
         # Pastillas de estado: fondo tintado oscuro + texto del color de la
         # señal. Antes eran chips claros con texto oscuro, herencia del tema
         # claro original, y desentonaban con el resto de la interfaz.
-        for bg_, fg_, txt in [(READY_BG, VERDE,     "  ✓ Autoría identificada  "),
-                               (WARN_BG,  ACENT,    "  ≈ Confianza media  "),
-                               (CARD_BG,  TXT_DIM,  "  — Anónimo  ")]:
+        for bg_, fg_, txt in [(TEMA.READY_BG, TEMA.VERDE,     "  ✓ Autoría identificada  "),
+                               (TEMA.WARN_BG,  TEMA.ACENT,    "  ≈ Confianza media  "),
+                               (TEMA.CARD_BG,  TEMA.TXT_DIM,  "  — Anónimo  ")]:
             tk.Label(ley_f, text=txt, bg=bg_, fg=fg_,
                      font=("Segoe UI",8), relief="solid", bd=1).pack(side="left", padx=3)
 
-        det_outer = tk.Frame(pad, bg=CARD_BOR, relief="solid", bd=1)
+        det_outer = tk.Frame(pad, bg=TEMA.CARD_BOR, relief="solid", bd=1)
         det_outer.pack(fill="x", pady=(10,0))
         det_hdr = tk.Frame(det_outer, bg="#171C20"); det_hdr.pack(fill="x")
         tk.Label(det_hdr, text="  📄  Texto del artículo seleccionado",
-                 bg="#171C20", fg=TXT_PRI, font=("Segoe UI",8,"bold")).pack(side="left", pady=4)
+                 bg="#171C20", fg=TEMA.TXT_PRI, font=("Segoe UI",8,"bold")).pack(side="left", pady=4)
         self._txt_seg_art = scrolledtext.ScrolledText(det_outer, height=6, font=("Consolas",9), bg="#0E1114", fg="#E8E5DF", relief="flat", state="disabled", wrap="word")
         self._txt_seg_art.pack(fill="x", padx=1, pady=(0,1))
 
@@ -168,25 +186,25 @@ class PanelAnalisis:
         self._page_header(f, "Análisis textual y semántico",
                           "NER · LDA · campos semánticos · Word2Vec · red de autoría", "🔍")
         self._build_ai_panel(f, "anal")
-        pad = tk.Frame(f, bg=CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=16)
+        pad = tk.Frame(f, bg=TEMA.CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=16)
 
         # ── Barra de acción fija ──────────────────────────────────────────────
-        bf_an = tk.Frame(pad, bg=CONTENT_BG); bf_an.pack(fill="x", pady=(0, 8))
+        bf_an = tk.Frame(pad, bg=TEMA.CONTENT_BG); bf_an.pack(fill="x", pady=(0, 8))
         self._btn_anal = ttk.Button(bf_an, text="▶  Iniciar análisis textual",
                                      style="P.TButton", command=self._start_anal)
         self._btn_anal.pack(side="left", padx=(0,12))
         tk.Label(bf_an, text="⚠  Requiere extracción completada",
-                 bg=CONTENT_BG, fg=ACENT, font=("Segoe UI",9)).pack(side="left")
+                 bg=TEMA.CONTENT_BG, fg=TEMA.ACENT, font=("Segoe UI",9)).pack(side="left")
         ttk.Button(bf_an, text="📓 Nota", style="S.TButton",
                    command=lambda: self._bitacora_nueva_nota("anal")).pack(side="right")
 
         self._lbl_fase_a = tk.Label(pad, text="Esperando…",
-                                     bg=CONTENT_BG, fg="#777F84",
+                                     bg=TEMA.CONTENT_BG, fg="#777F84",
                                      font=("Segoe UI",9,"italic"))
         self._lbl_fase_a.pack(anchor="w")
         self._prog_a = ttk.Progressbar(pad, mode="determinate", length=600)
         self._prog_a.pack(fill="x", pady=(6,4))
-        self._lbl_pct_a = tk.Label(pad, text="", bg=CONTENT_BG, fg="#777F84",
+        self._lbl_pct_a = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg="#777F84",
                                     font=("Courier",8))
         self._lbl_pct_a.pack(anchor="w")
 
@@ -210,34 +228,34 @@ class PanelAnalisis:
         self._txt_exp_res    = None  # se crea dentro del lazy builder
 
         def _build_anal_params(frame):
-            p2 = tk.Frame(frame, bg=CARD_BG, padx=16, pady=10)
+            p2 = tk.Frame(frame, bg=TEMA.CARD_BG, padx=16, pady=10)
             p2.pack(fill="x")
             # N-gramas
-            row_ng = tk.Frame(p2, bg=CARD_BG); row_ng.pack(anchor="w", pady=3)
-            tk.Label(row_ng, text="N-gramas máx.:", bg=CARD_BG, fg="#E8E5DF",
+            row_ng = tk.Frame(p2, bg=TEMA.CARD_BG); row_ng.pack(anchor="w", pady=3)
+            tk.Label(row_ng, text="N-gramas máx.:", bg=TEMA.CARD_BG, fg="#E8E5DF",
                      font=("Segoe UI",9,"bold"), width=16, anchor="w").pack(side="left")
             tk.Spinbox(row_ng, from_=1, to=4, textvariable=self._var_nt,
                        width=4, font=("Segoe UI",10), relief="solid", bd=1).pack(side="left", padx=6)
-            tk.Label(row_ng, text="(1=unigramas, 2=bigramas, etc.)", bg=CARD_BG,
+            tk.Label(row_ng, text="(1=unigramas, 2=bigramas, etc.)", bg=TEMA.CARD_BG,
                      fg="#646D72", font=("Segoe UI",8)).pack(side="left", padx=4)
             # Frecuencia mínima
-            row_mf = tk.Frame(p2, bg=CARD_BG); row_mf.pack(anchor="w", pady=3)
-            tk.Label(row_mf, text="Frec. mínima:", bg=CARD_BG, fg="#E8E5DF",
+            row_mf = tk.Frame(p2, bg=TEMA.CARD_BG); row_mf.pack(anchor="w", pady=3)
+            tk.Label(row_mf, text="Frec. mínima:", bg=TEMA.CARD_BG, fg="#E8E5DF",
                      font=("Segoe UI",9,"bold"), width=16, anchor="w").pack(side="left")
             tk.Spinbox(row_mf, from_=1, to=20, textvariable=self._var_mf,
                        width=4, font=("Segoe UI",10), relief="solid", bd=1).pack(side="left", padx=6)
-            tk.Label(row_mf, text="apariciones mínimas para incluir en vocabulario", bg=CARD_BG,
+            tk.Label(row_mf, text="apariciones mínimas para incluir en vocabulario", bg=TEMA.CARD_BG,
                      fg="#646D72", font=("Segoe UI",8)).pack(side="left", padx=4)
             # Word2Vec
-            row_wv = tk.Frame(p2, bg=CARD_BG); row_wv.pack(anchor="w", pady=3)
+            row_wv = tk.Frame(p2, bg=TEMA.CARD_BG); row_wv.pack(anchor="w", pady=3)
             ttk.Checkbutton(row_wv, text="🧠  Entrenar Word2Vec (expansión semántica automática de campos)",
                             variable=self._var_wv).pack(side="left")
 
         def _build_anal_exp(frame):
-            exp_inner = tk.Frame(frame, bg=CARD_BG, padx=16, pady=10)
+            exp_inner = tk.Frame(frame, bg=TEMA.CARD_BG, padx=16, pady=10)
             exp_inner.pack(fill="x")
-            exp_ctrl = tk.Frame(exp_inner, bg=CARD_BG); exp_ctrl.pack(anchor="w")
-            tk.Label(exp_ctrl, text="Campo:", bg=CARD_BG, fg="#E8E5DF",
+            exp_ctrl = tk.Frame(exp_inner, bg=TEMA.CARD_BG); exp_ctrl.pack(anchor="w")
+            tk.Label(exp_ctrl, text="Campo:", bg=TEMA.CARD_BG, fg="#E8E5DF",
                      font=("Segoe UI",9,"bold")).pack(side="left")
             campo_cmb = ttk.Combobox(exp_ctrl, textvariable=self._var_campo_exp,
                                       values=list(CAMPOS_DEFAULT.keys()),
@@ -261,23 +279,23 @@ class PanelAnalisis:
                           "Fuentes tipográficas · imágenes detectadas · diagrama de layout", "🖼")
         self._build_ai_panel(f, "vis")
         # Sub-pestañas con botones propios (no ttk.Notebook para mantener estilo)
-        top = tk.Frame(f, bg=CONTENT_BG); top.pack(fill="x", padx=24, pady=(12,0))
+        top = tk.Frame(f, bg=TEMA.CONTENT_BG); top.pack(fill="x", padx=24, pady=(12,0))
         self._vis_tabs_btns = {}
         for i, (tid, label) in enumerate([("tip","🔤 Tipografía"),
                                            ("ele","📷 Imágenes"),
                                            ("diag","📐 Diagrama")]):
-            btn = tk.Label(top, text=f"  {label}  ", bg=CARD_BOR if i > 0 else AZ3,
+            btn = tk.Label(top, text=f"  {label}  ", bg=TEMA.CARD_BOR if i > 0 else TEMA.AZ3,
                            fg="white" if i == 0 else "#646D72",
                            font=("Segoe UI",9,"bold"), cursor="hand2",
                            padx=10, pady=6, relief="flat")
             btn.pack(side="left", padx=(0,2))
             self._vis_tabs_btns[tid] = btn
-        tk.Frame(f, bg=CARD_BOR, height=1).pack(fill="x")
+        tk.Frame(f, bg=TEMA.CARD_BOR, height=1).pack(fill="x")
 
         # Frames de sub-contenido
         self._vis_frames = {}
         for tid in ("tip","ele","diag"):
-            frm = tk.Frame(f, bg=CONTENT_BG)
+            frm = tk.Frame(f, bg=TEMA.CONTENT_BG)
             self._vis_frames[tid] = frm
 
         self._tab_vis_tip  = self._vis_frames["tip"]
@@ -290,15 +308,15 @@ class PanelAnalisis:
             btn.bind("<Button-1>", lambda e, t=tid: self._vis_switch(t))
 
         # Botones de acción
-        bf = tk.Frame(f, bg=CONTENT_BG); bf.pack(fill="x", padx=24, pady=10)
+        bf = tk.Frame(f, bg=TEMA.CONTENT_BG); bf.pack(fill="x", padx=24, pady=10)
         self._btn_vis = ttk.Button(bf, text="▶  Analizar visual y tipografía",
                                     style="P.TButton", command=self._start_vis)
         self._btn_vis.pack(side="left", padx=(0,12))
-        self._lbl_vis_ok = tk.Label(bf, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_vis_ok = tk.Label(bf, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI",10,"bold"))
         self._lbl_vis_ok.pack(side="left")
         tk.Label(bf, text="⚠  Requiere extracción completada",
-                 bg=CONTENT_BG, fg=ACENT, font=("Segoe UI",9)).pack(side="left", padx=8)
+                 bg=TEMA.CONTENT_BG, fg=TEMA.ACENT, font=("Segoe UI",9)).pack(side="left", padx=8)
 
         # Mostrar primera sub-pestaña
         self._vis_switch("tip")
@@ -309,16 +327,16 @@ class PanelAnalisis:
         self._vis_frames[tid].pack(fill="both", expand=True)
         for t, btn in self._vis_tabs_btns.items():
             if t == tid:
-                btn.config(bg=AZ3, fg="white")
+                btn.config(bg=TEMA.AZ3, fg="white")
             else:
-                btn.config(bg=CARD_BOR, fg="#777F84")
+                btn.config(bg=TEMA.CARD_BOR, fg="#777F84")
 
     def _build_vis_tip(self):
         pad = self._tab_vis_tip
         cols = ("Número","Fuente principal","Clasificación","N fuentes","Cuerpo (pt)",
                 "Título (pt)","Ratio T/C","Interlineado","Columnas","% Negrita","% Cursiva","Imgs.")
         widths = [110,160,130,70,80,80,60,80,70,70,70,50]
-        tv_f = tk.Frame(pad, bg=CONTENT_BG); tv_f.pack(fill="both", expand=True, padx=8, pady=8)
+        tv_f = tk.Frame(pad, bg=TEMA.CONTENT_BG); tv_f.pack(fill="both", expand=True, padx=8, pady=8)
         sbv = ttk.Scrollbar(tv_f, orient="vertical")
         sbh = ttk.Scrollbar(tv_f, orient="horizontal")
         self._tv_tip = ttk.Treeview(tv_f, columns=cols, show="headings",
@@ -330,7 +348,7 @@ class PanelAnalisis:
         sbv.pack(side="right", fill="y"); sbh.pack(side="bottom", fill="x")
         self._tv_tip.pack(fill="both", expand=True)
         # detalle de fuentes al hacer clic
-        det_f = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1); tk.Label(det_f, text="  Detalle de fuentes del número seleccionado", bg="#171C20", fg=TXT_PRI, font=("Segoe UI",8,"bold")).pack(fill="x")
+        det_f = tk.Frame(pad, bg=TEMA.CARD_BG, relief="solid", bd=1); tk.Label(det_f, text="  Detalle de fuentes del número seleccionado", bg="#171C20", fg=TEMA.TXT_PRI, font=("Segoe UI",8,"bold")).pack(fill="x")
         det_f.pack(fill="x", padx=8, pady=(0,6))
         self._txt_tip_det = scrolledtext.ScrolledText(det_f, height=5, font=("Courier",9), bg="#0E1114", fg="#E8E5DF", relief="flat", state="disabled")
         self._txt_tip_det.pack(fill="x")
@@ -341,7 +359,7 @@ class PanelAnalisis:
         cols = ("Número","Página","Tipo","Confianza","Ancho cm","Alto cm","Área cm²",
                 "Pos X%","Pos Y%","Autor imagen","Pie de foto","Descripción IA")
         widths = [110,80,130,70,70,70,70,60,60,120,160,280]
-        tv_f = tk.Frame(pad, bg=CONTENT_BG); tv_f.pack(fill="both", expand=True, padx=8, pady=8)
+        tv_f = tk.Frame(pad, bg=TEMA.CONTENT_BG); tv_f.pack(fill="both", expand=True, padx=8, pady=8)
         sbv = ttk.Scrollbar(tv_f, orient="vertical")
         sbh = ttk.Scrollbar(tv_f, orient="horizontal")
         self._tv_ele = ttk.Treeview(tv_f, columns=cols, show="headings",
@@ -358,7 +376,7 @@ class PanelAnalisis:
         self._tv_ele.tag_configure("publicidad",  background="#2A2116", foreground="#D58B45")
         self._tv_ele.tag_configure("mixto",       background="#221C2E", foreground="#B18AD6")
         # Contador
-        cnt_f = tk.Frame(pad, bg=CONTENT_BG); cnt_f.pack(anchor="w", padx=8, pady=(0,4))
+        cnt_f = tk.Frame(pad, bg=TEMA.CONTENT_BG); cnt_f.pack(anchor="w", padx=8, pady=(0,4))
         self._lbl_ele_cnt = ttk.Label(cnt_f, text="", foreground="#777F84", font=("Segoe UI",9))
         self._lbl_ele_cnt.pack(side="left")
         ttk.Button(cnt_f, text="📥 Exportar CSV", style="S.TButton",
@@ -368,7 +386,7 @@ class PanelAnalisis:
 
     def _build_vis_diag(self):
         pad = self._tab_vis_diag
-        ctrl = tk.Frame(pad, bg=CONTENT_BG); ctrl.pack(fill="x", padx=12, pady=8)
+        ctrl = tk.Frame(pad, bg=TEMA.CONTENT_BG); ctrl.pack(fill="x", padx=12, pady=8)
         ttk.Label(ctrl, text="Número:", font=("Segoe UI",10)).pack(side="left")
         self._var_diag_num = tk.StringVar()
         self._cmb_diag = ttk.Combobox(ctrl, textvariable=self._var_diag_num,
@@ -384,7 +402,7 @@ class PanelAnalisis:
         ttk.Button(ctrl, text="📐 Mostrar diagrama", style="S.TButton",
                    command=self._mostrar_diagrama).pack(side="left", padx=8)
         # Canvas para la imagen
-        self._canvas_diag = tk.Canvas(pad, bg=CONTENT_BG, highlightthickness=0)
+        self._canvas_diag = tk.Canvas(pad, bg=TEMA.CONTENT_BG, highlightthickness=0)
         self._canvas_diag.pack(fill="both", expand=True, padx=12, pady=4)
         self._diag_img_ref = None   # evitar GC de la imagen
 
@@ -396,36 +414,36 @@ class PanelAnalisis:
         self._page_header(f, "Análisis comparativo",
                           "Compara el perfil temático con otras publicaciones del período", "📊")
         self._build_ai_panel(f, "comp")
-        pad = tk.Frame(f, bg=CONTENT_BG); pad.pack(fill="both", expand=True)
+        pad = tk.Frame(f, bg=TEMA.CONTENT_BG); pad.pack(fill="both", expand=True)
         # Sub-pestañas
-        top = tk.Frame(pad, bg=CONTENT_BG); top.pack(fill="x", padx=24, pady=(12,0))
+        top = tk.Frame(pad, bg=TEMA.CONTENT_BG); top.pack(fill="x", padx=24, pady=(12,0))
         self._comp_tabs_btns = {}
         for i,(tid,label) in enumerate([("sim","🔁 Similaridad"),
                                          ("dist","🏷 Términos distintivos"),
                                          ("cam","📊 Campos semánticos")]):
             btn = tk.Label(top, text=f"  {label}  ",
-                           bg=AZ3 if i==0 else CARD_BOR,
+                           bg=TEMA.AZ3 if i==0 else TEMA.CARD_BOR,
                            fg="white" if i==0 else "#646D72",
                            font=("Segoe UI",9,"bold"), cursor="hand2",
                            padx=10, pady=6)
             btn.pack(side="left", padx=(0,2))
             self._comp_tabs_btns[tid] = btn
-        tk.Frame(pad, bg=CARD_BOR, height=1).pack(fill="x")
+        tk.Frame(pad, bg=TEMA.CARD_BOR, height=1).pack(fill="x")
 
         # ── Barra de acción fija ──────────────────────────────────────────────
-        bf_comp = tk.Frame(pad, bg=CONTENT_BG); bf_comp.pack(fill="x", padx=0, pady=(0,8))
+        bf_comp = tk.Frame(pad, bg=TEMA.CONTENT_BG); bf_comp.pack(fill="x", padx=0, pady=(0,8))
         self._btn_comp = ttk.Button(bf_comp, text="▶  Ejecutar análisis comparativo",
                                      style="P.TButton", command=self._start_comp)
         self._btn_comp.pack(side="left", padx=(0,12))
-        self._lbl_comp_ok = tk.Label(bf_comp, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_comp_ok = tk.Label(bf_comp, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                       font=("Segoe UI",10,"bold"))
         self._lbl_comp_ok.pack(side="left")
         tk.Label(bf_comp, text="⚠  Requiere corpus de referencia configurado",
-                 bg=CONTENT_BG, fg=ACENT, font=("Segoe UI",9)).pack(side="left",padx=8)
+                 bg=TEMA.CONTENT_BG, fg=TEMA.ACENT, font=("Segoe UI",9)).pack(side="left",padx=8)
 
         self._comp_frames = {}
         for tid in ("sim","dist","cam"):
-            frm = tk.Frame(pad, bg=CONTENT_BG)
+            frm = tk.Frame(pad, bg=TEMA.CONTENT_BG)
             self._comp_frames[tid] = frm
         self._tab_c_sim  = self._comp_frames["sim"]
         self._tab_c_dist = self._comp_frames["dist"]
@@ -443,26 +461,26 @@ class PanelAnalisis:
             frm.pack_forget()
         self._comp_frames[tid].pack(fill="both", expand=True)
         for t, btn in self._comp_tabs_btns.items():
-            btn.config(bg=AZ3 if t==tid else CARD_BOR,
+            btn.config(bg=TEMA.AZ3 if t==tid else TEMA.CARD_BOR,
                        fg="white" if t==tid else "#646D72")
 
     def _build_comp_sim(self):
         pad = self._tab_c_sim
-        tk.Label(pad,text="Matriz de similaridad coseno (TF-IDF)",bg=CONTENT_BG,fg=TXT_PRI,font=("Segoe UI",10,"bold")).pack(anchor="w",padx=8,pady=6)
-        self._txt_sim = scrolledtext.ScrolledText(pad, height=12, font=("Consolas",9), bg=CARD_BG, fg="#E8E5DF", relief="flat")
+        tk.Label(pad,text="Matriz de similaridad coseno (TF-IDF)",bg=TEMA.CONTENT_BG,fg=TEMA.TXT_PRI,font=("Segoe UI",10,"bold")).pack(anchor="w",padx=8,pady=6)
+        self._txt_sim = scrolledtext.ScrolledText(pad, height=12, font=("Consolas",9), bg=TEMA.CARD_BG, fg="#E8E5DF", relief="flat")
         self._txt_sim.pack(fill="both",expand=True,padx=8,pady=4)
 
     def _build_comp_dist(self):
         pad = self._tab_c_dist
-        tk.Label(pad,text="Palabras más distintivas de la publicación analizada",bg=CONTENT_BG,fg=TXT_PRI,font=("Segoe UI",10,"bold")).pack(anchor="w",padx=8,pady=6)
-        self._txt_dist = scrolledtext.ScrolledText(pad, height=14, font=("Consolas",9), bg=CARD_BG, fg="#E8E5DF", relief="flat")
+        tk.Label(pad,text="Palabras más distintivas de la publicación analizada",bg=TEMA.CONTENT_BG,fg=TEMA.TXT_PRI,font=("Segoe UI",10,"bold")).pack(anchor="w",padx=8,pady=6)
+        self._txt_dist = scrolledtext.ScrolledText(pad, height=14, font=("Consolas",9), bg=TEMA.CARD_BG, fg="#E8E5DF", relief="flat")
         self._txt_dist.pack(fill="both",expand=True,padx=8,pady=4)
 
     def _build_comp_cam(self):
         pad = self._tab_c_cam
-        tk.Label(pad,text="Perfil de campos semánticos por publicación",bg=CONTENT_BG,fg=TXT_PRI,font=("Segoe UI",10,"bold")).pack(anchor="w",padx=8,pady=6)
+        tk.Label(pad,text="Perfil de campos semánticos por publicación",bg=TEMA.CONTENT_BG,fg=TEMA.TXT_PRI,font=("Segoe UI",10,"bold")).pack(anchor="w",padx=8,pady=6)
         # Figura embebida
-        self._fig_cam_frame = tk.Frame(pad, bg=CONTENT_BG); self._fig_cam_frame.pack(fill="both",expand=True,padx=8,pady=4)
+        self._fig_cam_frame = tk.Frame(pad, bg=TEMA.CONTENT_BG); self._fig_cam_frame.pack(fill="both",expand=True,padx=8,pady=4)
 
     def _start_seg(self):
         if not ST.ocr_done:
@@ -990,7 +1008,7 @@ class PanelAnalisis:
     def _build_coloc(self):
         self._page_header(self._tab_coloc, "Collocates y Redes Léxicas",
                           "Palabras que co-ocurren con una clave · KWIC · Dispersión léxica", "🔤")
-        outer = tk.Frame(self._tab_coloc, bg=CONTENT_BG)
+        outer = tk.Frame(self._tab_coloc, bg=TEMA.CONTENT_BG)
         outer.pack(fill="both", expand=True, padx=16, pady=8)
 
         self._coloc_params: dict = {}
@@ -1000,11 +1018,11 @@ class PanelAnalisis:
         except Exception:
             pass
 
-        pad = tk.Frame(outer, bg=CONTENT_BG)
+        pad = tk.Frame(outer, bg=TEMA.CONTENT_BG)
         pad.pack(side="left", fill="both", expand=True)
 
         # Botón bitácora en la barra superior
-        bbar_coloc = tk.Frame(pad, bg=CONTENT_BG)
+        bbar_coloc = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bbar_coloc.pack(fill="x", pady=(0, 4))
         ttk.Button(bbar_coloc, text="📓 Nota", style="S.TButton",
                    command=lambda: self._bitacora_nueva_nota("coloc")).pack(side="right")
@@ -1013,22 +1031,22 @@ class PanelAnalisis:
         nb.pack(fill="both", expand=True)
 
         # ── Sub-pestaña: Collocates ──
-        frm_col = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_col, text="  Collocates  ")
-        pad_col = tk.Frame(frm_col, bg=CONTENT_BG, padx=10, pady=8); pad_col.pack(fill="both", expand=True)
+        frm_col = tk.Frame(nb, bg=TEMA.CONTENT_BG); nb.add(frm_col, text="  Collocates  ")
+        pad_col = tk.Frame(frm_col, bg=TEMA.CONTENT_BG, padx=10, pady=8); pad_col.pack(fill="both", expand=True)
 
-        bf = tk.Frame(pad_col, bg=CONTENT_BG); bf.pack(fill="x", pady=(0, 6))
-        tk.Label(bf, text="Palabra clave:", bg=CONTENT_BG, fg=GRIS2,
+        bf = tk.Frame(pad_col, bg=TEMA.CONTENT_BG); bf.pack(fill="x", pady=(0, 6))
+        tk.Label(bf, text="Palabra clave:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 6))
         self._var_coloc_kw = tk.StringVar()
         tk.Entry(bf, textvariable=self._var_coloc_kw, width=20,
                  font=("Segoe UI", 10), relief="solid", bd=1,
                  bg="#12171B", fg="#E8E5DF").pack(side="left", padx=(0, 8))
-        tk.Label(bf, text="Ventana:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(bf, text="Ventana:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_coloc_vent = tk.IntVar(value=5)
         ttk.Spinbox(bf, from_=2, to=15, textvariable=self._var_coloc_vent,
                     width=4).pack(side="left", padx=(0, 8))
-        tk.Label(bf, text="Top N:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(bf, text="Top N:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_coloc_n = tk.IntVar(value=20)
         ttk.Spinbox(bf, from_=5, to=50, textvariable=self._var_coloc_n,
@@ -1041,7 +1059,7 @@ class PanelAnalisis:
         ttk.Button(bf, text="💾 CSV", style="S.TButton",
                    command=self._coloc_exportar_csv).pack(side="left", padx=(8, 0))
 
-        self._lbl_coloc_ok = tk.Label(pad_col, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_coloc_ok = tk.Label(pad_col, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                        font=("Segoe UI", 9, "bold"))
         self._lbl_coloc_ok.pack(anchor="w", pady=(0, 4))
 
@@ -1059,11 +1077,11 @@ class PanelAnalisis:
         sv.pack(side="left", fill="y")
 
         # ── Sub-pestaña: KWIC ──
-        frm_kwic = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_kwic, text="  KWIC  ")
-        pad_kwic = tk.Frame(frm_kwic, bg=CONTENT_BG, padx=10, pady=8); pad_kwic.pack(fill="both", expand=True)
+        frm_kwic = tk.Frame(nb, bg=TEMA.CONTENT_BG); nb.add(frm_kwic, text="  KWIC  ")
+        pad_kwic = tk.Frame(frm_kwic, bg=TEMA.CONTENT_BG, padx=10, pady=8); pad_kwic.pack(fill="both", expand=True)
 
-        bk = tk.Frame(pad_kwic, bg=CONTENT_BG); bk.pack(fill="x", pady=(0, 6))
-        tk.Label(bk, text="Palabra:", bg=CONTENT_BG, fg=GRIS2,
+        bk = tk.Frame(pad_kwic, bg=TEMA.CONTENT_BG); bk.pack(fill="x", pady=(0, 6))
+        tk.Label(bk, text="Palabra:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 6))
         self._var_kwic_kw = tk.StringVar()
         tk.Entry(bk, textvariable=self._var_kwic_kw, width=22,
@@ -1082,12 +1100,12 @@ class PanelAnalisis:
         self._txt_kwic.tag_configure("kw", foreground="#E6A64C", font=("Consolas", 9, "bold"))
 
         # ── Sub-pestaña: Frecuencias ──
-        frm_freq = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_freq, text="  Frecuencias  ")
-        pad_freq = tk.Frame(frm_freq, bg=CONTENT_BG, padx=10, pady=8); pad_freq.pack(fill="both", expand=True)
+        frm_freq = tk.Frame(nb, bg=TEMA.CONTENT_BG); nb.add(frm_freq, text="  Frecuencias  ")
+        pad_freq = tk.Frame(frm_freq, bg=TEMA.CONTENT_BG, padx=10, pady=8); pad_freq.pack(fill="both", expand=True)
 
-        bfr = tk.Frame(pad_freq, bg=CONTENT_BG); bfr.pack(fill="x", pady=(0, 6))
+        bfr = tk.Frame(pad_freq, bg=TEMA.CONTENT_BG); bfr.pack(fill="x", pady=(0, 6))
         self._var_freq_n = tk.IntVar(value=30)
-        tk.Label(bfr, text="Top N:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(bfr, text="Top N:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         ttk.Spinbox(bfr, from_=10, to=100, textvariable=self._var_freq_n,
                     width=4).pack(side="left", padx=(0, 8))
@@ -1113,17 +1131,17 @@ class PanelAnalisis:
         svf.pack(side="left", fill="y")
 
         # ── Sub-pestaña: N-gramas ─────────────────────────────────────────────
-        frm_ng = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_ng, text="  N-gramas  ")
-        pad_ng = tk.Frame(frm_ng, bg=CONTENT_BG, padx=10, pady=8)
+        frm_ng = tk.Frame(nb, bg=TEMA.CONTENT_BG); nb.add(frm_ng, text="  N-gramas  ")
+        pad_ng = tk.Frame(frm_ng, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad_ng.pack(fill="both", expand=True)
 
-        bng = tk.Frame(pad_ng, bg=CONTENT_BG); bng.pack(fill="x", pady=(0, 6))
-        tk.Label(bng, text="N:", bg=CONTENT_BG, fg=GRIS2,
+        bng = tk.Frame(pad_ng, bg=TEMA.CONTENT_BG); bng.pack(fill="x", pady=(0, 6))
+        tk.Label(bng, text="N:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_ng_n = tk.IntVar(value=2)
         ttk.Spinbox(bng, from_=2, to=5, textvariable=self._var_ng_n,
                     width=3).pack(side="left", padx=(0, 8))
-        tk.Label(bng, text="Top:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(bng, text="Top:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_ng_top = tk.IntVar(value=30)
         ttk.Spinbox(bng, from_=10, to=100, textvariable=self._var_ng_top,
@@ -1147,12 +1165,12 @@ class PanelAnalisis:
         sv_ng.pack(side="left", fill="y")
 
         # ── Sub-pestaña: Dispersión léxica ────────────────────────────────────
-        frm_disp = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_disp, text="  Dispersión  ")
-        pad_disp = tk.Frame(frm_disp, bg=CONTENT_BG, padx=10, pady=8)
+        frm_disp = tk.Frame(nb, bg=TEMA.CONTENT_BG); nb.add(frm_disp, text="  Dispersión  ")
+        pad_disp = tk.Frame(frm_disp, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad_disp.pack(fill="both", expand=True)
 
-        bdisp = tk.Frame(pad_disp, bg=CONTENT_BG); bdisp.pack(fill="x", pady=(0, 6))
-        tk.Label(bdisp, text="Palabras (coma):", bg=CONTENT_BG, fg=GRIS2,
+        bdisp = tk.Frame(pad_disp, bg=TEMA.CONTENT_BG); bdisp.pack(fill="x", pady=(0, 6))
+        tk.Label(bdisp, text="Palabras (coma):", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 6))
         self._var_disp_words = tk.StringVar()
         tk.Entry(bdisp, textvariable=self._var_disp_words, width=40,
@@ -1161,33 +1179,33 @@ class PanelAnalisis:
         ttk.Button(bdisp, text="▶  Graficar", style="P.TButton",
                    command=self._coloc_dispersion).pack(side="left")
 
-        self._frm_disp_canvas = tk.Frame(pad_disp, bg=CONTENT_BG)
+        self._frm_disp_canvas = tk.Frame(pad_disp, bg=TEMA.CONTENT_BG)
         self._frm_disp_canvas.pack(fill="both", expand=True)
 
         # ── Sub-pestaña: Stopwords del proyecto ───────────────────────────────
-        frm_sw = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_sw, text="  Stopwords  ")
-        pad_sw = tk.Frame(frm_sw, bg=CONTENT_BG, padx=10, pady=8)
+        frm_sw = tk.Frame(nb, bg=TEMA.CONTENT_BG); nb.add(frm_sw, text="  Stopwords  ")
+        pad_sw = tk.Frame(frm_sw, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad_sw.pack(fill="both", expand=True)
 
         tk.Label(pad_sw,
                  text="Stopwords adicionales para este proyecto "
                       "(una por línea, se suman a la lista base en español):",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 4))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 4))
         self._txt_stopwords = scrolledtext.ScrolledText(
-            pad_sw, height=10, bg="#171C20", fg=TXT_PRI,
-            insertbackground=TXT_PRI, font=("Courier New", 9),
+            pad_sw, height=10, bg="#171C20", fg=TEMA.TXT_PRI,
+            insertbackground=TEMA.TXT_PRI, font=("Courier New", 9),
             relief="solid", bd=1, wrap="word")
         self._txt_stopwords.pack(fill="both", expand=True)
         # Cargar stopwords del proyecto si existen
         sw_guardadas = getattr(ST, "stopwords_proyecto", [])
         if sw_guardadas:
             self._txt_stopwords.insert("1.0", "\n".join(sw_guardadas))
-        bsw = tk.Frame(pad_sw, bg=CONTENT_BG); bsw.pack(fill="x", pady=(6, 0))
+        bsw = tk.Frame(pad_sw, bg=TEMA.CONTENT_BG); bsw.pack(fill="x", pady=(6, 0))
         ttk.Button(bsw, text="💾 Guardar stopwords del proyecto", style="P.TButton",
                    command=self._coloc_guardar_stopwords).pack(side="left")
         tk.Label(bsw,
                  text="Se aplican a Collocates, Frecuencias y N-gramas al activar 'Filtrar stopwords'",
-                 bg=CONTENT_BG, fg=TXT_DIM, font=("Segoe UI", 8)).pack(
+                 bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(
                  side="left", padx=10)
 
     def _coloc_calcular(self):
@@ -1515,7 +1533,7 @@ class PanelAnalisis:
         win = tk.Toplevel(self)
         win.title("Frecuencias léxicas")
         win.geometry("720x480")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
         fig, ax = _fig(8, 5)
         ax.barh(palabras[::-1], freqs[::-1], color="#6CA8E8", alpha=0.85)
         ax.set_xlabel("Frecuencia")
@@ -1528,29 +1546,29 @@ class PanelAnalisis:
     def _build_nov(self):
         self._page_header(self._tab_nov, "Novedad y Cambio Discursivo",
                           "Palabras nuevas · cambio de vocabulario entre períodos · eventos temáticos", "🆕")
-        pad = tk.Frame(self._tab_nov, bg=CONTENT_BG, padx=16, pady=8)
+        pad = tk.Frame(self._tab_nov, bg=TEMA.CONTENT_BG, padx=16, pady=8)
         pad.pack(fill="both", expand=True)
 
         nb = ttk.Notebook(pad)
         nb.pack(fill="both", expand=True)
 
         # ── Sub-pestaña: Cambio discursivo ──
-        frm_cd = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_cd, text="  Cambio discursivo  ")
-        pad_cd = tk.Frame(frm_cd, bg=CONTENT_BG, padx=10, pady=8); pad_cd.pack(fill="both", expand=True)
+        frm_cd = tk.Frame(nb, bg=TEMA.CONTENT_BG); nb.add(frm_cd, text="  Cambio discursivo  ")
+        pad_cd = tk.Frame(frm_cd, bg=TEMA.CONTENT_BG, padx=10, pady=8); pad_cd.pack(fill="both", expand=True)
 
         tk.Label(pad_cd,
                  text="Mide cuánto cambia el vocabulario entre números consecutivos. "
                       "Alta distancia = cambio abrupto de tema o tono.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9),
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9),
                  wraplength=800, justify="left").pack(anchor="w", pady=(0, 8))
 
-        bf_cd = tk.Frame(pad_cd, bg=CONTENT_BG); bf_cd.pack(fill="x", pady=(0, 6))
+        bf_cd = tk.Frame(pad_cd, bg=TEMA.CONTENT_BG); bf_cd.pack(fill="x", pady=(0, 6))
         self._btn_nov_cd = ttk.Button(bf_cd, text="▶  Calcular cambio discursivo",
                                        style="P.TButton", command=self._nov_cambio)
         self._btn_nov_cd.pack(side="left", padx=(0, 8))
         ttk.Button(bf_cd, text="📊  Graficar", style="S.TButton",
                    command=self._nov_graficar_cambio).pack(side="left")
-        self._lbl_nov_ok = tk.Label(pad_cd, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_nov_ok = tk.Label(pad_cd, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_nov_ok.pack(anchor="w", pady=(0, 4))
 
@@ -1569,11 +1587,11 @@ class PanelAnalisis:
         self._nov_cambio_data = []
 
         # ── Sub-pestaña: Palabras nuevas ──
-        frm_pn = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_pn, text="  Palabras nuevas  ")
-        pad_pn = tk.Frame(frm_pn, bg=CONTENT_BG, padx=10, pady=8); pad_pn.pack(fill="both", expand=True)
+        frm_pn = tk.Frame(nb, bg=TEMA.CONTENT_BG); nb.add(frm_pn, text="  Palabras nuevas  ")
+        pad_pn = tk.Frame(frm_pn, bg=TEMA.CONTENT_BG, padx=10, pady=8); pad_pn.pack(fill="both", expand=True)
 
-        bf_pn = tk.Frame(pad_pn, bg=CONTENT_BG); bf_pn.pack(fill="x", pady=(0, 6))
-        tk.Label(bf_pn, text="Freq. mínima:", bg=CONTENT_BG, fg=GRIS2,
+        bf_pn = tk.Frame(pad_pn, bg=TEMA.CONTENT_BG); bf_pn.pack(fill="x", pady=(0, 6))
+        tk.Label(bf_pn, text="Freq. mínima:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_nov_freq = tk.IntVar(value=3)
         ttk.Spinbox(bf_pn, from_=1, to=20, textvariable=self._var_nov_freq,
@@ -1587,22 +1605,22 @@ class PanelAnalisis:
         self._txt_nov_pn.pack(fill="both", expand=True)
 
         # ── Sub-pestaña: Tendencia de términos ──
-        frm_td = tk.Frame(nb, bg=CONTENT_BG); nb.add(frm_td, text="  Tendencia de términos  ")
-        pad_td = tk.Frame(frm_td, bg=CONTENT_BG, padx=10, pady=8); pad_td.pack(fill="both", expand=True)
+        frm_td = tk.Frame(nb, bg=TEMA.CONTENT_BG); nb.add(frm_td, text="  Tendencia de términos  ")
+        pad_td = tk.Frame(frm_td, bg=TEMA.CONTENT_BG, padx=10, pady=8); pad_td.pack(fill="both", expand=True)
 
         tk.Label(pad_td, text="Términos a seguir (separados por coma):",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w")
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w")
         self._var_nov_terms = tk.StringVar(value="radio, cine, mujer, guerra, colombia")
         tk.Entry(pad_td, textvariable=self._var_nov_terms, width=60,
                  font=("Segoe UI", 9), relief="solid", bd=1,
                  bg="#12171B", fg="#E8E5DF").pack(anchor="w", pady=(4, 8))
-        bf_td = tk.Frame(pad_td, bg=CONTENT_BG); bf_td.pack(fill="x", pady=(0, 6))
+        bf_td = tk.Frame(pad_td, bg=TEMA.CONTENT_BG); bf_td.pack(fill="x", pady=(0, 6))
         ttk.Button(bf_td, text="▶  Calcular tendencia", style="P.TButton",
                    command=self._nov_tendencia).pack(side="left", padx=(0, 8))
         ttk.Button(bf_td, text="📊  Graficar", style="S.TButton",
                    command=self._nov_graficar_tendencia).pack(side="left")
         self._nov_tendencia_data = {}
-        self._lbl_nov_td = tk.Label(pad_td, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_nov_td = tk.Label(pad_td, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_nov_td.pack(anchor="w", pady=(0, 4))
         self._txt_nov_td = scrolledtext.ScrolledText(pad_td, font=("Consolas", 9),
@@ -1665,7 +1683,7 @@ class PanelAnalisis:
         win = tk.Toplevel(self)
         win.title("Cambio discursivo por período")
         win.geometry("720x400")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
         fig, ax = _fig(8, 4)
         colores = ["#D96B6B" if d > 0.5 else "#6CA8E8" for d in dists_ord]
         ax.bar(pares_ord, dists_ord, color=colores, alpha=0.85)
@@ -1754,7 +1772,7 @@ class PanelAnalisis:
         win = tk.Toplevel(self)
         win.title("Tendencia de vocabulario")
         win.geometry("760x460")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
         fig, ax = _fig(9, 5)
         corpus = self._nov_corpus_por_periodo()
         periodos = sorted(corpus.keys())
@@ -1772,7 +1790,7 @@ class PanelAnalisis:
         canvas.get_tk_widget().pack(fill="both", expand=True)
 
     def _build_sem(self):
-        outer = tk.Frame(self._tab_sem, bg=CONTENT_BG)
+        outer = tk.Frame(self._tab_sem, bg=TEMA.CONTENT_BG)
         outer.pack(fill="both", expand=True, padx=16, pady=12)
 
         self._sem_params: dict = {}
@@ -1782,41 +1800,41 @@ class PanelAnalisis:
         except Exception:
             pass
 
-        pad = tk.Frame(outer, bg=CONTENT_BG)
+        pad = tk.Frame(outer, bg=TEMA.CONTENT_BG)
         pad.pack(side="left", fill="both", expand=True)
 
-        tk.Label(pad, text="Análisis semántico profundo", bg=CONTENT_BG,
+        tk.Label(pad, text="Análisis semántico profundo", bg=TEMA.CONTENT_BG,
                  fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad, text="Tono editorial, léxico histórico y estilometría del corpus Estampa.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
         # ── Pestañas internas ─────────────────────────────────────────────────
         nb = ttk.Notebook(pad)
         nb.pack(fill="both", expand=True)
 
         # Tab Tono
-        frm_tono = tk.Frame(nb, bg=CONTENT_BG)
+        frm_tono = tk.Frame(nb, bg=TEMA.CONTENT_BG)
         nb.add(frm_tono, text="  Tono editorial  ")
         self._build_sem_tono(frm_tono)
 
         # Tab Léxico
-        frm_lex = tk.Frame(nb, bg=CONTENT_BG)
+        frm_lex = tk.Frame(nb, bg=TEMA.CONTENT_BG)
         nb.add(frm_lex, text="  Léxico histórico  ")
         self._build_sem_lexico(frm_lex)
 
         # Tab Estilometría
-        frm_estilo = tk.Frame(nb, bg=CONTENT_BG)
+        frm_estilo = tk.Frame(nb, bg=TEMA.CONTENT_BG)
         nb.add(frm_estilo, text="  Estilometría  ")
         self._build_sem_estilo(frm_estilo)
 
     # ── Sub-panel: Tono editorial ─────────────────────────────────────────────
     def _build_sem_tono(self, parent):
         from core.sentiment_engine import COLORES_TONO
-        pad = tk.Frame(parent, bg=CONTENT_BG, padx=10, pady=8)
+        pad = tk.Frame(parent, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad.pack(fill="both", expand=True)
 
         # ── Botones principales ──
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 4))
         self._btn_tono_art = ttk.Button(bf, text="▶  Artículo actual",
                                          style="P.TButton",
@@ -1836,12 +1854,12 @@ class PanelAnalisis:
                    style="S.TButton",
                    command=self._sem_tono_exportar).pack(side="right")
 
-        self._lbl_tono_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_tono_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                       font=("Segoe UI", 9, "bold"))
         self._lbl_tono_ok.pack(anchor="w", pady=(0, 4))
 
         # ── Chips de distribución (se actualizan al terminar el análisis) ──
-        self._frm_tono_chips = tk.Frame(pad, bg=CONTENT_BG)
+        self._frm_tono_chips = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         self._frm_tono_chips.pack(fill="x", pady=(0, 6))
         self._tono_chips = {}
         tonos_orden = ("celebratorio", "crítico", "neutro", "elegíaco", "polémico", "informativo")
@@ -1855,9 +1873,9 @@ class PanelAnalisis:
             self._tono_chips[tono] = lbl
 
         # ── Filtro por campo ──
-        ff = tk.Frame(pad, bg=CONTENT_BG)
+        ff = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         ff.pack(fill="x", pady=(0, 4))
-        tk.Label(ff, text="Filtrar por:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(ff, text="Filtrar por:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_tono_filtro_campo = tk.StringVar(value="todos")
         self._var_tono_filtro_valor = tk.StringVar(value="")
@@ -1896,10 +1914,10 @@ class PanelAnalisis:
 
     # ── Sub-panel: Léxico histórico ───────────────────────────────────────────
     def _build_sem_lexico(self, parent):
-        pad = tk.Frame(parent, bg=CONTENT_BG, padx=10, pady=8)
+        pad = tk.Frame(parent, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad.pack(fill="both", expand=True)
 
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 6))
         self._btn_lex_art = ttk.Button(bf, text="▶  Artículo actual",
                                         style="P.TButton",
@@ -1912,14 +1930,14 @@ class PanelAnalisis:
         ttk.Button(bf, text="💾  Exportar glosario",
                    style="S.TButton",
                    command=self._sem_lex_exportar).pack(side="right")
-        self._lbl_lex_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_lex_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_lex_ok.pack(anchor="w", pady=(0, 4))
 
         # Filtro categoría
-        fi = tk.Frame(pad, bg=CONTENT_BG)
+        fi = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         fi.pack(fill="x", pady=(0, 4))
-        tk.Label(fi, text="Categoría:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(fi, text="Categoría:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_lex_cat = tk.StringVar(value="Todas")
         cats = ["Todas", "arcaismos", "neologismos", "colombianismos", "tecnicismos"]
@@ -1943,21 +1961,21 @@ class PanelAnalisis:
 
     # ── Sub-panel: Estilometría ───────────────────────────────────────────────
     def _build_sem_estilo(self, parent):
-        pad = tk.Frame(parent, bg=CONTENT_BG, padx=10, pady=8)
+        pad = tk.Frame(parent, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad.pack(fill="both", expand=True)
 
         tk.Label(pad, text="Agrupa artículos anónimos por similitud estilística (TF-IDF n-gramas de caracteres).",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 6))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 6))
 
-        cf = tk.Frame(pad, bg=CONTENT_BG)
+        cf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         cf.pack(fill="x", pady=(0, 6))
-        tk.Label(cf, text="N° clusters:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(cf, text="N° clusters:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_estilo_clusters = tk.IntVar(value=5)
         ttk.Spinbox(cf, from_=2, to=15, textvariable=self._var_estilo_clusters,
                     width=4).pack(side="left")
 
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 6))
         self._btn_estilo = ttk.Button(bf, text="▶  Calcular clusters",
                                        style="P.TButton",
@@ -1966,7 +1984,7 @@ class PanelAnalisis:
         ttk.Button(bf, text="💾  Exportar CSV",
                    style="S.TButton",
                    command=self._sem_estilo_exportar).pack(side="left")
-        self._lbl_estilo_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_estilo_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                         font=("Segoe UI", 9, "bold"))
         self._lbl_estilo_ok.pack(anchor="w", pady=(0, 4))
 
@@ -2083,7 +2101,7 @@ class PanelAnalisis:
         win = tk.Toplevel(self)
         win.title("Evolución temporal del tono editorial")
         win.geometry("860x520")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
 
         periodos = sorted(evol.keys())
         fig, ax = plt.subplots(figsize=(9, 4.5))
@@ -2116,14 +2134,14 @@ class PanelAnalisis:
         canvas.get_tk_widget().pack(fill="both", expand=True, padx=10, pady=10)
 
         # Tabla de tendencias
-        tf = tk.Frame(win, bg=CONTENT_BG)
+        tf = tk.Frame(win, bg=TEMA.CONTENT_BG)
         tf.pack(fill="x", padx=10, pady=(0, 8))
         for tono in tonos_a_mostrar:
             t_info = tendencia_tono(evol, tono)
             color = COLORES_TONO.get(tono, "#777F84")
             icono = {"sube": "↑", "baja": "↓", "estable": "→"}.get(t_info["direccion"], "")
             tk.Label(tf, text=f"{icono} {tono}  (pend. {t_info['pendiente']:+.2f})",
-                     bg=CONTENT_BG, fg=color,
+                     bg=TEMA.CONTENT_BG, fg=color,
                      font=("Segoe UI", 9, "bold")).pack(side="left", padx=8)
 
     def _sem_tono_narrativa(self):
@@ -2143,9 +2161,9 @@ class PanelAnalisis:
         win = tk.Toplevel(self)
         win.title("Síntesis narrativa del tono editorial")
         win.geometry("680x360")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
 
-        lbl = tk.Label(win, text="Generando síntesis…", bg=CONTENT_BG, fg=GRIS2,
+        lbl = tk.Label(win, text="Generando síntesis…", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                        font=("Segoe UI", 9))
         lbl.pack(anchor="w", padx=16, pady=(12, 4))
         txt = tk.Text(win, bg="#171C20", fg="#E8E5DF", font=("Segoe UI", 10),
@@ -2294,51 +2312,51 @@ class PanelAnalisis:
 
     def _build_viz(self):
         from core.chart_builder import CATALOGO
-        pad = tk.Frame(self._tab_viz, bg=CONTENT_BG, padx=16, pady=12)
+        pad = tk.Frame(self._tab_viz, bg=TEMA.CONTENT_BG, padx=16, pady=12)
         pad.pack(fill="both", expand=True)
 
-        tk.Label(pad, text="Constructor de visualizaciones", bg=CONTENT_BG,
+        tk.Label(pad, text="Constructor de visualizaciones", bg=TEMA.CONTENT_BG,
                  fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad,
                  text="Selecciona qué dato graficar y con qué tipo de gráfico. "
                       "Cada opción incluye una descripción de cuándo usarla.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
         nb = ttk.Notebook(pad)
         nb.pack(fill="both", expand=True)
 
         # ── Pestaña: Constructor interactivo ──────────────────────────────────
-        frm_build = tk.Frame(nb, bg=CONTENT_BG)
+        frm_build = tk.Frame(nb, bg=TEMA.CONTENT_BG)
         nb.add(frm_build, text="  Constructor  ")
         self._build_viz_constructor(frm_build, CATALOGO)
 
         # ── Pestañas legacy (se mantienen para compatibilidad) ────────────────
-        frm_nube = tk.Frame(nb, bg=CONTENT_BG)
+        frm_nube = tk.Frame(nb, bg=TEMA.CONTENT_BG)
         nb.add(frm_nube, text="  Nube de palabras  ")
         self._build_viz_nube(frm_nube)
 
-        frm_heat = tk.Frame(nb, bg=CONTENT_BG)
+        frm_heat = tk.Frame(nb, bg=TEMA.CONTENT_BG)
         nb.add(frm_heat, text="  Heatmap términos  ")
         self._build_viz_heatmap(frm_heat)
 
-        frm_mapa = tk.Frame(nb, bg=CONTENT_BG)
+        frm_mapa = tk.Frame(nb, bg=TEMA.CONTENT_BG)
         nb.add(frm_mapa, text="  Mapa  ")
         self._build_viz_mapa(frm_mapa)
 
-        frm_tl = tk.Frame(nb, bg=CONTENT_BG)
+        frm_tl = tk.Frame(nb, bg=TEMA.CONTENT_BG)
         nb.add(frm_tl, text="  Timeline  ")
         self._build_viz_timeline(frm_tl)
 
     # ── Constructor interactivo de gráficos ───────────────────────────────────
     def _build_viz_constructor(self, parent, catalogo):
-        pad = tk.Frame(parent, bg=CONTENT_BG, padx=10, pady=8)
+        pad = tk.Frame(parent, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad.pack(fill="both", expand=True)
 
         # ── Fila de selectores ──
-        sel_frm = tk.Frame(pad, bg=CONTENT_BG)
+        sel_frm = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         sel_frm.pack(fill="x", pady=(0, 6))
 
-        tk.Label(sel_frm, text="Fuente de datos:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(sel_frm, text="Fuente de datos:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=(0, 6))
         self._var_viz_fuente = tk.StringVar()
         fuentes = list(catalogo.keys())
@@ -2347,14 +2365,14 @@ class PanelAnalisis:
         cb_fuente.grid(row=0, column=1, padx=(0, 16))
         cb_fuente.current(0)
 
-        tk.Label(sel_frm, text="Tipo de gráfico:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(sel_frm, text="Tipo de gráfico:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).grid(row=0, column=2, sticky="w", padx=(0, 6))
         self._var_viz_tipo = tk.StringVar()
         self._cb_viz_tipo = ttk.Combobox(sel_frm, textvariable=self._var_viz_tipo,
                                           values=[], state="readonly", width=28)
         self._cb_viz_tipo.grid(row=0, column=3, padx=(0, 16))
 
-        tk.Label(sel_frm, text="Título (opcional):", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(sel_frm, text="Título (opcional):", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).grid(row=0, column=4, sticky="w", padx=(0, 6))
         self._var_viz_titulo = tk.StringVar()
         tk.Entry(sel_frm, textvariable=self._var_viz_titulo,
@@ -2372,17 +2390,17 @@ class PanelAnalisis:
 
         # ── Descripción del gráfico seleccionado ──
         self._lbl_viz_desc = tk.Label(pad, text="",
-                                       bg=CONTENT_BG, fg="#B5B6B3",
+                                       bg=TEMA.CONTENT_BG, fg="#B5B6B3",
                                        font=("Segoe UI", 8), wraplength=900,
                                        justify="left")
         self._lbl_viz_desc.pack(anchor="w", pady=(0, 4))
 
-        self._lbl_viz_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_viz_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_viz_ok.pack(anchor="w", pady=(0, 4))
 
         # ── Canvas para el gráfico ──
-        self._frm_viz_canvas = tk.Frame(pad, bg=CONTENT_BG)
+        self._frm_viz_canvas = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         self._frm_viz_canvas.pack(fill="both", expand=True)
         self._viz_canvas_widget = None
         self._viz_fig_actual    = None
@@ -2530,10 +2548,10 @@ class PanelAnalisis:
 
     # ── Nube de palabras ───────────────────────────────────────────────────────
     def _build_viz_nube(self, parent):
-        pad = tk.Frame(parent, bg=CONTENT_BG, padx=10, pady=8)
+        pad = tk.Frame(parent, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad.pack(fill="both", expand=True)
 
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 8))
         self._btn_nube = ttk.Button(bf, text="▶  Generar nube",
                                      style="P.TButton",
@@ -2541,24 +2559,24 @@ class PanelAnalisis:
         self._btn_nube.pack(side="left", padx=(0, 8))
         ttk.Button(bf, text="🌐  Abrir imagen", style="S.TButton",
                    command=self._viz_nube_abrir).pack(side="left")
-        self._lbl_nube_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_nube_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                       font=("Segoe UI", 9, "bold"))
         self._lbl_nube_ok.pack(anchor="w", pady=(0, 6))
 
         # Preview de imagen
-        self._lbl_nube_img = tk.Label(pad, bg=CONTENT_BG,
+        self._lbl_nube_img = tk.Label(pad, bg=TEMA.CONTENT_BG,
                                        text="(La imagen aparecerá aquí después de generarla)",
-                                       fg=GRIS2, font=("Segoe UI", 9))
+                                       fg=TEMA.GRIS2, font=("Segoe UI", 9))
         self._lbl_nube_img.pack(fill="both", expand=True)
         self._nube_path = None
 
     # ── Heatmap ────────────────────────────────────────────────────────────────
     def _build_viz_heatmap(self, parent):
-        pad = tk.Frame(parent, bg=CONTENT_BG, padx=10, pady=8)
+        pad = tk.Frame(parent, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad.pack(fill="both", expand=True)
 
         tk.Label(pad, text="Términos a seguir (uno por línea):",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w")
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w")
         self._txt_heat_terms = scrolledtext.ScrolledText(
             pad, height=6, font=("Consolas", 9),
             bg="#12171B", fg="#B5B6B3", wrap="word")
@@ -2566,7 +2584,7 @@ class PanelAnalisis:
         default_terms = "colombia\nbogotá\nmedellín\nmujer\ncine\nradio\npolítica\ncultura"
         self._txt_heat_terms.insert("1.0", default_terms)
 
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 6))
         self._btn_heat = ttk.Button(bf, text="▶  Generar heatmap",
                                      style="P.TButton",
@@ -2574,21 +2592,21 @@ class PanelAnalisis:
         self._btn_heat.pack(side="left", padx=(0, 8))
         ttk.Button(bf, text="🌐  Abrir imagen", style="S.TButton",
                    command=self._viz_heat_abrir).pack(side="left")
-        self._lbl_heat_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_heat_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                       font=("Segoe UI", 9, "bold"))
         self._lbl_heat_ok.pack(anchor="w")
         self._heat_path = None
 
     # ── Mapa ──────────────────────────────────────────────────────────────────
     def _build_viz_mapa(self, parent):
-        pad = tk.Frame(parent, bg=CONTENT_BG, padx=10, pady=8)
+        pad = tk.Frame(parent, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad.pack(fill="both", expand=True)
 
         tk.Label(pad,
                  text="Genera un mapa HTML interactivo con los lugares del índice NER.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 8))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 8))
 
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 6))
         self._btn_mapa = ttk.Button(bf, text="▶  Generar mapa",
                                      style="P.TButton",
@@ -2596,25 +2614,25 @@ class PanelAnalisis:
         self._btn_mapa.pack(side="left", padx=(0, 8))
         ttk.Button(bf, text="🌐  Abrir en navegador", style="S.TButton",
                    command=self._viz_mapa_abrir).pack(side="left")
-        self._lbl_mapa_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_mapa_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                       font=("Segoe UI", 9, "bold"))
         self._lbl_mapa_ok.pack(anchor="w")
         self._mapa_path = None
 
         tk.Label(pad,
                  text="Nota: se mapean automáticamente ciudades colombianas conocidas del período.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 8)).pack(anchor="w", pady=(8, 0))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 8)).pack(anchor="w", pady=(8, 0))
 
     # ── Timeline ──────────────────────────────────────────────────────────────
     def _build_viz_timeline(self, parent):
-        pad = tk.Frame(parent, bg=CONTENT_BG, padx=10, pady=8)
+        pad = tk.Frame(parent, bg=TEMA.CONTENT_BG, padx=10, pady=8)
         pad.pack(fill="both", expand=True)
 
         tk.Label(pad,
                  text="Genera timeline HTML con personas y eventos del índice NER.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 8))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 8))
 
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 6))
         self._btn_tl = ttk.Button(bf, text="▶  Generar timeline",
                                    style="P.TButton",
@@ -2622,7 +2640,7 @@ class PanelAnalisis:
         self._btn_tl.pack(side="left", padx=(0, 8))
         ttk.Button(bf, text="🌐  Abrir en navegador", style="S.TButton",
                    command=self._viz_tl_abrir).pack(side="left")
-        self._lbl_tl_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_tl_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                     font=("Segoe UI", 9, "bold"))
         self._lbl_tl_ok.pack(anchor="w")
         self._tl_path = None
@@ -2704,15 +2722,15 @@ class PanelAnalisis:
         webbrowser.open(str(self._tl_path))
 
     def _build_dash(self):
-        pad = tk.Frame(self._tab_dash, bg=CONTENT_BG, padx=16, pady=12)
+        pad = tk.Frame(self._tab_dash, bg=TEMA.CONTENT_BG, padx=16, pady=12)
         pad.pack(fill="both", expand=True)
-        tk.Label(pad, text="Dashboard ejecutivo", bg=CONTENT_BG,
+        tk.Label(pad, text="Dashboard ejecutivo", bg=TEMA.CONTENT_BG,
                  fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad, text="Resumen del estado del proyecto y exportación del paquete completo.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
         # ── Grid de indicadores ───────────────────────────────────────────────
-        grid = tk.Frame(pad, bg=CONTENT_BG)
+        grid = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         grid.pack(fill="x", pady=(0, 12))
         self._dash_cards = {}
         indicadores = [
@@ -2736,7 +2754,7 @@ class PanelAnalisis:
 
         # ── Progreso por módulo ───────────────────────────────────────────────
         prog_frame = tk.LabelFrame(pad, text=" Estado del análisis ",
-                                    bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9))
+                                    bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9))
         prog_frame.pack(fill="x", pady=(0, 10))
         self._dash_prog_labels = {}
         modulos = [
@@ -2750,15 +2768,15 @@ class PanelAnalisis:
         for i, (mid, mlabel, badge) in enumerate(modulos):
             row = i // 3
             col = i % 3
-            frm = tk.Frame(prog_frame, bg=CONTENT_BG)
+            frm = tk.Frame(prog_frame, bg=TEMA.CONTENT_BG)
             frm.grid(row=row, column=col, padx=8, pady=4, sticky="w")
-            lbl = tk.Label(frm, text=f"◦ {mlabel}", bg=CONTENT_BG,
-                           fg=GRIS2, font=("Segoe UI", 9))
+            lbl = tk.Label(frm, text=f"◦ {mlabel}", bg=TEMA.CONTENT_BG,
+                           fg=TEMA.GRIS2, font=("Segoe UI", 9))
             lbl.pack(side="left")
             self._dash_prog_labels[mid] = (lbl, badge)
 
         # ── Botón actualizar ──────────────────────────────────────────────────
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 8))
         ttk.Button(bf, text="↻  Actualizar dashboard",
                    style="S.TButton",
@@ -2773,7 +2791,7 @@ class PanelAnalisis:
                                          style="S.TButton",
                                          command=self._dash_exportar_zip)
         self._btn_dash_zip.pack(side="right")
-        self._lbl_dash_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_dash_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                       font=("Segoe UI", 9, "bold"))
         self._lbl_dash_ok.pack(anchor="w", pady=(0, 6))
 
@@ -2823,7 +2841,7 @@ class PanelAnalisis:
                     done = bool(getattr(self, "_narrativas_data", {}))
                 else:
                     done = False
-            color = VERDE if done else GRIS2
+            color = TEMA.VERDE if done else TEMA.GRIS2
             ico = "✅" if done else "◦"
             lbl.config(text=f"{ico} {mid.upper()}", fg=color)
 
@@ -2857,7 +2875,7 @@ class PanelAnalisis:
         threading.Thread(target=self._worker_zip, args=(dest,), daemon=True).start()
 
     def _build_top(self):
-        outer = tk.Frame(self._tab_top, bg=CONTENT_BG)
+        outer = tk.Frame(self._tab_top, bg=TEMA.CONTENT_BG)
         outer.pack(fill="both", expand=True, padx=16, pady=12)
 
         self._top_params: dict = {}
@@ -2867,18 +2885,18 @@ class PanelAnalisis:
         except Exception:
             pass
 
-        pad = tk.Frame(outer, bg=CONTENT_BG)
+        pad = tk.Frame(outer, bg=TEMA.CONTENT_BG)
         pad.pack(side="left", fill="both", expand=True)
 
-        tk.Label(pad, text="Topic modeling del corpus", bg=CONTENT_BG,
+        tk.Label(pad, text="Topic modeling del corpus", bg=TEMA.CONTENT_BG,
                  fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad, text="Detecta temas recurrentes y su distribución en el corpus.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
         # Controles
-        cf = tk.Frame(pad, bg=CONTENT_BG)
+        cf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         cf.pack(fill="x", pady=(0, 6))
-        tk.Label(cf, text="N° tópicos:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(cf, text="N° tópicos:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_top_n = tk.IntVar(value=8)
         ttk.Spinbox(cf, from_=3, to=20, textvariable=self._var_top_n,
@@ -2891,7 +2909,7 @@ class PanelAnalisis:
                         variable=self._var_top_bertopic).pack(side="left")
 
         # Botones
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 6))
         self._btn_top = ttk.Button(bf, text="▶  Modelar tópicos",
                                     style="P.TButton",
@@ -2899,12 +2917,12 @@ class PanelAnalisis:
         self._btn_top.pack(side="left", padx=(0, 8))
         ttk.Button(bf, text="💾  Exportar CSV", style="S.TButton",
                    command=self._top_exportar).pack(side="left", padx=(0, 8))
-        self._lbl_top_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_top_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_top_ok.pack(anchor="w", pady=(0, 4))
 
         # Tabla de tópicos
-        tk.Label(pad, text="Tópicos detectados", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(pad, text="Tópicos detectados", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 10, "bold")).pack(anchor="w", pady=(4, 2))
         cols_top = ("id", "nombre", "n_docs", "porcentaje", "palabras_clave")
         self._tv_top = ttk.Treeview(pad, columns=cols_top, show="headings", height=10)

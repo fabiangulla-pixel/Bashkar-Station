@@ -1,13 +1,25 @@
 """paneles/resultados.py — Métodos de BashkarApp extraídos de app.py.
 
 Mixin: BashkarApp hereda de PanelResultados. Los cuerpos son copia literal del
-original; los nombres globales (ST, colores, tk…) los inyecta
-paneles.sincronizar() desde app.py.
+original. Importa explícitamente lo que usa; los colores del tema se
+leen de gui_comun.TEMA porque cambian en caliente.
 """
 
 from __future__ import annotations
 
-# ruff: noqa: F821
+import threading
+import tkinter as tk
+from datetime import datetime
+from pathlib import Path
+from tkinter import filedialog, messagebox, scrolledtext, ttk
+
+from core import plataforma
+from gui_comun import (
+    APP_VERSION,
+    ST,
+    TEMA,
+    _resolver_api_key_modelo,
+)
 
 
 class PanelResultados:
@@ -19,9 +31,9 @@ class PanelResultados:
         self._page_header(f, "Resultados y exportación",
                           "Gráficas interactivas, análisis de red y exportación Excel", "📈")
         self._build_ai_panel(f, "res")
-        pad = tk.Frame(f, bg=CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=12)
+        pad = tk.Frame(f, bg=TEMA.CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=12)
         # Métricas
-        ind = tk.Frame(pad, bg=CONTENT_BG); ind.pack(fill="x", pady=(0,12))
+        ind = tk.Frame(pad, bg=TEMA.CONTENT_BG); ind.pack(fill="x", pady=(0,12))
         self._lbl_r_num  = self._mk_ind(ind,"Números","—",0)
         self._lbl_r_pag  = self._mk_ind(ind,"Páginas","—",1)
         self._lbl_r_pal  = self._mk_ind(ind,"Palabras","—",2)
@@ -37,7 +49,7 @@ class PanelResultados:
             ("lda","🧩 Temas LDA"),("red","🕸️ Red"),
             ("visual","🖼️ Visual"),("comparativo","📊 Comparativo"),("layout","📐 Layout"),
         ]:
-            tab = tk.Frame(nb_r, bg=CONTENT_BG); nb_r.add(tab, text=f"  {label}  ")
+            tab = tk.Frame(nb_r, bg=TEMA.CONTENT_BG); nb_r.add(tab, text=f"  {label}  ")
             self._figs_tabs[key] = tab
         # Botones de exportación
         bb = ttk.Frame(pad,padding=8); bb.pack(fill="x")
@@ -63,7 +75,7 @@ class PanelResultados:
                    style="S.TButton", command=self._res_exportar_pptx).pack(side="left",padx=4)
         ttk.Button(bb, text="💾  Guardar como…",
                    style="P.TButton", command=self._exp_abrir_dialogo).pack(side="left",padx=4)
-        self._lbl_excel = tk.Label(bb, text="", bg=CONTENT_BG, fg=VERDE, font=("Segoe UI",10,"bold"))
+        self._lbl_excel = tk.Label(bb, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE, font=("Segoe UI",10,"bold"))
         self._lbl_excel.pack(side="left",padx=12)
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -74,7 +86,7 @@ class PanelResultados:
             self._tab_bench, "Benchmark de OCR",
             "Mide qué ruta transcribe mejor tu corpus: CER, WER y similitud "
             "contra una transcripción de referencia", "⚖️")
-        pad = tk.Frame(self._tab_bench, bg=CONTENT_BG, padx=16, pady=8)
+        pad = tk.Frame(self._tab_bench, bg=TEMA.CONTENT_BG, padx=16, pady=8)
         pad.pack(fill="both", expand=True)
 
         tk.Label(
@@ -83,50 +95,50 @@ class PanelResultados:
                  "Aquí se compara cada ruta contra páginas que tú transcribiste a "
                  "mano (el estándar de oro) y se obtienen las métricas que pide la "
                  "literatura: CER, WER y similitud de Levenshtein normalizada.",
-            bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9),
+            bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9),
             wraplength=880, justify="left").pack(anchor="w", pady=(0, 10))
 
         # ── 1. Estándar de oro ────────────────────────────────────────────────
-        f1 = tk.LabelFrame(pad, text=" 1 · Estándar de oro ", bg=CONTENT_BG,
-                           fg=TXT_SEC, font=("Segoe UI", 9, "bold"), padx=10, pady=8)
+        f1 = tk.LabelFrame(pad, text=" 1 · Estándar de oro ", bg=TEMA.CONTENT_BG,
+                           fg=TEMA.TXT_SEC, font=("Segoe UI", 9, "bold"), padx=10, pady=8)
         f1.pack(fill="x", pady=(0, 8))
         tk.Label(f1, text="Carpeta con las transcripciones de referencia (un .txt "
                           "por página, con el mismo nombre que la imagen).",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 8),
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 8),
                  wraplength=820, justify="left").pack(anchor="w")
-        fr1 = tk.Frame(f1, bg=CONTENT_BG); fr1.pack(fill="x", pady=(4, 0))
+        fr1 = tk.Frame(f1, bg=TEMA.CONTENT_BG); fr1.pack(fill="x", pady=(4, 0))
         self._var_bench_oro = tk.StringVar()
         ttk.Entry(fr1, textvariable=self._var_bench_oro, width=70).pack(side="left")
         ttk.Button(fr1, text="📂 Elegir…",
                    command=self._bench_elegir_oro).pack(side="left", padx=6)
 
         # ── 2. Imágenes a transcribir ─────────────────────────────────────────
-        f2 = tk.LabelFrame(pad, text=" 2 · Páginas a evaluar ", bg=CONTENT_BG,
-                           fg=TXT_SEC, font=("Segoe UI", 9, "bold"), padx=10, pady=8)
+        f2 = tk.LabelFrame(pad, text=" 2 · Páginas a evaluar ", bg=TEMA.CONTENT_BG,
+                           fg=TEMA.TXT_SEC, font=("Segoe UI", 9, "bold"), padx=10, pady=8)
         f2.pack(fill="x", pady=(0, 8))
-        fr2 = tk.Frame(f2, bg=CONTENT_BG); fr2.pack(fill="x")
+        fr2 = tk.Frame(f2, bg=TEMA.CONTENT_BG); fr2.pack(fill="x")
         self._var_bench_imgs = tk.StringVar()
         ttk.Entry(fr2, textvariable=self._var_bench_imgs, width=70).pack(side="left")
         ttk.Button(fr2, text="📂 Elegir…",
                    command=self._bench_elegir_imgs).pack(side="left", padx=6)
 
         # ── 3. Rutas a comparar ───────────────────────────────────────────────
-        f3 = tk.LabelFrame(pad, text=" 3 · Rutas a comparar ", bg=CONTENT_BG,
-                           fg=TXT_SEC, font=("Segoe UI", 9, "bold"), padx=10, pady=8)
+        f3 = tk.LabelFrame(pad, text=" 3 · Rutas a comparar ", bg=TEMA.CONTENT_BG,
+                           fg=TEMA.TXT_SEC, font=("Segoe UI", 9, "bold"), padx=10, pady=8)
         f3.pack(fill="x", pady=(0, 8))
 
         self._bench_rutas_vars = {}
         for clave, etiqueta, nota in self._bench_catalogo_rutas():
-            fila = tk.Frame(f3, bg=CONTENT_BG); fila.pack(fill="x", anchor="w")
+            fila = tk.Frame(f3, bg=TEMA.CONTENT_BG); fila.pack(fill="x", anchor="w")
             var = tk.BooleanVar(value=(clave == "tesseract"))
             self._bench_rutas_vars[clave] = var
             ttk.Checkbutton(fila, text=etiqueta, variable=var).pack(side="left")
             if nota:
-                tk.Label(fila, text=f"  {nota}", bg=CONTENT_BG, fg=TXT_DIM,
+                tk.Label(fila, text=f"  {nota}", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                          font=("Segoe UI", 8)).pack(side="left")
 
         # ── Acciones ──────────────────────────────────────────────────────────
-        acc = tk.Frame(pad, bg=CONTENT_BG); acc.pack(fill="x", pady=(4, 8))
+        acc = tk.Frame(pad, bg=TEMA.CONTENT_BG); acc.pack(fill="x", pady=(4, 8))
         self._btn_bench = ttk.Button(acc, text="▶  Ejecutar benchmark",
                                      style="P.TButton", command=self._bench_iniciar)
         self._btn_bench.pack(side="left", padx=(0, 8))
@@ -142,7 +154,7 @@ class PanelResultados:
                    command=lambda: self._bench_exportar("csv")).pack(side="left", padx=4)
         ttk.Button(acc, text="📋 Copiar tabla Markdown",
                    command=self._bench_copiar_md).pack(side="left", padx=4)
-        self._lbl_bench = tk.Label(acc, text="", bg=CONTENT_BG, fg=TXT_DIM,
+        self._lbl_bench = tk.Label(acc, text="", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                                    font=("Segoe UI", 9))
         self._lbl_bench.pack(side="left", padx=10)
 
@@ -461,26 +473,26 @@ class PanelResultados:
         self.toast("Tabla Markdown copiada al portapapeles", "ok")
 
     def _build_rep(self):
-        pad = tk.Frame(self._tab_rep, bg=CONTENT_BG, padx=16, pady=12)
+        pad = tk.Frame(self._tab_rep, bg=TEMA.CONTENT_BG, padx=16, pady=12)
         pad.pack(fill="both", expand=True)
-        tk.Label(pad, text="Reporte narrativo del corpus", bg=CONTENT_BG,
+        tk.Label(pad, text="Reporte narrativo del corpus", bg=TEMA.CONTENT_BG,
                  fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad,
                  text="Genera narrativas académicas con IA y exporta el reporte completo del análisis.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
         # ── Narrativas ────────────────────────────────────────────────────────
         nar_frame = tk.LabelFrame(pad, text=" Narrativas académicas (Claude) ",
-                                   bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9))
+                                   bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9))
         nar_frame.pack(fill="x", pady=(0, 10))
 
-        bf = tk.Frame(nar_frame, bg=CONTENT_BG)
+        bf = tk.Frame(nar_frame, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", padx=8, pady=6)
         self._btn_rep_nar = ttk.Button(bf, text="▶  Generar narrativas IA",
                                         style="P.TButton",
                                         command=self._rep_generar_narrativas)
         self._btn_rep_nar.pack(side="left", padx=(0, 8))
-        self._lbl_rep_nar = tk.Label(bf, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_rep_nar = tk.Label(bf, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                       font=("Segoe UI", 9))
         self._lbl_rep_nar.pack(side="left")
 
@@ -491,9 +503,9 @@ class PanelResultados:
 
         # ── Exportar HTML ─────────────────────────────────────────────────────
         html_frame = tk.LabelFrame(pad, text=" Reporte HTML scrollytelling ",
-                                    bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9))
+                                    bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9))
         html_frame.pack(fill="x", pady=(0, 10))
-        hf = tk.Frame(html_frame, bg=CONTENT_BG)
+        hf = tk.Frame(html_frame, bg=TEMA.CONTENT_BG)
         hf.pack(fill="x", padx=8, pady=6)
         self._btn_rep_html = ttk.Button(hf, text="▶  Generar reporte HTML",
                                          style="P.TButton",
@@ -501,21 +513,21 @@ class PanelResultados:
         self._btn_rep_html.pack(side="left", padx=(0, 8))
         ttk.Button(hf, text="🌐  Abrir en navegador", style="S.TButton",
                    command=self._rep_abrir_html).pack(side="left", padx=(0, 8))
-        self._lbl_rep_html = tk.Label(hf, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_rep_html = tk.Label(hf, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                        font=("Segoe UI", 9))
         self._lbl_rep_html.pack(side="left")
 
         # ── Exportar Word ─────────────────────────────────────────────────────
         word_frame = tk.LabelFrame(pad, text=" Exportar Word (.docx) ",
-                                    bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9))
+                                    bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9))
         word_frame.pack(fill="x", pady=(0, 10))
-        wf = tk.Frame(word_frame, bg=CONTENT_BG)
+        wf = tk.Frame(word_frame, bg=TEMA.CONTENT_BG)
         wf.pack(fill="x", padx=8, pady=6)
         self._btn_rep_word = ttk.Button(wf, text="📄  Exportar Word",
                                          style="S.TButton",
                                          command=self._rep_exportar_word)
         self._btn_rep_word.pack(side="left", padx=(0, 8))
-        self._lbl_rep_word = tk.Label(wf, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_rep_word = tk.Label(wf, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                        font=("Segoe UI", 9))
         self._lbl_rep_word.pack(side="left")
 
@@ -621,7 +633,7 @@ class PanelResultados:
         from core.user_prefs import guardar_pref, obtener_pref
 
         win, content = self._mk_glass_toplevel("Guardar como…", 480, 380)
-        pad = tk.Frame(content, bg=CONTENT_BG)
+        pad = tk.Frame(content, bg=TEMA.CONTENT_BG)
         pad.pack(fill="both", expand=True, padx=20, pady=16)
 
         var_abrir = tk.BooleanVar(value=obtener_pref("exp_abrir_al_terminar", True))
@@ -631,11 +643,11 @@ class PanelResultados:
                          ).pack(anchor="w", pady=(0, 12))
 
         def _tarjeta(titulo, descripcion, comando):
-            c = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1, cursor="hand2")
+            c = tk.Frame(pad, bg=TEMA.CARD_BG, relief="solid", bd=1, cursor="hand2")
             c.pack(fill="x", pady=4)
-            tk.Label(c, text=titulo, bg=CARD_BG, fg=TXT_PRI,
+            tk.Label(c, text=titulo, bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                      font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=12, pady=(8, 0))
-            tk.Label(c, text=descripcion, bg=CARD_BG, fg=TXT_DIM,
+            tk.Label(c, text=descripcion, bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                      font=("Segoe UI", 8), wraplength=400, justify="left").pack(
                          anchor="w", padx=12, pady=(0, 8))
 

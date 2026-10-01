@@ -76,13 +76,17 @@ def commit_software() -> str:
 
 
 def version_app() -> str:
-    """APP_VERSION de app.py sin importar el monolito (importarlo abre Tk)."""
-    try:
-        for linea in (_RAIZ / "app.py").read_text(encoding="utf-8").splitlines():
-            if linea.startswith("APP_VERSION"):
-                return linea.split("=", 1)[1].strip().strip("\"'")
-    except OSError:
-        pass
+    """APP_VERSION sin importar la GUI (importarla abre Tk).
+
+    Vive en gui_comun.py desde la sesión 71; app.py se mira por compatibilidad
+    con árboles anteriores."""
+    for archivo in ("gui_comun.py", "app.py"):
+        try:
+            for linea in (_RAIZ / archivo).read_text(encoding="utf-8").splitlines():
+                if linea.startswith("APP_VERSION"):
+                    return linea.split("=", 1)[1].strip().strip("\"'")
+        except OSError:
+            continue
     return DESCONOCIDO
 
 

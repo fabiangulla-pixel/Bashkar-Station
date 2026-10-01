@@ -199,32 +199,29 @@ import numpy as np
 import pandas as pd
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
-APP_VERSION = "12.6"
+# Compartido con los paneles (paneles/*.py): ver gui_comun.py.
+from gui_comun import (  # noqa: E402
+    APP_VERSION,
+    CAMPOS_DEFAULT,
+    COLABS_DEFAULT,
+    PALETTE,
+    ST,
+    TEMA,
+    _autor_local,
+    _MODELO_VISION_DEFECTO,
+    _registrar_error,
+    _resolver_api_key_modelo,
+    _simbolo_estado_norm,
+)
 
 
-# Símbolo por capa vigente de una página en el panel Normalizar. La lista
-# distingue lo que revisó una persona de lo que solo corrigió una máquina.
-_SIMBOLOS_ESTADO_NORM = {"revisado": "✓", "corregido_ia": "◐", "ocr": "○",
-                         "sin_datos": "·"}
 
 
-def _simbolo_estado_norm(bloque: dict) -> str:
-    from datos.normalizaciones import estado_epistemico
-    return _SIMBOLOS_ESTADO_NORM[estado_epistemico(bloque)]
 
 
-def _registrar_error(mensaje: str, exc: BaseException | None = None) -> None:
-    from core.registro_errores import registrar
-    registrar(mensaje, exc)
 
 
-def _autor_local() -> str:
-    """Nombre de la cuenta local, para firmar las revisiones humanas."""
-    try:
-        import getpass
-        return getpass.getuser() or "investigador"
-    except Exception:
-        return "investigador"
+
 APP_NAME    = "Bashkar Station"
 
 # ── Identidad visual — grafito, cobre y teal ──────────────────────────────────
@@ -347,10 +344,9 @@ def _aplicar_paleta(paleta: dict):
     g = globals()
     for k, v in paleta.items():
         g[k] = v
-    # Los paneles (paneles/*.py) tienen su propia copia de los nombres
-    # globales: hay que refrescarla o el cambio de tema no les llega.
-    if g.get("_paneles") is not None:
-        g["_paneles"].sincronizar(g)
+    # Los paneles leen los colores de TEMA (gui_comun): actualizarlo hace
+    # que el cambio de tema les llegue.
+    TEMA.actualizar(paleta)
 
 _aplicar_paleta(_PALETA_DARK)
 
@@ -402,22 +398,13 @@ TXT_PRI = _T.TEXT
 TXT_SEC = _T.TEXT_3
 TXT_DIM = _T.TEXT_MUTED
 
-# Serie categórica para gráficos: cobre, teal, azul, verde, púrpura, ámbar…
-PALETTE=[_T.COPPER, _T.TEAL, _T.BLUE, _T.GREEN, _T.PURPLE, _T.AMBER,
-         _T.COPPER_2, _T.RED]
+# TEMA (gui_comun) debe reflejar los valores efectivos de arriba, no solo los
+# de _PALETA_DARK: si alguna redeclaración difiriera, app.py y los paneles
+# pintarían con colores distintos.
+TEMA.actualizar({k: globals()[k] for k in _PALETA_DARK})
 
-COLABS_DEFAULT = ("Jorge Zalamea\nLeón de Greiff\nGermán Arciniegas\n"
-                  "Eduardo Carranza\nHernando Téllez\nLeo Matiz\n"
-                  "Gilberto Owen\nFernando Martínez")
 
-CAMPOS_DEFAULT = {
-    "Nación":      ["colombia","colombiano","patria","nación","nacional","bogotá","república","gobierno","pueblo"],
-    "Modernidad":  ["moderno","modernidad","progreso","técnica","industrial","máquina","radio","cine","automóvil","avión"],
-    "Género":      ["mujer","mujeres","femenino","familia","hogar","moda","maternidad","belleza","matrimonio"],
-    "Ciudad":      ["ciudad","urbano","calle","barrio","edificio","capital","plaza","parque","comercio"],
-    "Guerra/Eur.": ["guerra","europa","español","alemania","fascismo","exilio","refugiado","francia","nazismo"],
-    "Cultura":     ["literatura","arte","poesía","novela","música","teatro","escritor","artista","libro"],
-}
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -425,9 +412,6 @@ CAMPOS_DEFAULT = {
 # ══════════════════════════════════════════════════════════════════════════════
 # La clase Estado vive en core/estado.py — fuente única compartida con el
 # servidor web (servidor_web.py). Aquí solo se instancia el singleton de la GUI.
-from core.estado import Estado
-
-ST = Estado()
 
 
 class _VarCongelada:
@@ -453,47 +437,9 @@ class _VarCongelada:
 # HELPERS API / MODELOS
 # ══════════════════════════════════════════════════════════════════════════════
 
-# El OCR por visión vive ENTERO en core/ocr_llm.py. Aquí hubo durante mucho
-# tiempo una copia propia, `_ocr_vision_multiproveedor`, que la Ruta 2 de la
-# GUI llamaba en vez de la de core: sin el prompt calibrado contra las 46
-# páginas del juez de ground truth, sin registrar el gasto de IA, sin filtrar
-# los rechazos del modelo, sin lmstudio y devolviendo "" en silencio ante un
-# proveedor desconocido. Eliminada: `tests/test_ocr_vision_sin_duplicado.py`
-# impide que vuelva.
-_MODELO_VISION_DEFECTO = "claude-sonnet-4-6"
 
 
 
-def _resolver_api_key_modelo(etapa: str) -> tuple[str, str]:
-    """
-    Devuelve (api_key, modelo_id) para la etapa indicada.
-    Retorna ("", "") si ST.ia_habilitada es False (modo offline).
-
-    Lógica:
-    1. Si ST.ia_habilitada es False → retorna ("", "") para bloquear cualquier llamada a API
-    2. Lee ST.modelos_etapa[etapa] → "proveedor/modelo"
-    3. Busca la api_key en ST.api_keys[proveedor]
-    4. Si no hay clave específica, cae a ST.api_key (legado)
-    """
-    if not getattr(ST, "ia_habilitada", False):
-        return "", ""
-
-    modelo_full = ST.modelos_etapa.get(etapa, "")
-    if "/" in modelo_full:
-        proveedor, modelo_id = modelo_full.split("/", 1)
-    else:
-        proveedor, modelo_id = "anthropic", modelo_full
-
-    # Ollama no necesita API key — devuelve la URL del servidor como "key"
-    if proveedor == "ollama":
-        api_key = ST.api_keys.get("ollama", "http://localhost:11434").strip()
-        return api_key or "http://localhost:11434", modelo_id
-
-    api_key = ST.api_keys.get(proveedor, "").strip()
-    if not api_key:
-        api_key = ST.api_key  # fallback legado
-
-    return api_key, modelo_id
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -6621,13 +6567,6 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
 
 
 import re as re
-
-# Los métodos de los paneles usan los nombres globales de este módulo sin
-# prefijo: se reflejan en cada módulo de panel ahora que ya están todos
-# definidos (y _aplicar_paleta los vuelve a reflejar al cambiar el tema).
-import paneles as _paneles  # noqa: E402
-
-_paneles.sincronizar(globals())
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN

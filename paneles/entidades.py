@@ -1,13 +1,23 @@
 """paneles/entidades.py — Métodos de BashkarApp extraídos de app.py.
 
 Mixin: BashkarApp hereda de PanelEntidades. Los cuerpos son copia literal del
-original; los nombres globales (ST, colores, tk…) los inyecta
-paneles.sincronizar() desde app.py.
+original. Importa explícitamente lo que usa; los colores del tema se
+leen de gui_comun.TEMA porque cambian en caliente.
 """
 
 from __future__ import annotations
 
-# ruff: noqa: F821
+import threading
+import tkinter as tk
+from pathlib import Path
+from tkinter import filedialog, messagebox, scrolledtext, ttk
+
+from gui_comun import (
+    ST,
+    TEMA,
+    _registrar_error,
+    _resolver_api_key_modelo,
+)
 
 
 class PanelEntidades:
@@ -21,7 +31,7 @@ class PanelEntidades:
         self._build_ai_panel(f, "ner")
 
         # Contenedor con split horizontal (contenido izq + panel params der)
-        main_split = tk.Frame(f, bg=CONTENT_BG)
+        main_split = tk.Frame(f, bg=TEMA.CONTENT_BG)
         main_split.pack(fill="both", expand=True, padx=24, pady=16)
 
         # Panel de parámetros NER (derecha, colapsable)
@@ -32,11 +42,11 @@ class PanelEntidades:
         except Exception:
             pass
 
-        pad = tk.Frame(main_split, bg=CONTENT_BG)
+        pad = tk.Frame(main_split, bg=TEMA.CONTENT_BG)
         pad.pack(side="left", fill="both", expand=True)
 
         # ── Barra de acciones ─────────────────────────────────────────────────
-        bf = tk.Frame(pad, bg=CONTENT_BG); bf.pack(fill="x", pady=(0, 8))
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG); bf.pack(fill="x", pady=(0, 8))
         self._btn_ner_art = ttk.Button(bf, text="▶  Analizar artículo actual",
                                         style="P.TButton", command=self._ner_articulo_actual)
         self._btn_ner_art.pack(side="left", padx=(0, 8))
@@ -73,22 +83,22 @@ class PanelEntidades:
         ttk.Button(bf, text="📓 Nota", style="S.TButton",
                    command=lambda: self._bitacora_nueva_nota("ner")).pack(side="right", padx=(0, 6))
 
-        self._lbl_ner_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_ner_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_ner_ok.pack(anchor="w", pady=(0, 4))
 
         # ── Split: treeview izquierda + detalle derecha ───────────────────────
-        split = tk.Frame(pad, bg=CONTENT_BG); split.pack(fill="both", expand=True)
+        split = tk.Frame(pad, bg=TEMA.CONTENT_BG); split.pack(fill="both", expand=True)
 
-        izq = tk.Frame(split, bg=CONTENT_BG, width=440)
+        izq = tk.Frame(split, bg=TEMA.CONTENT_BG, width=440)
         izq.pack(side="left", fill="both", expand=True, padx=(0, 8))
         izq.pack_propagate(False)
 
         # Filtro categoría + búsqueda
-        filt_f = tk.Frame(izq, bg=CARD_BG, relief="solid", bd=1)
+        filt_f = tk.Frame(izq, bg=TEMA.CARD_BG, relief="solid", bd=1)
         filt_f.pack(fill="x", pady=(0, 6))
-        fi = tk.Frame(filt_f, bg=CARD_BG, padx=10, pady=6); fi.pack(fill="x")
-        tk.Label(fi, text="Categoría:", bg=CARD_BG, fg="#E8E5DF",
+        fi = tk.Frame(filt_f, bg=TEMA.CARD_BG, padx=10, pady=6); fi.pack(fill="x")
+        tk.Label(fi, text="Categoría:", bg=TEMA.CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold")).pack(side="left")
         _cats = ["Todas", "personas", "lugares", "organizaciones",
                  "fechas", "obras_publicaciones", "eventos_historicos"]
@@ -97,7 +107,7 @@ class PanelEntidades:
                                           state="readonly", width=22, font=("Segoe UI", 9))
         self._cmb_ner_cat.pack(side="left", padx=8)
         self._cmb_ner_cat.bind("<<ComboboxSelected>>", lambda e: self._ner_refrescar_tv())
-        tk.Label(fi, text="Buscar:", bg=CARD_BG, fg="#E8E5DF",
+        tk.Label(fi, text="Buscar:", bg=TEMA.CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold")).pack(side="left", padx=(12, 0))
         self._var_ner_buscar = tk.StringVar()
         self._var_ner_buscar.trace_add("write", lambda *_: self._ner_refrescar_tv())
@@ -105,7 +115,7 @@ class PanelEntidades:
                  font=("Segoe UI", 9), relief="solid", bd=1).pack(side="left", padx=6)
 
         # Treeview
-        tv_frame = tk.Frame(izq, bg=CARD_BG, relief="solid", bd=1)
+        tv_frame = tk.Frame(izq, bg=TEMA.CARD_BG, relief="solid", bd=1)
         tv_frame.pack(fill="both", expand=True)
         cols = ("entidad", "tipo", "n_arts", "wikidata")
         self._tv_ner = ttk.Treeview(tv_frame, columns=cols, show="headings", height=22)
@@ -125,13 +135,13 @@ class PanelEntidades:
         self._tv_ner.bind("<Double-1>", self._ner_abrir_wikidata)
 
         # Panel detalle
-        der = tk.Frame(split, bg=CONTENT_BG, width=260)
+        der = tk.Frame(split, bg=TEMA.CONTENT_BG, width=260)
         der.pack(side="left", fill="both")
         der.pack_propagate(False)
-        det_card = tk.Frame(der, bg=CARD_BG, relief="solid", bd=1)
+        det_card = tk.Frame(der, bg=TEMA.CARD_BG, relief="solid", bd=1)
         det_card.pack(fill="both", expand=True)
         det_hdr = tk.Frame(det_card, bg="#171C20"); det_hdr.pack(fill="x")
-        tk.Label(det_hdr, text="  📋  Detalle", bg="#171C20", fg=TXT_PRI,
+        tk.Label(det_hdr, text="  📋  Detalle", bg="#171C20", fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 8, "bold")).pack(side="left", pady=4)
         self._txt_ner_det = scrolledtext.ScrolledText(det_card, font=("Consolas", 9),
                                                        bg="#171C20", fg="#E8E5DF",
@@ -361,12 +371,12 @@ class PanelEntidades:
                                  tags=(cat,), iid=f"{cat}|{ent}")
         # Cada categoría con su fondo tintado y su texto en el mismo tono: en
         # una interfaz oscura, el chip claro con texto negro deslumbra.
-        paleta = {"personas":            (INFO_BG,  AZ_INFO),
-                  "lugares":             (READY_BG, VERDE),
-                  "organizaciones":      (WARN_BG,  ACENT),
-                  "fechas":              (TEAL_BG,  TEAL),
-                  "obras_publicaciones": (PURP_BG,  PURPURA),
-                  "eventos_historicos":  (ERR_BG,   ROJO)}
+        paleta = {"personas":            (TEMA.INFO_BG,  TEMA.AZ_INFO),
+                  "lugares":             (TEMA.READY_BG, TEMA.VERDE),
+                  "organizaciones":      (TEMA.WARN_BG,  TEMA.ACENT),
+                  "fechas":              (TEMA.TEAL_BG,  TEMA.TEAL),
+                  "obras_publicaciones": (TEMA.PURP_BG,  TEMA.PURPURA),
+                  "eventos_historicos":  (TEMA.ERR_BG,   TEMA.ROJO)}
         for cat, (fondo, tinta) in paleta.items():
             self._tv_ner.tag_configure(cat, background=fondo, foreground=tinta)
 
@@ -449,25 +459,25 @@ class PanelEntidades:
         self._page_header(f, "Búsqueda Semántica",
                           "Encuentra artículos por similitud de significado · powered by FAISS + sentence-transformers",
                           "🔍")
-        pad = tk.Frame(f, bg=CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=16)
+        pad = tk.Frame(f, bg=TEMA.CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=16)
 
         # ── Card: Construir índice ────────────────────────────────────────────
-        card_idx = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1)
+        card_idx = tk.Frame(pad, bg=TEMA.CARD_BG, relief="solid", bd=1)
         card_idx.pack(fill="x", pady=(0, 12))
         hdr_idx = tk.Frame(card_idx, bg="#171C20"); hdr_idx.pack(fill="x")
-        tk.Label(hdr_idx, text="  📦  Índice vectorial", bg="#171C20", fg=TXT_PRI,
+        tk.Label(hdr_idx, text="  📦  Índice vectorial", bg="#171C20", fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(side="left", pady=4)
         self._lbl_bsem_estado = tk.Label(hdr_idx, text="Sin índice", bg="#171C20",
                                           fg="#D96B6B", font=("Segoe UI", 8))
         self._lbl_bsem_estado.pack(side="right", padx=10)
 
-        body_idx = tk.Frame(card_idx, bg=CARD_BG, padx=12, pady=8)
+        body_idx = tk.Frame(card_idx, bg=TEMA.CARD_BG, padx=12, pady=8)
         body_idx.pack(fill="x")
         tk.Label(body_idx,
                  text="Genera embeddings de todos los artículos del corpus y construye el índice FAISS.",
-                 bg=CARD_BG, fg="#E8E5DF", font=("Segoe UI", 9), wraplength=580, justify="left"
+                 bg=TEMA.CARD_BG, fg="#E8E5DF", font=("Segoe UI", 9), wraplength=580, justify="left"
                  ).pack(anchor="w", pady=(0, 6))
-        bf_idx = tk.Frame(body_idx, bg=CARD_BG); bf_idx.pack(fill="x")
+        bf_idx = tk.Frame(body_idx, bg=TEMA.CARD_BG); bf_idx.pack(fill="x")
         self._btn_bsem_construir = ttk.Button(bf_idx, text="▶  Construir índice",
                                                style="P.TButton",
                                                command=self._bsem_construir)
@@ -476,21 +486,21 @@ class PanelEntidades:
                    command=self._bsem_guardar).pack(side="left", padx=(0, 8))
         ttk.Button(bf_idx, text="📂  Cargar índice", style="S.TButton",
                    command=self._bsem_cargar).pack(side="left")
-        self._lbl_bsem_n = tk.Label(bf_idx, text="", bg=CARD_BG, fg=VERDE,
+        self._lbl_bsem_n = tk.Label(bf_idx, text="", bg=TEMA.CARD_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI", 8, "bold"))
         self._lbl_bsem_n.pack(side="right")
 
         # ── Card: Consulta ────────────────────────────────────────────────────
-        card_q = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1)
+        card_q = tk.Frame(pad, bg=TEMA.CARD_BG, relief="solid", bd=1)
         card_q.pack(fill="x", pady=(0, 12))
         hdr_q = tk.Frame(card_q, bg="#171C20"); hdr_q.pack(fill="x")
-        tk.Label(hdr_q, text="  🔎  Consulta", bg="#171C20", fg=TXT_PRI,
+        tk.Label(hdr_q, text="  🔎  Consulta", bg="#171C20", fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(side="left", pady=4)
 
-        body_q = tk.Frame(card_q, bg=CARD_BG, padx=12, pady=8)
+        body_q = tk.Frame(card_q, bg=TEMA.CARD_BG, padx=12, pady=8)
         body_q.pack(fill="x")
-        row_q = tk.Frame(body_q, bg=CARD_BG); row_q.pack(fill="x")
-        tk.Label(row_q, text="Consulta:", bg=CARD_BG, fg="#E8E5DF",
+        row_q = tk.Frame(body_q, bg=TEMA.CARD_BG); row_q.pack(fill="x")
+        tk.Label(row_q, text="Consulta:", bg=TEMA.CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold"), width=9).pack(side="left")
         self._var_bsem_q = tk.StringVar()
         self._ent_bsem_q = tk.Entry(row_q, textvariable=self._var_bsem_q,
@@ -498,7 +508,7 @@ class PanelEntidades:
         self._ent_bsem_q.pack(side="left", fill="x", expand=True, padx=(6, 8))
         self._ent_bsem_q.bind("<Return>", lambda e: self._bsem_buscar())
 
-        tk.Label(row_q, text="K:", bg=CARD_BG, fg="#E8E5DF",
+        tk.Label(row_q, text="K:", bg=TEMA.CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold")).pack(side="left")
         self._var_bsem_k = tk.IntVar(value=10)
         ttk.Spinbox(row_q, from_=1, to=50, textvariable=self._var_bsem_k,
@@ -508,17 +518,17 @@ class PanelEntidades:
         self._btn_bsem_buscar.pack(side="left")
 
         # ── Opciones de resultado ────────────────────────────────────────────
-        opt_f = tk.Frame(body_q, bg=CARD_BG); opt_f.pack(fill="x", pady=(6, 0))
+        opt_f = tk.Frame(body_q, bg=TEMA.CARD_BG); opt_f.pack(fill="x", pady=(6, 0))
         ttk.Button(opt_f, text="💡  Explicar seleccionado", style="S.TButton",
                    command=self._bsem_explicar_seleccionado).pack(side="left", padx=(0, 8))
         ttk.Button(opt_f, text="📋  Explicar todos", style="S.TButton",
                    command=self._bsem_explicar_todos).pack(side="left")
 
         # ── Resultados ────────────────────────────────────────────────────────
-        res_f = tk.Frame(pad, bg=CONTENT_BG); res_f.pack(fill="both", expand=True)
+        res_f = tk.Frame(pad, bg=TEMA.CONTENT_BG); res_f.pack(fill="both", expand=True)
 
         # Treeview resultados
-        tv_frame = tk.Frame(res_f, bg=CARD_BG, relief="solid", bd=1)
+        tv_frame = tk.Frame(res_f, bg=TEMA.CARD_BG, relief="solid", bd=1)
         tv_frame.pack(fill="both", expand=True)
         cols = ("rank", "articulo_id", "similitud", "titulo")
         self._tv_bsem = ttk.Treeview(tv_frame, columns=cols, show="headings", height=11)
@@ -578,11 +588,11 @@ class PanelEntidades:
         win = tk.Toplevel(self)
         win.title(f"Explicación de resultados: '{query}'")
         win.geometry("780x540")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
 
-        tk.Label(win, text="Síntesis de la búsqueda", bg=CONTENT_BG,
+        tk.Label(win, text="Síntesis de la búsqueda", bg=TEMA.CONTENT_BG,
                  fg="#E8E5DF", font=("Segoe UI", 10, "bold")).pack(anchor="w", padx=16, pady=(12, 4))
-        lbl_res = tk.Label(win, text=resumen, bg=CONTENT_BG, fg="#B5B6B3",
+        lbl_res = tk.Label(win, text=resumen, bg=TEMA.CONTENT_BG, fg="#B5B6B3",
                            font=("Segoe UI", 9), wraplength=740, justify="left")
         lbl_res.pack(anchor="w", padx=16, pady=(0, 10))
 
@@ -667,7 +677,7 @@ class PanelEntidades:
                 self._bsem_indice = indice
 
                 self.after(0, lambda: self._lbl_bsem_estado.config(
-                    text=f"✓ {indice.n_articulos} artículos indexados", fg=VERDE))
+                    text=f"✓ {indice.n_articulos} artículos indexados", fg=TEMA.VERDE))
                 self.after(0, lambda: self._lbl_bsem_n.config(
                     text=f"{indice.n_articulos} artículos"))
                 self.after(0, lambda: self._bsem_log(
@@ -813,7 +823,7 @@ class PanelEntidades:
                 messagebox.showerror("Error", "No se pudo cargar el índice."); return
             self._bsem_indice = indice
             self._lbl_bsem_estado.config(
-                text=f"✓ {indice.n_articulos} artículos (cargado)", fg=VERDE)
+                text=f"✓ {indice.n_articulos} artículos (cargado)", fg=TEMA.VERDE)
             self._lbl_bsem_n.config(text=f"{indice.n_articulos} artículos")
             self._bsem_log(f"📂 Índice cargado: {indice.n_articulos} artículos")
         except Exception as e:
@@ -822,11 +832,11 @@ class PanelEntidades:
     def _build_anot(self):
         self._page_header(self._tab_anot, "Anotación Semántica",
                           "Revisa y corrige entidades detectadas automáticamente · historial de cambios", "✍️")
-        pad = tk.Frame(self._tab_anot, bg=CONTENT_BG, padx=16, pady=8)
+        pad = tk.Frame(self._tab_anot, bg=TEMA.CONTENT_BG, padx=16, pady=8)
         pad.pack(fill="both", expand=True)
 
         # ── Controles ──
-        bf = tk.Frame(pad, bg=CONTENT_BG); bf.pack(fill="x", pady=(0, 8))
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG); bf.pack(fill="x", pady=(0, 8))
         ttk.Button(bf, text="📥  Importar NER automático", style="P.TButton",
                    command=self._anot_importar_ner).pack(side="left", padx=(0, 8))
         ttk.Button(bf, text="⏳  Ver pendientes", style="S.TButton",
@@ -838,19 +848,19 @@ class PanelEntidades:
         ttk.Button(bf, text="📓 Nota", style="S.TButton",
                    command=lambda: self._bitacora_nueva_nota("anot")).pack(side="right")
         self._lbl_anot_ok = tk.Label(pad, text="Sin anotaciones cargadas",
-                                      bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9))
+                                      bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9))
         self._lbl_anot_ok.pack(anchor="w", pady=(0, 6))
 
         # ── Filtros ──
-        ff = tk.Frame(pad, bg=CONTENT_BG); ff.pack(fill="x", pady=(0, 6))
-        tk.Label(ff, text="Categoría:", bg=CONTENT_BG, fg=GRIS2,
+        ff = tk.Frame(pad, bg=TEMA.CONTENT_BG); ff.pack(fill="x", pady=(0, 6))
+        tk.Label(ff, text="Categoría:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_anot_cat = tk.StringVar(value="Todas")
         self._cb_anot_cat = ttk.Combobox(ff, textvariable=self._var_anot_cat,
                                           values=["Todas","PER","LOC","ORG","OBRA","EVE","CARGO"],
                                           state="readonly", width=10)
         self._cb_anot_cat.pack(side="left", padx=(0, 12))
-        tk.Label(ff, text="Estado:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(ff, text="Estado:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 4))
         self._var_anot_estado = tk.StringVar(value="Todos")
         ttk.Combobox(ff, textvariable=self._var_anot_estado,
@@ -880,7 +890,7 @@ class PanelEntidades:
         self._tv_anot.tag_configure("auto",       foreground="#B5B6B3")
 
         # Botones de acción sobre selección
-        ab = tk.Frame(pad, bg=CONTENT_BG); ab.pack(fill="x", pady=(6, 0))
+        ab = tk.Frame(pad, bg=TEMA.CONTENT_BG); ab.pack(fill="x", pady=(6, 0))
         for label, estado in [("✅ Confirmar","confirmada"),("✏️ Corregir","corregida"),
                                ("❌ Rechazar","rechazada")]:
             ttk.Button(ab, text=label, style="S.TButton",
@@ -970,7 +980,7 @@ class PanelEntidades:
         win = tk.Toplevel(self)
         win.title(f"Historial — anotación {anot_id}")
         win.geometry("580x300")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
         txt = scrolledtext.ScrolledText(win, font=("Consolas", 9),
                                          bg="#171C20", fg="#E8E5DF", relief="flat")
         txt.pack(fill="both", expand=True, padx=10, pady=10)
@@ -1010,22 +1020,22 @@ class PanelEntidades:
         messagebox.showinfo("Estadísticas de anotación", msg)
 
     def _build_red(self):
-        pad = tk.Frame(self._tab_red, bg=CONTENT_BG, padx=16, pady=12)
+        pad = tk.Frame(self._tab_red, bg=TEMA.CONTENT_BG, padx=16, pady=12)
         pad.pack(fill="both", expand=True)
-        tk.Label(pad, text="Redes de co-ocurrencia", bg=CONTENT_BG,
+        tk.Label(pad, text="Redes de co-ocurrencia", bg=TEMA.CONTENT_BG,
                  fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad, text="Construye un grafo de entidades que co-ocurren en los mismos artículos.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(anchor="w", pady=(0, 10))
 
         # ── Controles ────────────────────────────────────────────────────────
-        ctrl = tk.Frame(pad, bg=CONTENT_BG)
+        ctrl = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         ctrl.pack(fill="x", pady=(0, 8))
 
         # Categorías
-        tk.Label(ctrl, text="Categorías:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(ctrl, text="Categorías:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).grid(row=0, column=0, sticky="w", padx=(0, 4))
         self._var_red_cats = {}
-        cats_frame = tk.Frame(ctrl, bg=CONTENT_BG)
+        cats_frame = tk.Frame(ctrl, bg=TEMA.CONTENT_BG)
         cats_frame.grid(row=0, column=1, sticky="w")
         cat_labels = {
             "personas": "Personas",
@@ -1040,14 +1050,14 @@ class PanelEntidades:
             ttk.Checkbutton(cats_frame, text=lbl, variable=v).pack(side="left", padx=4)
 
         # Peso mínimo
-        tk.Label(ctrl, text="Co-ocurrencias mínimas:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(ctrl, text="Co-ocurrencias mínimas:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).grid(row=1, column=0, sticky="w", padx=(0, 4), pady=(6,0))
         self._var_red_peso = tk.IntVar(value=2)
         ttk.Spinbox(ctrl, from_=1, to=20, textvariable=self._var_red_peso,
                     width=5).grid(row=1, column=1, sticky="w", pady=(6,0))
 
         # Botones
-        bf = tk.Frame(pad, bg=CONTENT_BG)
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         bf.pack(fill="x", pady=(0, 8))
         self._btn_red_construir = ttk.Button(bf, text="▶  Construir red",
                                               style="P.TButton",
@@ -1068,7 +1078,7 @@ class PanelEntidades:
         ttk.Button(bf, text="💾  CSV métricas",
                    style="S.TButton",
                    command=self._red_exportar_csv).pack(side="left", padx=(0, 8))
-        self._lbl_red_ok = tk.Label(pad, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_red_ok = tk.Label(pad, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_red_ok.pack(anchor="w", pady=(0, 6))
 
@@ -1077,10 +1087,10 @@ class PanelEntidades:
         nb_red.pack(fill="both", expand=True, pady=(4, 0))
 
         # ── Pestaña: Métricas globales + top centralidad ──────────────────────
-        frm_met = tk.Frame(nb_red, bg=CONTENT_BG)
+        frm_met = tk.Frame(nb_red, bg=TEMA.CONTENT_BG)
         nb_red.add(frm_met, text="  Métricas  ")
 
-        met_frame = tk.Frame(frm_met, bg=CONTENT_BG)
+        met_frame = tk.Frame(frm_met, bg=TEMA.CONTENT_BG)
         met_frame.pack(fill="x", pady=(6, 4))
         cols_met = ("metrica", "valor")
         self._tv_red_met = ttk.Treeview(met_frame, columns=cols_met,
@@ -1092,7 +1102,7 @@ class PanelEntidades:
         self._tv_red_met.pack(fill="x", padx=6)
 
         tk.Label(frm_met, text="Top nodos por centralidad de grado",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9, "bold")).pack(
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9, "bold")).pack(
                  anchor="w", padx=6, pady=(6, 2))
         cols_top = ("rango", "entidad", "categoria", "grado")
         self._tv_red_top = ttk.Treeview(frm_met, columns=cols_top,
@@ -1111,12 +1121,12 @@ class PanelEntidades:
         self._tv_red_top.pack(fill="both", expand=True, padx=6)
 
         # ── Pestaña: Métricas avanzadas (betweenness, PageRank, closeness) ────
-        frm_av = tk.Frame(nb_red, bg=CONTENT_BG)
+        frm_av = tk.Frame(nb_red, bg=TEMA.CONTENT_BG)
         nb_red.add(frm_av, text="  Centralidad avanzada  ")
 
-        bav = tk.Frame(frm_av, bg=CONTENT_BG)
+        bav = tk.Frame(frm_av, bg=TEMA.CONTENT_BG)
         bav.pack(fill="x", padx=6, pady=(6, 4))
-        tk.Label(bav, text="Tipo de centralidad:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(bav, text="Tipo de centralidad:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 6))
         self._var_red_cent_tipo = tk.StringVar(value="betweenness")
         for val, lbl in [("betweenness","Betweenness (puentes)"),
@@ -1144,35 +1154,35 @@ class PanelEntidades:
         self._red_metricas_av_cache: dict = {}
 
         # ── Pestaña: Comunidades ──────────────────────────────────────────────
-        frm_com = tk.Frame(nb_red, bg=CONTENT_BG)
+        frm_com = tk.Frame(nb_red, bg=TEMA.CONTENT_BG)
         nb_red.add(frm_com, text="  Comunidades  ")
 
         tk.Label(frm_com,
                  text="Comunidades detectadas por algoritmo Louvain\n"
                       "(grupos de entidades fuertemente conectadas entre sí)",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 8)).pack(
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 8)).pack(
                  anchor="w", padx=6, pady=(6, 4))
 
-        split_com = tk.Frame(frm_com, bg=CONTENT_BG)
+        split_com = tk.Frame(frm_com, bg=TEMA.CONTENT_BG)
         split_com.pack(fill="both", expand=True)
 
         # Lista de comunidades (izquierda)
-        izq_com = tk.Frame(split_com, bg=CONTENT_BG, width=180)
+        izq_com = tk.Frame(split_com, bg=TEMA.CONTENT_BG, width=180)
         izq_com.pack(side="left", fill="y", padx=(6, 0))
         izq_com.pack_propagate(False)
-        tk.Label(izq_com, text="Comunidades", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(izq_com, text="Comunidades", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 8, "bold")).pack(anchor="w")
         self._lb_red_comunidades = tk.Listbox(
-            izq_com, bg=CARD_BG, fg=TXT_SEC, selectbackground=AB_SEL,
+            izq_com, bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, selectbackground=TEMA.AB_SEL,
             font=("Segoe UI", 9), relief="flat", activestyle="none")
         self._lb_red_comunidades.pack(fill="both", expand=True)
         self._lb_red_comunidades.bind("<<ListboxSelect>>",
                                       self._red_mostrar_comunidad)
 
         # Miembros de la comunidad (derecha)
-        der_com = tk.Frame(split_com, bg=CONTENT_BG)
+        der_com = tk.Frame(split_com, bg=TEMA.CONTENT_BG)
         der_com.pack(side="left", fill="both", expand=True, padx=6)
-        tk.Label(der_com, text="Miembros", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(der_com, text="Miembros", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 8, "bold")).pack(anchor="w")
         cols_com = ("entidad", "categoria", "grado")
         self._tv_red_miembros = ttk.Treeview(der_com, columns=cols_com,
@@ -1191,16 +1201,16 @@ class PanelEntidades:
         self._red_comunidades_cache: list = []
 
         # ── Pestaña: Evolución temporal ───────────────────────────────────────
-        frm_evo = tk.Frame(nb_red, bg=CONTENT_BG)
+        frm_evo = tk.Frame(nb_red, bg=TEMA.CONTENT_BG)
         nb_red.add(frm_evo, text="  Evolución temporal  ")
 
         tk.Label(frm_evo,
                  text="Cómo cambia la red entre números del corpus "
                       "(requiere haber procesado varios números).",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 8)).pack(
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 8)).pack(
                  anchor="w", padx=6, pady=(6, 4))
 
-        bevo = tk.Frame(frm_evo, bg=CONTENT_BG)
+        bevo = tk.Frame(frm_evo, bg=TEMA.CONTENT_BG)
         bevo.pack(fill="x", padx=6, pady=(0, 4))
         ttk.Button(bevo, text="▶  Calcular evolución", style="P.TButton",
                    command=self._red_calcular_evolucion).pack(side="left")
@@ -1225,17 +1235,17 @@ class PanelEntidades:
         self._red_evolucion_cache: list = []
 
         # ── Pestaña: Grafo canónico (entidades fundidas + relaciones) ─────────
-        frm_can = tk.Frame(nb_red, bg=CONTENT_BG)
+        frm_can = tk.Frame(nb_red, bg=TEMA.CONTENT_BG)
         nb_red.add(frm_can, text="  Grafo canónico  ")
 
         tk.Label(frm_can,
                  text="Funde las menciones NER en entidades canónicas (id estable) y\n"
                       "modela tripletas sujeto–predicado–objeto con procedencia y confianza.\n"
                       "Capa de grafo de conocimiento en el SQLite del proyecto.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 8), justify="left").pack(
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 8), justify="left").pack(
                  anchor="w", padx=6, pady=(6, 4))
 
-        bcan = tk.Frame(frm_can, bg=CONTENT_BG)
+        bcan = tk.Frame(frm_can, bg=TEMA.CONTENT_BG)
         bcan.pack(fill="x", padx=6, pady=(0, 4))
         self._btn_can_fundir = ttk.Button(
             bcan, text="▶  Fundir menciones → entidades canónicas",
@@ -1252,7 +1262,7 @@ class PanelEntidades:
                    command=self._can_exportar_rdf).pack(side="left", padx=(8, 0))
 
         # segunda fila: exploradores + editor de relaciones
-        bcan2 = tk.Frame(frm_can, bg=CONTENT_BG)
+        bcan2 = tk.Frame(frm_can, bg=TEMA.CONTENT_BG)
         bcan2.pack(fill="x", padx=6, pady=(0, 4))
         ttk.Button(bcan2, text="🗺  Mapa de lugares",
                    style="S.TButton",
@@ -1268,14 +1278,14 @@ class PanelEntidades:
                    command=self._can_editor_relacion).pack(side="left", padx=(8, 0))
 
         # tercera fila: portabilidad (OKF)
-        bcan3 = tk.Frame(frm_can, bg=CONTENT_BG)
+        bcan3 = tk.Frame(frm_can, bg=TEMA.CONTENT_BG)
         bcan3.pack(fill="x", padx=6, pady=(0, 4))
         self._btn_can_okf = ttk.Button(
             bcan3, text="📦  Exportar bundle OKF…",
             style="S.TButton", command=self._can_exportar_okf)
         self._btn_can_okf.pack(side="left")
 
-        self._lbl_can_ok = tk.Label(frm_can, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_can_ok = tk.Label(frm_can, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                      font=("Segoe UI", 9, "bold"))
         self._lbl_can_ok.pack(anchor="w", padx=6, pady=(2, 4))
 
@@ -1562,21 +1572,21 @@ class PanelEntidades:
 
         win = tk.Toplevel(self)
         win.title("Añadir relación (tripleta)")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
         win.transient(self)
         win.grab_set()
 
         tk.Label(win, text="Crear una aserción sujeto — predicado — objeto",
-                 bg=CONTENT_BG, fg="#E8E5DF",
+                 bg=TEMA.CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 11, "bold")).grid(row=0, column=0, columnspan=2,
                                                      sticky="w", padx=12, pady=(12, 8))
 
-        tk.Label(win, text="Sujeto:", bg=CONTENT_BG, fg=GRIS2).grid(
+        tk.Label(win, text="Sujeto:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2).grid(
             row=1, column=0, sticky="e", padx=8, pady=4)
         cb_suj = ttk.Combobox(win, values=etiquetas, state="readonly", width=38)
         cb_suj.grid(row=1, column=1, sticky="w", padx=8, pady=4); cb_suj.current(0)
 
-        tk.Label(win, text="Predicado:", bg=CONTENT_BG, fg=GRIS2).grid(
+        tk.Label(win, text="Predicado:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2).grid(
             row=2, column=0, sticky="e", padx=8, pady=4)
         cb_pred = ttk.Combobox(win, width=38, values=[
             "colaboro_con", "dirigio", "publico_en", "aliado_de", "opositor_de",
@@ -1584,13 +1594,13 @@ class PanelEntidades:
         cb_pred.grid(row=2, column=1, sticky="w", padx=8, pady=4)
         cb_pred.set("colaboro_con")
 
-        tk.Label(win, text="Objeto:", bg=CONTENT_BG, fg=GRIS2).grid(
+        tk.Label(win, text="Objeto:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2).grid(
             row=3, column=0, sticky="e", padx=8, pady=4)
         cb_obj = ttk.Combobox(win, values=etiquetas, state="readonly", width=38)
         cb_obj.grid(row=3, column=1, sticky="w", padx=8, pady=4)
         cb_obj.current(1 if len(ids) > 1 else 0)
 
-        tk.Label(win, text="Confianza:", bg=CONTENT_BG, fg=GRIS2).grid(
+        tk.Label(win, text="Confianza:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2).grid(
             row=4, column=0, sticky="e", padx=8, pady=4)
         var_conf = tk.DoubleVar(value=1.0)
         ttk.Spinbox(win, from_=0.1, to=1.0, increment=0.1, textvariable=var_conf,
@@ -1614,7 +1624,7 @@ class PanelEntidades:
             self.toast("Relación añadida al grafo", "ok")
             win.destroy()
 
-        bf = tk.Frame(win, bg=CONTENT_BG)
+        bf = tk.Frame(win, bg=TEMA.CONTENT_BG)
         bf.grid(row=5, column=0, columnspan=2, pady=12)
         ttk.Button(bf, text="Guardar", style="P.TButton",
                    command=_guardar).pack(side="left", padx=6)
@@ -1886,7 +1896,7 @@ class PanelEntidades:
         win = tk.Toplevel(self)
         win.title("Evolución temporal de la red")
         win.geometry("800x520")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
 
         fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 6),
                                         facecolor=_FONDO, sharex=True)

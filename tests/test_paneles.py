@@ -1,8 +1,9 @@
 """Los paneles extraídos de app.py siguen enganchados al monolito.
 
-Los módulos de paneles/ usan los nombres globales de app.py sin importarlos
-(los inyecta paneles.sincronizar) y por eso ruff no puede comprobarlos
-(F821 desactivado). Estos tests hacen esa comprobación en su lugar.
+Cada panel importa lo que usa (gui_comun, tkinter…) y ruff F821 lo comprueba
+en estático; estos tests lo confirman en ejecución, desde el bytecode, y
+vigilan lo que ruff no ve: herencia, métodos duplicados entre paneles y que
+los colores se lean de TEMA (el tema cambia en caliente).
 """
 
 import ast
@@ -30,18 +31,13 @@ def _globales_de(codigo):
             yield from _globales_de(c)
 
 
-@pytest.fixture(scope="module")
-def app_globales():
-    import app
-    return vars(app)
-
-
 def test_hay_paneles():
     assert MODULOS
 
 
 @pytest.mark.parametrize("nombre", MODULOS)
-def test_todo_nombre_global_de_un_panel_existe_en_app(nombre, app_globales):
+def test_todo_nombre_global_de_un_panel_se_resuelve_en_su_modulo(nombre):
+    """Complementa a ruff F821 en ejecución: leído del bytecode real."""
     mod = importlib.import_module(f"paneles.{nombre}")
     faltan = set()
     for clase in (v for v in vars(mod).values() if isinstance(v, type)
@@ -50,8 +46,8 @@ def test_todo_nombre_global_de_un_panel_existe_en_app(nombre, app_globales):
             fn = getattr(atributo, "__func__", atributo)
             if hasattr(fn, "__code__"):
                 faltan |= {n for n in _globales_de(fn.__code__)
-                           if n not in app_globales and not hasattr(builtins, n)}
-    assert not faltan, f"paneles/{nombre}.py usa nombres que app.py no define: {sorted(faltan)}"
+                           if n not in vars(mod) and not hasattr(builtins, n)}
+    assert not faltan, f"paneles/{nombre}.py usa nombres que no importa: {sorted(faltan)}"
 
 
 def test_bashkarapp_hereda_todos_los_paneles():
@@ -77,15 +73,33 @@ def test_ningun_metodo_definido_dos_veces():
                 vistos[nombre] = clase.__name__
 
 
-def test_sincronizar_refleja_cambios_de_tema():
+def test_el_cambio_de_tema_llega_a_los_paneles():
+    """Los paneles leen TEMA.X en cada uso; _aplicar_paleta lo actualiza."""
     import app
-    mod = importlib.import_module(f"paneles.{MODULOS[0]}")
+    from gui_comun import TEMA
     original = app.CONTENT_BG
     try:
         app._aplicar_paleta({"CONTENT_BG": "#123456"})
-        assert mod.CONTENT_BG == "#123456"
+        assert TEMA.CONTENT_BG == "#123456" == app.CONTENT_BG
     finally:
         app._aplicar_paleta({"CONTENT_BG": original})
+
+
+def test_tema_coincide_con_los_colores_de_app():
+    import app
+    from gui_comun import TEMA
+    for clave in app._PALETA_DARK:
+        assert getattr(TEMA, clave) == getattr(app, clave), clave
+
+
+def test_ningun_panel_usa_colores_sueltos():
+    """Un color sin TEMA. delante se congelaría al importar (el tema cambia)."""
+    import app
+    colores = set(app._PALETA_DARK)
+    for nombre in MODULOS:
+        arbol = ast.parse((RAIZ / "paneles" / f"{nombre}.py").read_text(encoding="utf-8"))
+        sueltos = {n.id for n in ast.walk(arbol) if isinstance(n, ast.Name) and n.id in colores}
+        assert not sueltos, f"{nombre}: {sorted(sueltos)}"
 
 
 def test_ningun_panel_usa_global_ni_super():

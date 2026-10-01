@@ -1,13 +1,26 @@
 """paneles/bitacora.py — Métodos de BashkarApp extraídos de app.py.
 
 Mixin: BashkarApp hereda de PanelBitacora. Los cuerpos son copia literal del
-original; los nombres globales (ST, colores, tk…) los inyecta
-paneles.sincronizar() desde app.py.
+original. Importa explícitamente lo que usa; los colores del tema se
+leen de gui_comun.TEMA porque cambian en caliente.
 """
 
 from __future__ import annotations
 
-# ruff: noqa: F821
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from core.bitacora_engine import BitacoraEngine
+
+import tkinter as tk
+from pathlib import Path
+from tkinter import messagebox, scrolledtext, ttk
+
+from gui_comun import (
+    ST,
+    TEMA,
+    _registrar_error,
+)
 
 
 class PanelBitacora:
@@ -47,12 +60,12 @@ class PanelBitacora:
         nb.pack(fill="both", expand=True, padx=8, pady=8)
 
         # ── Tab 1: Nueva nota ──────────────────────────────────────────────────
-        tab_nueva = tk.Frame(nb, bg=CONTENT_BG, padx=12, pady=10)
+        tab_nueva = tk.Frame(nb, bg=TEMA.CONTENT_BG, padx=12, pady=10)
         nb.add(tab_nueva, text="  ➕ Nueva nota  ")
         self._bitacora_build_nueva(tab_nueva)
 
         # ── Tab 2: Todas las notas ─────────────────────────────────────────────
-        tab_lista = tk.Frame(nb, bg=CONTENT_BG, padx=8, pady=6)
+        tab_lista = tk.Frame(nb, bg=TEMA.CONTENT_BG, padx=8, pady=6)
         nb.add(tab_lista, text="  📋 Todas las notas  ")
         self._bitacora_build_lista(tab_lista)
 
@@ -66,9 +79,9 @@ class PanelBitacora:
     def _bitacora_build_nueva(self, parent):
         """Construye el formulario de nueva nota."""
         # Tipo de nota
-        row_tipo = tk.Frame(parent, bg=CONTENT_BG)
+        row_tipo = tk.Frame(parent, bg=TEMA.CONTENT_BG)
         row_tipo.pack(fill="x", pady=(0, 6))
-        tk.Label(row_tipo, text="Tipo:", bg=CONTENT_BG, fg=TXT_PRI,
+        tk.Label(row_tipo, text="Tipo:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold"), width=10, anchor="w").pack(side="left")
         self._bvar_tipo = tk.StringVar(value="libre")
         for val, etiq in [("libre", "📝 Libre"), ("hipotesis", "💡 Hipótesis"), ("cita", "📌 Cita")]:
@@ -76,8 +89,8 @@ class PanelBitacora:
                             value=val, command=self._bitacora_on_tipo).pack(side="left", padx=6)
 
         # Estado (solo si hipótesis)
-        self._row_estado = tk.Frame(parent, bg=CONTENT_BG)
-        tk.Label(self._row_estado, text="Estado:", bg=CONTENT_BG, fg=TXT_PRI,
+        self._row_estado = tk.Frame(parent, bg=TEMA.CONTENT_BG)
+        tk.Label(self._row_estado, text="Estado:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold"), width=10, anchor="w").pack(side="left")
         self._bvar_estado = tk.StringVar(value="abierta")
         for val, etiq in [("abierta","🔵 Abierta"),("confirmada","✅ Confirmada"),
@@ -88,56 +101,56 @@ class PanelBitacora:
         self._bitacora_on_tipo()
 
         # Referencia (pre-rellena desde módulo activo)
-        row_ref = tk.Frame(parent, bg=CONTENT_BG)
+        row_ref = tk.Frame(parent, bg=TEMA.CONTENT_BG)
         row_ref.pack(fill="x", pady=(0, 4))
-        tk.Label(row_ref, text="Referencia:", bg=CONTENT_BG, fg=TXT_PRI,
+        tk.Label(row_ref, text="Referencia:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold"), width=10, anchor="w").pack(side="left")
         self._bvar_ref_num = tk.StringVar()
         self._bvar_ref_pag = tk.StringVar()
         tk.Entry(row_ref, textvariable=self._bvar_ref_num, width=20,
-                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
-                 relief="solid", bd=1, insertbackground=TXT_PRI).pack(side="left", padx=(0, 4))
-        tk.Label(row_ref, text="pág:", bg=CONTENT_BG,
-                 fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
+                 font=("Segoe UI", 9), bg="#171C20", fg=TEMA.TXT_PRI,
+                 relief="solid", bd=1, insertbackground=TEMA.TXT_PRI).pack(side="left", padx=(0, 4))
+        tk.Label(row_ref, text="pág:", bg=TEMA.CONTENT_BG,
+                 fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
         tk.Entry(row_ref, textvariable=self._bvar_ref_pag, width=10,
-                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
-                 relief="solid", bd=1, insertbackground=TXT_PRI).pack(side="left", padx=(2, 8))
-        tk.Label(row_ref, text="módulo:", bg=CONTENT_BG,
-                 fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
+                 font=("Segoe UI", 9), bg="#171C20", fg=TEMA.TXT_PRI,
+                 relief="solid", bd=1, insertbackground=TEMA.TXT_PRI).pack(side="left", padx=(2, 8))
+        tk.Label(row_ref, text="módulo:", bg=TEMA.CONTENT_BG,
+                 fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
         self._bvar_modulo = tk.StringVar()
         tk.Entry(row_ref, textvariable=self._bvar_modulo, width=12,
-                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
-                 relief="solid", bd=1, insertbackground=TXT_PRI,
+                 font=("Segoe UI", 9), bg="#171C20", fg=TEMA.TXT_PRI,
+                 relief="solid", bd=1, insertbackground=TEMA.TXT_PRI,
                  state="readonly").pack(side="left", padx=2)
 
         # Etiquetas
-        row_tags = tk.Frame(parent, bg=CONTENT_BG)
+        row_tags = tk.Frame(parent, bg=TEMA.CONTENT_BG)
         row_tags.pack(fill="x", pady=(0, 4))
-        tk.Label(row_tags, text="Etiquetas:", bg=CONTENT_BG, fg=TXT_PRI,
+        tk.Label(row_tags, text="Etiquetas:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold"), width=10, anchor="w").pack(side="left")
         self._bvar_tags = tk.StringVar()
         tk.Entry(row_tags, textvariable=self._bvar_tags, width=50,
-                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
-                 relief="solid", bd=1, insertbackground=TXT_PRI).pack(side="left")
-        tk.Label(row_tags, text="(separadas por coma)", bg=CONTENT_BG,
-                 fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left", padx=6)
+                 font=("Segoe UI", 9), bg="#171C20", fg=TEMA.TXT_PRI,
+                 relief="solid", bd=1, insertbackground=TEMA.TXT_PRI).pack(side="left")
+        tk.Label(row_tags, text="(separadas por coma)", bg=TEMA.CONTENT_BG,
+                 fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(side="left", padx=6)
 
         # Texto
-        tk.Label(parent, text="Nota:", bg=CONTENT_BG, fg=TXT_PRI,
+        tk.Label(parent, text="Nota:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(4, 2))
         self._btxt_nota = scrolledtext.ScrolledText(
-            parent, height=8, bg="#171C20", fg=TXT_PRI,
-            insertbackground=TXT_PRI, font=("Segoe UI", 10),
+            parent, height=8, bg="#171C20", fg=TEMA.TXT_PRI,
+            insertbackground=TEMA.TXT_PRI, font=("Segoe UI", 10),
             relief="solid", bd=1, wrap="word")
         self._btxt_nota.pack(fill="both", expand=True)
 
         # Botón guardar
-        row_btn = tk.Frame(parent, bg=CONTENT_BG)
+        row_btn = tk.Frame(parent, bg=TEMA.CONTENT_BG)
         row_btn.pack(fill="x", pady=(8, 0))
         ttk.Button(row_btn, text="💾 Guardar nota", style="P.TButton",
                    command=self._bitacora_guardar_nota).pack(side="left")
-        self._blbl_ok = tk.Label(row_btn, text="", bg=CONTENT_BG,
-                                  fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._blbl_ok = tk.Label(row_btn, text="", bg=TEMA.CONTENT_BG,
+                                  fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._blbl_ok.pack(side="left", padx=10)
 
     def _bitacora_on_tipo(self):
@@ -150,10 +163,10 @@ class PanelBitacora:
     def _bitacora_build_lista(self, parent):
         """Construye la vista de todas las notas con filtros."""
         # Barra de filtros
-        fbar = tk.Frame(parent, bg=CONTENT_BG)
+        fbar = tk.Frame(parent, bg=TEMA.CONTENT_BG)
         fbar.pack(fill="x", pady=(0, 6))
 
-        tk.Label(fbar, text="Tipo:", bg=CONTENT_BG, fg=TXT_DIM,
+        tk.Label(fbar, text="Tipo:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 8)).pack(side="left")
         self._bflt_tipo = tk.StringVar(value="todos")
         ttk.Combobox(fbar, textvariable=self._bflt_tipo,
@@ -161,7 +174,7 @@ class PanelBitacora:
                      state="readonly", width=10,
                      font=("Segoe UI", 8)).pack(side="left", padx=(2, 8))
 
-        tk.Label(fbar, text="Estado:", bg=CONTENT_BG, fg=TXT_DIM,
+        tk.Label(fbar, text="Estado:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 8)).pack(side="left")
         self._bflt_estado = tk.StringVar(value="todos")
         ttk.Combobox(fbar, textvariable=self._bflt_estado,
@@ -169,12 +182,12 @@ class PanelBitacora:
                      state="readonly", width=12,
                      font=("Segoe UI", 8)).pack(side="left", padx=(2, 8))
 
-        tk.Label(fbar, text="Buscar:", bg=CONTENT_BG, fg=TXT_DIM,
+        tk.Label(fbar, text="Buscar:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 8)).pack(side="left")
         self._bflt_q = tk.StringVar()
         tk.Entry(fbar, textvariable=self._bflt_q, width=20,
-                 font=("Segoe UI", 9), bg="#171C20", fg=TXT_PRI,
-                 relief="solid", bd=1, insertbackground=TXT_PRI).pack(side="left", padx=(2, 6))
+                 font=("Segoe UI", 9), bg="#171C20", fg=TEMA.TXT_PRI,
+                 relief="solid", bd=1, insertbackground=TEMA.TXT_PRI).pack(side="left", padx=(2, 6))
         ttk.Button(fbar, text="🔍", style="S.TButton",
                    command=self._bitacora_refrescar_lista).pack(side="left")
         ttk.Button(fbar, text="📄 Exportar Markdown", style="S.TButton",
@@ -195,7 +208,7 @@ class PanelBitacora:
         self._btv.column("fecha",    width=90,  stretch=False)
 
         # Colores por tipo
-        self._btv.tag_configure("libre",     background="#171C20", foreground=TXT_SEC)
+        self._btv.tag_configure("libre",     background="#171C20", foreground=TEMA.TXT_SEC)
         self._btv.tag_configure("hipotesis", background="#14202A", foreground="#6CA8E8")
         self._btv.tag_configure("cita",      background="#15251F", foreground="#6EC69A")
 
@@ -206,7 +219,7 @@ class PanelBitacora:
         self._btv.bind("<Double-1>", self._bitacora_editar_seleccion)
 
         # Botón eliminar
-        btn_row = tk.Frame(parent, bg=CONTENT_BG)
+        btn_row = tk.Frame(parent, bg=TEMA.CONTENT_BG)
         btn_row.pack(fill="x", pady=(4, 0))
         ttk.Button(btn_row, text="🗑 Eliminar seleccionada", style="S.TButton",
                    command=self._bitacora_eliminar_seleccion).pack(side="left")

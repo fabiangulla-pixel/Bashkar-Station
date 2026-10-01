@@ -1,25 +1,33 @@
 """paneles/linguistica.py — Métodos de BashkarApp extraídos de app.py.
 
 Mixin: BashkarApp hereda de PanelLinguistica. Los cuerpos son copia literal del
-original; los nombres globales (ST, colores, tk…) los inyecta
-paneles.sincronizar() desde app.py.
+original. Importa explícitamente lo que usa; los colores del tema se
+leen de gui_comun.TEMA porque cambian en caliente.
 """
 
 from __future__ import annotations
 
-# ruff: noqa: F821
+import threading
+import tkinter as tk
+from pathlib import Path
+from tkinter import messagebox, scrolledtext, ttk
+
+from gui_comun import (
+    ST,
+    TEMA,
+)
 
 
 class PanelLinguistica:
     def _build_ling(self):
-        pad = tk.Frame(self._frames_pagina["ling"], bg=CONTENT_BG, padx=16, pady=12)
+        pad = tk.Frame(self._frames_pagina["ling"], bg=TEMA.CONTENT_BG, padx=16, pady=12)
         pad.pack(fill="both", expand=True)
-        tk.Label(pad, text="Lingüística Computacional", bg=CONTENT_BG,
+        tk.Label(pad, text="Lingüística Computacional", bg=TEMA.CONTENT_BG,
                  fg="#E8E5DF", font=("Segoe UI", 14, "bold")).pack(anchor="w")
         tk.Label(pad,
                  text="Sintaxis, correferencia, morfología histórica, emociones, encuadre, "
                       "polaridad, revisión NER y validación metodológica (Kappa).",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9),
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9),
                  wraplength=760, justify="left").pack(anchor="w", pady=(0, 10))
 
         nb_ling = ttk.Notebook(pad)
@@ -27,12 +35,12 @@ class PanelLinguistica:
         self._nb_ling = nb_ling
 
         # ── Pestaña 1: Análisis sintáctico ────────────────────────────────────
-        frm_sint = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_sint = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_sint, text="  🌲 Sintaxis  ")
 
-        ctrl_sint = tk.Frame(frm_sint, bg=CONTENT_BG)
+        ctrl_sint = tk.Frame(frm_sint, bg=TEMA.CONTENT_BG)
         ctrl_sint.pack(fill="x", padx=8, pady=(8, 4))
-        tk.Label(ctrl_sint, text="Patrón sintáctico:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(ctrl_sint, text="Patrón sintáctico:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(0, 6))
         self._var_ling_patron = tk.StringVar(value="verbo_sujeto")
         _patrones = [
@@ -46,13 +54,13 @@ class PanelLinguistica:
             ttk.Radiobutton(ctrl_sint, text=lbl, variable=self._var_ling_patron,
                             value=val).pack(side="left", padx=3)
 
-        tk.Label(ctrl_sint, text="  Máx. resultados:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(ctrl_sint, text="  Máx. resultados:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(12, 4))
         self._var_ling_max = tk.IntVar(value=200)
         ttk.Spinbox(ctrl_sint, from_=50, to=1000, textvariable=self._var_ling_max,
                     width=6).pack(side="left")
 
-        bf_sint = tk.Frame(frm_sint, bg=CONTENT_BG)
+        bf_sint = tk.Frame(frm_sint, bg=TEMA.CONTENT_BG)
         bf_sint.pack(fill="x", padx=8, pady=(0, 6))
         self._btn_ling_sint = ttk.Button(bf_sint, text="▶  Analizar concordancias sintácticas",
                                           style="P.TButton",
@@ -62,8 +70,8 @@ class PanelLinguistica:
                    command=self._ling_sint_csv).pack(side="left", padx=(0, 8))
         ttk.Button(bf_sint, text="🔗  Relaciones SVO", style="S.TButton",
                    command=self._ling_relaciones).pack(side="left", padx=(0, 8))
-        self._lbl_ling_sint = tk.Label(frm_sint, text="", bg=CONTENT_BG,
-                                        fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_sint = tk.Label(frm_sint, text="", bg=TEMA.CONTENT_BG,
+                                        fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_sint.pack(anchor="w", padx=8)
 
         cols_sint = ("patron", "principal", "secundario", "descripcion", "fragmento")
@@ -83,22 +91,22 @@ class PanelLinguistica:
         self._ling_sint_resultados: list = []
 
         # ── Pestaña 2: Relaciones SVO ─────────────────────────────────────────
-        frm_svo = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_svo = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_svo, text="  🔗 Relaciones SVO  ")
 
-        ctrl_svo = tk.Frame(frm_svo, bg=CONTENT_BG)
+        ctrl_svo = tk.Frame(frm_svo, bg=TEMA.CONTENT_BG)
         ctrl_svo.pack(fill="x", padx=8, pady=(8, 4))
         self._var_ling_solo_ent = tk.BooleanVar(value=True)
         ttk.Checkbutton(ctrl_svo, text="Solo entidades nombradas como sujeto/objeto",
                         variable=self._var_ling_solo_ent).pack(side="left")
-        tk.Label(ctrl_svo, text="  Confianza mínima:", bg=CONTENT_BG, fg=GRIS2,
+        tk.Label(ctrl_svo, text="  Confianza mínima:", bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2,
                  font=("Segoe UI", 9)).pack(side="left", padx=(12, 4))
         self._var_ling_conf = tk.DoubleVar(value=0.5)
         ttk.Spinbox(ctrl_svo, from_=0.1, to=1.0, increment=0.1,
                     textvariable=self._var_ling_conf, width=5,
                     format="%.1f").pack(side="left")
 
-        bf_svo = tk.Frame(frm_svo, bg=CONTENT_BG)
+        bf_svo = tk.Frame(frm_svo, bg=TEMA.CONTENT_BG)
         bf_svo.pack(fill="x", padx=8, pady=(0, 6))
         self._btn_ling_svo = ttk.Button(bf_svo, text="▶  Extraer relaciones",
                                          style="P.TButton",
@@ -108,8 +116,8 @@ class PanelLinguistica:
                    command=self._ling_svo_csv).pack(side="left", padx=(0, 8))
         ttk.Button(bf_svo, text="📊  Agrupar por verbo", style="S.TButton",
                    command=self._ling_svo_agrupar).pack(side="left", padx=(0, 8))
-        self._lbl_ling_svo = tk.Label(frm_svo, text="", bg=CONTENT_BG,
-                                       fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_svo = tk.Label(frm_svo, text="", bg=TEMA.CONTENT_BG,
+                                       fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_svo.pack(anchor="w", padx=8)
 
         cols_svo = ("sujeto", "suj_tipo", "relacion", "objeto", "obj_tipo",
@@ -130,17 +138,17 @@ class PanelLinguistica:
         self._ling_svo_resultados: list = []
 
         # ── Pestaña 3: Correferencia ──────────────────────────────────────────
-        frm_coref = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_coref = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_coref, text="  🔁 Correferencia  ")
 
-        ctrl_coref = tk.Frame(frm_coref, bg=CONTENT_BG)
+        ctrl_coref = tk.Frame(frm_coref, bg=TEMA.CONTENT_BG)
         ctrl_coref.pack(fill="x", padx=8, pady=(8, 4))
         tk.Label(ctrl_coref, text="Entidad a rastrear (vacío = todas):",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9)).pack(side="left", padx=(0, 6))
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9)).pack(side="left", padx=(0, 6))
         self._ent_coref = ttk.Entry(ctrl_coref, width=24)
         self._ent_coref.pack(side="left", padx=(0, 12))
 
-        bf_coref = tk.Frame(frm_coref, bg=CONTENT_BG)
+        bf_coref = tk.Frame(frm_coref, bg=TEMA.CONTENT_BG)
         bf_coref.pack(fill="x", padx=8, pady=(0, 6))
         self._btn_ling_coref = ttk.Button(bf_coref, text="▶  Resolver correferencias",
                                            style="P.TButton",
@@ -148,29 +156,29 @@ class PanelLinguistica:
         self._btn_ling_coref.pack(side="left", padx=(0, 8))
         ttk.Button(bf_coref, text="📊  Estadísticas corpus", style="S.TButton",
                    command=self._ling_coref_stats).pack(side="left", padx=(0, 8))
-        self._lbl_ling_coref = tk.Label(frm_coref, text="", bg=CONTENT_BG,
-                                         fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_coref = tk.Label(frm_coref, text="", bg=TEMA.CONTENT_BG,
+                                         fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_coref.pack(anchor="w", padx=8)
 
         # Split: lista de cadenas izquierda, menciones derecha
-        split_coref = tk.Frame(frm_coref, bg=CONTENT_BG)
+        split_coref = tk.Frame(frm_coref, bg=TEMA.CONTENT_BG)
         split_coref.pack(fill="both", expand=True, padx=6)
 
-        izq_coref = tk.Frame(split_coref, bg=CONTENT_BG, width=220)
+        izq_coref = tk.Frame(split_coref, bg=TEMA.CONTENT_BG, width=220)
         izq_coref.pack(side="left", fill="y", padx=(0, 6))
         izq_coref.pack_propagate(False)
-        tk.Label(izq_coref, text="Cadenas referenciales", bg=CONTENT_BG,
-                 fg=GRIS2, font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        tk.Label(izq_coref, text="Cadenas referenciales", bg=TEMA.CONTENT_BG,
+                 fg=TEMA.GRIS2, font=("Segoe UI", 8, "bold")).pack(anchor="w")
         self._lb_coref = tk.Listbox(
-            izq_coref, bg=CARD_BG, fg=TXT_SEC, selectbackground=AB_SEL,
+            izq_coref, bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, selectbackground=TEMA.AB_SEL,
             font=("Segoe UI", 9), relief="flat", activestyle="none")
         self._lb_coref.pack(fill="both", expand=True)
         self._lb_coref.bind("<<ListboxSelect>>", self._ling_coref_mostrar_cadena)
 
-        der_coref = tk.Frame(split_coref, bg=CONTENT_BG)
+        der_coref = tk.Frame(split_coref, bg=TEMA.CONTENT_BG)
         der_coref.pack(side="left", fill="both", expand=True)
-        tk.Label(der_coref, text="Menciones", bg=CONTENT_BG,
-                 fg=GRIS2, font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        tk.Label(der_coref, text="Menciones", bg=TEMA.CONTENT_BG,
+                 fg=TEMA.GRIS2, font=("Segoe UI", 8, "bold")).pack(anchor="w")
         cols_coref = ("texto", "tipo", "oracion")
         self._tv_coref_men = ttk.Treeview(der_coref, columns=cols_coref,
                                            show="headings", height=18)
@@ -186,10 +194,10 @@ class PanelLinguistica:
         self._ling_coref_cadenas: list = []
 
         # ── Pestaña 4: Morfología histórica ──────────────────────────────────
-        frm_morf = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_morf = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_morf, text="  📜 Morfología histórica  ")
 
-        bf_morf = tk.Frame(frm_morf, bg=CONTENT_BG)
+        bf_morf = tk.Frame(frm_morf, bg=TEMA.CONTENT_BG)
         bf_morf.pack(fill="x", padx=8, pady=(8, 4))
         self._btn_ling_morf = ttk.Button(bf_morf, text="▶  Analizar corpus",
                                           style="P.TButton",
@@ -204,16 +212,16 @@ class PanelLinguistica:
         self._var_morf_normalizar = tk.BooleanVar(value=True)
         ttk.Checkbutton(bf_morf, text="Normalizar grafías históricas antes de analizar",
                         variable=self._var_morf_normalizar).pack(side="left", padx=(8, 0))
-        self._lbl_ling_morf = tk.Label(frm_morf, text="", bg=CONTENT_BG,
-                                        fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_morf = tk.Label(frm_morf, text="", bg=TEMA.CONTENT_BG,
+                                        fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_morf.pack(anchor="w", padx=8)
 
         # Resumen del corpus
-        frm_morf_stats = tk.Frame(frm_morf, bg=CONTENT_BG)
+        frm_morf_stats = tk.Frame(frm_morf, bg=TEMA.CONTENT_BG)
         frm_morf_stats.pack(fill="x", padx=8, pady=(0, 4))
         self._lbl_morf_resumen = tk.Label(frm_morf_stats,
                                            text="Analiza el corpus para ver la densidad de formas históricas.",
-                                           bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9))
+                                           bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9))
         self._lbl_morf_resumen.pack(anchor="w")
 
         cols_morf = ("doc", "tokens", "arcaismos", "score", "marcadores", "top_formas")
@@ -228,7 +236,7 @@ class PanelLinguistica:
         # Color por densidad
         self._tv_ling_morf.tag_configure("alta",  background="#15251F", foreground="#62C6B5")
         self._tv_ling_morf.tag_configure("media", background="#2A2116", foreground="#E6A64C")
-        self._tv_ling_morf.tag_configure("baja",  background=CONTENT_BG, foreground=TXT_PRI)
+        self._tv_ling_morf.tag_configure("baja",  background=TEMA.CONTENT_BG, foreground=TEMA.TXT_PRI)
         sv_m = ttk.Scrollbar(frm_morf, orient="vertical",
                               command=self._tv_ling_morf.yview)
         self._tv_ling_morf.configure(yscrollcommand=sv_m.set)
@@ -237,10 +245,10 @@ class PanelLinguistica:
         self._ling_morf_datos: list = []
 
         # ── Pestaña 5: Árbol de dependencias ─────────────────────────────────
-        frm_dep = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_dep = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_dep, text="  🌳 Árbol dep.  ")
 
-        bf_dep = tk.Frame(frm_dep, bg=CONTENT_BG)
+        bf_dep = tk.Frame(frm_dep, bg=TEMA.CONTENT_BG)
         bf_dep.pack(fill="x", padx=8, pady=(8, 4))
         self._btn_ling_dep = ttk.Button(bf_dep, text="▶  Analizar oración",
                                          style="P.TButton",
@@ -248,37 +256,37 @@ class PanelLinguistica:
         self._btn_ling_dep.pack(side="left", padx=(0, 8))
         ttk.Button(bf_dep, text="💾  Exportar CSV", style="S.TButton",
                    command=self._ling_dep_csv).pack(side="left", padx=(0, 8))
-        tk.Label(bf_dep, text="Máx. oraciones:", bg=CONTENT_BG,
-                 fg=TXT_SEC, font=("Segoe UI", 9)).pack(side="left", padx=(12, 4))
+        tk.Label(bf_dep, text="Máx. oraciones:", bg=TEMA.CONTENT_BG,
+                 fg=TEMA.TXT_SEC, font=("Segoe UI", 9)).pack(side="left", padx=(12, 4))
         self._var_dep_max = tk.IntVar(value=20)
         ttk.Spinbox(bf_dep, from_=1, to=100, textvariable=self._var_dep_max,
                     width=5).pack(side="left")
-        self._lbl_ling_dep = tk.Label(frm_dep, text="", bg=CONTENT_BG,
-                                       fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_dep = tk.Label(frm_dep, text="", bg=TEMA.CONTENT_BG,
+                                       fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_dep.pack(anchor="w", padx=8)
 
         # Selector de artículo
-        sel_dep = tk.Frame(frm_dep, bg=CONTENT_BG)
+        sel_dep = tk.Frame(frm_dep, bg=TEMA.CONTENT_BG)
         sel_dep.pack(fill="x", padx=8, pady=(0, 4))
-        tk.Label(sel_dep, text="Artículo:", bg=CONTENT_BG, fg=TXT_SEC,
+        tk.Label(sel_dep, text="Artículo:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9)).pack(side="left")
         self._var_dep_art = tk.IntVar(value=0)
         self._spn_dep_art = ttk.Spinbox(sel_dep, from_=0, to=9999,
                                          textvariable=self._var_dep_art, width=6)
         self._spn_dep_art.pack(side="left", padx=4)
-        tk.Label(sel_dep, text="(índice en corpus)", bg=CONTENT_BG, fg=TXT_DIM,
+        tk.Label(sel_dep, text="(índice en corpus)", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 8)).pack(side="left")
 
         # Panel split: lista oraciones | detalle tokens
-        split_dep = tk.Frame(frm_dep, bg=CONTENT_BG)
+        split_dep = tk.Frame(frm_dep, bg=TEMA.CONTENT_BG)
         split_dep.pack(fill="both", expand=True, padx=6)
 
-        izq_dep = tk.Frame(split_dep, bg=CONTENT_BG)
+        izq_dep = tk.Frame(split_dep, bg=TEMA.CONTENT_BG)
         izq_dep.pack(side="left", fill="both", expand=False)
-        tk.Label(izq_dep, text="Oraciones", bg=CONTENT_BG,
-                 fg=GRIS2, font=("Segoe UI", 8, "bold")).pack(anchor="w")
-        self._lb_dep = tk.Listbox(izq_dep, bg=CARD_BG, fg=TXT_PRI,
-                                   selectbackground=AZ3, font=("Segoe UI", 9),
+        tk.Label(izq_dep, text="Oraciones", bg=TEMA.CONTENT_BG,
+                 fg=TEMA.GRIS2, font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        self._lb_dep = tk.Listbox(izq_dep, bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
+                                   selectbackground=TEMA.AZ3, font=("Segoe UI", 9),
                                    width=42, height=18, relief="flat")
         sv_dep_lb = ttk.Scrollbar(izq_dep, orient="vertical",
                                    command=self._lb_dep.yview)
@@ -287,10 +295,10 @@ class PanelLinguistica:
         self._lb_dep.pack(fill="y", expand=True)
         self._lb_dep.bind("<<ListboxSelect>>", self._ling_dep_mostrar_tokens)
 
-        der_dep = tk.Frame(split_dep, bg=CONTENT_BG)
+        der_dep = tk.Frame(split_dep, bg=TEMA.CONTENT_BG)
         der_dep.pack(side="left", fill="both", expand=True, padx=(8, 0))
-        tk.Label(der_dep, text="Tokens y dependencias", bg=CONTENT_BG,
-                 fg=GRIS2, font=("Segoe UI", 8, "bold")).pack(anchor="w")
+        tk.Label(der_dep, text="Tokens y dependencias", bg=TEMA.CONTENT_BG,
+                 fg=TEMA.GRIS2, font=("Segoe UI", 8, "bold")).pack(anchor="w")
         cols_dep = ("texto", "lemma", "pos", "dep_es", "cabeza")
         self._tv_dep_tok = ttk.Treeview(der_dep, columns=cols_dep,
                                          show="headings", height=18)
@@ -311,10 +319,10 @@ class PanelLinguistica:
         self._ling_dep_datos: list = []
 
         # ── Pestaña 6: Emociones y subjetividad ──────────────────────────────
-        frm_emo = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_emo = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_emo, text="  💭 Emociones  ")
 
-        bf_emo = tk.Frame(frm_emo, bg=CONTENT_BG)
+        bf_emo = tk.Frame(frm_emo, bg=TEMA.CONTENT_BG)
         bf_emo.pack(fill="x", padx=8, pady=(8, 4))
         self._btn_ling_emo = ttk.Button(bf_emo, text="▶  Analizar emociones",
                                          style="P.TButton",
@@ -324,15 +332,15 @@ class PanelLinguistica:
                    command=self._ling_emo_graficar).pack(side="left", padx=(0, 8))
         ttk.Button(bf_emo, text="💾  Exportar CSV", style="S.TButton",
                    command=self._ling_emo_csv).pack(side="left", padx=(0, 8))
-        self._lbl_ling_emo = tk.Label(frm_emo, text="", bg=CONTENT_BG,
-                                       fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_emo = tk.Label(frm_emo, text="", bg=TEMA.CONTENT_BG,
+                                       fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_emo.pack(anchor="w", padx=8)
 
         # Resumen global
-        frm_emo_resumen = tk.Frame(frm_emo, bg=CONTENT_BG)
+        frm_emo_resumen = tk.Frame(frm_emo, bg=TEMA.CONTENT_BG)
         frm_emo_resumen.pack(fill="x", padx=8, pady=(0, 4))
         self._lbl_emo_resumen = tk.Label(frm_emo_resumen, text="",
-                                          bg=CONTENT_BG, fg=TXT_SEC,
+                                          bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                                           font=("Segoe UI", 9), wraplength=700,
                                           justify="left")
         self._lbl_emo_resumen.pack(anchor="w")
@@ -357,10 +365,10 @@ class PanelLinguistica:
         self._ling_emo_datos: list = []
 
         # ── Pestaña 7: Encuadre (framing) ─────────────────────────────────────
-        frm_frame = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_frame = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_frame, text="  🖼 Encuadre  ")
 
-        bf_frame = tk.Frame(frm_frame, bg=CONTENT_BG)
+        bf_frame = tk.Frame(frm_frame, bg=TEMA.CONTENT_BG)
         bf_frame.pack(fill="x", padx=8, pady=(8, 4))
         self._btn_ling_frame = ttk.Button(
             bf_frame, text="▶  Analizar encuadres del corpus",
@@ -370,17 +378,17 @@ class PanelLinguistica:
                    command=self._ling_frames_graficar).pack(side="left", padx=(0, 8))
         ttk.Button(bf_frame, text="💾  Exportar CSV", style="S.TButton",
                    command=self._ling_frames_csv).pack(side="left", padx=(0, 8))
-        self._lbl_ling_frame = tk.Label(frm_frame, text="", bg=CONTENT_BG,
-                                         fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_frame = tk.Label(frm_frame, text="", bg=TEMA.CONTENT_BG,
+                                         fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_frame.pack(anchor="w", padx=8)
 
         tk.Label(frm_frame,
                  text="Encuadre periodístico (Media Frames Corpus adaptado a prensa "
                       "ilustrada 1930s): desde qué ÁNGULO cubre cada artículo su tema.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9),
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9),
                  wraplength=720, justify="left").pack(anchor="w", padx=8, pady=(0, 4))
         self._lbl_frame_resumen = tk.Label(frm_frame, text="",
-                                            bg=CONTENT_BG, fg=TXT_SEC,
+                                            bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                                             font=("Segoe UI", 9), wraplength=720,
                                             justify="left")
         self._lbl_frame_resumen.pack(anchor="w", padx=8, pady=(0, 4))
@@ -405,10 +413,10 @@ class PanelLinguistica:
         self._ling_frame_corpus: dict = {}
 
         # ── Pestaña 8: Polaridad discriminante ────────────────────────────────
-        frm_pol = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_pol = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_pol, text="  ⚖ Polaridad  ")
 
-        bf_pol = tk.Frame(frm_pol, bg=CONTENT_BG)
+        bf_pol = tk.Frame(frm_pol, bg=TEMA.CONTENT_BG)
         bf_pol.pack(fill="x", padx=8, pady=(8, 4))
         self._btn_ling_pol = ttk.Button(
             bf_pol, text="▶  Analizar polaridad del corpus",
@@ -416,31 +424,31 @@ class PanelLinguistica:
         self._btn_ling_pol.pack(side="left", padx=(0, 8))
         ttk.Button(bf_pol, text="💾  Exportar CSV", style="S.TButton",
                    command=self._ling_pol_csv).pack(side="left", padx=(0, 8))
-        self._lbl_ling_pol = tk.Label(frm_pol, text="", bg=CONTENT_BG,
-                                      fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_pol = tk.Label(frm_pol, text="", bg=TEMA.CONTENT_BG,
+                                      fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_pol.pack(anchor="w", padx=8)
 
         tk.Label(frm_pol,
                  text="Polaridad pos/neg/neutro discriminante (complemento al análisis "
                       "de 8 emociones, que sesga a «confianza»).",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9),
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9),
                  wraplength=720, justify="left").pack(anchor="w", padx=8, pady=(0, 4))
 
         # Polaridad hacia una entidad concreta
-        pol_ent = tk.Frame(frm_pol, bg=CONTENT_BG)
+        pol_ent = tk.Frame(frm_pol, bg=TEMA.CONTENT_BG)
         pol_ent.pack(fill="x", padx=8, pady=(0, 4))
         tk.Label(pol_ent, text="Polaridad hacia entidad (formas separadas por «;»):",
-                 bg=CONTENT_BG, fg=TXT_SEC, font=("Segoe UI", 9)).pack(side="left")
+                 bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC, font=("Segoe UI", 9)).pack(side="left")
         self._ent_pol_entidad = ttk.Entry(pol_ent, width=30)
         self._ent_pol_entidad.pack(side="left", padx=(6, 6))
         ttk.Button(pol_ent, text="🎯  Calcular", style="S.TButton",
                    command=self._ling_pol_hacia).pack(side="left")
-        self._lbl_pol_hacia = tk.Label(pol_ent, text="", bg=CONTENT_BG,
+        self._lbl_pol_hacia = tk.Label(pol_ent, text="", bg=TEMA.CONTENT_BG,
                                        fg="#6CA8E8", font=("Segoe UI", 9, "bold"))
         self._lbl_pol_hacia.pack(side="left", padx=(10, 0))
 
         self._lbl_pol_resumen = tk.Label(frm_pol, text="",
-                                         bg=CONTENT_BG, fg=TXT_SEC,
+                                         bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                                          font=("Segoe UI", 9), wraplength=720,
                                          justify="left")
         self._lbl_pol_resumen.pack(anchor="w", padx=8, pady=(0, 4))
@@ -455,7 +463,7 @@ class PanelLinguistica:
             self._tv_ling_pol.column(cid, width=w, anchor="w")
         self._tv_ling_pol.tag_configure("positivo", foreground="#62C6B5")
         self._tv_ling_pol.tag_configure("negativo", foreground="#D96B6B")
-        self._tv_ling_pol.tag_configure("neutro",   foreground=TXT_DIM)
+        self._tv_ling_pol.tag_configure("neutro",   foreground=TEMA.TXT_DIM)
         sv_p = ttk.Scrollbar(frm_pol, orient="vertical",
                              command=self._tv_ling_pol.yview)
         self._tv_ling_pol.configure(yscrollcommand=sv_p.set)
@@ -464,10 +472,10 @@ class PanelLinguistica:
         self._ling_pol_datos: list = []
 
         # ── Pestaña 9: Revisión NER (human-in-the-loop) ───────────────────────
-        frm_rev = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_rev = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_rev, text="  🔍 Revisión NER  ")
 
-        bf_rev = tk.Frame(frm_rev, bg=CONTENT_BG)
+        bf_rev = tk.Frame(frm_rev, bg=TEMA.CONTENT_BG)
         bf_rev.pack(fill="x", padx=8, pady=(8, 4))
         self._btn_ling_rev = ttk.Button(
             bf_rev, text="▶  Construir cola de revisión",
@@ -479,14 +487,14 @@ class PanelLinguistica:
                    command=lambda: self._ling_rev_decidir("descartada")).pack(side="left", padx=(0, 4))
         ttk.Button(bf_rev, text="✎  Renombrar…", style="S.TButton",
                    command=self._ling_rev_renombrar).pack(side="left", padx=(0, 8))
-        self._lbl_ling_rev = tk.Label(frm_rev, text="", bg=CONTENT_BG,
-                                      fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_rev = tk.Label(frm_rev, text="", bg=TEMA.CONTENT_BG,
+                                      fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_rev.pack(anchor="w", padx=8)
 
         tk.Label(frm_rev,
                  text="Entidades dudosas (1 artículo = rojo, 2 = ámbar) priorizadas para "
                       "validar a mano. Las decisiones se guardan y se re-aplican al índice.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9),
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9),
                  wraplength=720, justify="left").pack(anchor="w", padx=8, pady=(0, 4))
 
         cols_rev = ("nombre", "categoria", "n_articulos", "nivel", "etiqueta")
@@ -506,39 +514,39 @@ class PanelLinguistica:
         self._tv_ling_rev.pack(fill="both", expand=True, padx=6, pady=(0, 4))
 
         # ── Pestaña 10: Validación (Kappa) ────────────────────────────────────
-        frm_val = tk.Frame(nb_ling, bg=CONTENT_BG)
+        frm_val = tk.Frame(nb_ling, bg=TEMA.CONTENT_BG)
         nb_ling.add(frm_val, text="  ✔ Validación  ")
 
         tk.Label(frm_val, text="Validación metodológica (fiabilidad inter-codificador)",
-                 bg=CONTENT_BG, fg="#E8E5DF", font=("Segoe UI", 11, "bold")).pack(
+                 bg=TEMA.CONTENT_BG, fg="#E8E5DF", font=("Segoe UI", 11, "bold")).pack(
                      anchor="w", padx=8, pady=(8, 2))
         tk.Label(frm_val,
                  text="1) Exporta una muestra aleatoria (semilla fija → reproducible) con la "
                       "clasificación automática y columnas vacías para codificar a mano.\n"
                       "2) Tras codificar el CSV, calcula el % de acuerdo y el Kappa de Cohen.",
-                 bg=CONTENT_BG, fg=GRIS2, font=("Segoe UI", 9),
+                 bg=TEMA.CONTENT_BG, fg=TEMA.GRIS2, font=("Segoe UI", 9),
                  justify="left").pack(anchor="w", padx=8, pady=(0, 8))
 
-        val_cfg = tk.Frame(frm_val, bg=CONTENT_BG)
+        val_cfg = tk.Frame(frm_val, bg=TEMA.CONTENT_BG)
         val_cfg.pack(fill="x", padx=8, pady=(0, 4))
-        tk.Label(val_cfg, text="Dimensión:", bg=CONTENT_BG, fg=TXT_SEC,
+        tk.Label(val_cfg, text="Dimensión:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9)).pack(side="left")
         self._var_val_dim = tk.StringVar(value="polaridad")
         ttk.Combobox(val_cfg, textvariable=self._var_val_dim, width=12,
                      state="readonly",
                      values=["polaridad", "frame", "emocion"]).pack(side="left", padx=(4, 12))
-        tk.Label(val_cfg, text="Tamaño muestra:", bg=CONTENT_BG, fg=TXT_SEC,
+        tk.Label(val_cfg, text="Tamaño muestra:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9)).pack(side="left")
         self._var_val_n = tk.IntVar(value=30)
         ttk.Spinbox(val_cfg, from_=10, to=300, textvariable=self._var_val_n,
                     width=6).pack(side="left", padx=(4, 12))
-        tk.Label(val_cfg, text="Semilla:", bg=CONTENT_BG, fg=TXT_SEC,
+        tk.Label(val_cfg, text="Semilla:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9)).pack(side="left")
         self._var_val_semilla = tk.IntVar(value=42)
         ttk.Spinbox(val_cfg, from_=0, to=9999, textvariable=self._var_val_semilla,
                     width=6).pack(side="left", padx=(4, 0))
 
-        bf_val = tk.Frame(frm_val, bg=CONTENT_BG)
+        bf_val = tk.Frame(frm_val, bg=TEMA.CONTENT_BG)
         bf_val.pack(fill="x", padx=8, pady=(6, 4))
         ttk.Button(bf_val, text="💾  Exportar muestra para codificar…",
                    style="P.TButton",
@@ -546,13 +554,13 @@ class PanelLinguistica:
         ttk.Button(bf_val, text="📐  Calcular concordancia (Kappa)…",
                    style="S.TButton",
                    command=self._ling_val_concordancia).pack(side="left", padx=(0, 8))
-        self._lbl_ling_val = tk.Label(frm_val, text="", bg=CONTENT_BG,
-                                      fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._lbl_ling_val = tk.Label(frm_val, text="", bg=TEMA.CONTENT_BG,
+                                      fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._lbl_ling_val.pack(anchor="w", padx=8, pady=(4, 0))
 
         self._txt_val_res = scrolledtext.ScrolledText(
             frm_val, height=14, font=("Consolas", 9),
-            bg=CARD_BG, fg=TXT_PRI, state="disabled", wrap="word")
+            bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, state="disabled", wrap="word")
         self._txt_val_res.pack(fill="both", expand=True, padx=8, pady=(8, 4))
 
         # ── Log compartido ────────────────────────────────────────────────────
@@ -830,40 +838,40 @@ class PanelLinguistica:
             f"📜 Detalle morfológico — Doc {d['doc_idx']+1}", ancho=560, alto=480)
 
         # Resumen numérico
-        info = tk.Frame(content, bg=CONTENT_BG, pady=10)
+        info = tk.Frame(content, bg=TEMA.CONTENT_BG, pady=10)
         info.pack(fill="x", padx=16)
         for lbl, val in [("Tokens:", d["n_tokens"]),
                          ("Arcaísmos:", d["n_arcaismos"]),
                          ("Score histórico:", f"{d['score']:.4f}")]:
-            row = tk.Frame(info, bg=CONTENT_BG); row.pack(fill="x", pady=1)
-            tk.Label(row, text=lbl, bg=CONTENT_BG, fg=TXT_SEC,
+            row = tk.Frame(info, bg=TEMA.CONTENT_BG); row.pack(fill="x", pady=1)
+            tk.Label(row, text=lbl, bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                      font=("Segoe UI", 9), width=20, anchor="w").pack(side="left")
-            tk.Label(row, text=str(val), bg=CONTENT_BG, fg=TXT_PRI,
+            tk.Label(row, text=str(val), bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                      font=("Segoe UI", 9, "bold")).pack(side="left")
 
-        tk.Frame(content, bg=CARD_BOR, height=1).pack(fill="x", padx=8)
+        tk.Frame(content, bg=TEMA.CARD_BOR, height=1).pack(fill="x", padx=8)
 
         # Marcadores morfosintácticos
         tk.Label(content, text="Marcadores morfosintácticos detectados",
-                 bg=CONTENT_BG, fg=AZ4, font=("Segoe UI", 9, "bold")).pack(
+                 bg=TEMA.CONTENT_BG, fg=TEMA.AZ4, font=("Segoe UI", 9, "bold")).pack(
                  anchor="w", padx=16, pady=(8, 2))
         marc = d.get("marcadores", {})
         if marc:
             for tipo, n in marc.items():
-                row = tk.Frame(content, bg=CONTENT_BG); row.pack(fill="x", padx=24, pady=1)
-                tk.Label(row, text=f"• {tipo}", bg=CONTENT_BG, fg=VERDE,
+                row = tk.Frame(content, bg=TEMA.CONTENT_BG); row.pack(fill="x", padx=24, pady=1)
+                tk.Label(row, text=f"• {tipo}", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                          font=("Segoe UI", 9), width=30, anchor="w").pack(side="left")
-                tk.Label(row, text=f"{n} ocurrencias", bg=CONTENT_BG, fg=TXT_SEC,
+                tk.Label(row, text=f"{n} ocurrencias", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                          font=("Segoe UI", 9)).pack(side="left")
         else:
-            tk.Label(content, text="  (ninguno)", bg=CONTENT_BG, fg=TXT_DIM,
+            tk.Label(content, text="  (ninguno)", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                      font=("Segoe UI", 9, "italic")).pack(anchor="w", padx=24)
 
-        tk.Frame(content, bg=CARD_BOR, height=1).pack(fill="x", padx=8, pady=(6, 0))
+        tk.Frame(content, bg=TEMA.CARD_BOR, height=1).pack(fill="x", padx=8, pady=(6, 0))
 
         # Ejemplos
         tk.Label(content, text="Ejemplos de formas históricas",
-                 bg=CONTENT_BG, fg=AZ4, font=("Segoe UI", 9, "bold")).pack(
+                 bg=TEMA.CONTENT_BG, fg=TEMA.AZ4, font=("Segoe UI", 9, "bold")).pack(
                  anchor="w", padx=16, pady=(8, 2))
         ejs = d.get("ejemplos", [])
         if ejs:
@@ -875,7 +883,7 @@ class PanelLinguistica:
                 tv_ej.insert("", "end", values=(ej["token"], ej["tipo"]))
             tv_ej.pack(fill="both", expand=True, padx=16, pady=(0, 12))
         else:
-            tk.Label(content, text="  (ninguno)", bg=CONTENT_BG, fg=TXT_DIM,
+            tk.Label(content, text="  (ninguno)", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                      font=("Segoe UI", 9, "italic")).pack(anchor="w", padx=24)
 
     def _ling_morf_glosario(self):
@@ -885,7 +893,7 @@ class PanelLinguistica:
             f"📖 Glosario de arcaísmos ({len(glos)} entradas)", ancho=500, alto=600)
 
         # ── Pie con botón exportar ────────────────────────────────────────────
-        pie = tk.Frame(content, bg=CONTENT_BG); pie.pack(side="bottom", fill="x", padx=6, pady=(4, 6))
+        pie = tk.Frame(content, bg=TEMA.CONTENT_BG); pie.pack(side="bottom", fill="x", padx=6, pady=(4, 6))
 
         def _exportar_glosario():
             import csv
@@ -1288,17 +1296,10 @@ class PanelLinguistica:
                             r.get("n_neg", 0), r.get("intensidad", 0)])
         messagebox.showinfo("Exportado", f"CSV guardado en:\n{ruta}")
 
-    def _ling_rev_con(self):
-        """Conexión SQLite para la cola de revisión (la del proyecto, o una junto a él)."""
-        import sqlite3
-        from pathlib import Path
-        ruta = getattr(ST, "ruta_db", "") or ""
-        if not ruta:
-            base = getattr(ST, "out_dir", None) or Path.cwd()
-            ruta = str(Path(base) / "revision_ner.db")
-        con = sqlite3.connect(ruta, timeout=30)
-        con.row_factory = sqlite3.Row
-        return con
+    def _ling_rev_ruta(self) -> str:
+        """Base de la cola de revisión (la del proyecto, o una junto a la salida)."""
+        from core.revision_engine import ruta_db_revision
+        return ruta_db_revision(getattr(ST, "ruta_db", "") or "", getattr(ST, "out_dir", None))
 
     def _ling_rev_construir(self):
         indice = getattr(ST, "indice_ner_global", None)
@@ -1307,12 +1308,8 @@ class PanelLinguistica:
                 "Ejecuta primero el NER del corpus (panel Entidades).")
             return
         try:
-            from core import revision_engine
-            con = self._ling_rev_con()
-            cola = revision_engine.construir_cola(indice)
-            revision_engine.guardar_cola(con, cola)
-            pend = revision_engine.pendientes(con)
-            con.close()
+            from core.revision_engine import construir_y_guardar
+            pend = construir_y_guardar(self._ling_rev_ruta(), indice)
         except Exception as ex:
             messagebox.showerror("Error revisión", str(ex))
             return
@@ -1329,27 +1326,17 @@ class PanelLinguistica:
         vals = self._tv_ling_rev.item(sel[0], "values")
         return vals[0], vals[1]  # nombre, categoria
 
-    def _ling_rev_aplicar_al_indice(self, con):
-        """Re-aplica TODAS las decisiones tomadas al índice NER en memoria
-        (descarta lo rechazado, fusiona renombres). Mantiene el índice limpio
-        para exportación y para que la cola no vuelva a mostrar lo ya resuelto."""
-        from core import revision_engine
-        decisiones = revision_engine.cargar_decisiones(con)
-        revision_engine.aplicar_revisiones(
-            getattr(ST, "indice_ner_global", {}) or {}, decisiones)
-
     def _ling_rev_decidir(self, decision):
         s = self._ling_rev_sel()
         if not s:
             return
         nombre, categoria = s
         try:
-            from core import revision_engine
-            con = self._ling_rev_con()
-            revision_engine.decidir(con, nombre, categoria, decision)
-            self._ling_rev_aplicar_al_indice(con)
-            pend = revision_engine.pendientes(con)
-            con.close()
+            # Registra la decisión y la re-aplica al índice NER en memoria
+            # (descarta lo rechazado, fusiona renombres): core.revision_engine.
+            from core.revision_engine import decidir_y_aplicar
+            pend = decidir_y_aplicar(self._ling_rev_ruta(), nombre, categoria, decision,
+                                     getattr(ST, "indice_ner_global", None))
         except Exception as ex:
             messagebox.showerror("Error revisión", str(ex))
             return
@@ -1369,13 +1356,9 @@ class PanelLinguistica:
         if not nuevo or nuevo == nombre:
             return
         try:
-            from core import revision_engine
-            con = self._ling_rev_con()
-            revision_engine.decidir(con, nombre, categoria, "renombrada",
-                                    nombre_nuevo=nuevo)
-            self._ling_rev_aplicar_al_indice(con)
-            pend = revision_engine.pendientes(con)
-            con.close()
+            from core.revision_engine import decidir_y_aplicar
+            pend = decidir_y_aplicar(self._ling_rev_ruta(), nombre, categoria, "renombrada",
+                                     getattr(ST, "indice_ner_global", None), nombre_nuevo=nuevo)
         except Exception as ex:
             messagebox.showerror("Error revisión", str(ex))
             return

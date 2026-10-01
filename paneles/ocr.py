@@ -1,13 +1,27 @@
 """paneles/ocr.py — Métodos de BashkarApp extraídos de app.py.
 
 Mixin: BashkarApp hereda de PanelOCR. Los cuerpos son copia literal del
-original; los nombres globales (ST, colores, tk…) los inyecta
-paneles.sincronizar() desde app.py.
+original. Importa explícitamente lo que usa; los colores del tema se
+leen de gui_comun.TEMA porque cambian en caliente.
 """
 
 from __future__ import annotations
 
-# ruff: noqa: F821
+import gc
+import os
+import threading
+import tkinter as tk
+from pathlib import Path
+from tkinter import filedialog, messagebox, scrolledtext, ttk
+
+import pandas as pd
+
+from gui_comun import (
+    _MODELO_VISION_DEFECTO,
+    ST,
+    TEMA,
+    _resolver_api_key_modelo,
+)
 
 
 class PanelOCR:
@@ -20,10 +34,10 @@ class PanelOCR:
                           "Detecta texto digital o aplica OCR automáticamente página a página", "📄")
 
         self._build_ai_panel(f, "ocr")
-        pad = tk.Frame(f, bg=CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=16)
+        pad = tk.Frame(f, bg=TEMA.CONTENT_BG); pad.pack(fill="both", expand=True, padx=24, pady=16)
 
         # ── Tarjetas de métricas ──────────────────────────────────────────────
-        ind = tk.Frame(pad, bg=CONTENT_BG); ind.pack(fill="x", pady=(0, 16))
+        ind = tk.Frame(pad, bg=TEMA.CONTENT_BG); ind.pack(fill="x", pady=(0, 16))
         self._lbl_o_pdf = self._mk_ind(ind, "Archivos",      "—", 0)
         self._lbl_o_pag = self._mk_ind(ind, "Páginas",       "—", 1)
         self._lbl_o_pal = self._mk_ind(ind, "Palabras",      "—", 2)
@@ -31,31 +45,31 @@ class PanelOCR:
         self._lbl_o_rev = self._mk_ind(ind, "Para revisión", "—", 4)
 
         # ── Progreso ──────────────────────────────────────────────────────────
-        prog_card = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1,
-                             highlightbackground=CARD_BOR, highlightthickness=1)
+        prog_card = tk.Frame(pad, bg=TEMA.CARD_BG, relief="solid", bd=1,
+                             highlightbackground=TEMA.CARD_BOR, highlightthickness=1)
         prog_card.pack(fill="x", pady=(0, 12))
-        prog_inner = tk.Frame(prog_card, bg=CARD_BG, padx=16, pady=12)
+        prog_inner = tk.Frame(prog_card, bg=TEMA.CARD_BG, padx=16, pady=12)
         prog_inner.pack(fill="x")
         self._lbl_fase = tk.Label(prog_inner, text="Esperando…",
-                                   bg=CARD_BG, fg="#777F84",
+                                   bg=TEMA.CARD_BG, fg="#777F84",
                                    font=("Segoe UI", 9, "italic"))
         self._lbl_fase.pack(anchor="w")
         self._prog = ttk.Progressbar(prog_inner, mode="determinate", length=600)
         self._prog.pack(fill="x", pady=(6, 4))
-        self._lbl_pct = tk.Label(prog_inner, text="", bg=CARD_BG, fg="#777F84",
+        self._lbl_pct = tk.Label(prog_inner, text="", bg=TEMA.CARD_BG, fg="#777F84",
                                   font=("Courier", 8))
         self._lbl_pct.pack(anchor="w")
 
         # ── Selector de ruta de extracción ───────────────────────────────────
-        ruta_card = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1,
-                             highlightbackground=CARD_BOR, highlightthickness=1)
+        ruta_card = tk.Frame(pad, bg=TEMA.CARD_BG, relief="solid", bd=1,
+                             highlightbackground=TEMA.CARD_BOR, highlightthickness=1)
         ruta_card.pack(fill="x", pady=(0, 10))
-        ruta_inner = tk.Frame(ruta_card, bg=CARD_BG, padx=16, pady=10)
+        ruta_inner = tk.Frame(ruta_card, bg=TEMA.CARD_BG, padx=16, pady=10)
         ruta_inner.pack(fill="x")
 
-        ruta_hdr = tk.Frame(ruta_inner, bg=CARD_BG)
+        ruta_hdr = tk.Frame(ruta_inner, bg=TEMA.CARD_BG)
         ruta_hdr.pack(fill="x", pady=(0, 6))
-        tk.Label(ruta_hdr, text="Ruta de extracción", bg=CARD_BG, fg="#E8E5DF",
+        tk.Label(ruta_hdr, text="Ruta de extracción", bg=TEMA.CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9, "bold")).pack(side="left")
         self._mk_ayuda(ruta_hdr,
             "Elige cómo se obtiene el texto de cada página del PDF.\n\n"
@@ -89,28 +103,28 @@ class PanelOCR:
             ("ollama",    "Ruta 5 — Ollama Vision  (offline, requiere Ollama + modelo visión)"),
         ]
         for val, etiq in rutas:
-            r = tk.Frame(ruta_inner, bg=CARD_BG)
+            r = tk.Frame(ruta_inner, bg=TEMA.CARD_BG)
             r.pack(fill="x", pady=1)
             ttk.Radiobutton(r, text=etiq, variable=self._var_ruta_ocr,
                             value=val).pack(side="left")
 
         # ── Sub-panel Ruta 2: selector proveedor + modelo ─────────────────────
         from core.zone_labeler import VISION_PROVEEDORES
-        self._ocr_vision_frame = tk.Frame(ruta_inner, bg=CARD_BG)
+        self._ocr_vision_frame = tk.Frame(ruta_inner, bg=TEMA.CARD_BG)
         self._ocr_vision_frame.pack(fill="x", pady=(2, 0), padx=(24, 0))
 
         self._ocr_vision_prov  = tk.StringVar(value="claude")
         self._ocr_vision_model = tk.StringVar(value="claude-sonnet-4-6")
 
         tk.Label(self._ocr_vision_frame, text="Proveedor:",
-                 bg=CARD_BG, fg=TXT_SEC, font=("Segoe UI", 8)).pack(side="left")
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, font=("Segoe UI", 8)).pack(side="left")
         _cb_ocr_prov = ttk.Combobox(
             self._ocr_vision_frame, textvariable=self._ocr_vision_prov,
             values=list(VISION_PROVEEDORES.keys()), state="readonly", width=10)
         _cb_ocr_prov.pack(side="left", padx=(4, 8))
 
         tk.Label(self._ocr_vision_frame, text="Modelo:",
-                 bg=CARD_BG, fg=TXT_SEC, font=("Segoe UI", 8)).pack(side="left")
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, font=("Segoe UI", 8)).pack(side="left")
         self._cb_ocr_vision_model = ttk.Combobox(
             self._ocr_vision_frame, textvariable=self._ocr_vision_model,
             state="readonly", width=26)
@@ -126,8 +140,8 @@ class PanelOCR:
             "Todos usan el mismo prompt interno de transcripción OCR.\n"
             "Costo estimado con Claude Haiku: ~$0.002/página."
         )
-        _btn_q = tk.Label(self._ocr_vision_frame, text=" ?", bg=CARD_BG,
-                          fg=TXT_SEC, font=("Segoe UI", 8, "bold"), cursor="hand2")
+        _btn_q = tk.Label(self._ocr_vision_frame, text=" ?", bg=TEMA.CARD_BG,
+                          fg=TEMA.TXT_SEC, font=("Segoe UI", 8, "bold"), cursor="hand2")
         _btn_q.pack(side="left", padx=(6, 0))
         _btn_q.bind("<Enter>",    lambda e: self._mostrar_tooltip(_VISION_OCR_AYUDA, _btn_q))
         _btn_q.bind("<Leave>",    lambda e: self._ocultar_tooltip())
@@ -182,10 +196,10 @@ class PanelOCR:
                  bg="#0E1114", fg="#646D72", font=("Segoe UI", 8)).pack(side="left", padx=4)
 
         # ── Sub-opciones Kraken ────────────────────────────────────────────────
-        kraken_card = tk.Frame(ruta_inner, bg=CONTENT_BG, relief="solid", bd=1)
+        kraken_card = tk.Frame(ruta_inner, bg=TEMA.CONTENT_BG, relief="solid", bd=1)
         kraken_card.pack(fill="x", pady=(4, 0))
-        ki = tk.Frame(kraken_card, bg=CONTENT_BG, padx=10, pady=6); ki.pack(fill="x")
-        tk.Label(ki, text="Modelo Kraken:", bg=CONTENT_BG, fg="#E8E5DF",
+        ki = tk.Frame(kraken_card, bg=TEMA.CONTENT_BG, padx=10, pady=6); ki.pack(fill="x")
+        tk.Label(ki, text="Modelo Kraken:", bg=TEMA.CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         self._var_kraken_modelo = tk.StringVar(value="")
         tk.Entry(ki, textvariable=self._var_kraken_modelo, width=42,
@@ -196,19 +210,19 @@ class PanelOCR:
                                        style="S.TButton",
                                        command=self._ocr_descargar_catmus)
         self._btn_catmus.pack(side="left")
-        self._lbl_kraken_ok = tk.Label(ki, text="", bg=CONTENT_BG, fg=VERDE,
+        self._lbl_kraken_ok = tk.Label(ki, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
                                         font=("Segoe UI", 8))
         self._lbl_kraken_ok.pack(side="left", padx=6)
         # Verificar Kraken al construir el panel
         self.after(200, self._ocr_verificar_kraken)
 
         # ── Paralelismo Kraken ────────────────────────────────────────────────
-        kpar = tk.Frame(kraken_card, bg=CONTENT_BG, padx=10, pady=4)
+        kpar = tk.Frame(kraken_card, bg=TEMA.CONTENT_BG, padx=10, pady=4)
         kpar.pack(fill="x")
 
         # Fila 1: selector de workers + explicación
-        kpar_row1 = tk.Frame(kpar, bg=CONTENT_BG); kpar_row1.pack(fill="x")
-        tk.Label(kpar_row1, text="Páginas en paralelo:", bg=CONTENT_BG, fg="#E8E5DF",
+        kpar_row1 = tk.Frame(kpar, bg=TEMA.CONTENT_BG); kpar_row1.pack(fill="x")
+        tk.Label(kpar_row1, text="Páginas en paralelo:", bg=TEMA.CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         self._var_kraken_workers = tk.IntVar(value=3)
         spin = tk.Spinbox(kpar_row1, from_=1, to=12,
@@ -219,7 +233,7 @@ class PanelOCR:
         spin.bind("<FocusOut>", lambda e: self._ocr_actualizar_estimacion())
         spin.bind("<Return>",   lambda e: self._ocr_actualizar_estimacion())
 
-        tk.Label(kpar_row1, text="Timeout por página (seg):", bg=CONTENT_BG,
+        tk.Label(kpar_row1, text="Timeout por página (seg):", bg=TEMA.CONTENT_BG,
                  fg="#E8E5DF", font=("Segoe UI", 8)).pack(side="left", padx=(10, 0))
         self._var_kraken_timeout = tk.IntVar(value=600)
         spin_to = tk.Spinbox(kpar_row1, from_=60, to=3600,
@@ -253,12 +267,12 @@ class PanelOCR:
             "procesador no llega al 80% de uso durante el OCR.")
 
         # Fila 2: estimación de tiempo
-        kpar_row2 = tk.Frame(kpar, bg=CONTENT_BG); kpar_row2.pack(fill="x", pady=(4, 0))
-        tk.Label(kpar_row2, text="Tiempo estimado:", bg=CONTENT_BG, fg="#E8E5DF",
+        kpar_row2 = tk.Frame(kpar, bg=TEMA.CONTENT_BG); kpar_row2.pack(fill="x", pady=(4, 0))
+        tk.Label(kpar_row2, text="Tiempo estimado:", bg=TEMA.CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         self._lbl_kraken_est = tk.Label(kpar_row2,
                                          text="— (carga un proyecto para estimar)",
-                                         bg=CONTENT_BG, fg="#777F84",
+                                         bg=TEMA.CONTENT_BG, fg="#777F84",
                                          font=("Segoe UI", 8))
         self._lbl_kraken_est.pack(side="left", padx=(6, 10))
 
@@ -280,10 +294,10 @@ class PanelOCR:
         self.after(500, self._ocr_actualizar_estimacion)
 
         # ── Sub-opciones Ollama ────────────────────────────────────────────────
-        ollama_card = tk.Frame(ruta_inner, bg=CONTENT_BG, relief="solid", bd=1)
+        ollama_card = tk.Frame(ruta_inner, bg=TEMA.CONTENT_BG, relief="solid", bd=1)
         ollama_card.pack(fill="x", pady=(4, 0))
-        oi = tk.Frame(ollama_card, bg=CONTENT_BG, padx=10, pady=6); oi.pack(fill="x")
-        tk.Label(oi, text="Modelo Ollama:", bg=CONTENT_BG, fg="#E8E5DF",
+        oi = tk.Frame(ollama_card, bg=TEMA.CONTENT_BG, padx=10, pady=6); oi.pack(fill="x")
+        tk.Label(oi, text="Modelo Ollama:", bg=TEMA.CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         self._var_ollama_modelo = tk.StringVar(value="qwen3.6:latest")
         self._cmb_ollama = ttk.Combobox(
@@ -298,18 +312,18 @@ class PanelOCR:
         self._cmb_ollama.pack(side="left", padx=6)
         ttk.Button(oi, text="🔄 Detectar modelos", style="S.TButton",
                    command=self._ocr_detectar_ollama).pack(side="left", padx=(0, 6))
-        self._lbl_ollama_ok = tk.Label(oi, text="", bg=CONTENT_BG, fg="#777F84",
+        self._lbl_ollama_ok = tk.Label(oi, text="", bg=TEMA.CONTENT_BG, fg="#777F84",
                                         font=("Segoe UI", 8))
         self._lbl_ollama_ok.pack(side="left", padx=6)
         self.after(300, self._ocr_detectar_ollama)
 
         # ── Preprocesamiento de imagen ────────────────────────────────────────
-        pre_card = tk.Frame(ruta_inner, bg=CARD_BG, relief="solid", bd=1)
+        pre_card = tk.Frame(ruta_inner, bg=TEMA.CARD_BG, relief="solid", bd=1)
         pre_card.pack(fill="x", pady=(6, 0))
-        pi_f = tk.Frame(pre_card, bg=CARD_BG, padx=10, pady=5)
+        pi_f = tk.Frame(pre_card, bg=TEMA.CARD_BG, padx=10, pady=5)
         pi_f.pack(fill="x")
         tk.Label(pi_f, text="Preprocesamiento de imagen:",
-                 bg=CARD_BG, fg=TXT_PRI,
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         # Desactivados por defecto — activar solo si la imagen lo necesita
         self._var_pre_deskew    = tk.BooleanVar(value=False)
@@ -321,13 +335,13 @@ class PanelOCR:
             ttk.Checkbutton(pi_f, text=txt, variable=var).pack(side="left", padx=(8, 0))
 
         # Botón preview — muestra la imagen antes y después del preprocesamiento
-        tk.Label(pi_f, text="  ", bg=CARD_BG).pack(side="left")
-        _btn_prev = tk.Label(pi_f, text="🔍 Preview", bg=CARD_BG, fg=TXT_SEC,
+        tk.Label(pi_f, text="  ", bg=TEMA.CARD_BG).pack(side="left")
+        _btn_prev = tk.Label(pi_f, text="🔍 Preview", bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC,
                               font=("Segoe UI", 8), cursor="hand2")
         _btn_prev.pack(side="left", padx=(4, 0))
         _btn_prev.bind("<Button-1>", lambda e: self._ocr_preview_preprocesamiento())
-        _btn_prev.bind("<Enter>", lambda e: _btn_prev.config(fg=TXT_PRI))
-        _btn_prev.bind("<Leave>", lambda e: _btn_prev.config(fg=TXT_SEC))
+        _btn_prev.bind("<Enter>", lambda e: _btn_prev.config(fg=TEMA.TXT_PRI))
+        _btn_prev.bind("<Leave>", lambda e: _btn_prev.config(fg=TEMA.TXT_SEC))
 
         self._mk_ayuda(pi_f,
             "Preprocesamiento aplicado antes del OCR (desactivado por defecto):\n\n"
@@ -342,21 +356,21 @@ class PanelOCR:
 
         # ── Opciones avanzadas de salida ──────────────────────────────────────
         def _build_ocr_avanzado(f):
-            row1 = tk.Frame(f, bg=CONTENT_BG); row1.pack(fill="x", pady=2)
+            row1 = tk.Frame(f, bg=TEMA.CONTENT_BG); row1.pack(fill="x", pady=2)
             tk.Label(row1, text="Umbral confianza para revisión manual (%):",
-                     bg=CONTENT_BG, fg=TXT_SEC, font=("Segoe UI", 8)).pack(side="left")
+                     bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC, font=("Segoe UI", 8)).pack(side="left")
             self._var_ocr_umbral_rev = tk.IntVar(value=70)
             ttk.Spinbox(row1, from_=10, to=99, textvariable=self._var_ocr_umbral_rev,
                         width=5).pack(side="left", padx=6)
             tk.Label(row1, text="(páginas por debajo irán a revisión)",
-                     bg=CONTENT_BG, fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
+                     bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
 
-            row2 = tk.Frame(f, bg=CONTENT_BG); row2.pack(fill="x", pady=2)
+            row2 = tk.Frame(f, bg=TEMA.CONTENT_BG); row2.pack(fill="x", pady=2)
             self._var_ocr_guardar_json = tk.BooleanVar(value=False)
             ttk.Checkbutton(row2, text="Guardar metadata de confianza por página (.json)",
                             variable=self._var_ocr_guardar_json).pack(side="left")
 
-            row3 = tk.Frame(f, bg=CONTENT_BG); row3.pack(fill="x", pady=2)
+            row3 = tk.Frame(f, bg=TEMA.CONTENT_BG); row3.pack(fill="x", pady=2)
             self._var_ocr_combinar_paginas = tk.BooleanVar(value=True)
             ttk.Checkbutton(row3, text="Combinar páginas en un solo TXT por número",
                             variable=self._var_ocr_combinar_paginas).pack(side="left")
@@ -364,7 +378,7 @@ class PanelOCR:
         self._mk_avanzado(pad, "Opciones avanzadas de extracción", _build_ocr_avanzado)
 
         # ── Botones ───────────────────────────────────────────────────────────
-        bf = tk.Frame(pad, bg=CONTENT_BG); bf.pack(fill="x", pady=(0, 8))
+        bf = tk.Frame(pad, bg=TEMA.CONTENT_BG); bf.pack(fill="x", pady=(0, 8))
         self._btn_ocr = ttk.Button(bf, text="▶  Iniciar extracción",
                                     style="P.TButton", command=self._start_ocr)
         self._btn_ocr.pack(side="left", padx=(0, 12))
@@ -417,13 +431,13 @@ class PanelOCR:
             "  → lmstudio: servidor local (Developer → Start Server),\n"
             "    lista los modelos cargados automáticamente\n"
             "Umbral 60: solo páginas malas. Umbral 40: más agresivo.")
-        tk.Label(bf, text="Umbral IA:", bg=CONTENT_BG, fg="#E8E5DF",
+        tk.Label(bf, text="Umbral IA:", bg=TEMA.CONTENT_BG, fg="#E8E5DF",
                  font=("Segoe UI", 9)).pack(side="left", padx=(8, 2))
         self._var_ocr_umbral = tk.IntVar(value=60)
         tk.Spinbox(bf, from_=10, to=90, textvariable=self._var_ocr_umbral,
                    width=4, font=("Segoe UI", 9), relief="solid", bd=1).pack(side="left", padx=(0,12))
         tk.Label(bf, text="⚠  Confirma la configuración antes de empezar",
-                 bg=CONTENT_BG, fg=ACENT, font=("Segoe UI", 9)).pack(side="left")
+                 bg=TEMA.CONTENT_BG, fg=TEMA.ACENT, font=("Segoe UI", 9)).pack(side="left")
 
         # ── Log ───────────────────────────────────────────────────────────────
         log_frame = tk.Frame(pad, bg="#12171B", bd=1, relief="solid")
@@ -464,7 +478,7 @@ class PanelOCR:
             "⚡",
         )
 
-        pad = tk.Frame(f, bg=CONTENT_BG)
+        pad = tk.Frame(f, bg=TEMA.CONTENT_BG)
         pad.pack(fill="both", expand=True, padx=24, pady=16)
 
         # ── Dependencias faltantes ────────────────────────────────────────────
@@ -504,17 +518,17 @@ class PanelOCR:
         c1 = self._card(pad, "  1  Elegí las carpetas")
 
         def _fila_dir(parent, etiqueta, descripcion, var, comando):
-            fila = tk.Frame(parent, bg=CARD_BG)
+            fila = tk.Frame(parent, bg=TEMA.CARD_BG)
             fila.pack(fill="x", pady=(0, 8))
-            tk.Label(fila, text=etiqueta, bg=CARD_BG, fg=TXT_PRI,
+            tk.Label(fila, text=etiqueta, bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                      font=("Segoe UI", 9, "bold"), width=8,
                      anchor="w").pack(side="left")
-            tk.Label(fila, text=descripcion, bg=CARD_BG, fg=TXT_DIM,
+            tk.Label(fila, text=descripcion, bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                      font=("Segoe UI", 8)).pack(side="left", padx=(0, 8))
-            tk.Button(fila, text="📁 Seleccionar", bg=AZ3, fg="#E8E5DF",
+            tk.Button(fila, text="📁 Seleccionar", bg=TEMA.AZ3, fg="#E8E5DF",
                       relief="flat", font=("Segoe UI", 8), padx=8, pady=3,
                       cursor="hand2", command=comando).pack(side="right")
-            tk.Entry(fila, textvariable=var, bg=CARD_BG, fg=TXT_SEC,
+            tk.Entry(fila, textvariable=var, bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC,
                      relief="solid", bd=1, font=("Segoe UI", 8),
                      state="readonly").pack(side="right", fill="x",
                                            expand=True, padx=(0, 8))
@@ -539,7 +553,7 @@ class PanelOCR:
         # ── Nota explicativa ──────────────────────────────────────────────────
         tk.Label(c1,
                  text="ℹ  Cada PDF genera su propia subcarpeta con los archivos organizados.",
-                 bg=CARD_BG, fg=TXT_DIM, font=("Segoe UI", 8),
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8),
                  justify="left").pack(anchor="w", pady=(0, 4))
 
         # ══ PASO 2 — Qué generar ═════════════════════════════════════════════
@@ -553,17 +567,17 @@ class PanelOCR:
             (self._conv_frag,     "📎  PDF por página",
              "Divide cada PDF en páginas individuales (opcional, ocupa más espacio)."),
         ]:
-            row = tk.Frame(c2, bg=CARD_BG)
+            row = tk.Frame(c2, bg=TEMA.CARD_BG)
             row.pack(fill="x", pady=3)
             ttk.Checkbutton(row, text=titulo, variable=var).pack(side="left")
-            tk.Label(row, text=desc, bg=CARD_BG, fg=TXT_DIM,
+            tk.Label(row, text=desc, bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                      font=("Segoe UI", 8)).pack(side="left", padx=(8, 0))
 
         # ── Separador ─────────────────────────────────────────────────────────
-        tk.Frame(c2, bg=CARD_BOR, height=1).pack(fill="x", pady=(8, 8))
+        tk.Frame(c2, bg=TEMA.CARD_BOR, height=1).pack(fill="x", pady=(8, 8))
 
         # ── Limpieza de texto ─────────────────────────────────────────────────
-        limpiar_row = tk.Frame(c2, bg=CARD_BG)
+        limpiar_row = tk.Frame(c2, bg=TEMA.CARD_BG)
         limpiar_row.pack(fill="x", pady=2)
         ttk.Checkbutton(limpiar_row,
                         text="🧹  Limpiar el texto automáticamente",
@@ -583,9 +597,9 @@ class PanelOCR:
             "completamente sin procesar.")
         tk.Label(limpiar_row,
                  text="  ← recomendado para corpus BNC",
-                 bg=CARD_BG, fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
 
-        norm_row = tk.Frame(c2, bg=CARD_BG)
+        norm_row = tk.Frame(c2, bg=TEMA.CARD_BG)
         norm_row.pack(fill="x", pady=(4, 0))
         ttk.Checkbutton(norm_row,
                         text="📝  Enviar al módulo Normalizar",
@@ -601,41 +615,41 @@ class PanelOCR:
             "opción se ignora.")
         tk.Label(norm_row,
                  text="  ← conecta con el pipeline de análisis",
-                 bg=CARD_BG, fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
 
         # ── Rango de páginas (avanzado, colapsado) ────────────────────────────
-        rango_row = tk.Frame(c2, bg=CARD_BG)
+        rango_row = tk.Frame(c2, bg=TEMA.CARD_BG)
         rango_row.pack(fill="x", pady=(6, 0))
-        tk.Label(rango_row, text="Páginas:", bg=CARD_BG, fg=TXT_DIM,
+        tk.Label(rango_row, text="Páginas:", bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 8)).pack(side="left")
-        tk.Label(rango_row, text="desde", bg=CARD_BG, fg=TXT_DIM,
+        tk.Label(rango_row, text="desde", bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 8)).pack(side="left", padx=(8, 2))
         tk.Entry(rango_row, textvariable=self._conv_desde, width=5,
-                 bg=CARD_BG, fg=TXT_PRI, relief="solid", bd=1,
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, relief="solid", bd=1,
                  font=("Segoe UI", 8)).pack(side="left")
-        tk.Label(rango_row, text="hasta", bg=CARD_BG, fg=TXT_DIM,
+        tk.Label(rango_row, text="hasta", bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 8)).pack(side="left", padx=(6, 2))
         tk.Entry(rango_row, textvariable=self._conv_hasta, width=5,
-                 bg=CARD_BG, fg=TXT_PRI, relief="solid", bd=1,
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI, relief="solid", bd=1,
                  font=("Segoe UI", 8)).pack(side="left")
         tk.Label(rango_row, text="  (vacío = todas)",
-                 bg=CARD_BG, fg=TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
+                 bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(side="left")
 
         # ══ BOTONES DE ACCIÓN ════════════════════════════════════════════════
         # Deben ir ANTES del widget con expand=True (regla de layout Tkinter)
-        btn_row = tk.Frame(pad, bg=CONTENT_BG)
+        btn_row = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         btn_row.pack(fill="x", pady=(4, 10))
 
         self._btn_conv_iniciar = tk.Button(
             btn_row, text="⚡  Convertir ahora",
-            bg=AZ3, fg="#E8E5DF", relief="flat",
+            bg=TEMA.AZ3, fg="#E8E5DF", relief="flat",
             font=("Segoe UI", 11, "bold"), padx=24, pady=8,
             cursor="hand2", command=self._conv_iniciar)
         self._btn_conv_iniciar.pack(side="left", padx=(0, 10))
 
         self._btn_conv_cancelar = tk.Button(
             btn_row, text="✖  Detener",
-            bg=CARD_BG, fg=TXT_SEC, relief="flat",
+            bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, relief="flat",
             font=("Segoe UI", 10), padx=16, pady=8,
             cursor="hand2", command=self._conv_cancelar,
             state="disabled")
@@ -643,22 +657,22 @@ class PanelOCR:
 
         self._btn_conv_abrir = tk.Button(
             btn_row, text="📂  Ver archivos generados",
-            bg=CARD_BG, fg=TXT_SEC, relief="flat",
+            bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, relief="flat",
             font=("Segoe UI", 10), padx=16, pady=8,
             cursor="hand2", command=self._conv_abrir_salida,
             state="disabled")
         self._btn_conv_abrir.pack(side="left")
 
         # ══ PROGRESO ═════════════════════════════════════════════════════════
-        prog_card = tk.Frame(pad, bg=CARD_BG, relief="solid", bd=1,
-                             highlightbackground=CARD_BOR, highlightthickness=1)
+        prog_card = tk.Frame(pad, bg=TEMA.CARD_BG, relief="solid", bd=1,
+                             highlightbackground=TEMA.CARD_BOR, highlightthickness=1)
         prog_card.pack(fill="x", pady=(0, 8))
-        prog_inner = tk.Frame(prog_card, bg=CARD_BG, padx=16, pady=12)
+        prog_inner = tk.Frame(prog_card, bg=TEMA.CARD_BG, padx=16, pady=12)
         prog_inner.pack(fill="x")
 
         self._conv_lbl_fase = tk.Label(
             prog_inner, text="Listo para convertir.",
-            bg=CARD_BG, fg=TXT_DIM, font=("Segoe UI", 9, "italic"))
+            bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 9, "italic"))
         self._conv_lbl_fase.pack(anchor="w")
 
         self._conv_prog = ttk.Progressbar(
@@ -666,14 +680,14 @@ class PanelOCR:
         self._conv_prog.pack(fill="x", pady=(6, 0))
 
         # ══ REGISTRO DE ACTIVIDAD ════════════════════════════════════════════
-        log_hdr = tk.Frame(pad, bg=CONTENT_BG)
+        log_hdr = tk.Frame(pad, bg=TEMA.CONTENT_BG)
         log_hdr.pack(fill="x", pady=(4, 2))
         tk.Label(log_hdr, text="Registro de actividad",
-                 bg=CONTENT_BG, fg=TXT_DIM,
+                 bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM,
                  font=("Segoe UI", 8, "bold")).pack(side="left")
 
         self._conv_log = tk.Text(
-            pad, bg=CARD_BG, fg=TXT_SEC,
+            pad, bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC,
             font=("Segoe UI", 9), height=8,
             relief="solid", bd=1, state="disabled",
             wrap="word")
@@ -881,7 +895,7 @@ class PanelOCR:
             "🧠",
         )
 
-        pad = tk.Frame(f, bg=CONTENT_BG)
+        pad = tk.Frame(f, bg=TEMA.CONTENT_BG)
         pad.pack(fill="both", expand=True, padx=24, pady=16)
 
         if not self._mmx_disponible:
@@ -908,16 +922,16 @@ class PanelOCR:
         c1 = self._card(pad, "  1  Carpetas")
 
         def _fila_dir(parent, etiqueta, descripcion, var, comando):
-            fila = tk.Frame(parent, bg=CARD_BG)
+            fila = tk.Frame(parent, bg=TEMA.CARD_BG)
             fila.pack(fill="x", pady=(0, 8))
-            tk.Label(fila, text=etiqueta, bg=CARD_BG, fg=TXT_PRI,
+            tk.Label(fila, text=etiqueta, bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                      font=("Segoe UI", 9, "bold"), width=8, anchor="w").pack(side="left")
-            tk.Label(fila, text=descripcion, bg=CARD_BG, fg=TXT_DIM,
+            tk.Label(fila, text=descripcion, bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                      font=("Segoe UI", 8)).pack(side="left", padx=(0, 8))
-            tk.Button(fila, text="📁 Seleccionar", bg=AZ3, fg="#E8E5DF",
+            tk.Button(fila, text="📁 Seleccionar", bg=TEMA.AZ3, fg="#E8E5DF",
                       relief="flat", font=("Segoe UI", 8), padx=8, pady=3,
                       cursor="hand2", command=comando).pack(side="right")
-            tk.Entry(fila, textvariable=var, bg=CARD_BG, fg=TXT_SEC, relief="solid",
+            tk.Entry(fila, textvariable=var, bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC, relief="solid",
                      bd=1, font=("Segoe UI", 8), state="readonly").pack(
                          side="right", fill="x", expand=True, padx=(0, 8))
 
@@ -940,15 +954,15 @@ class PanelOCR:
 
         # ══ PASO 2 — Proveedor de IA ════════════════════════════════════════
         c2 = self._card(pad, "  2  IA de visión")
-        rowp = tk.Frame(c2, bg=CARD_BG)
+        rowp = tk.Frame(c2, bg=TEMA.CARD_BG)
         rowp.pack(fill="x", pady=2)
-        tk.Label(rowp, text="Proveedor:", bg=CARD_BG, fg=TXT_PRI,
+        tk.Label(rowp, text="Proveedor:", bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9)).pack(side="left")
         cb_prov = ttk.Combobox(rowp, textvariable=self._mmx_prov, width=12,
                                state="readonly",
                                values=["gemini", "claude", "openai", "ollama", "lmstudio"])
         cb_prov.pack(side="left", padx=(6, 16))
-        tk.Label(rowp, text="Modelo:", bg=CARD_BG, fg=TXT_PRI,
+        tk.Label(rowp, text="Modelo:", bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9)).pack(side="left")
         # Combobox editable: muestra los modelos de visión vigentes del proveedor,
         # pero permite escribir uno propio.
@@ -987,12 +1001,12 @@ class PanelOCR:
 
         # ══ PASO 4 — Ejecutar ═══════════════════════════════════════════════
         c4 = self._card(pad, "  4  Procesar")
-        rowb = tk.Frame(c4, bg=CARD_BG)
+        rowb = tk.Frame(c4, bg=TEMA.CARD_BG)
         rowb.pack(fill="x", pady=(0, 8))
         tk.Button(rowb, text="🧮 Estimar costo", bg="#1C2227", fg="#B5B6B3",
                   relief="flat", font=("Segoe UI", 9), padx=12, pady=5,
                   cursor="hand2", command=self._mmx_estimar).pack(side="left")
-        self._mmx_btn = tk.Button(rowb, text="🧠 Extraer todo", bg=AZ3, fg="#E8E5DF",
+        self._mmx_btn = tk.Button(rowb, text="🧠 Extraer todo", bg=TEMA.AZ3, fg="#E8E5DF",
                                   relief="flat", font=("Segoe UI", 9, "bold"),
                                   padx=14, pady=5, cursor="hand2",
                                   command=self._mmx_iniciar)
@@ -1168,11 +1182,11 @@ class PanelOCR:
         from core.zone_labeler import VISION_PROVEEDORES
 
         # ── Barra de control ─────────────────────────────────────────────────
-        ctrl = tk.Frame(f, bg=CONTENT_BG)
+        ctrl = tk.Frame(f, bg=TEMA.CONTENT_BG)
         ctrl.pack(fill="x", padx=24, pady=(0, 6))
 
         # Selector de número
-        tk.Label(ctrl, text="Número:", bg=CONTENT_BG, fg=TXT_SEC,
+        tk.Label(ctrl, text="Número:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9)).pack(side="left")
         self._imgd_var_num = tk.StringVar()
         self._imgd_cb_num  = ttk.Combobox(ctrl, textvariable=self._imgd_var_num,
@@ -1182,7 +1196,7 @@ class PanelOCR:
                                 lambda e: self._imgd_cargar_db())
 
         # Proveedor + modelo
-        tk.Label(ctrl, text="IA:", bg=CONTENT_BG, fg=TXT_SEC,
+        tk.Label(ctrl, text="IA:", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 9)).pack(side="left")
         self._imgd_var_prov  = tk.StringVar(value="claude")
         self._imgd_var_model = tk.StringVar(value="claude-haiku-4-5-20251001")
@@ -1214,16 +1228,16 @@ class PanelOCR:
         ttk.Button(ctrl, text="↺ Actualizar números", style="S.TButton",
                    command=self._imgd_refrescar_numeros).pack(side="right")
 
-        self._imgd_lbl_estado = tk.Label(ctrl, text="", bg=CONTENT_BG,
-                                          fg=VERDE, font=("Segoe UI", 9, "bold"))
+        self._imgd_lbl_estado = tk.Label(ctrl, text="", bg=TEMA.CONTENT_BG,
+                                          fg=TEMA.VERDE, font=("Segoe UI", 9, "bold"))
         self._imgd_lbl_estado.pack(side="right", padx=8)
 
         # ── Filtros por categoría ─────────────────────────────────────────────
-        filt_f = tk.Frame(f, bg=CARD_BG, relief="solid", bd=1)
+        filt_f = tk.Frame(f, bg=TEMA.CARD_BG, relief="solid", bd=1)
         filt_f.pack(fill="x", padx=24, pady=(0, 6))
-        fi = tk.Frame(filt_f, bg=CARD_BG, padx=10, pady=6)
+        fi = tk.Frame(filt_f, bg=TEMA.CARD_BG, padx=10, pady=6)
         fi.pack(fill="x")
-        tk.Label(fi, text="Filtrar por categoría:", bg=CARD_BG, fg=TXT_PRI,
+        tk.Label(fi, text="Filtrar por categoría:", bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 8, "bold")).pack(side="left")
         self._imgd_var_cat = tk.StringVar(value="todas")
         cats = ["todas"] + sorted(CATEGORIAS_TEMATICAS)
@@ -1232,7 +1246,7 @@ class PanelOCR:
                          side="left", padx=(6, 12))
         self._imgd_var_cat.trace_add("write", lambda *_: self._imgd_filtrar())
 
-        tk.Label(fi, text="Buscar similitud:", bg=CARD_BG, fg=TXT_SEC,
+        tk.Label(fi, text="Buscar similitud:", bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC,
                  font=("Segoe UI", 8)).pack(side="left")
         self._imgd_var_busq = tk.StringVar()
         ttk.Entry(fi, textvariable=self._imgd_var_busq, width=28).pack(
@@ -1241,11 +1255,11 @@ class PanelOCR:
                    command=self._imgd_buscar_similitud).pack(side="left")
 
         # ── Split: tabla + detalle ────────────────────────────────────────────
-        split = tk.Frame(f, bg=CONTENT_BG)
+        split = tk.Frame(f, bg=TEMA.CONTENT_BG)
         split.pack(fill="both", expand=True, padx=24, pady=(0, 12))
 
         # Tabla izquierda
-        izq = tk.Frame(split, bg=CONTENT_BG)
+        izq = tk.Frame(split, bg=TEMA.CONTENT_BG)
         izq.pack(side="left", fill="both", expand=True, padx=(0, 8))
 
         cols = ("pagina", "descripcion", "categorias", "texto_visible", "contexto")
@@ -1269,38 +1283,38 @@ class PanelOCR:
         self._imgd_tv.bind("<<TreeviewSelect>>", self._imgd_on_sel)
 
         # Panel derecho: recorte + metadatos
-        der = tk.Frame(split, bg=CARD_BG, width=320, relief="solid", bd=1)
+        der = tk.Frame(split, bg=TEMA.CARD_BG, width=320, relief="solid", bd=1)
         der.pack(side="right", fill="y")
         der.pack_propagate(False)
 
         self._imgd_canvas = tk.Canvas(der, bg="#000", height=210, highlightthickness=0)
         self._imgd_canvas.pack(fill="x", padx=6, pady=6)
 
-        self._imgd_lbl_desc = tk.Label(der, text="", bg=CARD_BG, fg=TXT_PRI,
+        self._imgd_lbl_desc = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                                         font=("Segoe UI", 9, "bold"),
                                         wraplength=300, justify="left")
         self._imgd_lbl_desc.pack(anchor="w", padx=8, pady=(4, 2))
 
-        self._imgd_lbl_cats = tk.Label(der, text="", bg=CARD_BG, fg=AZ4,
+        self._imgd_lbl_cats = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.AZ4,
                                         font=("Segoe UI", 8),
                                         wraplength=300, justify="left")
         self._imgd_lbl_cats.pack(anchor="w", padx=8)
 
-        self._imgd_lbl_txt = tk.Label(der, text="", bg=CARD_BG, fg=TXT_SEC,
+        self._imgd_lbl_txt = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC,
                                        font=("Courier New", 8),
                                        wraplength=300, justify="left")
         self._imgd_lbl_txt.pack(anchor="w", padx=8, pady=(2, 0))
 
-        self._imgd_lbl_ctx = tk.Label(der, text="", bg=CARD_BG, fg=TXT_DIM,
+        self._imgd_lbl_ctx = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.TXT_DIM,
                                        font=("Segoe UI", 8, "italic"),
                                        wraplength=300, justify="left")
         self._imgd_lbl_ctx.pack(anchor="w", padx=8, pady=(2, 8))
 
         # Búsqueda por similitud — resultados
-        tk.Frame(der, bg=CARD_BOR, height=1).pack(fill="x", padx=6, pady=4)
-        tk.Label(der, text="Imágenes similares:", bg=CARD_BG, fg=TXT_PRI,
+        tk.Frame(der, bg=TEMA.CARD_BOR, height=1).pack(fill="x", padx=6, pady=4)
+        tk.Label(der, text="Imágenes similares:", bg=TEMA.CARD_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 8, "bold")).pack(anchor="w", padx=8)
-        self._imgd_lbl_sim = tk.Label(der, text="", bg=CARD_BG, fg=TXT_SEC,
+        self._imgd_lbl_sim = tk.Label(der, text="", bg=TEMA.CARD_BG, fg=TEMA.TXT_SEC,
                                        font=("Segoe UI", 8),
                                        wraplength=300, justify="left")
         self._imgd_lbl_sim.pack(anchor="w", padx=8, pady=(2, 8))
@@ -1333,13 +1347,13 @@ class PanelOCR:
         db = Path(ST.ruta_db)
         if not db.exists():
             self._imgd_lbl_estado.config(
-                text="Sin descripciones guardadas aún — usa ▶ Describir fotos", fg=TXT_SEC)
+                text="Sin descripciones guardadas aún — usa ▶ Describir fotos", fg=TEMA.TXT_SEC)
             return
         datos = cargar_descripciones_db(db, num)
         self._imgd_datos = datos
         self._imgd_poblar_tv(datos)
         self._imgd_lbl_estado.config(
-            text=f"{len(datos)} imágenes descritas — {num}", fg=VERDE)
+            text=f"{len(datos)} imágenes descritas — {num}", fg=TEMA.VERDE)
 
     def _imgd_poblar_tv(self, datos: list[dict]):
         self._imgd_tv.delete(*self._imgd_tv.get_children())
@@ -1362,7 +1376,7 @@ class PanelOCR:
                          if cat in d.get("categorias", [])]
             self._imgd_poblar_tv(filtrados)
         self._imgd_lbl_estado.config(
-            text=f"Filtrando: {cat}", fg=TXT_SEC)
+            text=f"Filtrando: {cat}", fg=TEMA.TXT_SEC)
 
     def _imgd_ordenar(self, col: str):
         if self._imgd_sort_col == col:
@@ -1459,7 +1473,7 @@ class PanelOCR:
                 self._imgd_poblar_tv(datos),
                 self._imgd_btn_run.config(state="normal"),
                 self._imgd_lbl_estado.config(
-                    text=f"✅ {len(datos)} imágenes descritas", fg=VERDE),
+                    text=f"✅ {len(datos)} imágenes descritas", fg=TEMA.VERDE),
             ))
         threading.Thread(target=_run, daemon=True).start()
 
@@ -1510,7 +1524,7 @@ class PanelOCR:
             if kraken_disponible():
                 modelo = _buscar_modelo()
                 nombre = Path(modelo).name if modelo else "modelo"
-                self._lbl_kraken_ok.config(text=f"✅ {nombre}", fg=VERDE)
+                self._lbl_kraken_ok.config(text=f"✅ {nombre}", fg=TEMA.VERDE)
                 if modelo:
                     self._var_kraken_modelo.set(str(modelo))
             else:
@@ -1523,9 +1537,9 @@ class PanelOCR:
                 if chk.returncode == 0:
                     self._lbl_kraken_ok.config(text="⚠ Sin modelo — descarga CATMuS-Print", fg="#E6A64C")
                 else:
-                    self._lbl_kraken_ok.config(text="✗ Kraken no instalado en venv", fg=ROJO)
+                    self._lbl_kraken_ok.config(text="✗ Kraken no instalado en venv", fg=TEMA.ROJO)
         except Exception as e:
-            self._lbl_kraken_ok.config(text=f"✗ {e}", fg=ROJO)
+            self._lbl_kraken_ok.config(text=f"✗ {e}", fg=TEMA.ROJO)
 
     def _ocr_elegir_modelo_kraken(self):
         """Abre diálogo para seleccionar un archivo .mlmodel de Kraken."""
@@ -1536,7 +1550,7 @@ class PanelOCR:
         )
         if ruta:
             self._var_kraken_modelo.set(ruta)
-            self._lbl_kraken_ok.config(text=f"✅ {Path(ruta).name}", fg=VERDE)
+            self._lbl_kraken_ok.config(text=f"✅ {Path(ruta).name}", fg=TEMA.VERDE)
 
     def _ocr_descargar_catmus(self):
         """Descarga el modelo CATMuS-Print Large en un thread."""
@@ -1550,7 +1564,7 @@ class PanelOCR:
                 ruta = descargar_modelo_catmus(callback=cb)
                 self.after(0, lambda r=ruta: (
                     self._var_kraken_modelo.set(r),
-                    self._lbl_kraken_ok.config(text=f"✅ {Path(r).name}", fg=VERDE),
+                    self._lbl_kraken_ok.config(text=f"✅ {Path(r).name}", fg=TEMA.VERDE),
                 ))
             except Exception as e:
                 msg = str(e)
@@ -1562,7 +1576,7 @@ class PanelOCR:
                 else:
                     msg = f"✗ {msg[:120]}"
                 self.after(0, lambda m=msg: self._lbl_kraken_ok.config(
-                    text=m, fg=ROJO, wraplength=320))
+                    text=m, fg=TEMA.ROJO, wraplength=320))
 
         threading.Thread(target=_worker, daemon=True).start()
 
@@ -1629,7 +1643,7 @@ class PanelOCR:
                 ocr_kraken(str(img_path), modelo)
                 seg = time.perf_counter() - t0
                 # Actualizar referencia y recalcular
-                BashkarApp._KRAKEN_SEG_PAG = round(seg, 1)
+                type(self)._KRAKEN_SEG_PAG = round(seg, 1)
                 self.after(0, lambda: self._lbl_kraken_est.config(
                     text=f"✅ Calibrado: {seg:.0f} seg/página — recalculando…",
                     fg="#6EC69A"))
@@ -1654,14 +1668,14 @@ class PanelOCR:
                                 self._var_ollama_modelo.get() not in ms:
                             self._var_ollama_modelo.set(ms[0])
                         self._lbl_ollama_ok.config(
-                            text=f"✅ {len(ms)} modelo(s)", fg=VERDE)
+                            text=f"✅ {len(ms)} modelo(s)", fg=TEMA.VERDE)
                     else:
                         self._lbl_ollama_ok.config(
                             text="⚠ Ollama sin modelos de visión", fg="#E6A64C")
                 self.after(0, _update)
             except Exception as e:
                 self.after(0, lambda err=e: self._lbl_ollama_ok.config(
-                    text=f"✗ {err}", fg=ROJO))
+                    text=f"✗ {err}", fg=TEMA.ROJO))
 
         threading.Thread(target=_worker, daemon=True).start()
 
@@ -1766,12 +1780,12 @@ class PanelOCR:
         win = tk.Toplevel(self)
         win.title(f"Preview preprocesamiento — {img_path.name}")
         win.geometry("900x500")
-        win.configure(bg=CONTENT_BG)
+        win.configure(bg=TEMA.CONTENT_BG)
         win.grab_set()
 
-        tk.Label(win, text="Original", bg=CONTENT_BG, fg=TXT_PRI,
+        tk.Label(win, text="Original", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold")).grid(row=0, column=0, pady=(8, 2))
-        tk.Label(win, text="Procesada", bg=CONTENT_BG, fg=TXT_PRI,
+        tk.Label(win, text="Procesada", bg=TEMA.CONTENT_BG, fg=TEMA.TXT_PRI,
                  font=("Segoe UI", 9, "bold")).grid(row=0, column=1, pady=(8, 2))
 
         cv_orig = tk.Canvas(win, bg="#000", width=420, height=420, highlightthickness=0)
@@ -1797,7 +1811,7 @@ class PanelOCR:
         _mostrar()
 
         # Checkboxes dentro del preview para ajustar en tiempo real
-        ctrl = tk.Frame(win, bg=CONTENT_BG)
+        ctrl = tk.Frame(win, bg=TEMA.CONTENT_BG)
         ctrl.grid(row=2, column=0, columnspan=2, pady=6)
         for txt, var in [("Deskew", self._var_pre_deskew),
                           ("CLAHE",  self._var_pre_enhance),

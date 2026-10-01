@@ -162,3 +162,32 @@ def test_ir_a_ling_pestania(app_ling):
     a._ir_a_ling_pestania(6)   # Encuadre
     a.update()
     assert a._nb_ling.index(a._nb_ling.select()) == 6
+
+
+def test_revision_cierra_la_conexion_aunque_falle(tmp_path, monkeypatch):
+    """La conexión se cerraba solo si todo iba bien: un fallo dejaba el .db
+    abierto (y bloqueado en Windows)."""
+    import pytest
+
+    from core import revision_engine as RE
+    cerradas = []
+    real = RE._conectar
+
+    def espia(ruta):
+        con = real(ruta)
+
+        class Envuelta:
+            def __getattr__(self, n):
+                return getattr(con, n)
+
+            def close(self):
+                cerradas.append(True)
+                con.close()
+        return Envuelta()
+    monkeypatch.setattr(RE, "_conectar", espia)
+    monkeypatch.setattr(RE, "decidir", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("x")))
+    with pytest.raises(RuntimeError):
+        RE.decidir_y_aplicar(str(tmp_path / "r.db"), "A", "personas", "descartada", {})
+    assert cerradas == [True]
+    assert RE.ruta_db_revision("", tmp_path).endswith("revision_ner.db")
+    assert RE.ruta_db_revision("p.db") == "p.db"

@@ -15,7 +15,11 @@ from xml.dom import minidom
 from xml.etree.ElementTree import Element, SubElement, tostring
 from core.proveniencia import con_proveniencia
 
-APP_VERSION = "11"
+# Versión real de la app (antes "11" fijo: cada ALTO declaraba una versión
+# que no era la que lo había producido).
+from core.proveniencia import version_app as _version_app  # noqa: E402
+
+APP_VERSION = _version_app()
 ALTO_NS = "http://www.loc.gov/standards/alto/ns-v4#"
 ALTO_SCHEMA = (
     "http://www.loc.gov/standards/alto/ns-v4# "
