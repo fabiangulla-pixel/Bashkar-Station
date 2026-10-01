@@ -38,3 +38,27 @@ def test_ningun_atributo_tapa_un_metodo():
     assert len(archivos) > 100
     problemas = [c for f in archivos for c in _colisiones(f)]
     assert problemas == []
+
+
+def test_ningun_atributo_tapa_un_metodo_de_otro_panel():
+    """Con los paneles como mixins, un `self.x = ...` en app.py puede tapar un
+    método definido en paneles/*.py (otra clase del mismo objeto)."""
+    fuentes = [RAIZ / "app.py", *sorted((RAIZ / "paneles").glob("*.py"))]
+    metodos, asignaciones = set(), []
+    for ruta in fuentes:
+        arbol = ast.parse(ruta.read_text(encoding="utf-8"))
+        for cls in (n for n in ast.walk(arbol) if isinstance(n, ast.ClassDef)):
+            if cls.name != "BashkarApp" and ruta.parent.name != "paneles":
+                continue
+            metodos |= {m.name for m in cls.body
+                        if isinstance(m, (ast.FunctionDef, ast.AsyncFunctionDef))}
+            for nodo in ast.walk(cls):
+                objetivos = (nodo.targets if isinstance(nodo, ast.Assign)
+                             else [nodo.target] if isinstance(nodo, ast.AnnAssign) else [])
+                for o in objetivos:
+                    for x in ast.walk(o):
+                        if (isinstance(x, ast.Attribute) and isinstance(x.value, ast.Name)
+                                and x.value.id == "self"):
+                            asignaciones.append((ruta.name, x.lineno, x.attr))
+    problemas = [f"{f}:{ln} self.{a}" for f, ln, a in asignaciones if a in metodos]
+    assert problemas == []
