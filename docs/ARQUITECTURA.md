@@ -112,20 +112,48 @@ sequenceDiagram
 
 ## Estado de app.py
 
-Medido con `ast` el 29-sep-2026:
+| | 29-sep-2026 (sesión 70) | 30-sep-2026 (sesión 71) |
+|---|---:|---:|
+| `app.py` | 21.469 líneas | **6.640 líneas** |
+| Métodos en `BashkarApp` (app.py) | 572 | 154 |
+| Métodos en `paneles/` | — | 420, en 8 módulos |
 
-| Bloque | Líneas |
-|---|---:|
-| Clase `BashkarApp` (única) | 20.702, 572 métodos |
-| Pestaña NER (índice de entidades, canónicas, grafos, revisión) | 8.214 |
-| Etiquetador de zonas | 4.254 |
-| Panel de asistente IA | 1.992 |
-| Resultados y exportación | 1.957 |
-| Configuración | 947 |
-| Resto de pestañas | < 500 cada una |
+### Dos capas de separación
 
-44 métodos no usan `self`: son lógica pura alojada en la clase por
-comodidad, y son los primeros candidatos a salir.
+1. **Lógica → `core/` y `datos/`** (servicios con tests de contrato):
+   `datos/normalizaciones`, `core/servicios_corpus`, `core/servicios_exportacion`,
+   `core/servicios_entidades`, `core/ocr` (contrato `MotorOCR` + registro de
+   motores), `core/perfil_corpus`, `core/proveniencia`.
+2. **Interfaz → `paneles/`** (una pestaña por módulo, como *mixin*):
+
+| Módulo | Pestañas | Métodos |
+|---|---|---:|
+| `paneles/analisis.py` | Colocaciones, tono, novedad, tópicos, visual, comparativo, segmentación, visualizaciones, dashboard | 95 |
+| `paneles/entidades.py` | NER, red, grafo canónico, anotaciones, validación, colaboración, búsqueda semántica | 74 |
+| `paneles/etiquetador_zonas.py` | Etiquetador de zonas | 68 |
+| `paneles/normalizar.py` | Normalizar y verificación | 48 |
+| `paneles/linguistica.py` | Lingüística (concordancias, SVO, morfología…) | 45 |
+| `paneles/ocr.py` | OCR, conversor masivo, extracción multimodal, descripción de imágenes | 40 |
+| `paneles/resultados.py` | Resultados, exportación, paquete de publicación, reporte, benchmark | 38 |
+| `paneles/bitacora.py` | Bitácora de investigación | 12 |
+
+`app.py` conserva la infraestructura: arranque, barra lateral y navegación,
+configuración, tema, panel del asistente IA, parámetros, y los métodos que
+usan `global`, `nonlocal` o `super()` (moverlos a un mixin cambiaría su
+significado).
+
+**Cómo funcionan los paneles.** Los métodos se movieron con copia literal
+(`scripts/_herramientas/extraer_panel.py`): siguen usando `ST`, `tk` y los
+colores sin importarlos. `paneles.sincronizar(globals())` refleja esos
+nombres en cada panel al cargar `app.py` y cada vez que cambia el tema (que
+reescribe los colores en caliente). Como ruff no puede verlos (F821
+desactivado en `paneles/`), `tests/test_paneles.py` comprueba desde el
+bytecode que todo nombre global que use un panel exista en `app.py`.
+
+**Siguiente paso natural:** que cada panel importe explícitamente lo que usa
+en lugar de recibirlo por sincronización. Es mecánico (el test anterior da la
+lista exacta por panel) pero toca los colores del tema, que hoy son globales
+mutables: conviene hacerlo junto con convertir la paleta en un objeto.
 
 ### Estrategia de extracción
 
@@ -155,11 +183,12 @@ Hechos:
 Tres de las cinco extracciones destaparon un fallo real. Es el argumento
 práctico a favor de seguir: la lógica escondida en la GUI no tenía tests.
 
-Siguientes, por orden:
+Siguientes (lógica que sigue dentro de los paneles), por orden:
 
-1. Ejecución de rutas del benchmark (`_bench_correr_ruta`) → `core/benchmark_ocr`.
-2. Pestaña NER: separar primero lectura/escritura en SQLite (ya existe
-   `datos/repositorio.py`), después la vista.
+1. Worker de OCR de `paneles/ocr.py`: que elija el motor por el registro
+   `core.ocr` (hoy repite cadenas de `if` por ruta) y guarde `motor` y
+   `version` en la proveniencia de cada página.
+2. Paneles de entidades: lectura/escritura en SQLite a `datos/repositorio.py`.
 3. Etiquetador de zonas: separar render de PDF y persistencia de zonas.
 
 Meta: `app.py` como punto de composición (construye ventanas y conecta
