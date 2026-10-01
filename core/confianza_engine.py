@@ -63,24 +63,31 @@ def score_ocr(conf_tesseract: float, mejorado_con_llm: bool = False) -> float:
 # ── Scoring de NER ────────────────────────────────────────────────────────────
 
 def score_ner_entidad(
-    en_kb: bool,          # está en la base de conocimiento
-    verificada: bool,     # verificada manualmente
-    spacy_conf: float,    # confianza spaCy (0-1)
-    llm_conf: float,      # confianza Claude (0-1)
+    en_kb: bool | None,        # está en la base de conocimiento (None: no consultada)
+    verificada: bool,          # verificada manualmente
+    spacy_conf: float | None,  # confianza del NER (0-1); None: no medida
+    llm_conf: float | None,    # confianza Claude (0-1); None: no hubo validación por LLM
 ) -> float:
-    """Calcula score de confianza para una entidad NER."""
+    """Calcula score de confianza para una entidad NER.
+
+    Una señal en ``None`` no existe y no cuenta: su peso se reparte entre las
+    que sí hay. Antes el panel de validación pasaba ``llm_conf = conf + 0.05``
+    sin que ningún LLM hubiera evaluado nada, y esa señal inventada pesaba el
+    45 % del puntaje (sesión 71).
+    """
     if verificada:
         return 1.0
-    pesos = {
-        "kb": 0.3,
-        "spacy": 0.25,
-        "llm": 0.45,
+    pesos = {"kb": 0.3, "spacy": 0.25, "llm": 0.45}
+    valores = {
+        "kb": None if en_kb is None else (1.0 if en_kb else 0.0),
+        "spacy": spacy_conf,
+        "llm": llm_conf,
     }
-    score = (
-        pesos["kb"] * (1.0 if en_kb else 0.0) +
-        pesos["spacy"] * spacy_conf +
-        pesos["llm"] * llm_conf
-    )
+    presentes = {k: v for k, v in valores.items() if v is not None}
+    total = sum(pesos[k] for k in presentes)
+    if not total:
+        return 0.0
+    score = sum(pesos[k] * v for k, v in presentes.items()) / total
     return round(score, 3)
 
 

@@ -14144,33 +14144,10 @@ class BashkarApp(tk.Tk):
 
         self._bsem_log(f"🔍 Búsqueda léxica (sin índice FAISS): '{consulta}'")
         k = self._var_bsem_k.get() if hasattr(self, "_var_bsem_k") else 10
-        terminos = [t.lower() for t in consulta.split() if len(t) > 2]
 
         def _worker():
-            resultados = []
-            for i, texto in enumerate(corpus_txt):
-                if not texto:
-                    continue
-                texto_lower = texto.lower()
-                # Score = número de términos encontrados / total términos
-                encontrados = sum(1 for t in terminos if t in texto_lower)
-                if encontrados == 0:
-                    continue
-                # Bonus por cercanía de términos (todos en la misma frase)
-                score = encontrados / max(len(terminos), 1)
-                if len(terminos) > 1 and all(t in texto_lower for t in terminos):
-                    score = min(score * 1.5, 1.0)
-                art_id = str(i)
-                titulo = ""
-                if isinstance(corpus_meta, dict):
-                    meta = corpus_meta.get(art_id, {})
-                    titulo = meta.get("titulo", "") if isinstance(meta, dict) else ""
-                resultados.append({"rank": 0, "articulo_id": art_id,
-                                   "similitud": score, "titulo": titulo})
-
-            resultados.sort(key=lambda r: -r["similitud"])
-            for j, r in enumerate(resultados[:k], 1):
-                r["rank"] = j
+            from core.servicios_entidades import buscar_lexico
+            resultados = buscar_lexico(corpus_txt, consulta, k, corpus_meta)
 
             def _mostrar():
                 for item in self._tv_bsem.get_children():
@@ -16050,29 +16027,13 @@ class BashkarApp(tk.Tk):
         # "no disponible" en vez de intentar iterarlo mal (.items() de un
         # DataFrame recorre columnas, no artículos).
         corpus_meta = getattr(ST, "corpus_meta", None)
-        if not isinstance(corpus_meta, dict):
-            corpus_meta = {}
         indice = getattr(ST, "indice_ner_global", {}) or {}
-
-        if not corpus_meta and not indice:
+        if not isinstance(corpus_meta, dict) and not indice:
             messagebox.showwarning("Sin corpus",
                 "Procesa al menos dos números del corpus primero."); return
 
-        # Construir índice_por_numero desde corpus_meta + indice NER
-        # Si hay corpus_meta, usamos los art_ids para separar por número
-        indice_por_numero: dict = {}
-        if corpus_meta:
-            for art_id, meta in corpus_meta.items():
-                numero = (meta.get("numero") or meta.get("pagina", "")[:7]
-                          if isinstance(meta, dict) else "sin_numero")
-                if numero not in indice_por_numero:
-                    indice_por_numero[numero] = {cat: {} for cat in indice}
-                for cat, ents in indice.items():
-                    if not isinstance(ents, dict):
-                        continue
-                    for ent, arts in ents.items():
-                        if art_id in arts:
-                            indice_por_numero[numero][cat].setdefault(ent, []).append(art_id)
+        from core.servicios_entidades import indice_por_numero as _por_numero
+        indice_por_numero = _por_numero(corpus_meta, indice)
 
         if len(indice_por_numero) < 2:
             messagebox.showwarning(
@@ -19226,72 +19187,34 @@ class BashkarApp(tk.Tk):
                   style="Sub.TLabel").grid(row=4, column=0, sticky="w", padx=20, pady=4)
 
     def _valid_calcular(self):
-        from core.confianza_engine import nivel_confianza, score_ner_entidad
+        """Semáforo de confianza de las entidades. Ver core.servicios_entidades."""
+        from core.servicios_entidades import calificar_entidades, fuente_para_validar
         try:
             from conocimiento.base_conocimiento import buscar_entidad, inicializar_db
             inicializar_db()
-            _kb = True
+            en_base = buscar_entidad
         except Exception:
-            _kb = False
+            en_base = None   # sin base de conocimiento: esa señal no cuenta
 
-        self._valid_tree.delete(*self._valid_tree.get_children())
-        n_verde = n_amarillo = n_rojo = 0
-
-        # Construir fuente: primero intentar desde Repositorio (DB), luego memoria
-        fuente_ner: dict = {}
-
+        filas = []
         if ST.repo:
             try:
-                rows = ST.repo.buscar_entidades()
-                CAT_DISPLAY = {
-                    "PER": "personas", "LOC": "lugares", "ORG": "organizaciones",
-                    "EVE": "eventos_historicos", "OBRA": "obras_publicaciones",
-                    "CARGO": "personas",
-                }
-                for row in rows:
-                    cat = CAT_DISPLAY.get(row.get("categoria", ""), row.get("categoria", "otros"))
-                    ent_text = str(row.get("texto", "")).strip()
-                    art_id = row.get("articulo_id", "?")
-                    conf = float(row.get("confianza", 0.75))
-                    if cat not in fuente_ner:
-                        fuente_ner[cat] = {}
-                    if ent_text not in fuente_ner[cat]:
-                        fuente_ner[cat][ent_text] = {"arts": [], "confianza": conf}
-                    if art_id not in fuente_ner[cat][ent_text]["arts"]:
-                        fuente_ner[cat][ent_text]["arts"].append(art_id)
-            except Exception:
-                fuente_ner = {}
+                filas = ST.repo.buscar_entidades()
+            except Exception as e:
+                _registrar_error("validación: no se pudieron leer las entidades", e)
+        fuente, origen = fuente_para_validar(filas, ST.indice_ner_global)
 
-        # Si el repo no tiene datos, usar el índice en memoria
-        if not fuente_ner and ST.indice_ner_global:
-            for cat, ents in ST.indice_ner_global.items():
-                if not isinstance(ents, dict):
-                    continue
-                fuente_ner[cat] = {ent: {"arts": arts, "confianza": 0.75}
-                                   for ent, arts in ents.items()}
-
-        for cat, ents in fuente_ner.items():
-            for ent, meta in ents.items():
-                conf_base = meta.get("confianza", 0.75) if isinstance(meta, dict) else 0.75
-                en_kb = bool(_kb and buscar_entidad(ent, cat)) if _kb else False
-                sc = score_ner_entidad(
-                    en_kb=en_kb,
-                    verificada=False,
-                    spacy_conf=conf_base,
-                    llm_conf=min(conf_base + 0.05, 1.0),
-                )
-                nivel = nivel_confianza(sc)
-                emojis = {"green": "🟢", "yellow": "🟡", "red": "🔴"}
-                self._valid_tree.insert("", "end",
-                    values=(ent, cat, f"{sc:.2f}", emojis.get(nivel, nivel), "No"),
-                    tags=(nivel,))
-                if nivel == "green": n_verde += 1
-                elif nivel == "yellow": n_amarillo += 1
-                else: n_rojo += 1
-
-        origen = "DB" if ST.repo and fuente_ner else "memoria"
+        self._valid_tree.delete(*self._valid_tree.get_children())
+        emojis = {"green": "🟢", "yellow": "🟡", "red": "🔴"}
+        conteo = {"green": 0, "yellow": 0, "red": 0}
+        for r in calificar_entidades(fuente, en_base):
+            self._valid_tree.insert("", "end", tags=(r["nivel"],), values=(
+                r["entidad"], r["categoria"], f"{r['score']:.2f}",
+                emojis.get(r["nivel"], r["nivel"]), "No"))
+            conteo[r["nivel"]] = conteo.get(r["nivel"], 0) + 1
         self._valid_stat_var.set(
-            f"🟢 {n_verde} confiables · 🟡 {n_amarillo} revisar · 🔴 {n_rojo} validar  [fuente: {origen}]")
+            f"🟢 {conteo['green']} confiables · 🟡 {conteo['yellow']} revisar · "
+            f"🔴 {conteo['red']} validar  [fuente: {origen or 'sin datos'}]")
 
     def _valid_verificar(self):
         sel = self._valid_tree.selection()
