@@ -560,7 +560,7 @@ def _inferir_campo_desde_snippets(snippets: list[dict], campo: str) -> str:
     if campo == "creador":
         # Nombres propios capitalizados (heurística)
         nombres = re.findall(
-            r'([A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,}\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,}(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,})?)',
+            r'\b([A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,}\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,}(?:\s+[A-ZÁÉÍÓÚÑ][a-záéíóúñ]{2,})?)\b',
             texto_completo)
         # Filtrar palabras comunes
         STOP = {"Esta","Este","Estos","Estas","Para","Como","Cuando","Donde"}
