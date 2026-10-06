@@ -48,9 +48,13 @@ def test_el_panel_se_construye(app_bench):
     assert a._bench_resultados == []
 
 
-def test_el_catalogo_ofrece_las_cuatro_rutas(app_bench):
+def test_el_catalogo_ofrece_las_rutas_del_registro(app_bench):
+    """La GUI ofrece exactamente lo que dice core.ocr.RUTAS_BENCHMARK (la sesión
+    72 sumó surya, paddle y ppstructure sin tocar la GUI)."""
+    from core.ocr import RUTAS_BENCHMARK
     claves = {c for c, _, _ in app_bench._bench_catalogo_rutas()}
-    assert claves == {"tesseract", "zonas", "churro", "pero"}
+    assert claves == set(RUTAS_BENCHMARK)
+    assert {"tesseract", "zonas", "churro", "pero", "surya", "ppstructure"} <= claves
 
 
 def test_el_catalogo_avisa_del_estado_real(app_bench):

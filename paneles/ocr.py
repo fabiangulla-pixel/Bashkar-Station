@@ -96,6 +96,7 @@ class PanelOCR:
 
         self._var_ruta_ocr = tk.StringVar(value="tesseract")
         rutas = [
+            ("auto",      "Ruta 0 — Automática: enrutador GPU (PP-Structure · Surya · segunda opinión)"),
             ("tesseract", "Ruta 1 — Tesseract propio  ✓ Recomendada"),
             ("vision_ia", "Ruta 2 — IA de visión  (Claude · GPT-4o · Gemini · Ollama)"),
             ("bnc",       "Ruta 3 — Texto BNC + reconstrucción de líneas"),
@@ -1937,6 +1938,7 @@ class PanelOCR:
         _ocr_vision_model = (_vm.get() if _vm else "") or "claude-sonnet-4-6"
 
         RUTA_LABELS = {
+            "auto":      "Ruta 0 · Automática (enrutador)",
             "tesseract": "Ruta 1 · Tesseract propio",
             "vision_ia": f"Ruta 2 · {_ocr_vision_prov}/{_ocr_vision_model}",
             "claude":    "Ruta 2 · Claude Vision (legado)",
@@ -1955,7 +1957,7 @@ class PanelOCR:
         for p in archivos:
             if ST.input_tipo == "img" or p.suffix.lower() in EXTS_IMAGEN:
                 modos[p.name] = "imagen"
-            elif ruta_ocr in ("tesseract", "vision_ia", "claude", "kraken", "ollama"):
+            elif ruta_ocr in ("auto", "tesseract", "vision_ia", "claude", "kraken", "ollama"):
                 # Forzar re-OCR desde imágenes, ignorar texto BNC
                 modos[p.name] = "escaneado"
             else:
@@ -2108,7 +2110,39 @@ class PanelOCR:
                         except Exception as ep:
                             self._put(tipo="log", texto=f"  ⚠ Preprocesamiento omitido: {ep}")
 
-                    if ruta_ocr in ("vision_ia", "claude"):
+                    if ruta_ocr == "auto":
+                        # Ruta 0: core.ocr.enrutador (config/ocr.toml), la misma
+                        # que usa la API. Aprovecha el texto embebido de cada
+                        # página si calidad_ocr lo da por utilizable.
+                        from core.ocr.enrutador import Enrutador
+                        nativos = []
+                        try:
+                            import fitz
+                            with fitz.open(str(archivo)) as _doc:
+                                nativos = [pg.get_text("text") for pg in _doc]
+                        except Exception:
+                            pass
+                        def _log(m):
+                            self._put(tipo="log", texto=m)
+                        with Enrutador(opciones={"tesseract": {"lang": lang},
+                                                 "zonas": {"lang": lang}}, log=_log) as enr:
+                            plan = enr.plan()
+                            self._put(tipo="log", texto=(
+                                f"  🧭 primario {plan['primario']} · segunda opinión "
+                                f"{plan['segunda_opinion'] or '—'}"))
+                            for pi, ip in enumerate(imgs):
+                                tp = txt_dir/(ip.stem+".txt")
+                                _r, fila = enr.procesar(
+                                    ip, tp, nombre,
+                                    texto_nativo=nativos[pi] if pi < len(nativos) else None)
+                                meta_rows.append(fila)
+                                pct=int(((idx*np_total+pi+1)/(total*max(np_total,1)))*100)
+                                self._put(tipo="prog",val=pct,txt=f"{nombre}·pg{pi+1}/{np_total}")
+                        n_rev = sum(1 for f in meta_rows[-np_total:] if f.get("revision"))
+                        self._put(tipo="log",
+                                  texto=f"  ✅ {np_total} pág · enrutador · {n_rev} para revisión")
+
+                    elif ruta_ocr in ("vision_ia", "claude"):
                         # Ruta 2: IA de visión multiproveedor (Claude/GPT-4o/Gemini/Ollama)
                         prov  = _ocr_vision_prov  if ruta_ocr == "vision_ia" else "claude"
                         model = _ocr_vision_model if ruta_ocr == "vision_ia" else ""
@@ -2118,40 +2152,21 @@ class PanelOCR:
                                 texto=f"  ❌ Ruta 2 requiere API key de {prov}. Configúrala en ⚙ Configuración.")
                             errores.append(archivo.name); continue
 
-                        from core.ocr.procedencia import fila_meta, version_de
-                        _ver_vis = version_de("vision_llm", proveedor=prov,
-                                              modelo=model or _MODELO_VISION_DEFECTO)
-                        _ver_tes = version_de("tesseract", lang=lang)
+                        # core.ocr.servicio: la misma secuencia que usa la API web.
+                        # core.ocr_llm es la ÚNICA implementación de OCR por visión
+                        # (prompt calibrado, registro de gasto, filtro de rechazos).
+                        from core.ocr import crear
+                        from core.ocr.servicio import ocr_pagina as _ocr_svc
+                        _m_vis = crear("vision_llm", api_key=api_key, proveedor=prov,
+                                       modelo=model or _MODELO_VISION_DEFECTO)
+                        _m_tes = crear("tesseract", lang=lang)
+                        def _log(m):
+                            self._put(tipo="log", texto=m)
                         for pi, ip in enumerate(imgs):
                             tp = txt_dir/(ip.stem+".txt")
-                            # La IA de visión no da confianza: None, no 95.0.
-                            motor_pag, ver_pag, respaldo = f"vision_{prov}", _ver_vis, None
-                            if tp.exists():
-                                texto = tp.read_text("utf-8", errors="replace"); conf = None
-                            else:
-                                try:
-                                    # core.ocr_llm es la ÚNICA implementación
-                                    # de OCR por visión. app.py tenía la suya
-                                    # propia, divergente: sin el prompt
-                                    # calibrado contra el juez de ground truth,
-                                    # sin registrar el gasto de IA, sin filtrar
-                                    # los rechazos del modelo y sin lmstudio.
-                                    # La Ruta 2 —la que se paga— usaba esa.
-                                    from core.ocr_llm import ocr_con_vision
-                                    texto = ocr_con_vision(
-                                        ip, api_key=api_key,
-                                        modelo=model or _MODELO_VISION_DEFECTO,
-                                        proveedor=prov)
-                                    conf  = None
-                                except Exception as ec:
-                                    self._put(tipo="log",
-                                        texto=f"    ⚠ {prov} falló en {ip.stem}: {ec}. Usando Tesseract.")
-                                    texto, conf = ocr_pagina(ip, lang=lang)
-                                    motor_pag, ver_pag, respaldo = "tesseract", _ver_tes, f"vision_{prov}"
-                                tp.write_text(texto, "utf-8")
-                            meta_rows.append(fila_meta(nombre, ip.stem, tp, texto,
-                                                       motor=motor_pag, version=ver_pag,
-                                                       confianza=conf, respaldo_de=respaldo))
+                            _r, fila = _ocr_svc(_m_vis, ip, tp, nombre, respaldo=_m_tes,
+                                                reusar=True, alias=f"vision_{prov}", log=_log)
+                            meta_rows.append(fila)
                             pct=int(((idx*np_total+pi+1)/(total*max(np_total,1)))*100)
                             self._put(tipo="prog",val=pct,txt=f"{nombre}·pg{pi+1}/{np_total}")
                         self._put(tipo="log",texto=f"  ✅ {np_total} pág · {prov}/{model}")
@@ -2356,19 +2371,11 @@ class PanelOCR:
             self._put(tipo="err",txt="No se pudo procesar ningún archivo.")
             self.after(0, lambda: self._btn_ocr.config(state="normal")); return
 
-        COLS=["numero","pagina","txt_path","palabras","confianza","revision"]
-        df=pd.DataFrame(meta_rows)
-        for c in COLS:
-            if c not in df.columns: df[c]=None
-        df["palabras"]=pd.to_numeric(df["palabras"],errors="coerce").fillna(0).astype(int)
-        df["confianza"]=pd.to_numeric(df["confianza"],errors="coerce")
-        # Baja confianza O marca previa (p. ej. página que salió de un respaldo
-        # porque su motor falló: core.ocr.procedencia). Antes se recalculaba
-        # solo con la confianza y la marca del respaldo se perdía.
-        _rev_prev = df["revision"].fillna(False).astype(bool)
-        df["revision"]=df["confianza"].apply(lambda c: bool(pd.notna(c) and c<60)) | _rev_prev
-        ad=out/"04_analisis"; ad.mkdir(exist_ok=True)
-        df.to_csv(ad/"ocr_metadatos.csv", index=False)
+        # core.ocr.servicio: las mismas reglas que la API (revisión = confianza
+        # < 60 O marca previa de respaldo/discrepancia, que no se pierde).
+        from core.ocr.servicio import guardar_metadatos, tabla_metadatos
+        df = tabla_metadatos(meta_rows)
+        guardar_metadatos(meta_rows, out)
         ST.corpus_meta=df; ST.ocr_done=True
         ST.marcar_etapa("ocr", "ready")
 
@@ -2490,19 +2497,14 @@ class PanelOCR:
             self._put(tipo="log",
                 texto=f"  ✅ {n_pag} pág · {pal:,} palabras · {nombre}")
 
-        # Consolidar metadatos
-        COLS = ["numero","pagina","txt_path","palabras","confianza","revision","metodo"]
-        df = pd.DataFrame(meta_rows) if meta_rows else pd.DataFrame(columns=COLS)
-        for c in COLS:
-            if c not in df.columns: df[c] = None
-        df["palabras"]  = pd.to_numeric(df["palabras"],  errors="coerce").fillna(0).astype(int)
-        df["confianza"] = pd.to_numeric(df["confianza"], errors="coerce")
-        df["revision"]  = df["confianza"].apply(
-            lambda c: bool(pd.notna(c) and c < 60))
-
-        ad = out / "04_analisis"
-        ad.mkdir(exist_ok=True)
-        df.to_csv(ad / "ocr_metadatos.csv", index=False)
+        # Consolidar metadatos (core.ocr.servicio, igual que _worker_ocr y la API).
+        # Esta copia recalculaba "revision" solo con la confianza y borraba la
+        # marca de las páginas que salieron de un respaldo.
+        from core.ocr.servicio import guardar_metadatos, tabla_metadatos
+        df = tabla_metadatos(meta_rows)
+        if "metodo" not in df.columns:
+            df["metodo"] = None
+        guardar_metadatos(df.to_dict("records"), out)
         ST.corpus_meta = df
         ST.ocr_done    = True
         ST.marcar_etapa("ocr", "ready")

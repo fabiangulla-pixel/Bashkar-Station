@@ -12,7 +12,22 @@ import functools
 import time
 from pathlib import Path
 
-from core.ocr.interfaces import ResultadoOCR
+from core.ocr.interfaces import Bloque, ResultadoOCR
+
+# Tipos de zona de Bashkar (``zone_labeler.TIPOS_ZONA``) → tipos de bloque.
+_TIPO_ZONA_A_BLOQUE = {
+    "articulo": "texto", "titulo": "titulo", "publicidad": "publicidad",
+    "foto": "figura", "pie_foto": "pie_imagen", "numero_pag": "numero_pagina",
+    "cabecera": "cabecera", "indice": "lista", "colofon": "nota",
+}
+
+
+def bloques_de_zonas(zonas: list[dict]) -> list[Bloque]:
+    """Zonas de ``ocr_por_zonas`` (con ``bbox``) → bloques del contrato."""
+    return [Bloque(texto=z.get("texto", ""), bbox=tuple(z["bbox"]),
+                   tipo=_TIPO_ZONA_A_BLOQUE.get(z.get("tipo"), "desconocido"),
+                   orden=z.get("orden", 0), confianza=z.get("confianza"))
+            for z in zonas if z.get("bbox")]
 
 
 def _medir(fn):
@@ -93,7 +108,8 @@ class TesseractZonas(Tesseract):
                 if r["texto"].strip():
                     return ResultadoOCR(r["texto"], self.nombre, self.version(),
                                         confianza=r.get("confianza"),
-                                        detalles={"zonas": len(r.get("zonas", []))})
+                                        detalles={"zonas": len(r.get("zonas", []))},
+                                        bloques=bloques_de_zonas(r.get("zonas", [])))
             from core.ocr_engine import ocr_pagina
             texto, conf = ocr_pagina(copia, lang=self.lang)
             return ResultadoOCR(texto or "", self.nombre, self.version(), confianza=conf,
@@ -257,12 +273,55 @@ class VisionIA:
         pass
 
 
+from core.ocr.externo import MotorExterno  # noqa: E402
+
+
+class Surya(MotorExterno):
+    """Surya-OCR 2 (VLM de datalab) en su venv, servido por llama.cpp con CUDA.
+
+    Devuelve bloques con polígono, tipo y orden de lectura. Sin confianza por
+    página: el modelo no la da (None, no 0).
+    """
+
+    nombre = "surya"
+    etiqueta = "Surya OCR 2 (GPU, bloques y orden de lectura)"
+    variable_venv = "BASHKAR_VENV_SURYA"
+    venv_por_defecto = Path(r"C:\dev\venv-surya")
+    script = "surya_trabajador.py"
+    paquete = "surya"
+
+
+class PaddleOCR(MotorExterno):
+    """PaddleOCR (PP-OCRv5, reconocedor latino) en su venv, GPU. Bloques = líneas."""
+
+    nombre = "paddle"
+    etiqueta = "PaddleOCR (GPU, rápido, por líneas)"
+    variable_venv = "BASHKAR_VENV_PADDLE"
+    venv_por_defecto = Path(r"C:\dev\venv-paddle")
+    script = "paddle_trabajador.py"
+    paquete = "paddleocr"
+
+    def _args(self) -> list[str]:
+        return ["ocr"]
+
+
+class PPStructure(PaddleOCR):
+    """PP-StructureV3: layout, tablas, fórmulas y orden de lectura, en GPU."""
+
+    nombre = "ppstructure"
+    etiqueta = "PP-StructureV3 (GPU, layout y tablas)"
+
+    def _args(self) -> list[str]:
+        return ["estructura"]
+
+
 # Rutas que se ofrecen en el benchmark, en orden de presentación. Kraken y la
 # IA de visión existen como motores pero no se listan aquí: la primera exige
 # un venv aparte y la segunda cuesta dinero por página.
-RUTAS_BENCHMARK = ("tesseract", "zonas", "churro", "pero")
+RUTAS_BENCHMARK = ("tesseract", "zonas", "churro", "pero", "surya", "paddle", "ppstructure")
 
-_CLASES = {c.nombre: c for c in (Tesseract, TesseractZonas, Churro, Pero, Kraken, VisionIA)}
+_CLASES = {c.nombre: c for c in (Tesseract, TesseractZonas, Churro, Pero, Kraken, VisionIA,
+                                  Surya, PaddleOCR, PPStructure)}
 
 
 def nombres() -> list[str]:

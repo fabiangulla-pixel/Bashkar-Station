@@ -331,12 +331,14 @@ def _detectar_dit(img_path: Path, modelo_path: Path | None,
     log(f"DiT · cargando modelo {model_id} …")
     try:
         extractor = AutoFeatureExtractor.from_pretrained(model_id)
-        model     = AutoModelForObjectDetection.from_pretrained(model_id)
+        from core.recursos import dispositivo_torch
+        disp      = dispositivo_torch()
+        model     = AutoModelForObjectDetection.from_pretrained(model_id).to(disp)
         model.eval()
 
         img      = Image.open(img_path).convert("RGB")
         W, H     = img.size
-        inputs   = extractor(images=img, return_tensors="pt")
+        inputs   = extractor(images=img, return_tensors="pt").to(disp)
 
         with torch.no_grad():
             outputs = model(**inputs)

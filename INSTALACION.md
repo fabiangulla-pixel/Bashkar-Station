@@ -176,6 +176,59 @@ pip install -r requirements-dev.txt
 
 ---
 
+## GPU NVIDIA y motores pesados (opcional, recomendado si hay GPU)
+
+Desde la sesión 72 Bashkar usa la GPU cuando la hay (`core/recursos.dispositivo_torch`).
+`BASHKAR_DISPOSITIVO=cpu` lo fuerza a CPU. Medido en una RTX 5080 Laptop
+(16 GB) sobre 20 páginas de *Estampa*: NER con RoBERTa 15,7 s → 1,0 s;
+embeddings 3,6 s → 0,3 s; mismas entidades.
+
+### 1. torch con CUDA en el venv de Bashkar
+
+`pip install torch` trae la versión **solo CPU**. Para GPU, reinstalar desde
+el índice de PyTorch (CUDA 13.0; driver NVIDIA 580 o más reciente):
+
+```
+pip install --force-reinstall --no-deps torch==2.14.0 torchvision==0.29.1 --index-url https://download.pytorch.org/whl/cu130
+python -c "import torch; print(torch.cuda.is_available())"     # True
+```
+
+### 2. Surya y PaddleOCR, cada uno en su venv
+
+No caben en el venv de Bashkar: Surya baja Pillow e instala otro OpenCV, y
+Paddle choca con torch por las DLL de CUDA. Bashkar los llama como
+**trabajadores persistentes** (`core/ocr/externo.py`): el proceso arranca una
+vez, carga el modelo en la GPU y atiende página tras página.
+
+```
+py -3.12 -m venv C:\dev\venv-surya
+C:\dev\venv-surya\Scripts\pip install torch==2.14.0 torchvision --index-url https://download.pytorch.org/whl/cu130
+C:\dev\venv-surya\Scripts\pip install surya-ocr
+
+py -3.12 -m venv C:\dev\venv-paddle
+C:\dev\venv-paddle\Scripts\pip install paddlepaddle-gpu==3.4.0 -i https://www.paddlepaddle.org.cn/packages/stable/cu130/ --extra-index-url https://pypi.org/simple
+C:\dev\venv-paddle\Scripts\pip install "paddleocr[doc-parser]"
+```
+
+Otras rutas: variables `BASHKAR_VENV_SURYA` y `BASHKAR_VENV_PADDLE`.
+
+**Surya 0.22 es un modelo de visión servido por llama.cpp** (vLLM no existe
+en Windows). Hace falta `llama-server` con CUDA: descargar
+`llama-bXXXX-bin-win-cuda-13.x-x64.zip` y `cudart-llama-bin-win-cuda-13.x-x64.zip`
+de https://github.com/ggml-org/llama.cpp/releases y descomprimir ambos en
+`C:\dev\tools\llama.cpp\` (o fijar `LLAMA_CPP_BINARY`).
+
+La primera página de cada motor descarga sus modelos (Surya ~2 GB, Paddle
+~1 GB, CHURRO ~7 GB).
+
+### 3. El enrutador
+
+`config/ocr.toml` decide qué motor lee cada página (Ruta 0 del escritorio,
+`motor=auto` en la API). Sus umbrales son provisionales hasta que el
+benchmark tenga referencia humana.
+
+---
+
 ## Arrancar la aplicación
 
 ```
@@ -183,6 +236,16 @@ python app.py
 ```
 
 En Windows también sirve `Ejecutar.bat`.
+
+### La API (versión nube)
+
+```
+python -m api                    # http://localhost:8422/docs
+```
+
+Sin `BASHKAR_PASSWORD` corre en modo local (una sesión, acceso al disco,
+como el escritorio). Con `BASHKAR_PASSWORD` pide `POST /api/v1/sesiones` y
+un token `Bearer` por petición; cada sesión trabaja aislada.
 
 ---
 

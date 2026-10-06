@@ -78,9 +78,18 @@ def test_app_no_lleva_su_propio_prompt_de_ocr():
 
 
 def test_la_ruta_2_llama_a_core_ocr_llm():
+    """Desde la sesión 72 la Ruta 2 pasa por el registro de motores
+    (``crear("vision_llm")``, el mismo que la API), cuyo adaptador ``VisionIA``
+    llama a ``core.ocr_llm.ocr_con_vision``. Se comprueban los dos tramos."""
+    import inspect
+
+    from core.ocr import motores
     fuente = _fuente()
-    assert "from core.ocr_llm import ocr_con_vision" in fuente
-    assert "ocr_con_vision(" in fuente
+    assert ('crear("vision_llm"' in fuente
+            or "from core.ocr_llm import ocr_con_vision" in fuente)
+    adaptador = inspect.getsource(motores.VisionIA.reconocer)
+    assert "from core.ocr_llm import ocr_con_vision" in adaptador
+    assert "ocr_con_vision(" in adaptador
 
 
 def test_el_prompt_de_core_sigue_pidiendo_lo_que_se_calibro():

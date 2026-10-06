@@ -137,8 +137,13 @@ def _pipeline_ner():
         "ner",
         model=_MODELO_NER,
         aggregation_strategy="simple",
-        device=-1,  # CPU; cambiar a 0 si hay GPU disponible
+        device=_indice_dispositivo(),
     )
+
+
+def _indice_dispositivo() -> int:
+    from core.recursos import indice_dispositivo
+    return indice_dispositivo()
 
 
 def _fragmentar_por_tokens(texto: str, tokenizador) -> list[str]:

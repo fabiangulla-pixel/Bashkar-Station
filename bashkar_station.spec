@@ -83,6 +83,11 @@ a = Analysis(
             else (str(APP_DIR / 'requirements.txt'), '.'),
         # Diccionario Hunspell español (ver _datas_diccionario_es arriba)
         *_datas_dic_es,
+        # Sesión 72: política del enrutador de OCR y los scripts que Surya y
+        # Paddle ejecutan con el Python de SU venv (tienen que existir como
+        # archivo .py en disco, no dentro del PYZ).
+        (str(APP_DIR / 'config' / 'ocr.toml'), 'config'),
+        (str(APP_DIR / 'core' / 'ocr' / 'trabajadores'), 'core/ocr/trabajadores'),
     ],
     hiddenimports=[
         # Capa visual: define la paleta (import en la cabecera de app.py) y el

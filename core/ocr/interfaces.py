@@ -21,6 +21,44 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 
+# Tipos de bloque. Los de prensa (publicidad, firma…) se agregan cuando un motor
+# los distinga de verdad; "desconocido" es honesto, adivinar no.
+TIPOS_BLOQUE = ("titulo", "subtitulo", "texto", "pie_imagen", "lista", "tabla",
+                "figura", "formula", "cabecera", "pie_pagina", "numero_pagina",
+                "nota", "publicidad", "desconocido")
+
+
+@dataclass
+class Bloque:
+    """Una región de la página con su texto, geometría y procedencia.
+
+    ``bbox`` va en píxeles de la imagen reconocida: ``(x0, y0, x1, y1)``.
+    ``orden`` es el orden de lectura (1..n) que dio el motor; 0 = sin orden.
+    """
+    texto: str
+    bbox: tuple[int, int, int, int]
+    tipo: str = "desconocido"
+    orden: int = 0
+    confianza: float | None = None      # 0-100, misma escala que ResultadoOCR
+    poligono: list[tuple[int, int]] | None = None
+    revisar: bool = False
+    alternativas: list[dict] = field(default_factory=list)  # [{motor, texto, confianza}]
+
+    def a_dict(self) -> dict:
+        return {"texto": self.texto, "bbox": list(self.bbox), "tipo": self.tipo,
+                "orden": self.orden, "confianza": self.confianza,
+                "poligono": [list(p) for p in self.poligono] if self.poligono else None,
+                "revisar": self.revisar, "alternativas": self.alternativas}
+
+    @classmethod
+    def de_dict(cls, d: dict) -> "Bloque":
+        return cls(texto=d.get("texto", ""), bbox=tuple(d["bbox"]),
+                   tipo=d.get("tipo", "desconocido"), orden=d.get("orden", 0),
+                   confianza=d.get("confianza"),
+                   poligono=[tuple(p) for p in d["poligono"]] if d.get("poligono") else None,
+                   revisar=d.get("revisar", False), alternativas=d.get("alternativas", []))
+
+
 @dataclass
 class ResultadoOCR:
     texto: str
@@ -31,6 +69,8 @@ class ResultadoOCR:
     confianza: float | None = None
     segundos: float = 0.0
     detalles: dict = field(default_factory=dict)
+    # Vacío si el motor no da geometría. Nunca se inventan coordenadas.
+    bloques: list[Bloque] = field(default_factory=list)
 
 
 @runtime_checkable

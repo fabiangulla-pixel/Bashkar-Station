@@ -2,6 +2,88 @@
 
 ---
 
+## Sesión 72 — 2026-10-06 — GPU, enrutador de OCR y API en paridad con el escritorio
+
+Decisión del investigador: se abandona el objetivo de un `.exe` que corra en
+cualquier PC. Bashkar pasa a tener dos versiones de primera clase y en
+paridad: el escritorio, que aprovecha la GPU del equipo, y una API para la
+nube.
+
+### 1. La GPU estaba ociosa
+El venv traía `torch 2.14.0+cpu` y CHURRO fijaba `device_map="cpu"`. Ahora
+hay un único punto de decisión (`core/recursos.dispositivo_torch`, con
+`BASHKAR_DISPOSITIVO=cpu` para forzar CPU) usado por RoBERTa, los embeddings,
+CHURRO y DiT. Medido en la RTX 5080 Laptop sobre 20 páginas de *Estampa*:
+NER 15,7 s → 1,0 s y embeddings 3,6 s → 0,3 s, con las mismas 564 entidades.
+CHURRO no podía correr: le faltaba torchvision.
+
+### 2. Bloques con coordenadas en el contrato de OCR
+`ResultadoOCR.bloques` (`core/ocr/interfaces.Bloque`): texto, `bbox`,
+polígono, tipo, orden de lectura, confianza, marca de revisión y lecturas
+alternativas. Se guardan en `<pagina>.bloques.json`. TesseractZonas, Surya,
+PaddleOCR y PP-StructureV3 los llenan; los demás los dejan vacíos.
+
+### 3. Motores nuevos en GPU: Surya 2, PaddleOCR y PP-StructureV3
+Cada uno en su venv (`C:\dev\venv-surya`, `C:\dev\venv-paddle`) porque
+rompen el de Bashkar (Pillow, OpenCV, DLL de CUDA). Corren como
+trabajadores persistentes (`core/ocr/externo.py`): el modelo se carga una
+vez y atiende página tras página. Surya 0.22 es un VLM que en Windows se
+sirve con llama.cpp CUDA. Primeras mediciones sobre páginas reales:
+PP-StructureV3 lee una página en 0,3-1,9 s; Surya en 2,5-27 s; CHURRO en GPU
+en 9-55 s y **alucina** palabras verosímiles («murió en Franco», «Peronismo
+Miroslav»), más peligroso que los errores de letra de Surya («Rumonia»).
+Ninguna cifra de calidad es definitiva hasta que el benchmark tenga
+referencia humana.
+
+### 4. Enrutador de OCR y segunda opinión
+`core/ocr/enrutador.py`, con la política en `config/ocr.toml` (umbrales
+provisionales). Por página: texto embebido si `calidad_ocr` lo da por
+bueno; si no, el primario (PP-StructureV3); si el resultado es dudoso,
+segunda opinión (Surya). `core/ocr/desacuerdo.py` compara y marca para
+revisión **sin elegir** cuál acierta: en la prueba, las disputas señalaron
+errores de los dos lados («S0.000»/«50.000», «Rumania»/«Rumonia»). La
+segunda lectura va a `<pagina>.alternativas.json`, nunca a un `.txt`, que
+entraría al corpus. En el escritorio es la «Ruta 0 — Automática».
+
+### 5. API FastAPI (`api/app.py`, `python -m api`)
+OCR (página suelta y documentos, con el enrutador), proyectos, normalizar,
+segmentar, NER, análisis, layout, benchmark, exportar y descargas. Modo
+local o público con token por sesión. Reutiliza el estado y los trabajos de
+`servidor_web.py`.
+
+### 6. Paridad que se hace cumplir
+`core/operaciones.py` registra las 25 operaciones del escritorio (38
+`_worker_*`) con su ruta en la API o `api=None` y el motivo.
+`tests/test_paridad.py` falla si aparece un worker sin registrar; se
+comprobó que de verdad falla con un worker inventado. Al cierre: 6 de 25
+operaciones con ruta.
+
+### Fallos encontrados al unificar
+- **NER distinto según desde dónde se corriera.** Escritorio, CLI y web
+  tenían cada uno su bucle: solo el escritorio descartaba textos de menos de
+  100 palabras y aplicaba el umbral de confianza. Ahora los tres usan
+  `core/servicios_ner.ner_corpus`.
+- **La exportación TEI de la web fallaba siempre**: llamaba a
+  `exportar_corpus_tei(titulo=, fecha=)`, argumentos que ya no existen (la
+  sesión 62 lo arregló en la CLI, no aquí). Ahora
+  `servicios_exportacion.exportar_tei_articulos`.
+- **`_worker_ocr_carpetas` borraba la marca de revisión** de las páginas que
+  salieron de un respaldo (recalculaba solo con la confianza): el fallo que la
+  sesión 71 arregló en `_worker_ocr` seguía en la otra copia. Las dos usan
+  ahora `core/ocr/servicio.guardar_metadatos`.
+- La comprobación de disponibilidad de los motores externos importaba el
+  paquete en un subproceso: el panel de benchmark tardaba 96 s en abrir.
+  Ahora mira el disco (1 ms).
+
+### Pendiente
+- Referencia humana del benchmark (sin ella los umbrales del enrutador y la
+  comparación entre motores son provisionales).
+- 19 operaciones del escritorio sin ruta en la API (`core/operaciones.py`).
+- Pasar la Ruta 0 a página por página con `ocr_documento` también en la CLI.
+- Interfaz web para revisar bloques en disputa sobre el facsímil.
+
+---
+
 ## Sesión 71 — 2026-09-30 — El monolito se desarma: de 21.282 a 6.640 líneas
 
 Seguimiento de las recomendaciones de arquitectura (pasos 3, 4 y 7: servicios,

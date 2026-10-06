@@ -1,0 +1,33 @@
+# Política del enrutador de OCR (core/ocr/enrutador.py).
+#
+# ⚠ Los umbrales de esta sección son PROVISIONALES: no se han calibrado contra
+# referencia humana porque benchmark/estampa-1939/referencia/ sigue vacío.
+# Cuando exista, se ajustan con scripts/benchmark_ocr_regresion.py y se anota
+# aquí la evidencia, como en core/calidad_ocr.py.
+
+[enrutador]
+# Orden de preferencia del primer motor; se usa el primero disponible.
+primarios = ["ppstructure", "surya", "zonas", "tesseract"]
+# Segunda opinión; el primero disponible que no sea el primario.
+segundos = ["surya", "paddle", "zonas", "tesseract"]
+# Respaldo si el primario lanza excepción.
+respaldo = "tesseract"
+
+# Texto embebido del PDF: se usa sin OCR si calidad_ocr lo da por "utilizable".
+usar_texto_nativo = true
+
+[segunda_opinion]
+# Se pide segunda opinión si se cumple cualquiera de estas condiciones.
+# Confianza del primario (0-100) por debajo de esto, cuando el motor la mide.
+confianza_min = 80.0
+# Si calidad_ocr da "revisar" o "no_utilizable" al texto del primario.
+si_calidad_dudosa = true
+# Siempre (para construir el corpus de comparación; cuesta el doble de tiempo).
+siempre = false
+
+[revision]
+# Discrepancia de caracteres entre motores (0-1) a partir de la cual la página
+# va a revisión humana.
+discrepancia_pagina = 0.15
+# Igual, por bloque (cuando ambos motores dan bloques).
+discrepancia_bloque = 0.15

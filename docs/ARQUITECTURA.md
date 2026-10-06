@@ -64,6 +64,48 @@ flowchart TB
 La GUI y el servidor web comparten `core/` y `core/estado.Estado`. La GUI
 todavía hace mucho trabajo propio: ver "Estado de app.py" más abajo.
 
+### Escritorio y API en paridad (sesión 72)
+
+Desde la sesión 72 hay dos interfaces de primera clase, sin prioridad de una
+sobre la otra: el escritorio (`app.py` + `paneles/`, aprovecha la GPU local)
+y la API (`api/app.py`, FastAPI, pensada para la nube). La regla:
+
+- **La lógica vive en `core/`**; los paneles y las rutas de la API solo la
+  llaman. Ejemplos: `core/ocr/servicio.py` (OCR de una página y
+  `ocr_metadatos.csv`), `core/servicios_ner.py` (NER de corpus),
+  `core/servicios_exportacion.exportar_tei_articulos`.
+- **`core/operaciones.py` registra cada operación del escritorio** (cada
+  `_worker_*`) con su ruta en la API o `api=None` y el motivo.
+  `tests/test_paridad.py` falla si aparece un worker sin registrar o si una
+  ruta declarada no existe. Al 6-oct-2026: 25 operaciones, 6 con ruta.
+
+```mermaid
+flowchart LR
+    gui[Escritorio<br/>paneles/_worker_*] --> svc
+    api[API FastAPI<br/>api/app.py] --> svc
+    cli[cli.py] --> svc
+    svc[core/ servicios] --> enr[core/ocr/enrutador]
+    enr --> m1[PP-StructureV3<br/>venv-paddle · GPU]
+    enr --> m2[Surya 2<br/>venv-surya · llama.cpp CUDA]
+    enr --> m3[CHURRO · Tesseract · Kraken<br/>venv de Bashkar]
+    reg[core/operaciones.py] -. test_paridad .- gui
+    reg -. test_paridad .- api
+```
+
+### OCR: enrutador, bloques y segunda opinión
+
+- `ResultadoOCR.bloques`: regiones con `bbox`, tipo, orden de lectura,
+  confianza y lecturas alternativas. Se guardan en `<pagina>.bloques.json`
+  junto al `.txt`. Motores sin geometría dejan la lista vacía (no se
+  inventan coordenadas).
+- `core/ocr/enrutador.py` (política en `config/ocr.toml`): texto embebido si
+  `calidad_ocr` lo da por bueno; si no, el primario disponible; segunda
+  opinión si el resultado es dudoso. `core/ocr/desacuerdo.py` compara y marca
+  revisión; **no elige** cuál de los dos acierta. La segunda lectura va a
+  `<pagina>.alternativas.json`, nunca a un `.txt` (entraría al corpus).
+- Surya y Paddle corren en venvs propios como trabajadores persistentes
+  (`core/ocr/externo.py`, protocolo de líneas JSON por stdin/stdout).
+
 ## Nivel 3 — Componentes (pipeline de texto)
 
 ```mermaid

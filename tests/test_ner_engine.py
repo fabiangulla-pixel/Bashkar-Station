@@ -376,12 +376,23 @@ class TestGuiNerEvitaSegfault:
             app_src[m.start():m.start() + 400]
             for m in __import__("re").finditer(r"pipeline_ner\(", app_src)
         ]
-        assert len(llamadas) >= 2, "se esperaban al menos 2 llamadas a pipeline_ner en app.py"
+        # Sesión 72: el NER de corpus pasa por core.servicios_ner.ner_corpus
+        # (el mismo que la CLI y la API); la GUI le entrega `motor` y la regla
+        # vive en el servicio. Siguen siendo dos sitios: el artículo suelto
+        # (pipeline_ner directo) y el corpus (ner_corpus).
+        corpus = [app_src[m.start():m.start() + 400]
+                  for m in __import__("re").finditer(r"(?<!\w)ner_corpus\(", app_src)]
+        assert len(llamadas) + len(corpus) >= 2, "se esperaban los dos sitios de NER de la GUI"
         for bloque in llamadas:
             assert 'usar_roberta=(motor not in ("spacy", "fallback"))' in bloque, (
-                "una llamada a pipeline_ner en app.py ya no respeta la elección "
+                "una llamada a pipeline_ner en la GUI ya no respeta la elección "
                 'explícita de "spacy"/"fallback" en Motor NER'
             )
+        for bloque in corpus:
+            assert "motor=motor" in bloque, "la GUI no le pasa el motor elegido a ner_corpus"
+        from pathlib import Path
+        servicio = (Path(__file__).resolve().parents[1] / "core" / "servicios_ner.py").read_text("utf-8")
+        assert 'usar_roberta=motor not in ("spacy", "fallback")' in servicio
 
 
 class TestHeuristicaFechas:

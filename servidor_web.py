@@ -682,42 +682,20 @@ def _trabajo_ner(ses: EstadoServidor):
         raise ValueError("spaCy español no está instalado en este servidor")
 
     def _fn(trabajo: Trabajo):
-        import spacy
+        # core.servicios_ner: el mismo NER de corpus que el escritorio y la CLI.
+        from core.servicios_ner import contar_entidades, ner_corpus, textos_de_articulos
 
-        from core.ner_engine import (
-            actualizar_indice_global,
-            indice_global_vacio,
-            pipeline_ner,
-        )
+        trabajo.avanzar(2, "Cargando modelos…")
+        textos = textos_de_articulos(ses.articulos)
 
-        trabajo.avanzar(2, "Cargando modelo spaCy…")
-        nlp = None
-        for m in ("es_core_news_lg", "es_core_news_md", "es_core_news_sm"):
-            try:
-                nlp = spacy.load(m)
-                break
-            except Exception:
-                continue
-        if nlp is None:
-            raise ValueError("No se pudo cargar ningún modelo spaCy es_core_news_*")
-        indice = indice_global_vacio()
-        for i, art in enumerate(ses.articulos):
+        def _progreso(i, total, _aid):
             if i % 10 == 0:
-                trabajo.avanzar(
-                    5 + int(i / len(ses.articulos) * 90), f"NER {i}/{len(ses.articulos)}…"
-                )
-            texto = art.get("texto", "")
-            if not texto:
-                continue
-            try:
-                ner = pipeline_ner(texto, nlp)
-                actualizar_indice_global(indice, art.get("id", str(i)), ner)
-            except Exception:
-                continue
+                trabajo.avanzar(5 + int(i / max(1, total) * 90), f"NER {i}/{total}…")
+
+        indice = ner_corpus(textos, progreso=_progreso)
         ses.st.indice_ner_global = indice
         ses.st.ner_done = True
-        n = sum(len(v) for v in indice.values() if isinstance(v, dict))
-        return {"n_entidades": n}
+        return {"n_entidades": contar_entidades(indice), "textos": len(textos)}
 
     return _lanzar_trabajo(ses, "ner", _fn)
 
@@ -737,10 +715,10 @@ def _exportar(ses: EstadoServidor, formato: str) -> Path:
     ]
 
     if formato == "tei":
-        from core.tei_engine import exportar_corpus_tei
+        from core.servicios_exportacion import exportar_tei_articulos
 
         ruta = destino / "corpus_tei.xml"
-        exportar_corpus_tei(arts, ruta, titulo=ses.st.publicacion, fecha=ses.st.periodo)
+        exportar_tei_articulos(arts, ruta, ses.st.publicacion, ses.st.periodo)
         return ruta
     if formato == "bibtex":
         from core.tei_engine import exportar_bibtex

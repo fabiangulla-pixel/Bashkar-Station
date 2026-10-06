@@ -78,3 +78,17 @@ def articulos_para_tei(corpus_txt, ner_global) -> list[dict]:
                    for cat, ents in ner_global.items()}
         articulos.append({"id": art_id, "texto": t or "", "ner": ner_art})
     return articulos
+
+
+def exportar_tei_articulos(articulos, ruta, publicacion: str = "", periodo: str = ""):
+    """Corpus TEI de artículos segmentados; la CLI y la API llaman aquí.
+
+    La web llamaba ``exportar_corpus_tei(titulo=, fecha=)``, argumentos que ya
+    no existen (la CLI lo arregló en la sesión 62, la web no): su exportación
+    TEI fallaba siempre.
+    """
+    from core.tei_engine import exportar_corpus_tei
+    arts = [{"id": a.get("id", str(i)), "texto": a.get("texto", "")}
+            for i, a in enumerate(articulos)]
+    fuente = f"{publicacion} ({periodo})" if periodo else publicacion
+    return exportar_corpus_tei(arts, ruta, proyecto_nombre=publicacion or "Corpus", fuente=fuente)

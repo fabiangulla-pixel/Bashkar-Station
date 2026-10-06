@@ -595,6 +595,7 @@ def ocr_por_zonas(
             "tipo": z.tipo,
             "texto": texto,
             "confianza": conf,
+            "bbox": [x0, y0, x1, y1],
         })
         log(f"  Zona {i+1}/{len(procesables)} ({z.tipo}): "
             f"{len(texto.split())} palabras, conf {conf:.0f}")

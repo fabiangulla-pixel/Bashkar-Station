@@ -32,6 +32,8 @@ __all__ = [
     "hilos_recomendados",
     "aplicar_limites_cpu",
     "limitar_hilos_torch",
+    "dispositivo_torch",
+    "indice_dispositivo",
     "VARIABLE_OVERRIDE",
 ]
 
@@ -119,3 +121,27 @@ def limitar_hilos_torch(hilos: int | None = None) -> int | None:
         # motivo para tumbar un OCR que por lo demás iba a funcionar.
         pass
     return n
+
+
+# ── GPU ──────────────────────────────────────────────────────────────────────
+# Hasta la sesión 72 todos los modelos se cargaban en CPU aunque la máquina
+# tuviera GPU (el venv traía torch "+cpu" y CHURRO fijaba device_map="cpu").
+# Un único punto de decisión: CUDA si existe, salvo que BASHKAR_DISPOSITIVO=cpu
+# lo impida (para comparar, o si la VRAM está ocupada por otro proceso).
+VARIABLE_DISPOSITIVO = "BASHKAR_DISPOSITIVO"
+
+
+def dispositivo_torch() -> str:
+    """``"cuda"`` o ``"cpu"``. Importa torch: llamar solo donde ya se va a usar."""
+    if os.environ.get(VARIABLE_DISPOSITIVO, "").strip().lower() == "cpu":
+        return "cpu"
+    try:
+        import torch
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except Exception:
+        return "cpu"
+
+
+def indice_dispositivo() -> int:
+    """Lo mismo en la convención de ``transformers.pipeline``: 0 = GPU, -1 = CPU."""
+    return 0 if dispositivo_torch() == "cuda" else -1

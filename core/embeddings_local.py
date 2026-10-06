@@ -92,7 +92,8 @@ def _modelo_embeddings():
         ) from e
 
     # HF_HUB_OFFLINE ya se fijó a nivel de módulo, antes del import de arriba.
-    return SentenceTransformer(MODELO_EMBEDDINGS)
+    from core.recursos import dispositivo_torch
+    return SentenceTransformer(MODELO_EMBEDDINGS, device=dispositivo_torch())
 
 
 def generar_embeddings(textos: list[str],

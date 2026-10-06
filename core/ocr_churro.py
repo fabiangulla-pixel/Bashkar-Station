@@ -460,7 +460,7 @@ def _cargar():
         modelo = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             origen,
             dtype=_dtype(torch),
-            device_map="cpu",
+            device_map=recursos.dispositivo_torch(),
             low_cpu_mem_usage=True,
         )
         modelo.eval()
@@ -474,7 +474,7 @@ def _cargar():
 
 
 def liberar() -> None:
-    """Suelta el modelo de memoria (son ~6 GB de RAM)."""
+    """Suelta el modelo de memoria (~6 GB de RAM, o de VRAM si corre en GPU)."""
     global _modelo, _procesador
     with _lock:
         _modelo = None
@@ -482,6 +482,12 @@ def liberar() -> None:
     import gc
 
     gc.collect()
+    try:
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:
+        pass
 
 
 def ocr_pagina(imagen, prompt: str = PROMPT_POR_DEFECTO, max_tokens: int = 2048) -> str:
@@ -505,6 +511,7 @@ def ocr_pagina(imagen, prompt: str = PROMPT_POR_DEFECTO, max_tokens: int = 2048)
         mensajes, tokenize=False, add_generation_prompt=True
     )
     entradas = procesador(text=[texto_plantilla], images=[img], return_tensors="pt")
+    entradas = entradas.to(modelo.device)
 
     import torch
 

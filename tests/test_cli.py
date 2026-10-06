@@ -94,7 +94,8 @@ def test_etapa_ner_usa_roberta_por_defecto():
     threading. Confirmado sin segfault sobre el corpus real completo de
     Estampa (792 páginas) tras el fix — _etapa_ner vuelve a usar el default
     real de pipeline_ner (usar_roberta=True)."""
-    articulos = [{"id": "a1", "texto": "Texto de prueba con alguna entidad."}]
+    # ≥100 palabras: desde la sesión 72 la CLI filtra como el escritorio.
+    articulos = [{"id": "a1", "texto": "Texto de prueba con alguna entidad. " * 20}]
 
     with patch("spacy.load", return_value=MagicMock()), \
          patch("core.ner_engine.pipeline_ner") as mock_pipeline_ner, \

@@ -273,13 +273,8 @@ class PanelEntidades:
                          args=(self._snapshot_ner(),), daemon=True).start()
 
     def _worker_ner_corpus(self, snap: dict):
-        import spacy
-
-        from core.ner_engine import (
-            actualizar_indice_global,
-            indice_global_vacio,
-            pipeline_ner,
-        )
+        # core.servicios_ner: el mismo NER de corpus que la CLI y la API.
+        from core.servicios_ner import cargar_spacy, ner_corpus, textos_de_articulos
         p = snap["params"]
         usar_ia = snap["usar_ia"]
         proveedor_llm = snap["proveedor_llm"]
@@ -297,44 +292,33 @@ class PanelEntidades:
         umbral  = float(p.get("umbral_confianza", 0.7))
         cats    = p.get("categorias") or None
         min_palabras = int(p.get("min_longitud_texto", 100))
-        try:
-            nlp = spacy.load("es_core_news_lg") if motor != "fallback" else None
-        except OSError:
-            nlp = None
-            if motor == "spacy":
-                self._ner_log("⚠ spaCy no instalado. Ejecuta: python -m spacy download es_core_news_lg")
-                self.after(0, lambda: self._btn_ner_corpus.config(state="normal"))
-                self.after(0, lambda: self._btn_ner_art.config(state="normal"))
-                return
+        nlp = cargar_spacy(motor)
+        if nlp is None and motor == "spacy":
+            self._ner_log("⚠ spaCy no instalado. Ejecuta: python -m spacy download es_core_news_lg")
+            self.after(0, lambda: self._btn_ner_corpus.config(state="normal"))
+            self.after(0, lambda: self._btn_ner_art.config(state="normal"))
+            return
 
-        ST.indice_ner_global = indice_global_vacio()
-        articulos = []
         if ST.df_articulos is not None and not ST.df_articulos.empty:
-            for i, row in ST.df_articulos.iterrows():
-                txt = str(row.get("texto", row.get("contenido", "")))
-                aid = str(row.get("id", row.get("titulo", f"art_{i}")))
-                if txt.strip() and len(txt.split()) >= min_palabras:
-                    articulos.append((aid, txt))
-        elif ST.out_dir:
-            txt_dir = ST.out_dir / "03_ocr"
-            if txt_dir.exists():
-                for tf in sorted(txt_dir.rglob("*.txt")):
-                    txt = tf.read_text("utf-8", errors="replace")
-                    if txt.strip() and len(txt.split()) >= min_palabras:
-                        articulos.append((tf.stem, txt))
+            articulos = textos_de_articulos(ST.df_articulos.to_dict("records"), min_palabras)
+        elif ST.out_dir and (ST.out_dir / "03_ocr").exists():
+            articulos = textos_de_articulos(
+                ({"id": tf.stem, "texto": tf.read_text("utf-8", errors="replace")}
+                 for tf in sorted((ST.out_dir / "03_ocr").rglob("*.txt"))), min_palabras)
+        else:
+            articulos = []
 
-        total = len(articulos)
-        self._ner_log(f"📚 Corpus: {total} textos (umbral ≥{min_palabras} palabras)")
-        for i, (aid, txt) in enumerate(articulos, 1):
+        self._ner_log(f"📚 Corpus: {len(articulos)} textos (umbral ≥{min_palabras} palabras)")
+
+        def _progreso(i, total, aid):
             self._ner_log(f"[{i}/{total}] {aid}")
-            # usar_roberta: ver comentario en _worker_ner_articulo.
-            ner = pipeline_ner(txt, nlp, api_key=api_key,
-                               umbral_confianza=umbral, categorias=cats,
-                               proveedor_llm=proveedor_llm, modelo_ollama=modelo_ollama,
-                               usar_roberta=(motor not in ("spacy", "fallback")))
-            actualizar_indice_global(ST.indice_ner_global, aid, ner)
             if i % 5 == 0:
                 self.after(0, self._ner_refrescar_tv)
+
+        ST.indice_ner_global = ner_corpus(
+            articulos, motor=motor, nlp=nlp, umbral_confianza=umbral, categorias=cats,
+            api_key=api_key, proveedor_llm=proveedor_llm, modelo_ollama=modelo_ollama,
+            progreso=_progreso)
 
         ST.ner_done = True
         n_ents = sum(len(v) for v in ST.indice_ner_global.values())

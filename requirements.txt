@@ -69,7 +69,14 @@ spylls>=0.1.7
 transformers>=4.40.0
 sentence-transformers>=3.0.0
 torch>=2.0.0
+torchvision>=0.20.0
 faiss-cpu>=1.7.0
+
+# API (api/app.py, sesión 72): FastAPI + uvicorn. La versión de escritorio no
+# los necesita; la nube sí.
+fastapi>=0.110.0
+uvicorn>=0.30.0
+python-multipart>=0.0.9
 
 # Benchmark de OCR y modelos recientes (v11.9)
 # accelerate lo necesita transformers para cargar CHURRO-3B con

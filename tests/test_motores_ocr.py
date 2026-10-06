@@ -27,6 +27,16 @@ def dobles(monkeypatch):
     monkeypatch.setattr(ocr_kraken, "ocr_kraken", lambda p, *a, **k: (f"kraken {Path(p).stem}", 0.9))
     monkeypatch.setattr(ocr_llm, "ocr_con_vision", lambda p, key, modelo=None, proveedor=None:
                         f"ia {Path(p).stem}")
+    # Motores en otro venv (Surya, Paddle): el trabajador persistente se sustituye.
+    from core.ocr import externo
+
+    def _pedir(self, pedido, timeout=900):
+        self.version = f"{self.script.stem} 1"
+        stem = Path(pedido["imagen"]).stem
+        return {"ok": True, "texto": f"ext {stem}", "version": self.version,
+                "bloques": [{"texto": f"ext {stem}", "bbox": [0, 0, 5, 5]}]}
+    monkeypatch.setattr(externo.TrabajadorExterno, "pedir", _pedir)
+    monkeypatch.setattr(externo.MotorExterno, "motivo_no_disponible", lambda self: None)
 
 
 def _crear(nombre, tmp_path):

@@ -7,8 +7,8 @@
 Ver ``interfaces.py`` (el contrato) y ``motores.py`` (los adaptadores).
 """
 
-from core.ocr.interfaces import MotorOCR, ResultadoOCR
+from core.ocr.interfaces import TIPOS_BLOQUE, Bloque, MotorOCR, ResultadoOCR
 from core.ocr.motores import RUTAS_BENCHMARK, crear, nombres, reconocer_lote
 
-__all__ = ["MotorOCR", "ResultadoOCR", "RUTAS_BENCHMARK", "crear", "nombres",
+__all__ = ["TIPOS_BLOQUE", "Bloque", "MotorOCR", "ResultadoOCR", "RUTAS_BENCHMARK", "crear", "nombres",
            "reconocer_lote"]

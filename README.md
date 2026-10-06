@@ -126,6 +126,21 @@ directamente sin crear proyecto. Útil para demostraciones o análisis explorato
 
 ---
 
+## Escritorio con GPU y API para la nube (sesión 72)
+
+Bashkar tiene dos versiones en paridad: el **escritorio** (`python app.py`),
+que usa la GPU NVIDIA si la hay, y la **API** (`python -m api`, documentación
+en `http://localhost:8422/docs`). Toda la lógica vive en `core/`;
+`core/operaciones.py` registra qué operación del escritorio tiene ruta en la
+API y `tests/test_paridad.py` lo hace cumplir.
+
+El OCR pasa por un **enrutador** (`config/ocr.toml`) que, página por página,
+usa el texto embebido si es bueno o elige motor (PP-StructureV3, Surya,
+Tesseract…), pide una segunda opinión si el resultado es dudoso y marca para
+revisión las discrepancias en vez de elegir en silencio. Cada página guarda
+sus bloques con coordenadas (`<pagina>.bloques.json`). Instalación de la GPU
+y de los motores pesados: [INSTALACION.md](INSTALACION.md#gpu-nvidia-y-motores-pesados-opcional-recomendado-si-hay-gpu).
+
 ## Versión web (segundo frontend)
 
 Bashkar Station también puede usarse desde el navegador. No es una reescritura:

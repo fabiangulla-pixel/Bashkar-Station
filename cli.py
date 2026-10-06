@@ -310,48 +310,24 @@ def _etapa_seg(cfg: dict, verbose: bool) -> list[dict]:
 
 
 def _etapa_ner(articulos: list[dict], verbose: bool) -> dict:
-    """Ejecuta NER sobre los artículos segmentados."""
+    """Ejecuta NER sobre los artículos segmentados.
+
+    Mismo servicio y mismos parámetros por defecto que el escritorio y la API
+    (``core.servicios_ner``): RoBERTa si está, textos de ≥100 palabras,
+    umbral de confianza 0,7.
+    """
     if not articulos:
         return {}
-    _log(f"NER sobre {len(articulos)} artículos…", verbose)
-    try:
-        import spacy
-        nlp = spacy.load("es_core_news_sm")
-    except Exception:
-        _log("  ⚠ spaCy no disponible — omitiendo NER", verbose)
-        return {}
+    from core.servicios_ner import contar_entidades, ner_corpus, textos_de_articulos
+    textos = textos_de_articulos(articulos)
+    _log(f"NER sobre {len(textos)} de {len(articulos)} artículos (≥100 palabras)…", verbose)
 
-    from core.ner_engine import (
-        actualizar_indice_global,
-        indice_global_vacio,
-        pipeline_ner,
-    )
-    indice = indice_global_vacio()
-    for i, art in enumerate(articulos, 1):
+    def _progreso(i, total, _aid):
         if i % 20 == 0:
-            _log(f"  {i}/{len(articulos)}", verbose)
-        texto = art.get("texto", "") or art.get("ocr_limpio", "")
-        if not texto:
-            continue
-        try:
-            # usar_roberta=True (el default de pipeline_ner): el segfault que
-            # sesión 62 le atribuyó a un conflicto de threading torch/tokenizers
-            # (con recursos.aplicar_limites_cpu() activo) no era eso. Causa
-            # real, confirmada en sesión 63 sobre el corpus completo (792
-            # páginas): core/ner_roberta_local.py importaba `transformers`
-            # (que arrastra huggingface_hub) ANTES de forzar HF_HUB_OFFLINE=1
-            # — huggingface_hub congela esa variable como constante en su
-            # propio import, así que fijarla después no evitaba que pipeline()
-            # saliera a red aunque el modelo ya estuviera en caché. Esa
-            # llamada de red era la que reventaba con access violation en
-            # Windows. Arreglado en ner_roberta_local.py (offline forzado a
-            # nivel de módulo, antes de cualquier import de transformers).
-            ner = pipeline_ner(texto, nlp)
-            actualizar_indice_global(indice, art.get("id", str(i)), ner)
-        except Exception:
-            pass
-    n = sum(len(v) for v in indice.values() if isinstance(v, dict))
-    _log(f"NER completado: {n} entidades únicas", verbose)
+            _log(f"  {i}/{total}", verbose)
+
+    indice = ner_corpus(textos, progreso=_progreso)
+    _log(f"NER completado: {contar_entidades(indice)} entidades únicas", verbose)
     return indice
 
 
@@ -361,13 +337,10 @@ def _etapa_exportar(out_dir: Path, articulos: list, indice_ner: dict,
     if "tei" in etapas:
         _log("Exportando XML-TEI…", verbose)
         try:
-            from core.tei_engine import exportar_corpus_tei
+            from core.servicios_exportacion import exportar_tei_articulos
             ruta = out_dir / "corpus.xml"
-            arts_tei = [{"id": a.get("id", str(i)), "texto": a.get("texto", "")}
-                        for i, a in enumerate(articulos)]
-            exportar_corpus_tei(arts_tei, ruta,
-                                proyecto_nombre=cfg.get("publicacion", "Corpus"),
-                                fuente=f"{cfg.get('publicacion', '')} ({cfg.get('periodo', '')})")
+            exportar_tei_articulos(articulos, ruta, cfg.get("publicacion", ""),
+                                   cfg.get("periodo", ""))
             _log(f"  TEI: {ruta}", verbose)
         except Exception as e:
             _log(f"  ERROR TEI: {e}", verbose)
