@@ -74,6 +74,12 @@ operaciones con ruta.
 - La comprobación de disponibilidad de los motores externos importaba el
   paquete en un subproceso: el panel de benchmark tardaba 96 s en abrir.
   Ahora mira el disco (1 ms).
+- **El extractor de metadatos nunca encontró un autor.** La regex del campo
+  «creador» (`core/metadata_extractor._inferir_campo_desde_snippets`) traía
+  dos retrocesos literales donde iba `\b`, desde el commit inicial: exigía un
+  carácter que ningún texto contiene. Medido: devolvía `''`; ahora «Germán
+  Arciniegas». Lo encontró `tests/test_sin_caracteres_de_control.py`, nuevo,
+  que también halló dos retrocesos en el CHANGELOG de la sesión 71.
 
 ### Pendiente
 - Referencia humana del benchmark (sin ella los umbrales del enrutador y la
