@@ -234,13 +234,13 @@ que cada bloque extraído ahora tiene tests.
 
 ### 7. Tercera tanda (misma sesión, tarde)
 
-- **La sesión 69 estaba huérfana.** Trabajó en `C:\devashkar_station` y
+- **La sesión 69 estaba huérfana.** Trabajó en `C:\dev\bashkar_station` y
   nunca subió sus 4 commits (abstención por fragmentación, ruta por página,
   `pagina_inicio` NULL, ruta 2). Se integraron por cherry-pick; la copia de
   `C:\dev` quedó en `origin/main` con los originales en la rama
   `respaldo-sesion69-sin-integrar`.
 - **Poppler invisible** (`5e41758`): `instalar.py` lo deja en
-  `%LOCALAPPDATA%ashkar_poppler` y nadie buscaba ahí sin `poppler_path.txt`.
+  `%LOCALAPPDATA%\bashkar_poppler` y nadie buscaba ahí sin `poppler_path.txt`.
 - **Enderezado de página roto con OpenCV 5** (mismo commit): `HoughLinesP`
   cambió de forma; el deskew no se aplicaba nunca con el lock actual. Una
   página inclinada pasa de 0 a 834 palabras por la ruta de zonas.
