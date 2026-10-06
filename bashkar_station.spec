@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec — Bashkar Station v12.1
+# PyInstaller spec — Bashkar Station v13.0
 # Compilar SIEMPRE a disco local, nunca al proyecto (que vive en Google Drive):
 #   python -m PyInstaller bashkar_station.spec --noconfirm ^
 #       --distpath C:/build_rf/bs_dist --workpath C:/build_rf/bs_work
@@ -273,7 +273,9 @@ a = Analysis(
         # `python app.py`, y el usuario de este programa no abre una terminal.
         # Incluirlo sube el paquete ~772 MB; es el precio de que la función
         # exista de verdad para quien usa el .exe.
-        'torchvision', 'torchaudio', 'detectron2',
+        # torchvision ya NO se excluye (sesión 72): CHURRO la exige
+        # (Qwen2VLVideoProcessor) y sin ella la ruta no carga.
+        'torchaudio', 'detectron2',
         'tensorflow', 'tensorflow_core', 'keras',
         'cupy', 'cuml', 'numba', 'llvmlite',
         # spaCy internals — PyInstaller se queda sin RAM intentando introspeccionar thinc
