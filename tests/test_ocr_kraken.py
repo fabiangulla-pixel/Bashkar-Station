@@ -262,3 +262,15 @@ class TestPythonKrakenFrozen:
         img.write_bytes(b"\x89PNG\r\n\x1a\n")
         with pytest.raises(ImportError, match="exe compilado"):
             ocr_kraken(str(img))
+
+
+def test_modelo_en_carpeta_del_usuario(tmp_path, monkeypatch):
+    """En el .exe modelos/ no viaja dentro del paquete: el modelo se busca
+    también en ~/.bashkar/modelos (sesión 72: Kraken nunca estaba disponible)."""
+    import core.ocr_kraken as K
+    vacia, usuario = tmp_path / "app_modelos", tmp_path / "usuario"
+    usuario.mkdir()
+    (usuario / "catmus-print-fondue-large.mlmodel").write_bytes(b"x")
+    monkeypatch.setattr(K, "_MODELOS_DIR", vacia)
+    monkeypatch.setattr(K, "_MODELOS_USUARIO", usuario)
+    assert K._buscar_modelo().name == "catmus-print-fondue-large.mlmodel"

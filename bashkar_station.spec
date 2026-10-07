@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec — Bashkar Station v13.0
+# PyInstaller spec — Bashkar Station v13.1
 # Compilar SIEMPRE a disco local, nunca al proyecto (que vive en Google Drive):
 #   python -m PyInstaller bashkar_station.spec --noconfirm ^
 #       --distpath C:/build_rf/bs_dist --workpath C:/build_rf/bs_work
@@ -20,6 +20,63 @@ try:
     _google_genai_imports = collect_submodules('google.generativeai')
 except Exception:
     _google_genai_imports = []
+
+# Pila de modelos (sesión 72). `BashkarStation.exe --diagnostico` mostró que
+# en el .exe NO cargaban transformers ni sentence-transformers: el NER con
+# RoBERTa caía a spaCy, la búsqueda semántica y CHURRO no funcionaban, y el
+# mensaje decía "no está instalado". Dos causas:
+#  1. transformers verifica al importarse las versiones de sus dependencias con
+#     importlib.metadata, y PyInstaller no copia los dist-info.
+#  2. transformers carga cada arquitectura de forma perezosa, por nombre
+#     (transformers.models.bert…): el análisis estático no la ve.
+from PyInstaller.utils.hooks import copy_metadata
+
+_ML_PAQUETES = ('transformers', 'tokenizers', 'huggingface-hub', 'safetensors',
+                'sentence-transformers', 'torch', 'torchvision', 'accelerate', 'tqdm',
+                'regex', 'requests', 'packaging', 'filelock', 'numpy', 'pyyaml',
+                'scikit-learn', 'scipy', 'pillow', 'fsspec', 'jinja2', 'typing-extensions')
+_ml_metadatos = []
+for _paq in _ML_PAQUETES:
+    try:
+        _ml_metadatos += copy_metadata(_paq)
+    except Exception:
+        print(f'[spec] AVISO: sin metadatos de {_paq}')
+
+# Arquitecturas que usa Bashkar: bert (NER RoBERTa-BNE y MiniLM de embeddings),
+# qwen2_5_vl/qwen2_vl (CHURRO), clip (búsqueda visual), beit (DiT de layout).
+_MODELOS_HF = ('auto', 'bert', 'roberta', 'xlm_roberta', 'qwen2', 'qwen2_vl',
+               'qwen2_5_vl', 'clip', 'beit', 'mpnet')
+_ml_ocultos = []
+for _mod in ('sentence_transformers', 'transformers.pipelines', 'transformers.generation',
+             *(f'transformers.models.{m}' for m in _MODELOS_HF)):
+    try:
+        _ml_ocultos += collect_submodules(_mod)
+    except Exception:
+        print(f'[spec] AVISO: no se pudo recolectar {_mod}')
+
+# torchvision carga su extensión (_C_stable.pyd) y sus DLL con
+# torch.ops.load_library, por ruta: PyInstaller no las ve y torchvision falla
+# con "operator torchvision::nms does not exist" (y con él, CHURRO).
+try:
+    import torchvision as _tv
+    _tv_dir = Path(_tv.__file__).parent
+    _torchvision_binarios = [(str(f), 'torchvision') for f in
+                             [*_tv_dir.glob('*.pyd'), *_tv_dir.glob('*.dll')]]
+except Exception:
+    _torchvision_binarios = []
+
+# spaCy y su modelo español (ver la nota en excludes).
+from PyInstaller.utils.hooks import collect_all
+_spacy_datas, _spacy_binarios, _spacy_ocultos = [], [], []
+for _paq in ('spacy', 'thinc', 'es_core_news_sm', 'srsly', 'blis', 'cymem', 'preshed',
+             'murmurhash', 'wasabi', 'catalogue', 'confection', 'weasel'):
+    try:
+        _d, _b, _h = collect_all(_paq)
+        _spacy_datas += _d
+        _spacy_binarios += _b
+        _spacy_ocultos += [h for h in _h if '.tests' not in h]
+    except Exception:
+        print(f'[spec] AVISO: no se pudo recolectar {_paq}')
 
 # Diccionario Hunspell espanol para la correccion post-OCR. Hasta la sesion 67
 # esta ruta estaba CABLEADA a la maquina de desarrollo
@@ -65,7 +122,7 @@ except Exception:
 a = Analysis(
     [str(APP_DIR / 'app.py')],
     pathex=[str(APP_DIR)],
-    binaries=[],
+    binaries=_torchvision_binarios + _spacy_binarios,
     datas=[
         # Incluir assets gráficos
         (str(APP_DIR / 'assets'), 'assets'),
@@ -88,8 +145,14 @@ a = Analysis(
         # archivo .py en disco, no dentro del PYZ).
         (str(APP_DIR / 'config' / 'ocr.toml'), 'config'),
         (str(APP_DIR / 'core' / 'ocr' / 'trabajadores'), 'core/ocr/trabajadores'),
+        # dist-info de la pila de modelos (ver _ml_metadatos arriba).
+        *_ml_metadatos,
+        *_spacy_datas,
     ],
     hiddenimports=[
+        # Arquitecturas de transformers y sentence_transformers (ver arriba).
+        *_ml_ocultos,
+        *_spacy_ocultos,
         # Capa visual: define la paleta (import en la cabecera de app.py) y el
         # panel Inicio (import perezoso dentro de _build_inicio, que el
         # análisis estático no alcanza).
@@ -278,14 +341,15 @@ a = Analysis(
         'torchaudio', 'detectron2',
         'tensorflow', 'tensorflow_core', 'keras',
         'cupy', 'cuml', 'numba', 'llvmlite',
-        # spaCy internals — PyInstaller se queda sin RAM intentando introspeccionar thinc
-        'thinc', 'blis', 'cymem', 'preshed', 'murmurhash',
-        'srsly', 'wasabi', 'catalogue', 'confection', 'weasel',
-        'spacy.lang', 'spacy.pipeline', 'spacy.training',
-        'spacy.cli', 'spacy.tests',
+        # spaCy YA NO se excluye (sesión 72): sin thinc no cargaba y en el .exe
+        # no funcionaban sintaxis, correferencia ni el respaldo del NER. La
+        # exclusión era por falta de RAM al compilar en el equipo anterior; en
+        # el MSI (68 GB) compila. Solo se dejan fuera los tests de spaCy.
+        'spacy.tests',
         # ML pesados no usados en runtime
         'sklearn.datasets', 'sklearn.tests',
-        'scipy.spatial.transform', 'scipy.io', 'scipy.stats',
+        # scipy.stats / scipy.spatial.transform / scipy.io YA NO se excluyen
+        # (sesión 72): sentence_transformers y transformers los importan.
         # Otros innecesarios
         'onnx', 'onnxruntime',
         'jupyter', 'IPython', 'ipykernel', 'ipywidgets',

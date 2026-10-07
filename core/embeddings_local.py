@@ -86,9 +86,10 @@ def _modelo_embeddings():
     try:
         from sentence_transformers import SentenceTransformer
     except ImportError as e:
+        # La causa va en el mensaje (ver ner_roberta_local._pipeline_ner).
         raise ImportError(
-            "sentence-transformers no está instalado.\n"
-            "Ejecuta: pip install sentence-transformers"
+            f"sentence-transformers no se pudo importar ({e}).\n"
+            "Si no está instalado: pip install sentence-transformers"
         ) from e
 
     # HF_HUB_OFFLINE ya se fijó a nivel de módulo, antes del import de arriba.

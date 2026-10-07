@@ -17,8 +17,14 @@ import os
 import sys
 from pathlib import Path
 
-# Ruta por defecto de modelos (relativa al directorio de la app)
-_MODELOS_DIR = Path(__file__).parent.parent / "modelos"
+# Modelos de Kraken. Junto al código cuando se corre desde fuente; en el .exe,
+# en la carpeta del usuario (~/.bashkar/modelos, como los diccionarios): la
+# carpeta del programa se reemplaza en cada actualización y modelos/ no viaja
+# dentro del paquete. Hasta la sesión 72 el .exe buscaba solo en
+# _internal/modelos, que no existe: Kraken nunca estuvo disponible en el .exe.
+_MODELOS_USUARIO = Path.home() / ".bashkar" / "modelos"
+_MODELOS_DIR = (_MODELOS_USUARIO if getattr(sys, "frozen", False)
+                else Path(__file__).parent.parent / "modelos")
 _MODELO_DEFAULT = "catmus-print-large.mlmodel"
 
 # ── Venv dedicado a Kraken (Python 3.12 + kraken instalado ahí) ──────────────
@@ -94,9 +100,9 @@ def _buscar_modelo(modelo_path: str | None = None) -> Path | None:
         if p.exists():
             return p
 
-    # Buscar en carpeta modelos/
-    if _MODELOS_DIR.exists():
-        candidatos = list(_MODELOS_DIR.glob("*.mlmodel"))
+    # Buscar en la carpeta de modelos y, después, en la del usuario
+    for carpeta in dict.fromkeys((_MODELOS_DIR, _MODELOS_USUARIO)):
+        candidatos = sorted(carpeta.glob("*.mlmodel")) if carpeta.exists() else []
         if candidatos:
             # Preferir el que tenga "catmus" en el nombre
             for c in candidatos:

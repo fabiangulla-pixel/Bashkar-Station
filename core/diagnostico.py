@@ -57,6 +57,19 @@ def _embeddings():
     return {"dimension": int(v.shape[1]), "dispositivo": str(_modelo_embeddings().device)}
 
 
+def _spacy():
+    """Sintaxis y correferencia dependen de spaCy: analizar una frase de verdad."""
+    from core.servicios_ner import cargar_spacy
+    nlp = cargar_spacy()
+    if nlp is None:
+        raise RuntimeError("ningún modelo es_core_news_* carga")
+    doc = nlp("Germán Arciniegas publicó una crónica en Bogotá.")
+    raiz = [t.text for t in doc if t.dep_ == "ROOT"]
+    assert raiz, "sin análisis de dependencias"
+    return {"modelo": nlp.meta.get("name"), "raiz": raiz,
+            "entidades": [e.text for e in doc.ents]}
+
+
 def _motores():
     from core.ocr import crear, nombres
     salida = {}
@@ -98,11 +111,35 @@ def _ocr_real():
     return {"motor": fila["metodo"], "texto": texto.strip()[:80]}
 
 
+def _importaciones():
+    """Importa de verdad las librerías pesadas y devuelve el error REAL.
+
+    Los módulos de Bashkar envuelven el ImportError en "no está instalado";
+    en el .exe congelado la causa suele ser otra (un submódulo que PyInstaller
+    no empaquetó) y ese mensaje la tapa.
+    """
+    import importlib
+    salida, fallos = {}, []
+    for mod in ("transformers", "sentence_transformers", "torchvision", "faiss", "spacy",
+                "transformers.models.qwen2_5_vl"):
+        try:
+            m = importlib.import_module(mod)
+            salida[mod] = getattr(m, "__version__", "ok")
+        except Exception as e:
+            fallos.append(mod)
+            salida[mod] = "".join(traceback.format_exception_only(type(e), e)).strip()[-400:]
+    if fallos:
+        raise RuntimeError(json.dumps(salida, ensure_ascii=False))
+    return salida
+
+
 def ejecutar(destino: Path | None = None, ocr: bool = True) -> dict:
     resultados: list = []
+    _probar("importaciones", _importaciones, resultados)
     _probar("gpu", _gpu, resultados)
     _probar("ner_roberta", _ner, resultados)
     _probar("embeddings", _embeddings, resultados)
+    _probar("spacy", _spacy, resultados)
     _probar("motores_ocr", _motores, resultados)
     _probar("plan_enrutador", _plan_ocr, resultados)
     if ocr:

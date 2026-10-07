@@ -131,8 +131,11 @@ def _pipeline_ner():
     try:
         from transformers import pipeline
     except ImportError as e:
+        # La causa va en el mensaje: en el .exe transformers SÍ está y lo que
+        # falla es una dependencia no empaquetada (sesión 72: scipy, torchvision).
         raise ImportError(
-            "transformers no está instalado. Ejecuta: pip install transformers torch"
+            f"transformers no se pudo importar ({e}). Si no está instalado: "
+            "pip install transformers torch"
         ) from e
 
     # HF_HUB_OFFLINE ya se fijó a nivel de módulo, antes del import de arriba

@@ -101,6 +101,25 @@ Lo que salió:
   enrutador y un OCR real; deja un JSON. Es la única forma de verificar el
   .exe congelado sin clics.
 
+### Lo que el diagnóstico encontró dentro del .exe (v13.1)
+La GPU y el OCR funcionaban, pero **en el .exe no cargaban transformers,
+sentence-transformers, torchvision ni spaCy**: el NER con RoBERTa, la
+búsqueda semántica, CHURRO, la sintaxis y la correferencia no funcionaban, y
+el mensaje decía «no está instalado». Probablemente venía de versiones
+anteriores. Causas y arreglos en `bashkar_station.spec`:
+- faltaban los `dist-info` que transformers lee al importarse → `copy_metadata`;
+- las arquitecturas de transformers se cargan por nombre → `collect_submodules`
+  de bert, qwen2_5_vl, clip, beit…;
+- torchvision carga `_C_stable.pyd` y sus DLL por ruta → binarios explícitos;
+- `scipy.stats`, `scipy.spatial.transform` y `scipy.io` estaban excluidos;
+- spaCy y `thinc` se excluían por falta de RAM al compilar en el equipo
+  anterior; en el MSI (68 GB) compilan → `collect_all`.
+- **Kraken nunca estuvo disponible en el .exe**: buscaba el modelo en
+  `_internal/modelos`, que no existe. Ahora también en `~/.bashkar/modelos`.
+- Los mensajes «no está instalado» de RoBERTa y embeddings ahora incluyen la
+  causa real.
+Resultado: 9 de 9 pruebas del diagnóstico en verde dentro del .exe.
+
 ### Pendiente
 - Referencia humana del benchmark (sin ella los umbrales del enrutador y la
   comparación entre motores son provisionales).
