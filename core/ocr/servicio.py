@@ -133,6 +133,56 @@ def guardar_metadatos(filas: list[dict], out_dir) -> Path:
 
 EXTS_IMAGEN = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp"}
 
+# Fracción de la página cubierta por imágenes a partir de la cual la página es
+# un escaneo. Medido en Estampa (BNC, Adobe Paper Capture): 1,00 en todas.
+COBERTURA_ESCANEO = 0.85
+
+
+def cobertura_imagen(pagina) -> float:
+    """Fracción (0-1) del área de una página de PyMuPDF cubierta por imágenes."""
+    area = pagina.rect.width * pagina.rect.height or 1.0
+    cubierta = 0.0
+    for img in pagina.get_images(full=True):
+        try:
+            for r in pagina.get_image_rects(img[0]):
+                r = r & pagina.rect
+                cubierta += max(0.0, r.width) * max(0.0, r.height)
+        except Exception:
+            continue
+    return min(1.0, cubierta / area)
+
+
+def textos_nativos_utiles(pdf, log=lambda m: None) -> list[str | None]:
+    """Texto embebido por página, SOLO donde es texto digital de verdad.
+
+    En una página escaneada (una imagen que la cubre) el texto embebido es el
+    OCR de otra herramienta —la capa de Adobe Paper Capture de la BNC—, no
+    texto nativo. Medido en Estampa (abril 1939, p. 3): la capa BNC trae
+    «LO QUE HA PASAPO», «lo patria», «Mortínez», «militpr»; PP-StructureV3
+    lee «PASADO», «la patria», «Martínez», «militar». ``calidad_ocr`` no lo
+    detecta porque mide fragmentación, no letras cambiadas. Sesión 72: el
+    enrutador usaba esa capa como "nativo" y dejaba el OCR peor.
+
+    Devuelve una lista con el texto de cada página digital y ``None`` en las
+    escaneadas (el enrutador las manda a OCR).
+    """
+    try:
+        import fitz
+        with fitz.open(str(pdf)) as doc:
+            salida, escaneadas = [], 0
+            for pg in doc:
+                if cobertura_imagen(pg) >= COBERTURA_ESCANEO:
+                    salida.append(None)
+                    escaneadas += 1
+                else:
+                    salida.append(pg.get_text("text"))
+    except Exception:
+        return []
+    if escaneadas:
+        log(f"  · {escaneadas} de {len(salida)} pág escaneadas: su capa de texto embebida "
+            "es OCR ajeno, se vuelve a reconocer")
+    return salida
+
 
 def ocr_documento(origen, out_dir, enrutador, *, dpi: int = 300, log=lambda m: None,
                   progreso=lambda i, total: None) -> list[dict]:
@@ -148,12 +198,7 @@ def ocr_documento(origen, out_dir, enrutador, *, dpi: int = 300, log=lambda m: N
     if origen.is_file() and origen.suffix.lower() == ".pdf":
         from core.ocr_engine import pdf_a_imagenes
         imgs = pdf_a_imagenes(origen, out_dir / "02_imagenes" / numero, dpi)
-        try:
-            import fitz
-            with fitz.open(str(origen)) as doc:
-                nativos = [pg.get_text("text") for pg in doc]
-        except Exception:
-            nativos = []
+        nativos = textos_nativos_utiles(origen, log=log)
     elif origen.is_dir():
         imgs = sorted(p for p in origen.iterdir() if p.suffix.lower() in EXTS_IMAGEN)
     elif origen.suffix.lower() in EXTS_IMAGEN:

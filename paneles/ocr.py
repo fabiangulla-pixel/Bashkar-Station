@@ -2112,18 +2112,15 @@ class PanelOCR:
 
                     if ruta_ocr == "auto":
                         # Ruta 0: core.ocr.enrutador (config/ocr.toml), la misma
-                        # que usa la API. Aprovecha el texto embebido de cada
-                        # página si calidad_ocr lo da por utilizable.
+                        # que usa la API. Aprovecha el texto embebido solo en
+                        # páginas digitales: en las escaneadas es OCR ajeno
+                        # (core.ocr.servicio.textos_nativos_utiles).
                         from core.ocr.enrutador import Enrutador
-                        nativos = []
-                        try:
-                            import fitz
-                            with fitz.open(str(archivo)) as _doc:
-                                nativos = [pg.get_text("text") for pg in _doc]
-                        except Exception:
-                            pass
+                        from core.ocr.servicio import textos_nativos_utiles
+
                         def _log(m):
                             self._put(tipo="log", texto=m)
+                        nativos = textos_nativos_utiles(archivo, log=_log)
                         with Enrutador(opciones={"tesseract": {"lang": lang},
                                                  "zonas": {"lang": lang}}, log=_log) as enr:
                             plan = enr.plan()

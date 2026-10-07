@@ -125,3 +125,44 @@ def test_metadatos_conservan_marca_previa_de_revision(tmp_path):
 def test_metadatos_vacios_no_revientan(tmp_path):
     from core.ocr.servicio import tabla_metadatos
     assert tabla_metadatos([]).empty
+
+
+def _pdf_digital(ruta):
+    import pymupdf
+    doc = pymupdf.open()
+    pg = doc.new_page()
+    pg.insert_text((72, 72), "La revista publicó una crónica sobre el embajador. " * 3)
+    doc.save(ruta)
+
+
+def _pdf_escaneado(ruta, tmp_path):
+    """Como los de la BNC: una imagen que cubre la página + texto invisible encima."""
+    import pymupdf
+    from PIL import Image
+    png = tmp_path / "scan.png"
+    Image.new("RGB", (600, 800), "white").save(png)
+    doc = pymupdf.open()
+    pg = doc.new_page()
+    pg.insert_image(pg.rect, filename=str(png))
+    pg.insert_text((72, 72), "LO QUE HA PASAPO lo patria Mortínez " * 3, render_mode=3)
+    doc.save(ruta)
+
+
+def test_texto_nativo_solo_en_paginas_digitales(tmp_path):
+    """Sesión 72: el enrutador tomaba la capa OCR de la BNC por texto nativo."""
+    from core.ocr.servicio import textos_nativos_utiles
+    dig, esc = tmp_path / "dig.pdf", tmp_path / "esc.pdf"
+    _pdf_digital(dig)
+    _pdf_escaneado(esc, tmp_path)
+    assert "embajador" in textos_nativos_utiles(dig)[0]
+    assert textos_nativos_utiles(esc) == [None]
+
+
+def test_cobertura_imagen(tmp_path):
+    import pymupdf
+
+    from core.ocr.servicio import cobertura_imagen
+    esc = tmp_path / "esc.pdf"
+    _pdf_escaneado(esc, tmp_path)
+    with pymupdf.open(esc) as d:
+        assert cobertura_imagen(d[0]) > 0.9   # la imagen conserva su proporción

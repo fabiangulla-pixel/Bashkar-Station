@@ -6572,6 +6572,10 @@ import re as re
 # MAIN
 # ══════════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
+    if "--diagnostico" in sys.argv:
+        # Sin ventana: informe JSON de GPU, modelos y motores (core/diagnostico.py).
+        from core.diagnostico import main as _diagnostico
+        sys.exit(_diagnostico(sys.argv))
     app = BashkarApp()
     app.mainloop()
 

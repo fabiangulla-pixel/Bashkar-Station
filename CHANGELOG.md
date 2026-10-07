@@ -81,6 +81,26 @@ operaciones con ruta.
   Arciniegas». Lo encontró `tests/test_sin_caracteres_de_control.py`, nuevo,
   que también halló dos retrocesos en el CHANGELOG de la sesión 71.
 
+### Pruebas de punta a punta con páginas reales (Estampa, abril 1939)
+Pipeline directo, API (uvicorn real, modo público) y worker de la GUI sobre
+las mismas 6 páginas: los tres dan 6 páginas, 3 artículos y 168 entidades.
+Lo que salió:
+- **El enrutador tomaba la capa OCR de la BNC por texto nativo.** En un PDF
+  escaneado el texto embebido es el OCR de Adobe Paper Capture, peor que el
+  nuestro: «LO QUE HA PASAPO», «lo patria», «Mortínez», «militpr», donde
+  PP-StructureV3 lee «PASADO», «la patria», «Martínez», «militar».
+  `calidad_ocr` no lo ve (mide fragmentación, no letras cambiadas). Ahora
+  `servicio.textos_nativos_utiles` solo acepta texto embebido en páginas sin
+  una imagen que las cubra (≥85 %; en Estampa, 100 %). Con el arreglo, el
+  normalizador pasa de corregir 225 palabras a 26.
+- **Entidades con puntuación pegada** («. Sen» como persona): duplicaban
+  entidades en el índice. `ner_roberta` limpia los bordes y conserva el punto
+  de iniciales y abreviaturas.
+- **`BashkarStation.exe --diagnostico [informe.json]`** (`core/diagnostico.py`):
+  sin abrir la ventana, comprueba GPU, RoBERTa, embeddings, motores, plan del
+  enrutador y un OCR real; deja un JSON. Es la única forma de verificar el
+  .exe congelado sin clics.
+
 ### Pendiente
 - Referencia humana del benchmark (sin ella los umbrales del enrutador y la
   comparación entre motores son provisionales).

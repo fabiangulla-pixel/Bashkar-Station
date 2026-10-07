@@ -101,6 +101,11 @@ _forzar_offline_si_ya_cacheado(_MODELO_NER)
 _VENTANA_TOKENS = 480
 _SOLAPE_TOKENS  = 50
 
+# Puntuación que no puede abrir ni cerrar una entidad (el "." final sí puede:
+# iniciales y abreviaturas).
+_BORDE_IZQ = " .,;:!?¡¿-–—\"'«»“”‘’()[]*·/"
+_BORDE_DER = " ,;:!?¡¿-–—\"'«»“”‘’()[]*·/"
+
 # Mapeo de etiquetas del modelo a categorías de Bashkar
 MAPA_CATEGORIAS = {
     "PER":  "personas",
@@ -220,6 +225,10 @@ def ner_roberta(texto: str,
 
             # Limpiar artefactos del tokenizador (▁ de sentencepiece, ## de wordpiece)
             texto_ent = texto_ent.replace("▁", " ").replace("##", "").strip()
+            # Puntuación arrastrada en los bordes (sesión 72, Estampa abril 1939:
+            # una "persona" ". Sen"): duplica entidades en el índice. Se conserva
+            # el punto final de iniciales y abreviaturas ("Alicia A.", "S.A.").
+            texto_ent = texto_ent.lstrip(_BORDE_IZQ).rstrip(_BORDE_DER).strip()
 
             if len(texto_ent) < 2:
                 continue
