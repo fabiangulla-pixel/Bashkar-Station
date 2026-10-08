@@ -1,0 +1,103 @@
+{
+ "congelado": true,
+ "python": "3.12.10",
+ "ejecutable": "C:\\Users\\fabia\\Programas\\BashkarStation\\BashkarStation.exe",
+ "ok": true,
+ "pruebas": [
+  {
+   "prueba": "importaciones",
+   "ok": true,
+   "detalle": {
+    "transformers": "5.16.1",
+    "sentence_transformers": "6.0.1",
+    "torchvision": "0.29.1+cu130",
+    "faiss": "1.15.0",
+    "spacy": "3.8.16",
+    "transformers.models.qwen2_5_vl": "ok"
+   },
+   "segundos": 6.67
+  },
+  {
+   "prueba": "gpu",
+   "ok": true,
+   "detalle": {
+    "torch": "2.14.0+cu130",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 5080 Laptop GPU"
+   },
+   "segundos": 0.27
+  },
+  {
+   "prueba": "ner_roberta",
+   "ok": true,
+   "detalle": {
+    "dispositivo": "cuda:0",
+    "entidades": [
+     "Bogotá",
+     "Buenos Aires",
+     "Germán Arciniegas"
+    ]
+   },
+   "segundos": 2.34
+  },
+  {
+   "prueba": "embeddings",
+   "ok": true,
+   "detalle": {
+    "dimension": 384,
+    "dispositivo": "cuda:0"
+   },
+   "segundos": 5.45
+  },
+  {
+   "prueba": "spacy",
+   "ok": true,
+   "detalle": {
+    "modelo": "core_news_sm",
+    "raiz": [
+     "publicó"
+    ],
+    "entidades": [
+     "Germán Arciniegas",
+     "Bogotá"
+    ]
+   },
+   "segundos": 0.25
+  },
+  {
+   "prueba": "motores_ocr",
+   "ok": true,
+   "detalle": {
+    "tesseract": "disponible",
+    "zonas": "disponible",
+    "churro": "disponible",
+    "pero": "no instalado: pip install pero-ocr",
+    "kraken": "disponible",
+    "vision_llm": "falta la clave de API de claude",
+    "surya": "disponible",
+    "paddle": "disponible",
+    "ppstructure": "disponible"
+   },
+   "segundos": 0.39
+  },
+  {
+   "prueba": "plan_enrutador",
+   "ok": true,
+   "detalle": {
+    "primario": "ppstructure",
+    "segunda_opinion": "surya",
+    "respaldo": "tesseract"
+   },
+   "segundos": 0.01
+  },
+  {
+   "prueba": "ocr_real",
+   "ok": true,
+   "detalle": {
+    "motor": "ppstructure",
+    "texto": "Revista Estampa Bogota 1939"
+   },
+   "segundos": 57.28
+  }
+ ]
+}
