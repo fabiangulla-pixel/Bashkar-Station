@@ -11,7 +11,7 @@ import threading
 import tkinter as tk
 from datetime import datetime
 from pathlib import Path
-from tkinter import filedialog, messagebox, scrolledtext, ttk
+from tkinter import filedialog, messagebox, scrolledtext, simpledialog, ttk
 
 from core import plataforma
 from gui_comun import (
@@ -150,6 +150,8 @@ class PanelResultados:
                    command=self._bench_preparar_oro).pack(side="left", padx=4)
         ttk.Button(acc, text="📊 Avance",
                    command=self._bench_estado_oro).pack(side="left", padx=4)
+        ttk.Button(acc, text="🎙 Transcribir con voz",
+                   command=self._bench_dictar_referencia).pack(side="left", padx=4)
         ttk.Button(acc, text="💾 Exportar CSV",
                    command=lambda: self._bench_exportar("csv")).pack(side="left", padx=4)
         ttk.Button(acc, text="📋 Copiar tabla Markdown",
@@ -257,6 +259,202 @@ class PanelResultados:
             f"({e['porcentaje']} %)\n"
             f"{e['pendientes']} pendiente(s) · {e['palabras']} palabras escritas\n\n"
             f"Por tipo:\n{detalle}{aviso}")
+
+    # ── Transcripción de referencia por dictado de voz (sesión 73) ─────────────
+    # El estándar de oro por zonas (arriba) exige etiquetar primero cada página
+    # en el Etiquetador; para un benchmark de página completa como
+    # benchmark/<corpus>/benchmark.json (core.benchmark_regresion) no hace
+    # falta ese paso. Reusa core.voice_dictation.DictadoSession, el mismo motor
+    # que ya usa el panel Normalizar.
+    def _bench_dictar_referencia(self):
+        carpeta_default = Path("benchmark/estampa-1939")
+        carpeta = carpeta_default if (carpeta_default / "benchmark.json").exists() else None
+        if carpeta is None:
+            d = filedialog.askdirectory(title="Carpeta del benchmark (con benchmark.json)")
+            if not d:
+                return
+            carpeta = Path(d)
+        try:
+            from core.benchmark_regresion import cargar_manifiesto
+            man = cargar_manifiesto(carpeta, exigir_referencia=False)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
+        casos = man.get("casos", [])
+        if not casos:
+            messagebox.showinfo("Sin casos", "El benchmark no tiene páginas registradas.")
+            return
+
+        self._dr_carpeta = Path(carpeta)
+        self._dr_manifiesto = man
+        self._dr_casos = casos
+        self._dr_session = None
+        # Arranca en la primera página sin referencia todavía.
+        self._dr_idx = 0
+        for i, c in enumerate(casos):
+            ruta = self._dr_carpeta / c["referencia"]
+            if not ruta.exists() or not ruta.read_text("utf-8", errors="replace").strip():
+                self._dr_idx = i
+                break
+        self._dr_abrir_ventana()
+
+    def _dr_abrir_ventana(self):
+        win, content = self._mk_glass_toplevel(
+            "🎙 Transcribir referencia humana", ancho=900, alto=760)
+        self._dr_win = win
+
+        top = tk.Frame(content, bg=TEMA.CONTENT_BG)
+        top.pack(fill="x", padx=10, pady=(6, 0))
+        self._dr_lbl_progreso = tk.Label(top, text="", bg=TEMA.CONTENT_BG,
+                                         fg=TEMA.TXT_SEC, font=("Segoe UI", 9))
+        self._dr_lbl_progreso.pack(side="left")
+        tk.Label(top, text="Lee la imagen en voz alta y edita el resultado antes de guardar.",
+                bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(side="right")
+
+        self._dr_lbl_img = tk.Label(content, bg="#0E1114")
+        self._dr_lbl_img.pack(fill="x", padx=10, pady=8)
+
+        self._dr_txt = scrolledtext.ScrolledText(
+            content, height=14, bg="#0E1114", fg="#E8E5DF", font=("Consolas", 11),
+            insertbackground="#E8E5DF", wrap="word")
+        self._dr_txt.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+
+        botones = tk.Frame(content, bg=TEMA.CONTENT_BG)
+        botones.pack(fill="x", padx=10, pady=(0, 10))
+        self._dr_btn_dictar = ttk.Button(botones, text="🎙 Dictar",
+                                         command=self._dr_dictar_toggle)
+        self._dr_btn_dictar.pack(side="left")
+        self._dr_lbl_estado = tk.Label(botones, text="", bg=TEMA.CONTENT_BG,
+                                       fg=TEMA.TXT_DIM, font=("Segoe UI", 9))
+        self._dr_lbl_estado.pack(side="left", padx=10)
+        ttk.Button(botones, text="⬅ Anterior",
+                   command=lambda: self._dr_ir(-1)).pack(side="right", padx=4)
+        ttk.Button(botones, text="💾 Guardar y siguiente ➡", style="P.TButton",
+                   command=lambda: self._dr_ir(1)).pack(side="right", padx=4)
+
+        win.protocol("WM_DELETE_WINDOW", self._dr_cerrar)
+        self._dr_cargar_caso()
+
+    def _dr_cargar_caso(self):
+        c = self._dr_casos[self._dr_idx]
+        self._dr_lbl_progreso.config(
+            text=f"Página {self._dr_idx + 1}/{len(self._dr_casos)} — {c['page_id']}")
+        img_path = (self._dr_carpeta / c["imagen"]).resolve()
+        try:
+            from PIL import Image, ImageTk
+            img = Image.open(img_path)
+            ancho_max = 820
+            if img.width > ancho_max:
+                factor = ancho_max / img.width
+                img = img.resize((ancho_max, int(img.height * factor)))
+            self._dr_photo = ImageTk.PhotoImage(img)
+            self._dr_lbl_img.config(image=self._dr_photo, text="")
+        except Exception as e:
+            self._dr_lbl_img.config(image="", text=f"⚠ No se pudo cargar la imagen: {e}")
+        ruta_txt = self._dr_carpeta / c["referencia"]
+        texto = ruta_txt.read_text("utf-8", errors="replace") if ruta_txt.exists() else ""
+        self._dr_txt.delete("1.0", "end")
+        self._dr_txt.insert("1.0", texto)
+
+    def _dr_dictar_toggle(self):
+        if getattr(self, "_dr_session", None) is not None:
+            self._dr_session.detener()
+            self._dr_session = None
+            self._dr_btn_dictar.config(text="🎙 Dictar")
+            self._dr_lbl_estado.config(text="")
+            return
+        try:
+            from core.voice_dictation import DictadoSession
+        except ImportError:
+            messagebox.showerror("Dependencia faltante",
+                                 "Instala las dependencias de dictado:\n\n"
+                                 "  pip install SpeechRecognition sounddevice\n\n"
+                                 "Luego reinicia la aplicación.")
+            return
+        self._dr_btn_dictar.config(text="⏹ Detener")
+        self._dr_lbl_estado.config(text="⏳ Iniciando micrófono…")
+
+        def _on_texto(texto: str):
+            self.after(0, lambda t=texto: self._dr_insertar(t))
+
+        self._dr_session = DictadoSession(callback=_on_texto, idioma="es-CO", modo_online=True)
+        self._dr_session.iniciar()
+        self.after(200, self._dr_poll)
+
+    def _dr_insertar(self, texto: str):
+        if not texto.strip():
+            return
+        widget = self._dr_txt
+        try:
+            pos = widget.index("insert")
+        except Exception:
+            pos = "end"
+        contenido_actual = widget.get("1.0", pos)
+        if contenido_actual and contenido_actual[-1] not in (" ", "\n"):
+            texto = " " + texto
+        widget.insert(pos, texto)
+        widget.see("insert")
+        preview = texto.strip()[:40] + ("…" if len(texto.strip()) > 40 else "")
+        self._dr_lbl_estado.config(text=f"🔴 Escuchando · '{preview}'")
+
+    def _dr_poll(self):
+        if getattr(self, "_dr_session", None) is None:
+            return
+        estado = self._dr_session.estado()
+        if estado:
+            if estado == "escuchando":
+                self._dr_lbl_estado.config(text="🔴 Escuchando…")
+            elif estado == "detenido":
+                self._dr_btn_dictar.config(text="🎙 Dictar")
+                self._dr_lbl_estado.config(text="")
+                self._dr_session = None
+                return
+            elif estado.startswith("error:"):
+                self._dr_btn_dictar.config(text="🎙 Dictar")
+                self._dr_lbl_estado.config(text=f"⚠ {estado[6:]}")
+                self._dr_session = None
+                return
+        if getattr(self, "_dr_session", None) is not None:
+            self.after(200, self._dr_poll)
+
+    def _dr_guardar_actual(self):
+        c = self._dr_casos[self._dr_idx]
+        ruta_txt = self._dr_carpeta / c["referencia"]
+        ruta_txt.parent.mkdir(parents=True, exist_ok=True)
+        texto = self._dr_txt.get("1.0", "end").rstrip("\n")
+        ruta_txt.write_text(texto, encoding="utf-8")
+        man = self._dr_manifiesto
+        if not (man.get("referencia", {}).get("transcriptor") or "").strip():
+            nombre = simpledialog.askstring(
+                "Transcriptor",
+                "¿Quién está transcribiendo? Queda registrado en benchmark.json "
+                "(referencia.transcriptor).")
+            if (nombre or "").strip():
+                import json as _json
+                man.setdefault("referencia", {})["transcriptor"] = nombre.strip()
+                (self._dr_carpeta / "benchmark.json").write_text(
+                    _json.dumps(man, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    def _dr_ir(self, delta: int):
+        if getattr(self, "_dr_session", None) is not None:
+            self._dr_dictar_toggle()
+        self._dr_guardar_actual()
+        nuevo = self._dr_idx + delta
+        if nuevo < 0:
+            self.toast("Ya estás en la primera página", "warn")
+            return
+        if nuevo >= len(self._dr_casos):
+            self.toast("✅ Última página — todo guardado", "ok")
+            return
+        self._dr_idx = nuevo
+        self._dr_cargar_caso()
+
+    def _dr_cerrar(self):
+        if getattr(self, "_dr_session", None) is not None:
+            self._dr_session.detener()
+            self._dr_session = None
+        self._dr_guardar_actual()
+        self._dr_win.destroy()
 
     def _bench_descargar_churro(self):
         """Descarga el modelo CHURRO desde la propia aplicación.
