@@ -21,6 +21,18 @@ from gui_comun import (
     _resolver_api_key_modelo,
 )
 
+# Tipologías editoriales reales de Estampa 1939, tomadas de la muestra
+# vision_ocr/muestras_corpus/Corpus_ESTAMPA_1939_muestra.docx (25 páginas
+# categorizadas a mano por el investigador antes de esta sesión). Sirven
+# como estrato "tipologia" en core.benchmark_regresion.ESTRATOS.
+TIPOLOGIAS_EDITORIAL = (
+    "Portada", "Editorial", "Crónica política", "Crónica social",
+    "Crónica de moda", "Crónica urbana", "Reportaje / entrevista",
+    "Perfil biográfico", "Ensayo cultural/histórico", "Crítica de cine",
+    "Ilustraciones / humor gráfico", "Sección práctica femenina",
+    "Aviso publicitario", "Convocatoria / concurso", "Otro",
+)
+
 
 class PanelResultados:
     # ══════════════════════════════════════════════════════════════════════════
@@ -314,6 +326,14 @@ class PanelResultados:
         self._dr_lbl_img = tk.Label(content, bg="#0E1114")
         self._dr_lbl_img.pack(fill="x", padx=10, pady=8)
 
+        tip = tk.Frame(content, bg=TEMA.CONTENT_BG)
+        tip.pack(fill="x", padx=10, pady=(0, 4))
+        tk.Label(tip, text="Tipología editorial:", bg=TEMA.CONTENT_BG,
+                fg=TEMA.TXT_SEC, font=("Segoe UI", 9)).pack(side="left")
+        self._dr_var_tipologia = tk.StringVar()
+        ttk.Combobox(tip, textvariable=self._dr_var_tipologia, width=40,
+                    values=TIPOLOGIAS_EDITORIAL).pack(side="left", padx=6)
+
         self._dr_txt = scrolledtext.ScrolledText(
             content, height=14, bg="#0E1114", fg="#E8E5DF", font=("Consolas", 11),
             insertbackground="#E8E5DF", wrap="word")
@@ -351,6 +371,7 @@ class PanelResultados:
             self._dr_lbl_img.config(image=self._dr_photo, text="")
         except Exception as e:
             self._dr_lbl_img.config(image="", text=f"⚠ No se pudo cargar la imagen: {e}")
+        self._dr_var_tipologia.set(c.get("tipologia", "") or "")
         ruta_txt = self._dr_carpeta / c["referencia"]
         texto = ruta_txt.read_text("utf-8", errors="replace") if ruta_txt.exists() else ""
         self._dr_txt.delete("1.0", "end")
@@ -423,17 +444,21 @@ class PanelResultados:
         ruta_txt.parent.mkdir(parents=True, exist_ok=True)
         texto = self._dr_txt.get("1.0", "end").rstrip("\n")
         ruta_txt.write_text(texto, encoding="utf-8")
+
         man = self._dr_manifiesto
+        c["tipologia"] = (self._dr_var_tipologia.get() or "").strip()
+
         if not (man.get("referencia", {}).get("transcriptor") or "").strip():
             nombre = simpledialog.askstring(
                 "Transcriptor",
                 "¿Quién está transcribiendo? Queda registrado en benchmark.json "
                 "(referencia.transcriptor).")
             if (nombre or "").strip():
-                import json as _json
                 man.setdefault("referencia", {})["transcriptor"] = nombre.strip()
-                (self._dr_carpeta / "benchmark.json").write_text(
-                    _json.dumps(man, ensure_ascii=False, indent=2), encoding="utf-8")
+
+        import json as _json
+        (self._dr_carpeta / "benchmark.json").write_text(
+            _json.dumps(man, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _dr_ir(self, delta: int):
         if getattr(self, "_dr_session", None) is not None:

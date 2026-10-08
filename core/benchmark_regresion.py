@@ -41,7 +41,7 @@ from core import benchmark_ocr as B
 
 MANIFIESTO = "benchmark.json"
 LINEA_BASE = "linea_base.json"
-ESTRATOS = ("revista", "anio", "tipografia", "calidad_imagen")
+ESTRATOS = ("revista", "anio", "tipografia", "calidad_imagen", "tipologia")
 # Tolerancia absoluta por defecto: medio punto de CER. Menos que eso es ruido
 # de normalización en muestras del tamaño de un piloto.
 TOLERANCIA = 0.005
