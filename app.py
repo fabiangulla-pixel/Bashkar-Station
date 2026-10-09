@@ -1384,7 +1384,7 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
                                              "coloc", "nov", "red", "ling",
                                              "sem", "top", "vis", "imgdesc"]),
         ("visualize", "🎨", "Visualizar",  ["viz", "comp", "comp2", "intxt"]),
-        ("publish",   "📤", "Publicar",    ["rep", "dash", "valid", "colab"]),
+        ("publish",   "📤", "Publicar",    ["bench", "rep", "dash", "valid", "colab"]),
         ("settings",  "⚙️", "Proyecto",    ["meta", "res"]),
     ]
 
