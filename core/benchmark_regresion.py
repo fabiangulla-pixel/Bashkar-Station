@@ -85,6 +85,41 @@ def _leer(carpeta: Path, rel: str) -> str | None:
     return ruta.read_text(encoding="utf-8") if ruta.exists() else None
 
 
+def aplanar_zonas(zonas: list[dict]) -> str:
+    """Texto plano en orden de lectura, una zona por línea — lo que consume el
+    CER/WER existente. Zonas sin ``orden`` se dejan al final en el orden dado."""
+    ordenadas = sorted(zonas, key=lambda z: (z.get("orden") is None, z.get("orden", 0)))
+    return "\n".join(z.get("texto", "") for z in ordenadas)
+
+
+def cargar_referencia_zonas(ruta_json: Path) -> dict:
+    """Lee un ``referencia/<page_id>.json`` (zonas con texto+orden+tipo)."""
+    return json.loads(ruta_json.read_text(encoding="utf-8"))
+
+
+def guardar_referencia_zonas(ruta_json: Path, page_id: str, zonas: list[dict],
+                              transcriptor: str = "") -> Path:
+    """Escribe ``referencia/<page_id>.json``. Cada zona: ``{orden, tipo, texto}``."""
+    ruta_json = Path(ruta_json)
+    ruta_json.parent.mkdir(parents=True, exist_ok=True)
+    datos = {"page_id": page_id, "transcriptor": transcriptor, "zonas": zonas}
+    ruta_json.write_text(json.dumps(datos, ensure_ascii=False, indent=2), encoding="utf-8")
+    return ruta_json
+
+
+def _leer_referencia(carpeta: Path, rel_txt: str) -> str | None:
+    """Referencia humana de una página: prefiere el formato por zonas
+    (``<mismo nombre>.json``, estructura gráfica real) y cae al ``.txt`` plano
+    cuando no existe — así las páginas ya transcritas (p. ej. p0002) siguen
+    siendo compatibles sin reescribir esta función."""
+    ruta_txt = carpeta / rel_txt
+    ruta_json = ruta_txt.with_suffix(".json")
+    if ruta_json.exists():
+        datos = cargar_referencia_zonas(ruta_json)
+        return aplanar_zonas(datos.get("zonas", []))
+    return ruta_txt.read_text(encoding="utf-8") if ruta_txt.exists() else None
+
+
 def cargar_textos(carpeta) -> tuple[dict, dict[str, str], dict[str, dict[str, str]]]:
     """(manifiesto, referencias, salidas por ruta). Casos sin referencia se omiten."""
     carpeta = Path(carpeta)
@@ -94,7 +129,7 @@ def cargar_textos(carpeta) -> tuple[dict, dict[str, str], dict[str, dict[str, st
     salidas: dict[str, dict[str, str]] = defaultdict(dict)
     for caso in man["casos"]:
         pid = caso["page_id"]
-        ref = _leer(carpeta, caso.get("referencia", f"referencia/{pid}.txt"))
+        ref = _leer_referencia(carpeta, caso.get("referencia", f"referencia/{pid}.txt"))
         if not ref or not ref.strip():
             continue
         referencias[pid] = ref

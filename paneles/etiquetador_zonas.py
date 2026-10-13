@@ -161,6 +161,7 @@ class PanelEtiquetadorZonas:
             ("🗑 Todo",     self._etz_limpiar_todo),
             ("💾 Guardar",  self._etz_guardar_pagina),
             ("⟳ Inclinar", self._etz_deskew_pagina),
+            ("🎙 Referencia humana", self._etz_dictar_referencia_zonas),
         ]:
             b = tk.Label(row2, text=txt, bg="#171C20", fg="#777F84",
                          font=("Segoe UI", 7), cursor="hand2", padx=6, pady=2)
@@ -2533,6 +2534,183 @@ class PanelEtiquetadorZonas:
         threading.Thread(target=_run, daemon=True).start()
 
     # ── Actualizar selector de números en ETZ ────────────────────────────────
+    # ── Referencia humana del benchmark, por zona (sesión 74) ──────────────────
+    # Decisión de la sesión 73: la referencia debe capturar estructura gráfica
+    # (columnas, encabezados) en el orden de lectura real, y vivir junto al
+    # Etiquetador — el investigador ya ve las zonas de la página aquí, en vez
+    # de dictar la página completa como en «Publicar → Benchmark OCR».
+    # Reusa core.benchmark_regresion (formato referencia/<page_id>.json) y
+    # core.voice_dictation.DictadoSession, el mismo motor del panel Normalizar.
+    def _etz_dictar_referencia_zonas(self):
+        if not self._etz_zonas:
+            messagebox.showwarning(
+                "Sin zonas", "Etiqueta las zonas de esta página antes de transcribirla.")
+            return
+        from tkinter import filedialog
+        carpeta_default = Path("benchmark/estampa-1939")
+        carpeta = carpeta_default if (carpeta_default / "benchmark.json").exists() else None
+        if carpeta is None:
+            d = filedialog.askdirectory(title="Carpeta del benchmark (con benchmark.json)")
+            if not d:
+                return
+            carpeta = Path(d)
+
+        numero = self._etz_numero.get()
+        pagina = self._etz_pagina.get()
+        if not pagina:
+            messagebox.showwarning("Sin página", "Selecciona una página primero.")
+            return
+
+        from core.benchmark_regresion import cargar_referencia_zonas, guardar_referencia_zonas
+
+        ruta_json = carpeta / "referencia" / f"{pagina}.json"
+        previas = {}
+        if ruta_json.exists():
+            try:
+                previas = {z.get("zid"): z.get("texto", "")
+                          for z in cargar_referencia_zonas(ruta_json).get("zonas", [])}
+            except Exception:
+                previas = {}
+
+        zonas_ordenadas = sorted(self._etz_zonas, key=lambda z: (z.orden or 9999))
+
+        win, content = self._mk_glass_toplevel(
+            f"🎙 Referencia humana por zonas — {pagina}", ancho=1100, alto=760)
+        self._etzr_win = win
+        self._etzr_session = None
+        self._etzr_txt_activo = None
+
+        tk.Label(content, text="Transcribe cada zona en su orden de lectura. "
+                 "Dicta o escribe directamente en el recuadro activo.",
+                 bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8)
+                 ).pack(anchor="w", padx=10, pady=(6, 4))
+
+        cuerpo = tk.Frame(content, bg=TEMA.CONTENT_BG)
+        cuerpo.pack(fill="both", expand=True, padx=10)
+        canvas = tk.Canvas(cuerpo, bg=TEMA.CONTENT_BG, highlightthickness=0)
+        scroll = ttk.Scrollbar(cuerpo, orient="vertical", command=canvas.yview)
+        lista = tk.Frame(canvas, bg=TEMA.CONTENT_BG)
+        lista.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=lista, anchor="nw")
+        canvas.configure(yscrollcommand=scroll.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scroll.pack(side="right", fill="y")
+
+        self._etzr_cajas = []
+        for z in zonas_ordenadas:
+            fila = tk.Frame(lista, bg=TEMA.CONTENT_BG)
+            fila.pack(fill="x", pady=4)
+            etiqueta = f"#{z.orden or '—'} · {z.tipo}"
+            tk.Label(fila, text=etiqueta, bg=TEMA.CONTENT_BG, fg=TEMA.TXT_SEC,
+                     font=("Segoe UI", 8, "bold"), width=22, anchor="w").pack(side="left")
+            caja = scrolledtext.ScrolledText(fila, height=3, wrap="word", font=("Segoe UI", 9))
+            caja.insert("1.0", previas.get(z.zid, ""))
+            caja.pack(side="left", fill="x", expand=True, padx=(4, 0))
+            caja.bind("<FocusIn>", lambda e, c=caja: setattr(self, "_etzr_txt_activo", c))
+            self._etzr_cajas.append((z, caja))
+        if self._etzr_cajas:
+            self._etzr_txt_activo = self._etzr_cajas[0][1]
+
+        botones = tk.Frame(content, bg=TEMA.CONTENT_BG)
+        botones.pack(fill="x", padx=10, pady=8)
+        self._etzr_btn_dictar = ttk.Button(botones, text="🎙 Dictar en la zona activa",
+                                           command=self._etzr_dictar_toggle)
+        self._etzr_btn_dictar.pack(side="left")
+        self._etzr_lbl_estado = tk.Label(botones, text="", bg=TEMA.CONTENT_BG,
+                                         fg=TEMA.TXT_DIM, font=("Segoe UI", 8))
+        self._etzr_lbl_estado.pack(side="left", padx=10)
+        ttk.Button(botones, text="💾 Guardar referencia",
+                  command=lambda: self._etzr_guardar(carpeta, pagina)).pack(side="right")
+
+        def _cerrar():
+            if getattr(self, "_etzr_session", None) is not None:
+                self._etzr_session.detener()
+                self._etzr_session = None
+            win.destroy()
+        win.protocol("WM_DELETE_WINDOW", _cerrar)
+
+    def _etzr_dictar_toggle(self):
+        if getattr(self, "_etzr_session", None) is not None:
+            self._etzr_session.detener()
+            self._etzr_session = None
+            self._etzr_btn_dictar.config(text="🎙 Dictar en la zona activa")
+            self._etzr_lbl_estado.config(text="")
+            return
+        if self._etzr_txt_activo is None:
+            messagebox.showwarning("Sin zona activa", "Haz clic en el recuadro de una zona primero.")
+            return
+        try:
+            from core.voice_dictation import DictadoSession
+        except ImportError:
+            messagebox.showerror("Dependencia faltante",
+                                 "Instala las dependencias de dictado:\n\n"
+                                 "  pip install SpeechRecognition sounddevice\n\n"
+                                 "Luego reinicia la aplicación.")
+            return
+        self._etzr_btn_dictar.config(text="⏹ Detener")
+        self._etzr_lbl_estado.config(text="⏳ Iniciando micrófono…")
+
+        def _on_texto(texto: str):
+            self.after(0, lambda t=texto: self._etzr_insertar(t))
+
+        self._etzr_session = DictadoSession(callback=_on_texto, idioma="es-CO", modo_online=True)
+        self._etzr_session.iniciar()
+        self.after(200, self._etzr_poll)
+
+    def _etzr_insertar(self, texto: str):
+        if not texto.strip() or self._etzr_txt_activo is None:
+            return
+        widget = self._etzr_txt_activo
+        try:
+            pos = widget.index("insert")
+        except Exception:
+            pos = "end"
+        contenido_actual = widget.get("1.0", pos)
+        if contenido_actual and contenido_actual[-1] not in (" ", "\n"):
+            texto = " " + texto
+        widget.insert(pos, texto)
+        widget.see("insert")
+        preview = texto.strip()[:40] + ("…" if len(texto.strip()) > 40 else "")
+        self._etzr_lbl_estado.config(text=f"🔴 Escuchando · '{preview}'")
+
+    def _etzr_poll(self):
+        if getattr(self, "_etzr_session", None) is None:
+            return
+        estado = self._etzr_session.estado()
+        if estado:
+            if estado == "escuchando":
+                self._etzr_lbl_estado.config(text="🔴 Escuchando…")
+            elif estado == "detenido":
+                self._etzr_btn_dictar.config(text="🎙 Dictar en la zona activa")
+                self._etzr_lbl_estado.config(text="")
+                self._etzr_session = None
+                return
+            elif estado.startswith("error:"):
+                self._etzr_btn_dictar.config(text="🎙 Dictar en la zona activa")
+                self._etzr_lbl_estado.config(text=f"⚠ {estado[6:]}")
+                self._etzr_session = None
+                return
+        if getattr(self, "_etzr_session", None) is not None:
+            self.after(200, self._etzr_poll)
+
+    def _etzr_guardar(self, carpeta: Path, pagina: str):
+        from core.benchmark_regresion import guardar_referencia_zonas
+        zonas_json = [
+            {"zid": z.zid, "orden": z.orden, "tipo": z.tipo,
+             "texto": caja.get("1.0", "end").rstrip("\n")}
+            for z, caja in self._etzr_cajas
+        ]
+        transcriptor = ""
+        try:
+            from core.benchmark_regresion import cargar_manifiesto
+            man = cargar_manifiesto(carpeta, exigir_referencia=False)
+            transcriptor = (man.get("referencia", {}).get("transcriptor") or "").strip()
+        except Exception:
+            pass
+        guardar_referencia_zonas(carpeta / "referencia" / f"{pagina}.json",
+                                 pagina, zonas_json, transcriptor=transcriptor)
+        self._etzr_lbl_estado.config(text=f"✅ Guardado — {len(zonas_json)} zona(s)")
+
     def _etz_deskew_pagina(self):
         """Detecta la inclinación de la página actual, muestra previsualización
         con slider de ajuste fino y guarda la imagen corregida si el usuario confirma."""

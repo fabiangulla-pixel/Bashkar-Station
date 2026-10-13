@@ -1,0 +1,21 @@
+{
+  "page_id": "p0002",
+  "transcriptor": "yo",
+  "zonas": [
+    {
+      "orden": 1,
+      "tipo": "titulo",
+      "texto": "Primera Gran Rifa Aanual de Estampa "
+    },
+    {
+      "orden": 2,
+      "tipo": "cuerpo",
+      "texto": "60 premios  20 de julio de 1939   5000.00 en premios "
+    },
+    {
+      "orden": 3,
+      "tipo": "cuerpo",
+      "texto": "1er. Premio--Automóvil Opel \"Kadet\", de cuatro puertas, de la Casa Leonidas Lara e hijos. Valor  $1.480.00"
+    }
+  ]
+}

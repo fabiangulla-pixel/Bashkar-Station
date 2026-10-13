@@ -58,6 +58,43 @@ def test_pagina_ausente_cuenta_como_error_y_baja_cobertura(tmp_path):
     assert g["cobertura"] == 0.5 and g["cer"] > 0
 
 
+def test_aplanar_zonas_respeta_el_orden():
+    zonas = [{"orden": 2, "tipo": "cuerpo", "texto": "segunda"},
+             {"orden": 1, "tipo": "titulo", "texto": "primera"}]
+    assert BR.aplanar_zonas(zonas) == "primera\nsegunda"
+
+
+def test_aplanar_zonas_sin_orden_va_al_final():
+    zonas = [{"tipo": "cuerpo", "texto": "sin orden"},
+             {"orden": 1, "tipo": "titulo", "texto": "primera"}]
+    assert BR.aplanar_zonas(zonas) == "primera\nsin orden"
+
+
+def test_guardar_y_cargar_referencia_zonas_hace_round_trip(tmp_path):
+    zonas = [{"orden": 1, "tipo": "titulo", "texto": "Un título"},
+             {"orden": 2, "tipo": "cuerpo", "texto": "Cuerpo del artículo"}]
+    ruta = BR.guardar_referencia_zonas(tmp_path / "p1.json", "p1", zonas, transcriptor="F. G.")
+    datos = BR.cargar_referencia_zonas(ruta)
+    assert datos["page_id"] == "p1" and datos["transcriptor"] == "F. G."
+    assert datos["zonas"] == zonas
+
+
+def test_cargar_textos_prefiere_json_de_zonas_sobre_el_txt_plano(tmp_path):
+    """Compatibilidad: una página ya transcrita como .txt sigue leyéndose igual
+    hasta que se migra; si existe el .json de zonas (formato nuevo), gana."""
+    _bench(tmp_path, salidas={"t": {"p1": "el gobierno de los liberales"}})
+    # p1.txt ya existe con "el gobierno de los liberales" (ver _bench) — sin
+    # .json todavía debe seguir usando el .txt plano.
+    _, referencias, _ = BR.cargar_textos(tmp_path)
+    assert referencias["p1"] == "el gobierno de los liberales"
+
+    zonas = [{"orden": 1, "tipo": "cuerpo", "texto": "el gobierno"},
+             {"orden": 2, "tipo": "cuerpo", "texto": "de los liberales"}]
+    BR.guardar_referencia_zonas(tmp_path / "referencia" / "p1.json", "p1", zonas)
+    _, referencias, _ = BR.cargar_textos(tmp_path)
+    assert referencias["p1"] == "el gobierno\nde los liberales"
+
+
 def test_tasas_de_fusion_y_fragmentacion():
     t = BR.tasas_segmentacion("el gobierno de los liberales",
                               "el gob ierno delos liberales")
