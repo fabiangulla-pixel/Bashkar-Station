@@ -2,6 +2,52 @@
 
 ---
 
+## Sesión 73 — 2026-10-13 — Ventana de referencia humana usable + decisión de rediseño
+
+### 1. "Benchmark OCR" faltaba en el menú
+El panel existía completo (página, lógica, tests) pero `_CONTEXTOS` (la
+lista que define qué botones muestra cada sección del sidebar) no lo
+listaba bajo ningún contexto — nunca aparecía ningún ícono para abrirlo.
+Fix: agregado `"bench"` al contexto "Publicar" (`app.py`).
+
+### 2. Ventana "Transcribir referencia humana" (`paneles/resultados.py`) — 4 bugs reales
+- **Imagen sin límite de alto:** solo se limitaba el ancho; una página de
+  prensa (más alta que ancha) crecía sin tope y empujaba tipología/texto/
+  botones fuera de la ventana. Luego, al limitar también el alto, la imagen
+  quedaba ilegible (estampilla). Fix definitivo: canvas con scroll vertical/
+  horizontal + controles de zoom (➖/➕/"Ajustar al ancho"), imagen cacheada
+  en memoria (`self._dr_img_pil`) para que el zoom no relea el archivo.
+- **Ventana sin foco:** `_mk_glass_toplevel` no hacía `lift()`/`focus_force()`
+  — el Toplevel podía abrirse detrás de la ventana principal maximizada sin
+  que el usuario notara que se había abierto.
+- **Audio "borrado" al dictar:** `core/voice_dictation.py` grababa 4 s,
+  **paraba de grabar**, mandaba el audio a Google y esperaba la respuesta
+  antes de volver a grabar — todo lo dicho durante esa espera de red se
+  perdía. Fix: captura continua con `sd.InputStream` (nunca se detiene) +
+  hilo separado que consume y transcribe en paralelo.
+- **Sin guardado explícito ni autoguardado:** "Guardar y siguiente" sí
+  guardaba (en ambas direcciones y al cerrar) pero no había feedback visible
+  ni forma de guardar sin navegar. Agregado botón "💾 Guardar" + autoguardado
+  silencioso 1.5 s después de la última edición (texto o tipología), con
+  indicador de estado ("✅ Guardado HH:MM:SS" / "💾 Autoguardado HH:MM:SS").
+- Además: panel dividido con `PanedWindow` (sash arrastrable) entre imagen y
+  controles, para que el investigador ajuste el espacio de cada bloque.
+
+### 3. Decisión de diseño para la próxima sesión (NO implementada aún)
+El investigador señaló que la referencia humana debería poder marcar
+estructura gráfica (columnas, encabezados) para que el benchmark compare en
+el orden de lectura real, no en el orden que devuelve cada motor de OCR —
+y que ese flujo debería vivir junto al Etiquetador de zonas, no en
+"Publicar". Decisión tomada: **sí, formato JSON por página** (zonas con
+texto+orden, aplanable a texto plano para no romper la métrica CER/WER
+actual) y **como pestaña nueva dentro de "✏️ Etiquetar"** (Ingestión), no
+como panel aparte. Ver pendientes en `project_bashkar_station.md`.
+
+**Archivos modificados:** `app.py`, `paneles/resultados.py`,
+`core/voice_dictation.py`. Suite completa en verde antes de commitear.
+
+---
+
 ## Sesión 72 — 2026-10-06 — GPU, enrutador de OCR y API en paridad con el escritorio
 
 Decisión del investigador: se abandona el objetivo de un `.exe` que corra en

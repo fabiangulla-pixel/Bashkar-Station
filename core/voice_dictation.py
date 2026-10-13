@@ -107,33 +107,49 @@ class DictadoSession:
         self._q_estado.put("escuchando")
 
         chunk_frames = int(SAMPLE_RATE * CHUNK_SECONDS)
+        # El micrófono se captura en un hilo aparte (callback de audio) que
+        # NUNCA se detiene; la transcripción (red, Google) corre en paralelo
+        # en otro hilo consumiendo de una cola. Antes, grabar y transcribir
+        # eran secuenciales: mientras se esperaba la respuesta de Google
+        # (ida y vuelta por red, 1-2+ s) el micrófono estaba apagado y esa
+        # voz se perdía por completo — de ahí el audio "borrado".
+        buffer = np.zeros((0,), dtype="float32")
+        cola_audio: queue.Queue = queue.Queue()
 
-        while self._activo:
-            try:
-                # Grabar un chunk
-                audio_np = sd.rec(
-                    chunk_frames,
-                    samplerate=SAMPLE_RATE,
-                    channels=CHANNELS,
-                    dtype="float32",
-                    blocking=True,
-                )
-                if not self._activo:
-                    break
+        def _callback_audio(indata, frames, time_info, status):
+            cola_audio.put(indata[:, 0].copy())
 
-                # Convertir a WAV y crear AudioData para SpeechRecognition
-                wav_bytes = _numpy_a_wav(audio_np[:, 0], SAMPLE_RATE)
-                audio_data = sr.AudioData(wav_bytes, SAMPLE_RATE, 2)
+        def _hilo_transcribir():
+            nonlocal buffer
+            while self._activo or not cola_audio.empty():
+                try:
+                    bloque = cola_audio.get(timeout=0.2)
+                except queue.Empty:
+                    continue
+                buffer = np.concatenate([buffer, bloque])
+                while len(buffer) >= chunk_frames:
+                    trozo, buffer = buffer[:chunk_frames], buffer[chunk_frames:]
+                    try:
+                        wav_bytes = _numpy_a_wav(trozo, SAMPLE_RATE)
+                        audio_data = sr.AudioData(wav_bytes, SAMPLE_RATE, 2)
+                        texto = self._transcribir(recognizer, audio_data)
+                        if texto:
+                            self.callback(texto)
+                    except Exception as ex:
+                        self._q_estado.put(f"error:{ex}")
 
-                # Transcribir
-                texto = self._transcribir(recognizer, audio_data)
-                if texto:
-                    self.callback(texto)
+        hilo = threading.Thread(target=_hilo_transcribir, daemon=True)
+        hilo.start()
 
-            except Exception as ex:
-                self._q_estado.put(f"error:{ex}")
-                break
+        try:
+            with sd.InputStream(samplerate=SAMPLE_RATE, channels=CHANNELS,
+                                 dtype="float32", callback=_callback_audio):
+                while self._activo:
+                    sd.sleep(100)
+        except Exception as ex:
+            self._q_estado.put(f"error:{ex}")
 
+        hilo.join(timeout=CHUNK_SECONDS + 5)
         self._q_estado.put("detenido")
 
     def _transcribir(self, recognizer, audio_data) -> str:

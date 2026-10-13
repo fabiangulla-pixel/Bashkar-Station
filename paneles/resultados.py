@@ -312,38 +312,83 @@ class PanelResultados:
 
     def _dr_abrir_ventana(self):
         win, content = self._mk_glass_toplevel(
-            "🎙 Transcribir referencia humana", ancho=900, alto=760)
+            "🎙 Transcribir referencia humana", ancho=1200, alto=940)
         self._dr_win = win
+        self._dr_zoom = None  # None = ajustar al ancho del panel
 
         top = tk.Frame(content, bg=TEMA.CONTENT_BG)
-        top.pack(fill="x", padx=10, pady=(6, 0))
+        top.pack(side="top", fill="x", padx=10, pady=(6, 0))
         self._dr_lbl_progreso = tk.Label(top, text="", bg=TEMA.CONTENT_BG,
                                          fg=TEMA.TXT_SEC, font=("Segoe UI", 9))
         self._dr_lbl_progreso.pack(side="left")
         tk.Label(top, text="Lee la imagen en voz alta y edita el resultado antes de guardar.",
                 bg=TEMA.CONTENT_BG, fg=TEMA.TXT_DIM, font=("Segoe UI", 8)).pack(side="right")
 
-        self._dr_lbl_img = tk.Label(content, bg="#0E1114")
-        self._dr_lbl_img.pack(fill="x", padx=10, pady=8)
+        # Divisor vertical arrastrable: arriba la imagen, abajo tipología +
+        # texto + botones. El usuario mueve el sash para darle más o menos
+        # espacio a cada bloque según lo que necesite en el momento.
+        paned = tk.PanedWindow(content, orient="vertical", bg=TEMA.CONTENT_BG,
+                               sashwidth=6, sashrelief="raised",
+                               bd=0, opaqueresize=True)
+        paned.pack(side="top", fill="both", expand=True, padx=10, pady=(4, 10))
 
-        tip = tk.Frame(content, bg=TEMA.CONTENT_BG)
-        tip.pack(fill="x", padx=10, pady=(0, 4))
+        # ── Panel superior: imagen con zoom + scroll ────────────────────────
+        img_panel = tk.Frame(paned, bg="#0E1114")
+        paned.add(img_panel, minsize=120, stretch="always")
+
+        zoom_bar = tk.Frame(img_panel, bg=TEMA.CONTENT_BG)
+        zoom_bar.pack(side="top", fill="x")
+        ttk.Button(zoom_bar, text="➖", width=3,
+                   command=lambda: self._dr_zoom_cambiar(-0.15)).pack(side="left", padx=(4, 0), pady=3)
+        self._dr_lbl_zoom = tk.Label(zoom_bar, text="Ajustar", bg=TEMA.CONTENT_BG,
+                                     fg=TEMA.TXT_SEC, font=("Segoe UI", 9), width=10)
+        self._dr_lbl_zoom.pack(side="left")
+        ttk.Button(zoom_bar, text="➕", width=3,
+                   command=lambda: self._dr_zoom_cambiar(0.15)).pack(side="left")
+        ttk.Button(zoom_bar, text="Ajustar al ancho",
+                   command=self._dr_zoom_ajustar).pack(side="left", padx=8)
+
+        img_frame = tk.Frame(img_panel, bg="#0E1114")
+        img_frame.pack(side="top", fill="both", expand=True)
+        self._dr_canvas_img = tk.Canvas(img_frame, bg="#0E1114", highlightthickness=0)
+        scroll_y = ttk.Scrollbar(img_frame, orient="vertical", command=self._dr_canvas_img.yview)
+        scroll_x = ttk.Scrollbar(img_panel, orient="horizontal", command=self._dr_canvas_img.xview)
+        self._dr_canvas_img.configure(yscrollcommand=scroll_y.set, xscrollcommand=scroll_x.set)
+        scroll_y.pack(side="right", fill="y")
+        self._dr_canvas_img.pack(side="left", fill="both", expand=True)
+        scroll_x.pack(side="bottom", fill="x")
+        self._dr_img_item = self._dr_canvas_img.create_image(0, 0, anchor="nw")
+
+        def _on_wheel_img(e):
+            delta = -1 if (e.delta > 0 or e.num == 4) else 1
+            self._dr_canvas_img.yview_scroll(delta, "units")
+        self._dr_canvas_img.bind("<MouseWheel>", _on_wheel_img)
+        self._dr_canvas_img.bind("<Button-4>", _on_wheel_img)
+        self._dr_canvas_img.bind("<Button-5>", _on_wheel_img)
+
+        # ── Panel inferior: tipología + texto + botones ─────────────────────
+        abajo = tk.Frame(paned, bg=TEMA.CONTENT_BG)
+        paned.add(abajo, minsize=150, stretch="always")
+
+        tip = tk.Frame(abajo, bg=TEMA.CONTENT_BG)
+        tip.pack(side="top", fill="x", padx=4, pady=(8, 6))
         tk.Label(tip, text="Tipología editorial:", bg=TEMA.CONTENT_BG,
-                fg=TEMA.TXT_SEC, font=("Segoe UI", 9)).pack(side="left")
+                fg=TEMA.TXT_SEC, font=("Segoe UI", 10, "bold")).pack(side="left")
         self._dr_var_tipologia = tk.StringVar()
-        ttk.Combobox(tip, textvariable=self._dr_var_tipologia, width=40,
-                    values=TIPOLOGIAS_EDITORIAL).pack(side="left", padx=6)
+        ttk.Combobox(tip, textvariable=self._dr_var_tipologia, font=("Segoe UI", 10),
+                    values=TIPOLOGIAS_EDITORIAL).pack(side="left", padx=8, fill="x", expand=True)
 
         self._dr_txt = scrolledtext.ScrolledText(
-            content, height=14, bg="#0E1114", fg="#E8E5DF", font=("Consolas", 11),
+            abajo, height=8, bg="#0E1114", fg="#E8E5DF", font=("Consolas", 11),
             insertbackground="#E8E5DF", wrap="word")
-        self._dr_txt.pack(fill="both", expand=True, padx=10, pady=(0, 6))
+        self._dr_txt.pack(side="top", fill="both", expand=True, padx=4, pady=(0, 8))
 
-        botones = tk.Frame(content, bg=TEMA.CONTENT_BG)
-        botones.pack(fill="x", padx=10, pady=(0, 10))
+        botones = tk.Frame(abajo, bg=TEMA.CONTENT_BG)
+        botones.pack(side="bottom", fill="x", padx=4, pady=(0, 4))
         self._dr_btn_dictar = ttk.Button(botones, text="🎙 Dictar",
                                          command=self._dr_dictar_toggle)
         self._dr_btn_dictar.pack(side="left")
+        ttk.Button(botones, text="💾 Guardar", command=self._dr_guardar_manual).pack(side="left", padx=6)
         self._dr_lbl_estado = tk.Label(botones, text="", bg=TEMA.CONTENT_BG,
                                        fg=TEMA.TXT_DIM, font=("Segoe UI", 9))
         self._dr_lbl_estado.pack(side="left", padx=10)
@@ -352,30 +397,86 @@ class PanelResultados:
         ttk.Button(botones, text="💾 Guardar y siguiente ➡", style="P.TButton",
                    command=lambda: self._dr_ir(1)).pack(side="right", padx=4)
 
+        # Autoguardado: cualquier edición de texto o tipología dispara un
+        # guardado silencioso 1.5s después de la última tecla, para no perder
+        # trabajo si el usuario navega para atrás sin haber dado "Guardar".
+        self._dr_autoguardar_job = None
+        self._dr_txt.bind("<<Modified>>", self._dr_on_modificado)
+        self._dr_var_tipologia.trace_add("write", lambda *_: self._dr_programar_autoguardado())
+
         win.protocol("WM_DELETE_WINDOW", self._dr_cerrar)
+        # Sin esto el Toplevel puede quedar detrás de la ventana principal
+        # (maximizada) sin que el usuario note que se abrió otra ventana.
+        win.transient(self)
+        win.lift()
+        win.focus_force()
+        win.attributes("-topmost", True)
+        win.after(200, lambda: win.attributes("-topmost", False))
         self._dr_cargar_caso()
 
+    def _dr_zoom_cambiar(self, delta: float):
+        base = self._dr_zoom if self._dr_zoom is not None else self._dr_zoom_ajuste_actual
+        self._dr_zoom = max(0.15, min(3.0, round(base + delta, 2)))
+        self._dr_render_imagen()
+
+    def _dr_zoom_ajustar(self):
+        self._dr_zoom = None
+        self._dr_render_imagen()
+
     def _dr_cargar_caso(self):
+        self._dr_cargando = True  # evita que cargar la página dispare el autoguardado
         c = self._dr_casos[self._dr_idx]
         self._dr_lbl_progreso.config(
             text=f"Página {self._dr_idx + 1}/{len(self._dr_casos)} — {c['page_id']}")
         img_path = (self._dr_carpeta / c["imagen"]).resolve()
         try:
-            from PIL import Image, ImageTk
-            img = Image.open(img_path)
-            ancho_max = 820
-            if img.width > ancho_max:
-                factor = ancho_max / img.width
-                img = img.resize((ancho_max, int(img.height * factor)))
-            self._dr_photo = ImageTk.PhotoImage(img)
-            self._dr_lbl_img.config(image=self._dr_photo, text="")
+            from PIL import Image
+            self._dr_img_pil = Image.open(img_path)
+            self._dr_img_error = None
         except Exception as e:
-            self._dr_lbl_img.config(image="", text=f"⚠ No se pudo cargar la imagen: {e}")
+            self._dr_img_pil = None
+            self._dr_img_error = str(e)
+        self._dr_zoom = None  # cada página nueva arranca ajustada al ancho
+        self._dr_render_imagen()
         self._dr_var_tipologia.set(c.get("tipologia", "") or "")
         ruta_txt = self._dr_carpeta / c["referencia"]
         texto = ruta_txt.read_text("utf-8", errors="replace") if ruta_txt.exists() else ""
         self._dr_txt.delete("1.0", "end")
         self._dr_txt.insert("1.0", texto)
+        self._dr_txt.edit_modified(False)
+        self._dr_cargando = False
+        self._dr_lbl_estado.config(text="")
+
+    def _dr_render_imagen(self):
+        """Redibuja la imagen cacheada (self._dr_img_pil) con el zoom actual
+        sin volver a leer el archivo — así los botones +/- responden al toque."""
+        from PIL import ImageTk
+        if self._dr_img_pil is None:
+            self._dr_canvas_img.itemconfig(self._dr_img_item, image="")
+            self._dr_canvas_img.create_text(
+                10, 10, anchor="nw", fill="#E8E5DF",
+                text=f"⚠ No se pudo cargar la imagen: {self._dr_img_error}")
+            self._dr_lbl_zoom.config(text="—")
+            return
+        img = self._dr_img_pil
+        self._dr_canvas_img.update_idletasks()
+        ancho_panel = max(self._dr_canvas_img.winfo_width(), 400)
+        if self._dr_zoom is None:
+            factor = min(ancho_panel / img.width, 1.0) or 1.0
+            self._dr_zoom_ajuste_actual = factor
+            texto_zoom = "Ajustar"
+        else:
+            factor = self._dr_zoom
+            texto_zoom = f"{int(factor * 100)} %"
+        self._dr_lbl_zoom.config(text=texto_zoom)
+        ancho = max(1, int(img.width * factor))
+        alto = max(1, int(img.height * factor))
+        img_mostrar = img.resize((ancho, alto)) if factor != 1.0 else img
+        self._dr_photo = ImageTk.PhotoImage(img_mostrar)
+        self._dr_canvas_img.itemconfig(self._dr_img_item, image=self._dr_photo)
+        self._dr_canvas_img.configure(scrollregion=(0, 0, ancho, alto))
+        self._dr_canvas_img.yview_moveto(0)
+        self._dr_canvas_img.xview_moveto(0)
 
     def _dr_dictar_toggle(self):
         if getattr(self, "_dr_session", None) is not None:
@@ -438,7 +539,7 @@ class PanelResultados:
         if getattr(self, "_dr_session", None) is not None:
             self.after(200, self._dr_poll)
 
-    def _dr_guardar_actual(self):
+    def _dr_guardar_actual(self, preguntar_transcriptor: bool = True, silencioso: bool = False):
         c = self._dr_casos[self._dr_idx]
         ruta_txt = self._dr_carpeta / c["referencia"]
         ruta_txt.parent.mkdir(parents=True, exist_ok=True)
@@ -448,7 +549,7 @@ class PanelResultados:
         man = self._dr_manifiesto
         c["tipologia"] = (self._dr_var_tipologia.get() or "").strip()
 
-        if not (man.get("referencia", {}).get("transcriptor") or "").strip():
+        if preguntar_transcriptor and not (man.get("referencia", {}).get("transcriptor") or "").strip():
             nombre = simpledialog.askstring(
                 "Transcriptor",
                 "¿Quién está transcribiendo? Queda registrado en benchmark.json "
@@ -460,9 +561,42 @@ class PanelResultados:
         (self._dr_carpeta / "benchmark.json").write_text(
             _json.dumps(man, ensure_ascii=False, indent=2), encoding="utf-8")
 
+        if self._dr_win.winfo_exists():
+            from datetime import datetime
+            hora = datetime.now().strftime("%H:%M:%S")
+            self._dr_lbl_estado.config(
+                text=f"💾 Autoguardado {hora}" if silencioso else f"✅ Guardado {hora}")
+        self._dr_txt.edit_modified(False)
+
+    def _dr_guardar_manual(self):
+        if self._dr_autoguardar_job is not None:
+            self._dr_win.after_cancel(self._dr_autoguardar_job)
+            self._dr_autoguardar_job = None
+        self._dr_guardar_actual()
+        self.toast("💾 Página guardada", "ok")
+
+    def _dr_on_modificado(self, _event=None):
+        if self._dr_txt.edit_modified():
+            self._dr_programar_autoguardado()
+        self._dr_txt.edit_modified(False)
+
+    def _dr_programar_autoguardado(self):
+        if getattr(self, "_dr_cargando", False):
+            return
+        if self._dr_autoguardar_job is not None:
+            self._dr_win.after_cancel(self._dr_autoguardar_job)
+        self._dr_autoguardar_job = self._dr_win.after(1500, self._dr_autoguardar_disparar)
+
+    def _dr_autoguardar_disparar(self):
+        self._dr_autoguardar_job = None
+        self._dr_guardar_actual(preguntar_transcriptor=False, silencioso=True)
+
     def _dr_ir(self, delta: int):
         if getattr(self, "_dr_session", None) is not None:
             self._dr_dictar_toggle()
+        if self._dr_autoguardar_job is not None:
+            self._dr_win.after_cancel(self._dr_autoguardar_job)
+            self._dr_autoguardar_job = None
         self._dr_guardar_actual()
         nuevo = self._dr_idx + delta
         if nuevo < 0:
@@ -478,6 +612,9 @@ class PanelResultados:
         if getattr(self, "_dr_session", None) is not None:
             self._dr_session.detener()
             self._dr_session = None
+        if self._dr_autoguardar_job is not None:
+            self._dr_win.after_cancel(self._dr_autoguardar_job)
+            self._dr_autoguardar_job = None
         self._dr_guardar_actual()
         self._dr_win.destroy()
 

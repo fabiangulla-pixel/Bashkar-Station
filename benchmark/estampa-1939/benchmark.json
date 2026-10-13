@@ -3,7 +3,7 @@
   "descripcion": "Estampa (Bogota), numero de marzo de 1939: 47 paginas del piloto.",
   "referencia": {
     "tipo": "humana",
-    "transcriptor": "",
+    "transcriptor": "yo",
     "prellenado_con": null,
     "nota": "Llenar transcriptor al empezar. Las referencias estan vacias a proposito: los juicios de ground_truth_piloto/*/juicios son de IA y NO sirven como referencia."
   },
@@ -17,7 +17,8 @@
       "anio": 1939,
       "numero": "rev_estampa_mar_1939",
       "tipografia": "",
-      "calidad_imagen": ""
+      "calidad_imagen": "",
+      "tipologia": "Convocatoria / concurso"
     },
     {
       "page_id": "p0003",
@@ -27,7 +28,8 @@
       "anio": 1939,
       "numero": "rev_estampa_mar_1939",
       "tipografia": "",
-      "calidad_imagen": ""
+      "calidad_imagen": "",
+      "tipologia": ""
     },
     {
       "page_id": "p0004",
