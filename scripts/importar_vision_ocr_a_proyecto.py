@@ -36,8 +36,34 @@ NUMEROS = [
     "rev_estampa_may_1939",
 ]
 
-PDF_DIR_ORIGEN = Path("D:/Bashkar/Corpus Estampa/sin")
 VISION_SALIDA = _ROOT / "vision_ocr" / "salida"
+
+# Procedencia del texto: lote de scripts/ocr_vision_lote.py (agosto de 2026,
+# workflow ocr_vision_lote.yml) con su modelo por defecto. No se registró el
+# modelo página por página; se declara el del lote.
+METODO_OCR = "claude_vision"
+MODELO_OCR = "claude-sonnet-5"
+
+PERIODO = "enero–mayo de 1939"
+
+# Créditos que declaran las exportaciones (core/metadatos_exportacion).
+# Fórmula institucional del documento E-RIHS del 14-oct-2026: el ICyC fue
+# institución mentora de la beca; no hay afiliación.
+EXPORTACION_ESTAMPA = {
+    "lugar": "Bogotá",
+    "creditos": [
+        {"rol": "Financiación",
+         "nombre": "Beca a Nuevos Investigadores en Estudios Editoriales, Ministerio "
+                   "de las Culturas, las Artes y los Saberes de Colombia"},
+        {"rol": "Institución mentora de la beca (sin afiliación)",
+         "nombre": "Instituto Caro y Cuervo"},
+        {"rol": "Digitalización de la fuente", "nombre": "Biblioteca Nacional de Colombia"},
+    ],
+    # Redacción provisional (hito B3 de PLAN_MVP.md); se ajusta a los términos
+    # exactos de la autorización en el hito E2.
+    "disponibilidad": "Las imágenes y los textos de Estampa se publican con "
+                      "autorización de la Biblioteca Nacional de Colombia.",
+}
 
 
 def _copiar_ocr(salida_vision: Path, datos_dir: Path, *, forzar: bool) -> dict:
@@ -62,34 +88,66 @@ def _copiar_ocr(salida_vision: Path, datos_dir: Path, *, forzar: bool) -> dict:
     return resumen
 
 
-def _archivos_pdf_existentes() -> list[Path]:
-    return [PDF_DIR_ORIGEN / f"{n}.pdf" for n in NUMEROS if (PDF_DIR_ORIGEN / f"{n}.pdf").exists()]
+def escribir_metadatos_ocr(datos_dir: Path) -> int:
+    """``04_analisis/ocr_metadatos.csv`` con el método real de cada página.
+
+    Sin él, la app reconstruye los metadatos marcando todo como «conversor».
+    """
+    import csv
+    filas = []
+    for num_dir in sorted((datos_dir / "03_ocr").iterdir()):
+        if not num_dir.is_dir():
+            continue
+        for txt in sorted(num_dir.glob("*.txt")):
+            palabras = len(txt.read_text(encoding="utf-8", errors="replace").split())
+            filas.append({"numero": num_dir.name, "pagina": txt.stem,
+                          "txt_path": str(txt), "palabras": palabras, "confianza": "",
+                          "revision": False, "metodo": METODO_OCR})
+    ad = datos_dir / "04_analisis"
+    ad.mkdir(parents=True, exist_ok=True)
+    with open(ad / "ocr_metadatos.csv", "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=list(filas[0]) if filas else ["numero"])
+        w.writeheader()
+        w.writerows(filas)
+    return len(filas)
 
 
-def escribir_bashkar(ruta_bashkar: Path, datos_dir: Path, nombre: str) -> None:
+def escribir_bashkar(ruta_bashkar: Path, datos_dir: Path, nombre: str,
+                     pdf_dir: Path | None = None) -> None:
     """Escribe un .bashkar mínimo pero válido para core.project_manager.
-    cargar_proyecto() — mismo esquema, sin necesitar instanciar Estado."""
+    cargar_proyecto() — mismo esquema, sin necesitar instanciar Estado.
+
+    ``archivos_sel`` queda vacío a propósito: si la app encuentra el PDF de un
+    número, segmenta desde su capa de texto de la BNC (Paper Capture, peor
+    que Vision) en vez de desde estas transcripciones. ``pdf_dir`` solo se
+    anota como referencia de dónde están las imágenes.
+    """
+    from core.project_manager import VERSION
     ahora = datetime.now().isoformat()
     contenido = {
-        "version": "11",
+        "version": VERSION,
         "nombre": nombre,
         "publicacion": "Estampa",
-        "periodo": "1939 (enero-mayo)",
+        "periodo": PERIODO,
         "creado": ahora,
         "modificado": ahora,
         "config": {
             "publicacion": "Estampa",
-            "periodo": "1939 (enero-mayo)",
-            "pdf_dir": str(PDF_DIR_ORIGEN),
+            "periodo": PERIODO,
+            "pdf_dir": str(pdf_dir) if pdf_dir else "",
             "out_dir": str(datos_dir),
             "input_tipo": "pdf",
-            "archivos_sel": [str(p) for p in _archivos_pdf_existentes()],
+            "archivos_sel": [],
             "max_ia": 15,
             "campos_semillas": {},
+            "exportacion": EXPORTACION_ESTAMPA,
         },
         "progreso": {"ocr": True, "seg": False, "anal": False, "vis": False, "comp": False},
         "resultados": {},
-        "historial_ia": [],
+        # El OCR se hizo con IA en la nube: que las exportaciones lo declaren.
+        "historial_ia": [{"proveedor": "anthropic", "modelo": MODELO_OCR, "etapa": "ocr",
+                          "nota": "Transcripción de las 792 páginas con "
+                                  "scripts/ocr_vision_lote.py (agosto de 2026)."}],
         "db": str(ruta_bashkar.with_suffix(".db")),
     }
     ruta_bashkar.write_text(json.dumps(contenido, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -101,6 +159,8 @@ def main() -> int:
     parser.add_argument("--proyectos-dir", type=Path,
                          default=Path.home() / "Documents" / "BashkarStation" / "proyectos")
     parser.add_argument("--forzar", action="store_true", help="Sobrescribir .txt ya copiados")
+    parser.add_argument("--pdf-dir", type=Path, default=None,
+                        help="Carpeta con los PDF originales de los 5 números (referencia)")
     args = parser.parse_args()
 
     if not VISION_SALIDA.is_dir():
@@ -118,7 +178,9 @@ def main() -> int:
     if total == 0 and not args.forzar:
         print("0 páginas nuevas copiadas (¿ya se había importado? usa --forzar para repetir).")
 
-    escribir_bashkar(ruta_bashkar, datos_dir, args.nombre)
+    n_meta = escribir_metadatos_ocr(datos_dir)
+    escribir_bashkar(ruta_bashkar, datos_dir, args.nombre, args.pdf_dir)
+    print(f"Metadatos de OCR: {n_meta} páginas ({METODO_OCR})")
 
     print(f"Proyecto escrito en: {ruta_bashkar}")
     print(f"Datos en: {datos_dir}")
