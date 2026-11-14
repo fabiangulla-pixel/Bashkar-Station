@@ -332,17 +332,14 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
                     repo.guardar_ocr(art["id"], texto, texto,
                                      float(row.get("confianza_ocr", 0.0) or 0.0), "legacy")
         # Entidades NER
-        indice_ner = getattr(st, "indice_ner_global", None)
-        if indice_ner and any(indice_ner.values()):
-            # Todas a la vez: guardar_entidades() reemplaza las del artículo, y
-            # llamarla entidad por entidad dejaba una sola por artículo.
-            repo.reemplazar_entidades_de_fuente("ner_engine", [
-                {"articulo_id": aid, "texto": texto_ent, "categoria": cat,
-                 "confianza": 0.85}
-                for cat, entidades in indice_ner.items() if isinstance(entidades, dict)
-                for texto_ent, art_ids in entidades.items()
-                for aid in art_ids
-            ])
+        sincronizar_entidades_ner(repo, getattr(st, "indice_ner_global", None))
+        # La base es la única fuente de las entidades. El .bashkar guarda una
+        # copia DERIVADA de ella (la leen colaboracion.py y comparador.py
+        # directamente del archivo) y la marca de que la base manda.
+        derivado = repo.indice_ner()
+        if any(derivado.values()):
+            resultados["indice_ner_global"] = derivado
+            resultados["entidades_fuente"] = "sqlite"
         ruta_db = str(repo.ruta_db)
         # Sin esto, un proyecto recién creado no tenía base para el grafo
         # canónico hasta cerrarlo y reabrirlo (solo cargar_proyecto la fijaba).
@@ -549,9 +546,31 @@ def cargar_proyecto(ruta: Path, st):
         repo = Repositorio(ruta_db)
         st.repo = repo
         st.ruta_db = ruta_db
-    except Exception:
+    except Exception as e:
+        from core.registro_errores import registrar
+        registrar(f"No se pudo abrir la base del proyecto ({ruta_db})", e)
         st.repo = None
         st.ruta_db = ""
+
+    # ── Entidades: la base es la fuente única ─────────────────────────────────
+    entidades_migradas = False
+    if st.repo is not None:
+        try:
+            if resultados.get("entidades_fuente") == "sqlite":
+                st.indice_ner_global = st.repo.indice_ner()
+            elif any((st.indice_ner_global or {}).values()):
+                # Proyecto anterior: la base pudo quedar recortada por el fallo
+                # de guardado (una entidad por artículo). Manda el índice del
+                # .bashkar; se reescribe la base, con copia de seguridad.
+                _respaldar_db(ruta_db)
+                sincronizar_entidades_ner(st.repo, st.indice_ner_global)
+                st.indice_ner_global = st.repo.indice_ner()
+                entidades_migradas = True
+            st.ner_done = bool(any((st.indice_ner_global or {}).values())) or \
+                getattr(st, "ner_done", False)
+        except Exception as e:
+            from core.registro_errores import registrar
+            registrar("No se pudieron leer las entidades de la base del proyecto", e)
 
     historial = datos.get("historial_ia", [])
     msg = "Proyecto cargado"
@@ -570,7 +589,37 @@ def cargar_proyecto(ruta: Path, st):
     return {"ok": True, "mensaje": msg, "historial_ia": historial,
             "nombre": datos.get("nombre", ruta.stem), "migrado": migrado,
             "credenciales_migradas": credenciales_migradas,
-            "migracion_ids": migracion_ids}
+            "migracion_ids": migracion_ids,
+            "entidades_migradas": entidades_migradas}
+
+
+def sincronizar_entidades_ner(repo, indice_ner) -> int:
+    """Escribe el índice NER en la base (reemplaza las filas de ``ner_engine``).
+
+    No hace nada con un índice vacío: un proyecto sin NER en memoria no debe
+    borrar las entidades que ya están en la base.
+    """
+    if not indice_ner or not any(indice_ner.values()):
+        return 0
+    return repo.reemplazar_entidades_de_fuente("ner_engine", [
+        {"articulo_id": aid, "texto": texto_ent, "categoria": cat, "confianza": 0.85}
+        for cat, entidades in indice_ner.items() if isinstance(entidades, dict)
+        for texto_ent, art_ids in entidades.items()
+        for aid in art_ids
+    ])
+
+
+def _respaldar_db(ruta_db: str) -> Path | None:
+    """Copia ``<proyecto>.db`` a ``<proyecto>.db.respaldo-AAAAMMDD-HHMMSS``."""
+    import shutil
+    from datetime import datetime
+    origen = Path(ruta_db)
+    if not origen.exists():
+        return None
+    destino = origen.with_name(
+        f"{origen.name}.respaldo-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+    shutil.copy2(origen, destino)
+    return destino
 
 
 def migrar_ids_articulos(st) -> dict:

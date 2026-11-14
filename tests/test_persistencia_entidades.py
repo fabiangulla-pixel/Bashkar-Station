@@ -141,3 +141,83 @@ def test_un_fallo_al_sincronizar_sqlite_queda_registrado(dir_proyectos, muestra,
     res = guardar_proyecto(ruta, _estado_con(muestra))
     assert registrados and "disco lleno" in str(registrados[0][1])
     assert res.get("error_sqlite")
+
+
+# ── A5: una sola fuente para las entidades (la base) ──────────────────────────
+
+def _proyecto_antiguo(dir_proyectos, muestra, nombre):
+    """Simula un .bashkar de v13: índice por título en el JSON, base recortada."""
+    import sqlite3
+
+    from core.project_manager import nuevo_proyecto
+    from datos.repositorio import Repositorio
+    ruta = nuevo_proyecto(nombre, "Estampa", "abril 1939")
+    datos = json.loads(ruta.read_text(encoding="utf-8"))
+    datos.setdefault("resultados", {})["indice_ner_global"] = muestra["indice_ner_global"]
+    ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
+    carpeta = ruta.with_suffix("")
+    carpeta.mkdir(exist_ok=True)
+    pd.DataFrame(muestra["articulos"]).to_csv(carpeta / "articulos.csv", index=False)
+    repo = Repositorio(datos["db"])
+    for a in muestra["articulos"]:                 # como lo dejaba el fallo 1
+        repo.guardar_articulo({"id": a["titulo"], "titulo": a["titulo"]})
+        repo.guardar_entidades(a["titulo"], [{"texto": "X", "categoria": "personas",
+                                              "fuente": "ner_engine"}])
+    con = sqlite3.connect(datos["db"])
+    assert con.execute("SELECT COUNT(*) FROM entidades").fetchone()[0] == 5
+    con.close()
+    return ruta
+
+
+def test_al_reabrir_el_indice_sale_de_la_base(dir_proyectos, muestra):
+    from core.estado import Estado
+    from core.project_manager import cargar_proyecto, guardar_proyecto, nuevo_proyecto
+    from datos.repositorio import Repositorio
+    ruta = nuevo_proyecto("Fuente unica", "Estampa", "abril 1939")
+    guardar_proyecto(ruta, _estado_con(muestra))
+    datos = json.loads(ruta.read_text(encoding="utf-8"))
+    assert datos["resultados"]["entidades_fuente"] == "sqlite"
+    # Si alguien toca la base (p. ej. una corrección), al reabrir manda la base.
+    Repositorio(datos["db"]).reemplazar_entidades_de_fuente(
+        "ner_engine", [{"articulo_id": "a", "texto": "Bogotá", "categoria": "lugares"}])
+    st = Estado()
+    cargar_proyecto(ruta, st)
+    assert st.indice_ner_global["lugares"] == {"Bogotá": ["a"]}
+
+
+def test_proyecto_antiguo_se_migra_desde_el_json_con_respaldo(dir_proyectos, muestra):
+    from core.estado import Estado
+    from core.project_manager import cargar_proyecto
+    ruta = _proyecto_antiguo(dir_proyectos, muestra, "Antiguo")
+    st = Estado()
+    res = cargar_proyecto(ruta, st)
+    assert res["entidades_migradas"]
+    assert _unicas(st.indice_ner_global) == 161 and _pares(st.indice_ner_global) == 169
+    ids = set(st.df_articulos["id"])
+    assert all(a in ids for ents in st.indice_ner_global.values()
+               for arts in ents.values() for a in arts)
+    assert list(dir_proyectos.glob("Antiguo.db.respaldo-*")), "falta la copia de la base"
+
+
+def test_panel_grafo_y_tei_cuentan_lo_mismo(dir_proyectos, muestra, tmp_path):
+    from core.estado import Estado
+    from core.project_manager import cargar_proyecto
+    from core.servicios_exportacion import articulos_para_tei
+    from core.tei_engine import contar_entidades_en_tei, exportar_corpus_tei
+    from datos.repositorio import Repositorio
+    ruta = _proyecto_antiguo(dir_proyectos, muestra, "Cuentas")
+    st = Estado()
+    cargar_proyecto(ruta, st)
+    repo = Repositorio(st.ruta_db)
+    repo.fundir_menciones_en_canonicas(fuente="ner")
+    panel = _unicas(st.indice_ner_global)
+    grafo = len(repo.listar_entidades_canonicas())
+    xml = tmp_path / "c.xml"
+    arts = articulos_para_tei([""] * 5, st.indice_ner_global, articulos=st.df_articulos)
+    exportar_corpus_tei(arts, xml)
+    en_tei = contar_entidades_en_tei(xml)
+    pares_exportables = sum(len(arts) for ents in st.indice_ner_global.values()
+                            for e, arts in ents.items() if len(e.strip()) > 2)
+    assert panel == 161
+    assert grafo == 161          # antes del arreglo: 5
+    assert en_tei == pares_exportables

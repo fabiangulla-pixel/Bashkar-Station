@@ -327,6 +327,19 @@ class PanelEntidades:
             progreso=_progreso)
 
         ST.ner_done = True
+        # La base es la fuente única de las entidades: se escriben ya, para que
+        # el grafo canónico no trabaje con las de la corrida anterior si se
+        # abre antes de guardar. Repositorio nuevo en este hilo (sqlite3 no
+        # comparte conexiones entre hilos).
+        if getattr(ST, "ruta_db", ""):
+            try:
+                from core.project_manager import sincronizar_entidades_ner
+                from datos.repositorio import Repositorio
+                sincronizar_entidades_ner(Repositorio(ST.ruta_db), ST.indice_ner_global)
+            except Exception as e:
+                from core.registro_errores import registrar
+                registrar("No se pudieron escribir las entidades en la base", e)
+                self._ner_log(f"⚠ Las entidades no se guardaron en la base: {e}")
         n_ents = sum(len(v) for v in ST.indice_ner_global.values())
         self._ner_log(f"✅ Corpus completo: {n_ents} entidades únicas")
         self.after(0, self._ner_refrescar_tv)

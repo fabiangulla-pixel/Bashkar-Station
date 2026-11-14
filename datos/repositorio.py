@@ -250,6 +250,28 @@ class Repositorio:
             """, filas)
         return len(filas)
 
+    def indice_ner(self, fuente: str = "ner_engine") -> dict:
+        """Índice NER ``{categoria: {entidad: [art_ids]}}`` leído de la base.
+
+        Es la forma que usan el panel NER y los exportadores; la base es la
+        única fuente de las entidades (hito A5 de PLAN_MVP.md).
+        """
+        from core.ner_engine import indice_global_vacio
+        indice = indice_global_vacio()
+        with self._conn() as conn:
+            for cat, texto, aid in conn.execute(
+                    "SELECT categoria, texto, articulo_id FROM entidades "
+                    "WHERE fuente = ? ORDER BY id", (fuente,)):
+                lista = indice.setdefault(cat, {}).setdefault(texto, [])
+                if aid not in lista:
+                    lista.append(aid)
+        return indice
+
+    def contar_entidades_de_fuente(self, fuente: str = "ner_engine") -> int:
+        with self._conn() as conn:
+            return conn.execute("SELECT COUNT(*) FROM entidades WHERE fuente = ?",
+                                (fuente,)).fetchone()[0]
+
     def buscar_entidades(self, categoria: str = None, texto: str = None,
                          articulo_id: str = None) -> list[dict]:
         sql = "SELECT * FROM entidades WHERE 1=1"
