@@ -329,13 +329,15 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
         # Entidades NER
         indice_ner = getattr(st, "indice_ner_global", None)
         if indice_ner and any(indice_ner.values()):
-            for cat, entidades in indice_ner.items():
-                for texto_ent, art_ids in entidades.items():
-                    for aid in art_ids:
-                        repo.guardar_entidades(aid, [
-                            {"texto": texto_ent, "categoria": cat,
-                             "confianza": 0.85, "fuente": "ner_engine"}
-                        ])
+            # Todas a la vez: guardar_entidades() reemplaza las del artículo, y
+            # llamarla entidad por entidad dejaba una sola por artículo.
+            repo.reemplazar_entidades_de_fuente("ner_engine", [
+                {"articulo_id": aid, "texto": texto_ent, "categoria": cat,
+                 "confianza": 0.85}
+                for cat, entidades in indice_ner.items() if isinstance(entidades, dict)
+                for texto_ent, art_ids in entidades.items()
+                for aid in art_ids
+            ])
         ruta_db = str(repo.ruta_db)
     except Exception:
         pass

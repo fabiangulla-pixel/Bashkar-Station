@@ -1,0 +1,543 @@
+{
+ "_nota": "Índice NER real de 6 páginas de Estampa (abril de 1939, BNC), producido por Bashkar v13.1 el 14-nov-2026. Solo títulos y entidades, sin texto de los artículos. Publicado con autorización de la Biblioteca Nacional de Colombia.",
+ "articulos": [
+  {
+   "numero": "estampa_abr_muestra",
+   "titulo": "La último fotografía de Francisco Franco, jefe",
+   "autor": "Manuel Chaves Nogales\n\nLa",
+   "tipo": "Internacional",
+   "palabras": 2230
+  },
+  {
+   "numero": "estampa_abr_muestra",
+   "titulo": "LO QUE HA PASADO",
+   "autor": "",
+   "tipo": "Política",
+   "palabras": 693
+  },
+  {
+   "numero": "estampa_abr_muestra",
+   "titulo": "La presencia del doctor López en",
+   "autor": "",
+   "tipo": "Política",
+   "palabras": 612
+  },
+  {
+   "numero": "estampa_abr_muestra",
+   "titulo": "Especial para ESTAMPA",
+   "autor": "",
+   "tipo": "Teatro",
+   "palabras": 353
+  },
+  {
+   "numero": "estampa_abr_muestra",
+   "titulo": "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-",
+   "autor": "",
+   "tipo": "Modas/Hogar",
+   "palabras": 287
+  }
+ ],
+ "indice_ner_global": {
+  "personas": {
+   "Alfredo del Diestro": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Alicia A. de Mejía": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Alicia Arango": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Alicia Arango de Mej lar": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Angelito Henao": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Anguela Henao": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Antonio Alvarez Lleras": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Arturo Acevedo": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Bolívar": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Carlos Olarte Res": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Casado": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Di Doménico": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Diego Martínez Barrio": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Don Arturo Acevedo": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Don Gonzalo Acevedo": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Engenio Martínez Dórrie": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Felixerre": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Frailejón": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Fran": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Francisco Franco": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Franco": [
+    "La último fotografía de Francisco Franco, jefe",
+    "LO QUE HA PASADO"
+   ],
+   "Gon zalo Mejía": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Gonzalo A - Noranjo": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "González Coutin": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Harold Berman": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Hitler": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Isaac": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Isaacs": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Isabel Bombalden": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Largo Caba llero": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Lely Vargas": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Lía Restrepo de Vélez": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "MANUEL NOGALES": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Manuel Azaña": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Manuel Chaves Nogales": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Marabella": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Mejía": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Menichelli": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Miaja": [
+    "La último fotografía de Francisco Franco, jefe",
+    "LO QUE HA PASADO"
+   ],
+   "Mussolini": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Nieto Caballero": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Olaya Herrera": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Palou": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Ramón Rosales": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Rosa Elena de Mejía": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Samuel Velásquez": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Sen": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Serrano Suñer": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Sr": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Vargas Vila": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Vicente Ortega": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "co": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "don Ar": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "gri cevedo": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "lias Quijano": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "padre Posada": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "pathos": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "señor Borriga": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Alberto Galotre": [
+    "LO QUE HA PASADO"
+   ],
+   "Alvarez Angulo": [
+    "LO QUE HA PASADO"
+   ],
+   "Besteiro": [
+    "LO QUE HA PASADO"
+   ],
+   "Hernando Parra C": [
+    "LO QUE HA PASADO"
+   ],
+   "Martínez Barrio": [
+    "LO QUE HA PASADO"
+   ],
+   "Mola": [
+    "LO QUE HA PASADO"
+   ],
+   "Ratfo d": [
+    "LO QUE HA PASADO"
+   ],
+   "lord Phi - Ilimore": [
+    "LO QUE HA PASADO"
+   ],
+   "Alfonso Fuenmayor": [
+    "La presencia del doctor López en"
+   ],
+   "Calibán": [
+    "La presencia del doctor López en"
+   ],
+   "López": [
+    "La presencia del doctor López en"
+   ],
+   "Oscar Rodríguez O": [
+    "La presencia del doctor López en"
+   ],
+   "Presidente": [
+    "La presencia del doctor López en"
+   ],
+   "Rodríguez": [
+    "La presencia del doctor López en"
+   ],
+   "so": [
+    "La presencia del doctor López en"
+   ],
+   "Camilo Blas": [
+    "Especial para ESTAMPA"
+   ],
+   "Codesido": [
+    "Especial para ESTAMPA"
+   ],
+   "Sabogal": [
+    "Especial para ESTAMPA"
+   ],
+   "Cezane": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Diego Rivera": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "El Gomono": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "El Varayoc": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Fra Angélico": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Goya": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "José Sabogal": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Leonardo": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Miguel Angel": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Picasso": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Pro": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Theothocupulis": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Van Dogen": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ],
+   "Velásquez": [
+    "Mentario a aspectos aislados, fragdad, Su S, artificiales, de la reali-"
+   ]
+  },
+  "lugares": {
+   "Argentina": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Berlín": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Bocas de Ceniza": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Bogotá": [
+    "La último fotografía de Francisco Franco, jefe",
+    "LO QUE HA PASADO"
+   ],
+   "CAS": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Cali": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Calle 25": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Cartagena": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Cataluña": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Chapinero": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Colombia": [
+    "La último fotografía de Francisco Franco, jefe",
+    "La presencia del doctor López en"
+   ],
+   "El Paraíso": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "España": [
+    "La último fotografía de Francisco Franco, jefe",
+    "LO QUE HA PASADO"
+   ],
+   "Luna": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Madrid": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Manizales": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Medellín": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Mediterráneo": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Méjico": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "República": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Roma": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Sastrería de Lujo": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "burrá": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Barrancaber": [
+    "LO QUE HA PASADO"
+   ],
+   "Bucaramanga": [
+    "LO QUE HA PASADO"
+   ],
+   "Cúcuta": [
+    "LO QUE HA PASADO"
+   ],
+   "Francia": [
+    "LO QUE HA PASADO"
+   ],
+   "Huila": [
+    "LO QUE HA PASADO"
+   ],
+   "Ibagué": [
+    "LO QUE HA PASADO"
+   ],
+   "Inglaterra": [
+    "LO QUE HA PASADO",
+    "La presencia del doctor López en"
+   ],
+   "Neiva": [
+    "LO QUE HA PASADO"
+   ],
+   "Tunja": [
+    "LO QUE HA PASADO"
+   ],
+   "Atlántico": [
+    "La presencia del doctor López en"
+   ],
+   "Bodegón": [
+    "La presencia del doctor López en"
+   ],
+   "Calle 13": [
+    "La presencia del doctor López en"
+   ],
+   "Número 9": [
+    "La presencia del doctor López en"
+   ],
+   "Palacio de la Carrera": [
+    "La presencia del doctor López en"
+   ],
+   "Santa Cla": [
+    "La presencia del doctor López en"
+   ],
+   "Teatro Municipal": [
+    "La presencia del doctor López en"
+   ],
+   "Universidad": [
+    "La presencia del doctor López en"
+   ],
+   "ra": [
+    "La presencia del doctor López en"
+   ],
+   "América": [
+    "Especial para ESTAMPA"
+   ],
+   "Ayacuchana": [
+    "Especial para ESTAMPA"
+   ],
+   "Lima": [
+    "Especial para ESTAMPA"
+   ],
+   "Me": [
+    "Especial para ESTAMPA"
+   ],
+   "Perú": [
+    "Especial para ESTAMPA"
+   ]
+  },
+  "organizaciones": {
+   "Alemania": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Compañía Nacional": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Consejo de Defensa Nacional": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Cortes": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Falange Española": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Gestapo": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Moscú": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Ovra": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "Paramount": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "República": [
+    "La último fotografía de Francisco Franco, jefe",
+    "LO QUE HA PASADO",
+    "La presencia del doctor López en"
+   ],
+   "República Española": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "U. R. S. S": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "España": [
+    "LO QUE HA PASADO"
+   ],
+   "Estado": [
+    "LO QUE HA PASADO"
+   ],
+   "Hijos Sucs.": [
+    "LO QUE HA PASADO"
+   ],
+   "Honda Rojas Hermanos": [
+    "LO QUE HA PASADO"
+   ],
+   "Sunday Times": [
+    "LO QUE HA PASADO"
+   ],
+   "sa é": [
+    "LO QUE HA PASADO"
+   ],
+   "ía. de Energía Eléctrica": [
+    "LO QUE HA PASADO"
+   ],
+   "ESTAMPA": [
+    "La presencia del doctor López en"
+   ],
+   "Facultad Nacional de Derecho": [
+    "La presencia del doctor López en"
+   ],
+   "Universidad": [
+    "La presencia del doctor López en"
+   ],
+   "Escuela de Bellas Artes de Lima": [
+    "Especial para ESTAMPA"
+   ]
+  },
+  "fechas": {
+   "20 de abril": [
+    "La último fotografía de Francisco Franco, jefe"
+   ],
+   "4 de agosto": [
+    "La último fotografía de Francisco Franco, jefe"
+   ]
+  },
+  "obras_publicaciones": {},
+  "eventos_historicos": {}
+ }
+}

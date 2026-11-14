@@ -216,6 +216,40 @@ class Repositorio:
                 "wikidata_uri":e.get("wikidata_uri"),
             } for e in entidades])
 
+    def reemplazar_entidades_de_fuente(self, fuente: str, entidades: list[dict]) -> int:
+        """Sustituye, en una sola transacción, todas las entidades de ``fuente``.
+
+        Cada entidad: {articulo_id, texto, categoria, confianza?}. Devuelve
+        cuántas filas quedaron. Las de otras fuentes no se tocan.
+
+        Existe porque guardar el índice NER entidad por entidad con
+        ``guardar_entidades`` (que reemplaza las del artículo) dejaba una sola
+        por artículo. Si un artículo citado no existe en ``articulos`` se crea
+        una fila mínima: con las claves foráneas activas, insertar la entidad
+        sin él fallaría y la entidad se perdería.
+        """
+        filas = []
+        vistos = set()
+        for e in entidades:
+            clave = (str(e["articulo_id"]), e["texto"], e["categoria"])
+            if clave in vistos:
+                continue
+            vistos.add(clave)
+            filas.append({
+                "articulo_id": clave[0], "texto": clave[1], "categoria": clave[2],
+                "confianza": e.get("confianza", 0.0), "fuente": fuente,
+            })
+        with self._conn() as conn:
+            conn.executemany(
+                "INSERT OR IGNORE INTO articulos (id, titulo) VALUES (?, ?)",
+                [(aid, aid) for aid in {f["articulo_id"] for f in filas}])
+            conn.execute("DELETE FROM entidades WHERE fuente = ?", (fuente,))
+            conn.executemany("""
+                INSERT INTO entidades (articulo_id, texto, categoria, confianza, fuente)
+                VALUES (:articulo_id, :texto, :categoria, :confianza, :fuente)
+            """, filas)
+        return len(filas)
+
     def buscar_entidades(self, categoria: str = None, texto: str = None,
                          articulo_id: str = None) -> list[dict]:
         sql = "SELECT * FROM entidades WHERE 1=1"
