@@ -16,6 +16,10 @@ class Estado:
         self.publicacion   = "Mi publicación"
         self.periodo       = ""
         self.perfil_corpus = {}     # core/perfil_corpus.PerfilCorpus como dict; {} = Estampa
+        # Créditos, responsable, condiciones de uso y lugar que declaran las
+        # exportaciones (core/metadatos_exportacion). Vacío = no se declaran.
+        self.config_exportacion = {}
+        self.ner_motor     = ""     # motor de NER usado en la última corrida
         self.pdf_dir       = None
         self.out_dir       = None
         self.input_tipo    = "pdf"

@@ -189,6 +189,9 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
         # Suposiciones sobre el corpus (país, período): ver core/perfil_corpus.
         # Vacío = perfil de Estampa, el comportamiento histórico.
         "perfil_corpus":  getattr(st, "perfil_corpus", None) or {},
+        # Créditos y condiciones que declaran TEI/BibTeX/Excel
+        # (core/metadatos_exportacion).
+        "exportacion":    getattr(st, "config_exportacion", None) or {},
     }
 
     # ── Progreso ──────────────────────────────────────────────────────────────
@@ -254,6 +257,8 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
     indice_ner = getattr(st, "indice_ner_global", None)
     if indice_ner and any(indice_ner.values()):
         resultados["indice_ner_global"] = indice_ner
+    if getattr(st, "ner_motor", ""):
+        resultados["ner_motor"] = st.ner_motor
 
     # ── Enlaces Wikidata ──────────────────────────────────────────────────────
     wikidata = getattr(st, "wikidata_enlaces", None)
@@ -387,6 +392,7 @@ def cargar_proyecto(ruta: Path, st):
     st.publicacion  = config.get("publicacion", "Mi publicación")
     st.periodo      = config.get("periodo", "")
     st.perfil_corpus = config.get("perfil_corpus") or {}
+    st.config_exportacion = config.get("exportacion") or {}
     pdf_dir         = config.get("pdf_dir", "")
     st.pdf_dir      = _P(pdf_dir) if pdf_dir else None
     out_dir         = config.get("out_dir", "")
@@ -411,6 +417,7 @@ def cargar_proyecto(ruta: Path, st):
     if indice_ner:
         st.indice_ner_global = indice_ner
         st.ner_done = True
+    st.ner_motor = resultados.get("ner_motor", "")
 
     # ── Enlaces Wikidata ──────────────────────────────────────────────────────
     wikidata = resultados.get("wikidata_enlaces")

@@ -256,10 +256,17 @@ def construir_excel(datos: dict, figs: dict, output_path: Path) -> Path:
     ws0.column_dimensions["A"].width = 32
     ws0.column_dimensions["B"].width = 18
     ws0.column_dimensions["C"].width = 55
-    ws0["A1"] = "🗞️  ESTAMPA — Resultados del análisis editorial"
+    # Título y período del proyecto real: hasta el 14-nov-2026 decía siempre
+    # «ESTAMPA» y «enero–junio 1939», fuera cual fuera el corpus.
+    _pub = str(datos.get("publicacion") or "").strip()
+    if _pub.lower() in ("", "mi publicación"):
+        _pub = "Corpus"
+    _periodo = str(datos.get("periodo") or "").strip()
+    ws0["A1"] = f"🗞️  {_pub.upper()} — Resultados del análisis editorial"
     ws0["A1"].font = Font(name="Arial", bold=True, size=16, color="1F3864")
     ws0.merge_cells("A1:C1")
-    ws0["A2"] = f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')} · Corpus: enero–junio 1939"
+    ws0["A2"] = (f"Generado: {datetime.now().strftime('%d/%m/%Y %H:%M')}"
+                 + (f" · Corpus: {_periodo}" if _periodo else ""))
     ws0["A2"].font = Font(name="Arial", italic=True, size=10, color="555555")
     ws0.merge_cells("A2:C2")
     for j, h in enumerate(["Indicador", "Valor", "Nota"], 1):

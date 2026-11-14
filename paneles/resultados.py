@@ -42,6 +42,21 @@ def _articulos_segmentados():
     return getattr(ST, "articulos", None) or None
 
 
+def _metadatos_exportacion(app) -> dict:
+    """Metadatos reales del proyecto activo para TEI y BibTeX."""
+    from core.metadatos_exportacion import metadatos_proyecto
+    ruta = getattr(app, "_proyecto_ruta", None)
+    nombre = Path(ruta).stem.replace("_", " ") if ruta else ""
+    return metadatos_proyecto(ST, nombre, getattr(app, "_historial_ia", None))
+
+
+def _articulos_bibtex() -> list[dict]:
+    """Artículos con id, título y autor para el BibTeX (no páginas sin título)."""
+    from core.servicios_exportacion import articulos_para_tei
+    return articulos_para_tei(getattr(ST, "corpus_txt", []) or [], {},
+                              articulos=_articulos_segmentados())
+
+
 class PanelResultados:
     # ══════════════════════════════════════════════════════════════════════════
     # TAB 7: RESULTADOS
@@ -1157,9 +1172,8 @@ class PanelResultados:
             from pathlib import Path as _PPath
 
             from core.tei_engine import exportar_corpus_tei
-            proyecto = getattr(ST, "proyecto_nombre", "Corpus Estampa")
             exportar_corpus_tei(articulos, _PPath(dest),
-                                proyecto_nombre=proyecto)
+                                metadatos=_metadatos_exportacion(self))
             from core.servicios_ner import contar_entidades
             from core.tei_engine import validar_tei
             errores = validar_tei(_PPath(dest),
@@ -1248,12 +1262,14 @@ class PanelResultados:
         if not corpus_txt:
             messagebox.showwarning("Sin corpus", "Extrae el texto del corpus primero.")
             return
-        articulos = [{"id": f"art_{i:04d}", "texto": t} for i, t in enumerate(corpus_txt)]
+        articulos = _articulos_bibtex()
         try:
             from pathlib import Path as _PPath
 
             from core.tei_engine import exportar_bibtex
-            exportar_bibtex(articulos, _PPath(dest))
+            meta = _metadatos_exportacion(self)
+            exportar_bibtex(articulos, _PPath(dest), fuente=meta["publicacion"],
+                            editor=meta["responsable"], periodo=meta["periodo"])
             messagebox.showinfo("Exportado", f"✅ BibTeX exportado:\n{dest}")
         except Exception as e:
             messagebox.showerror("Error", str(e))
@@ -1379,12 +1395,8 @@ class PanelResultados:
                 if arts_tei:
                     # Antes pasaba titulo=/fecha=, que la función no acepta: el
                     # TypeError dejaba el paquete SIEMPRE sin corpus.xml.
-                    exportar_corpus_tei(
-                        arts_tei, tmp / "corpus.xml",
-                        proyecto_nombre=getattr(ST, "publicacion", "") or "Corpus",
-                        investigador=getattr(ST, "investigador", "") or "Investigador",
-                        institucion=getattr(ST, "institucion", "") or "",
-                    )
+                    exportar_corpus_tei(arts_tei, tmp / "corpus.xml",
+                                        metadatos=_metadatos_exportacion(self))
             except Exception as e:
                 errores.append(f"TEI: {e}")
 
@@ -1392,11 +1404,12 @@ class PanelResultados:
             _log("Exportando BibTeX…")
             try:
                 from core.tei_engine import exportar_bibtex
-                corpus_txt = getattr(ST, "corpus_txt", []) or []
-                arts_bib = [{"id": f"art_{i:04d}", "texto": t}
-                            for i, t in enumerate(corpus_txt)]
+                arts_bib = _articulos_bibtex()
                 if arts_bib:
-                    exportar_bibtex(arts_bib, tmp / "corpus.bib")
+                    meta = _metadatos_exportacion(self)
+                    exportar_bibtex(arts_bib, tmp / "corpus.bib",
+                                    fuente=meta["publicacion"],
+                                    editor=meta["responsable"], periodo=meta["periodo"])
             except Exception as e:
                 errores.append(f"BibTeX: {e}")
 

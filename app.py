@@ -3413,7 +3413,7 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
         tk.Entry(c1, textvariable=self._var_per, width=34,
                  font=("Segoe UI",10), relief="solid", bd=1,
                  bg="#171C20").grid(row=2,column=1,sticky="w",padx=8)
-        tk.Label(c1, text='Ej.: "enero–junio 1939"', bg=CARD_BG,
+        tk.Label(c1, text='Ej.: "enero–mayo 1939"', bg=CARD_BG,
                  fg="#646D72", font=("Segoe UI",8)).grid(row=2,column=2,sticky="w")
         # Tipo de corpus
         tk.Label(c1, text="Tipo:", bg=CARD_BG, fg="#E8E5DF",
@@ -5051,7 +5051,8 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
                    "df_campos":ST.df_campos,"df_layout":ST.df_layout,"df_temas":ST.df_temas,
                    "df_doc_temas":ST.df_doc_temas,"graph_path":ST.graph_path,
                    "df_articulos":ST.df_articulos,"datos_visual":ST.datos_visual,
-                   "datos_comparativo":ST.datos_comparativo}
+                   "datos_comparativo":ST.datos_comparativo,
+                   "publicacion":ST.publicacion,"periodo":ST.periodo}
             construir_excel_completo(datos, ST.figuras, out_path)
             ST.xlsx_path=out_path
             self._lbl_excel.config(text=f"✅ {out_path.name} ({out_path.stat().st_size/1024:.0f} KB)")

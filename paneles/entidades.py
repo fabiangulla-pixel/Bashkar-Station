@@ -274,7 +274,12 @@ class PanelEntidades:
 
     def _worker_ner_corpus(self, snap: dict):
         # core.servicios_ner: el mismo NER de corpus que la CLI y la API.
-        from core.servicios_ner import cargar_spacy, ner_corpus, textos_de_articulos
+        from core.servicios_ner import (
+            cargar_spacy,
+            describir_motor_ner,
+            ner_corpus,
+            textos_de_articulos,
+        )
         p = snap["params"]
         usar_ia = snap["usar_ia"]
         proveedor_llm = snap["proveedor_llm"]
@@ -315,6 +320,7 @@ class PanelEntidades:
             if i % 5 == 0:
                 self.after(0, self._ner_refrescar_tv)
 
+        ST.ner_motor = describir_motor_ner(motor, nlp)
         ST.indice_ner_global = ner_corpus(
             articulos, motor=motor, nlp=nlp, umbral_confianza=umbral, categorias=cats,
             api_key=api_key, proveedor_llm=proveedor_llm, modelo_ollama=modelo_ollama,

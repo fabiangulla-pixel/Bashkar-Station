@@ -41,58 +41,75 @@ def _sub(parent, tag: str, attrib: dict | None = None, text: str | None = None):
 
 # ── TEI Header ────────────────────────────────────────────────────────────────
 
-def _build_tei_header(
-    titulo: str,
-    autor: str | None,
-    fuente: str,
-    fecha: str | None,
-    proyecto_nombre: str,
-    investigador: str,
-    institucion: str,
-) -> ET.Element:
-    """Construye el <teiHeader> para un artículo."""
-    header = _tei("teiHeader")
+def _meta_compatible(metadatos: dict | None, proyecto_nombre: str = "",
+                     investigador: str = "", institucion: str = "",
+                     fuente: str = "") -> dict:
+    """Metadatos de la exportación; acepta los parámetros sueltos de antes.
 
-    # fileDesc
+    Hasta el 14-nov-2026 los valores por defecto eran «Corpus Estampa»,
+    «Instituto Caro y Cuervo» y «Revista Estampa»: todo TEI decía eso, fuera
+    cual fuera el proyecto. Ahora lo no declarado queda vacío.
+    """
+    meta = dict(metadatos or {})
+    meta.setdefault("proyecto", proyecto_nombre or "Corpus")
+    meta.setdefault("publicacion", fuente)
+    responsable = investigador if investigador not in ("", "Investigador") else ""
+    meta.setdefault("responsable", responsable or institucion)
+    for clave, defecto in (("periodo", ""), ("lugar", ""), ("disponibilidad", ""),
+                           ("creditos", []), ("idioma", "Español"),
+                           ("herramientas", {})):
+        meta.setdefault(clave, defecto)
+    return meta
+
+
+def _build_tei_header(titulo: str, autor: str | None, meta: dict,
+                      fecha_fuente: str | None = None) -> ET.Element:
+    """Construye el <teiHeader> con los metadatos reales del proyecto."""
+    from core.metadatos_exportacion import declaracion_editorial
+    from core.proveniencia import version_app
+
+    header = _tei("teiHeader")
     fd = _sub(header, "fileDesc")
 
-    # titleStmt
     ts = _sub(fd, "titleStmt")
     _sub(ts, "title", text=titulo or "Sin título")
     if autor:
         a = _sub(ts, "author")
         _sub(a, "persName", text=autor)
+    for c in meta.get("creditos") or []:
+        rs = _sub(ts, "respStmt")
+        _sub(rs, "resp", text=str(c.get("rol") or "crédito"))
+        _sub(rs, "name", text=str(c["nombre"]))
 
-    # publicationStmt
     ps = _sub(fd, "publicationStmt")
-    _sub(ps, "publisher", text=institucion)
-    _sub(ps, "pubPlace", text="Bogotá, Colombia")
+    if meta.get("responsable"):
+        _sub(ps, "publisher", text=meta["responsable"])
+    else:
+        _sub(ps, "p", text=f"Exportado con Bashkar Station {version_app()}.")
+    if meta.get("lugar"):
+        _sub(ps, "pubPlace", text=meta["lugar"])
     _sub(ps, "date", attrib={"when": datetime.now().strftime("%Y-%m-%d")},
          text=datetime.now().strftime("%Y"))
-    _sub(ps, "availability",
-         attrib={"status": "restricted"},
-         text="Para uso exclusivo de investigación académica.")
+    if meta.get("disponibilidad"):
+        av = _sub(ps, "availability")
+        _sub(av, "p", text=meta["disponibilidad"])
 
-    # sourceDesc
     sd = _sub(fd, "sourceDesc")
     bibl = _sub(sd, "bibl")
-    _sub(bibl, "title", text=fuente)
+    _sub(bibl, "title", text=meta.get("publicacion") or "desconocido")
+    fecha = fecha_fuente or meta.get("periodo")
     if fecha:
         _sub(bibl, "date", text=fecha)
 
-    # encodingDesc
     ed = _sub(header, "encodingDesc")
-    _sub(ed, "projectDesc",
-         text=f"Corpus digital del proyecto: {proyecto_nombre}")
-    _sub(ed, "editorialDecl",
-         text="Transcripción automática mediante OCR con corrección asistida por IA. "
-              "Las entidades nombradas han sido identificadas mediante NER híbrido (spaCy + Claude).")
+    pdesc = _sub(ed, "projectDesc")
+    _sub(pdesc, "p", text=f"Corpus digital del proyecto: {meta.get('proyecto') or 'Corpus'}")
+    edecl = _sub(ed, "editorialDecl")
+    _sub(edecl, "p", text=declaracion_editorial(meta.get("herramientas") or {}))
 
-    # profileDesc
     pd = _sub(header, "profileDesc")
     lang = _sub(pd, "langUsage")
-    _sub(lang, "language", attrib={"ident": "es"},
-         text="Español colombiano histórico (1930-1940)")
+    _sub(lang, "language", attrib={"ident": "es"}, text=meta.get("idioma") or "Español")
 
     return header
 
@@ -179,26 +196,19 @@ def articulo_a_tei(
     fuente: str,
     fecha: str | None,
     ner: dict | None,
-    proyecto_nombre: str = "Corpus Estampa",
-    investigador: str = "Investigador",
-    institucion: str = "Instituto Caro y Cuervo",
+    proyecto_nombre: str = "",
+    investigador: str = "",
+    institucion: str = "",
+    metadatos: dict | None = None,
 ) -> ET.Element:
     """
     Convierte un artículo a elemento TEI completo.
     Retorna <TEI> element.
     """
     tei = _tei("TEI", attrib={f"{{{XML_NS}}}id": _ncname(art_id)})
-
-    # Header
-    tei.append(_build_tei_header(
-        titulo=titulo or f"Artículo {art_id}",
-        autor=autor,
-        fuente=fuente,
-        fecha=fecha,
-        proyecto_nombre=proyecto_nombre,
-        investigador=investigador,
-        institucion=institucion,
-    ))
+    meta = _meta_compatible(metadatos, proyecto_nombre, investigador, institucion, fuente)
+    tei.append(_build_tei_header(titulo or f"Artículo {art_id}", autor, meta,
+                                 fecha_fuente=fecha))
 
     # Text > body
     text_el = _sub(tei, "text")
@@ -227,39 +237,32 @@ def articulo_a_tei(
 def exportar_corpus_tei(
     articulos: list[dict],
     ruta: Path,
-    proyecto_nombre: str = "Corpus Estampa",
-    investigador: str = "Investigador",
-    institucion: str = "Instituto Caro y Cuervo",
-    fuente: str = "Revista Estampa",
+    proyecto_nombre: str = "",
+    investigador: str = "",
+    institucion: str = "",
+    fuente: str = "",
     callback=None,
+    metadatos: dict | None = None,
 ) -> Path:
     """
     Exporta el corpus completo como teiCorpus XML-TEI P5.
 
     articulos: lista de dicts con keys: id, texto, titulo, autor, fecha, ner
+    metadatos: los de core.metadatos_exportacion.metadatos_proyecto(); sin
+        ellos se usan los parámetros sueltos y lo no declarado queda vacío.
     Retorna ruta del archivo generado.
     """
     ruta = Path(ruta)
     ruta.parent.mkdir(parents=True, exist_ok=True)
+    meta = _meta_compatible(metadatos, proyecto_nombre, investigador, institucion, fuente)
 
     def log(m):
         if callback:
             callback(m)
 
-    # Elemento raíz
     corpus = _tei("teiCorpus")
-
-    # Header del corpus
-    corpus_header = _build_tei_header(
-        titulo=f"{proyecto_nombre} — Corpus completo",
-        autor=None,
-        fuente=fuente,
-        fecha="1930-1940",
-        proyecto_nombre=proyecto_nombre,
-        investigador=investigador,
-        institucion=institucion,
-    )
-    corpus.insert(0, corpus_header)
+    corpus.insert(0, _build_tei_header(f"{meta['proyecto']} — Corpus completo",
+                                       None, meta))
 
     total = len(articulos)
     for i, art in enumerate(articulos):
@@ -272,12 +275,10 @@ def exportar_corpus_tei(
             texto=art.get("texto", art.get("ocr", {}).get("texto_limpio", "")),
             titulo=art.get("titulo"),
             autor=art.get("autor"),
-            fuente=fuente,
+            fuente=meta.get("publicacion", ""),
             fecha=art.get("fecha"),
             ner=art.get("ner"),
-            proyecto_nombre=proyecto_nombre,
-            investigador=investigador,
-            institucion=institucion,
+            metadatos=meta,
         )
         corpus.append(tei_el)
 
@@ -295,41 +296,46 @@ def exportar_corpus_tei(
 def exportar_bibtex(
     articulos: list[dict],
     ruta: Path,
-    fuente: str = "Estampa",
-    editor: str = "Instituto Caro y Cuervo",
+    fuente: str = "",
+    editor: str = "",
+    periodo: str = "",
 ) -> Path:
     """
     Genera archivo .bib con una entrada @article por artículo del corpus.
+
+    El año sale de la fecha del artículo o, si no la tiene, del ``periodo``
+    del proyecto; si ninguno lo trae, la entrada va sin año. Hasta el
+    14-nov-2026 se escribía «1935» y «Instituto Caro y Cuervo» como editor
+    cuando no se sabía.
     """
     ruta = Path(ruta)
     ruta.parent.mkdir(parents=True, exist_ok=True)
 
     lineas = [
         "% BibTeX generado por Bashkar Station",
-        f"% Corpus: {fuente} — {datetime.now().strftime('%Y-%m-%d')}",
+        f"% Corpus: {fuente or 'sin nombre'} — {datetime.now().strftime('%Y-%m-%d')}",
         "",
     ]
+    anio_periodo = re.search(r"\d{4}", str(periodo or ""))
 
     for art in articulos:
         art_id = re.sub(r"[^a-zA-Z0-9_]", "_", art.get("id", "art"))
         titulo = art.get("titulo") or "Sin título"
         autor = art.get("autor") or "Anónimo"
-        fecha = art.get("fecha") or "1935"
-        year = re.search(r"\d{4}", str(fecha))
-        year_str = year.group(0) if year else "1935"
+        year = re.search(r"\d{4}", str(art.get("fecha") or "")) or anio_periodo
 
-        entrada = [
-            f"@article{{{art_id},",
-            f"  title = {{{titulo}}},",
-            f"  author = {{{autor}}},",
-            f"  journal = {{{fuente}}},",
-            f"  year = {{{year_str}}},",
-            f"  publisher = {{{editor}}},",
-            "  language = {spanish},",
-            "  note = {Corpus digital. Procesado con Bashkar Station.}",
-            "}",
-            "",
-        ]
+        entrada = [f"@article{{{art_id},",
+                   f"  title = {{{titulo}}},",
+                   f"  author = {{{autor}}},"]
+        if fuente:
+            entrada.append(f"  journal = {{{fuente}}},")
+        if year:
+            entrada.append(f"  year = {{{year.group(0)}}},")
+        if editor:
+            entrada.append(f"  publisher = {{{editor}}},")
+        entrada += ["  language = {spanish},",
+                    "  note = {Corpus digital. Procesado con Bashkar Station.}",
+                    "}", ""]
         lineas.extend(entrada)
 
     ruta.write_text("\n".join(lineas), encoding="utf-8")

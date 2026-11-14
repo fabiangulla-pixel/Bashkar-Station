@@ -142,7 +142,7 @@ def contar_entidades_tei(articulos_tei: list[dict]) -> int:
 
 
 def exportar_tei_articulos(articulos, ruta, publicacion: str = "", periodo: str = "",
-                           ner_global=None):
+                           ner_global=None, metadatos: dict | None = None):
     """Corpus TEI de artículos segmentados; la CLI y la web llaman aquí.
 
     Hasta el 14-nov-2026 descartaba las entidades: el TEI de la CLI y de la web
@@ -150,6 +150,8 @@ def exportar_tei_articulos(articulos, ruta, publicacion: str = "", periodo: str 
     """
     from core.tei_engine import exportar_corpus_tei
     arts = articulos_para_tei(ner_global=ner_global, articulos=articulos)
-    fuente = f"{publicacion} ({periodo})" if periodo else publicacion
+    meta = dict(metadatos or {})
+    meta.setdefault("publicacion", publicacion)
+    meta.setdefault("periodo", periodo)
     return exportar_corpus_tei(arts, ruta, proyecto_nombre=publicacion or "Corpus",
-                               fuente=fuente)
+                               metadatos=meta)
