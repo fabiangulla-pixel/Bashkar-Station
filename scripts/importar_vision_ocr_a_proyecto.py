@@ -105,10 +105,16 @@ def escribir_metadatos_ocr(datos_dir: Path) -> int:
                           "revision": False, "metodo": METODO_OCR})
     ad = datos_dir / "04_analisis"
     ad.mkdir(parents=True, exist_ok=True)
-    with open(ad / "ocr_metadatos.csv", "w", encoding="utf-8", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=list(filas[0]) if filas else ["numero"])
-        w.writeheader()
-        w.writerows(filas)
+    # 04_analisis/ocr_metadatos.csv: lo que lee la reconstrucción desde texto.
+    # <datos_dir>/corpus_meta.csv: lo que cargar_proyecto() restaura como
+    # ST.corpus_meta. Como el OCR queda marcado como hecho, la app no
+    # reconstruye nada, y sin este segundo archivo las exportaciones
+    # declararían el método de extracción como «desconocido».
+    for destino in (ad / "ocr_metadatos.csv", datos_dir / "corpus_meta.csv"):
+        with open(destino, "w", encoding="utf-8", newline="") as f:
+            w = csv.DictWriter(f, fieldnames=list(filas[0]) if filas else ["numero"])
+            w.writeheader()
+            w.writerows(filas)
     return len(filas)
 
 
