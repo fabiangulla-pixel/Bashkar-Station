@@ -696,7 +696,49 @@ def segmentar_numero_paper_capture(pdf_path: Path) -> list[dict]:
 # PUNTO DE ENTRADA PRINCIPAL
 # ─────────────────────────────────────────────────────────────────────────────
 
+def id_articulo(numero: str, orden: int) -> str:
+    """Identificador estable de un artículo: ``<número>-a<orden 1-based>``.
+
+    Antes el título hacía de identificador (NER, SQLite, TEI): dos artículos
+    con el mismo título —secciones fijas como «Moda»— se fundían en uno, y el
+    TEI, que buscaba ``art_0000``, nunca encontraba sus entidades.
+    """
+    return f"{numero or 'sin_numero'}-a{orden:04d}"
+
+
+def asignar_ids_articulos(articulos: list[dict]) -> list[dict]:
+    """Da ``id`` estable a los artículos que no lo tienen, en su orden, por número.
+
+    Respeta los ``id`` ya presentes. Modifica en el sitio y devuelve la lista.
+    """
+    contadores: dict[str, int] = {}
+    usados = {str(a["id"]) for a in articulos if a.get("id")}
+    for a in articulos:
+        num = str(a.get("numero") or "")
+        if a.get("id"):
+            continue
+        n = contadores.get(num, 0)
+        while True:
+            n += 1
+            nuevo = id_articulo(num, n)
+            if nuevo not in usados:
+                break
+        contadores[num] = n
+        usados.add(nuevo)
+        a["id"] = nuevo
+    return articulos
+
+
 def segmentar_numero(
+    ocr_dir:  Path,
+    nombre:   str,
+    pdf_path: Path | None = None,
+) -> list[dict]:
+    """Segmenta un número; cada artículo sale con ``id`` estable (ver id_articulo)."""
+    return asignar_ids_articulos(_segmentar_numero(ocr_dir, nombre, pdf_path))
+
+
+def _segmentar_numero(
     ocr_dir:  Path,
     nombre:   str,
     pdf_path: Path | None = None,

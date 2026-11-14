@@ -791,7 +791,7 @@ def paquete_publicacion(ses=Depends(sesion)):
         try:
             from core.servicios_exportacion import articulos_para_tei
             from core.tei_engine import exportar_corpus_tei
-            arts_tei = articulos_para_tei(corpus_txt, ner)
+            arts_tei = articulos_para_tei(corpus_txt, ner, articulos=ses.articulos)
             if arts_tei:
                 exportar_corpus_tei(arts_tei, tmp / "corpus.xml",
                                     proyecto_nombre=ses.st.publicacion or "Corpus",

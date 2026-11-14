@@ -718,7 +718,8 @@ def _exportar(ses: EstadoServidor, formato: str) -> Path:
         from core.servicios_exportacion import exportar_tei_articulos
 
         ruta = destino / "corpus_tei.xml"
-        exportar_tei_articulos(arts, ruta, ses.st.publicacion, ses.st.periodo)
+        exportar_tei_articulos(arts, ruta, ses.st.publicacion, ses.st.periodo,
+                               ner_global=ses.st.indice_ner_global or {})
         return ruta
     if formato == "bibtex":
         from core.tei_engine import exportar_bibtex

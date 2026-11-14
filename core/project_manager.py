@@ -524,6 +524,9 @@ def cargar_proyecto(ruta: Path, st):
         except Exception:
             st.corpus_txt = []
 
+    # ── Identificadores estables de artículo (proyectos anteriores a v14) ─────
+    migracion_ids = migrar_ids_articulos(st)
+
     # ── Conectar/crear SQLite ─────────────────────────────────────────────────
     ruta_db = _ruta_db(ruta, datos)
     try:
@@ -544,9 +547,55 @@ def cargar_proyecto(ruta: Path, st):
                 "movieron a tu carpeta personal y se borraron del archivo.\n"
                 "Como el proyecto pudo compartirse o sincronizarse a la nube, "
                 "ROTA esas claves en el panel de cada proveedor.")
+    if migracion_ids.get("titulos_ambiguos"):
+        msg += (f"\n\n⚠ {migracion_ids['titulos_ambiguos']} títulos se repetían "
+                "en varios artículos. Las entidades de esos artículos estaban "
+                "mezcladas y se asignaron a todos los que comparten título; "
+                "vuelve a ejecutar el NER para separarlas.")
     return {"ok": True, "mensaje": msg, "historial_ia": historial,
             "nombre": datos.get("nombre", ruta.stem), "migrado": migrado,
-            "credenciales_migradas": credenciales_migradas}
+            "credenciales_migradas": credenciales_migradas,
+            "migracion_ids": migracion_ids}
+
+
+def migrar_ids_articulos(st) -> dict:
+    """Da ``id`` estable a artículos que no lo tienen y traduce el índice NER.
+
+    Hasta v13 el título hacía de identificador. Si ``df_articulos`` no trae
+    columna ``id`` se asignan con ``asignar_ids_articulos`` y las claves del
+    índice NER que eran títulos pasan a ser esos ids. Un título repetido no
+    se puede separar: sus entidades se asignan a todos los artículos con ese
+    título y se informa en ``titulos_ambiguos``.
+    """
+    import pandas as pd
+
+    from core.article_segmenter import asignar_ids_articulos
+    df = getattr(st, "df_articulos", None)
+    if df is None or getattr(df, "empty", True) or "id" in df.columns:
+        return {"migrado": False}
+    registros = asignar_ids_articulos(df.to_dict("records"))
+    st.df_articulos = pd.DataFrame(registros)
+    if isinstance(getattr(st, "articulos", None), list) and \
+            len(st.articulos) == len(registros):
+        for a, r in zip(st.articulos, registros):
+            a.setdefault("id", r["id"])
+    por_titulo: dict[str, list[str]] = {}
+    for r in registros:
+        por_titulo.setdefault(str(r.get("titulo", "")), []).append(r["id"])
+    ids = {r["id"] for r in registros}
+    indice = getattr(st, "indice_ner_global", None) or {}
+    for cat, ents in indice.items():
+        if not isinstance(ents, dict):
+            continue
+        for ent, arts in ents.items():
+            nuevos: list[str] = []
+            for aid in arts:
+                for n in ([aid] if aid in ids else por_titulo.get(str(aid), [aid])):
+                    if n not in nuevos:
+                        nuevos.append(n)
+            ents[ent] = nuevos
+    ambiguos = sum(1 for v in por_titulo.values() if len(v) > 1)
+    return {"migrado": True, "articulos": len(registros), "titulos_ambiguos": ambiguos}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

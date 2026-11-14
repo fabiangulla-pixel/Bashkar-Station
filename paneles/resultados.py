@@ -34,6 +34,14 @@ TIPOLOGIAS_EDITORIAL = (
 )
 
 
+def _articulos_segmentados():
+    """Artículos de la segmentación (con ``id`` estable), o None si no hay."""
+    df = getattr(ST, "df_articulos", None)
+    if df is not None and not getattr(df, "empty", True):
+        return df
+    return getattr(ST, "articulos", None) or None
+
+
 class PanelResultados:
     # ══════════════════════════════════════════════════════════════════════════
     # TAB 7: RESULTADOS
@@ -1143,7 +1151,8 @@ class PanelResultados:
             messagebox.showwarning("Sin corpus", "Extrae el texto del corpus primero.")
             return
         from core.servicios_exportacion import articulos_para_tei
-        articulos = articulos_para_tei(corpus_txt, ner_global)
+        articulos = articulos_para_tei(corpus_txt, ner_global,
+                                       articulos=_articulos_segmentados())
         try:
             from pathlib import Path as _PPath
 
@@ -1151,7 +1160,16 @@ class PanelResultados:
             proyecto = getattr(ST, "proyecto_nombre", "Corpus Estampa")
             exportar_corpus_tei(articulos, _PPath(dest),
                                 proyecto_nombre=proyecto)
-            messagebox.showinfo("Exportado", f"✅ XML-TEI exportado:\n{dest}")
+            from core.servicios_ner import contar_entidades
+            from core.tei_engine import validar_tei
+            errores = validar_tei(_PPath(dest),
+                                  entidades_esperadas=contar_entidades(ner_global))
+            if errores:
+                messagebox.showwarning(
+                    "TEI exportado con problemas",
+                    "\n".join(f"• {e}" for e in errores[:10]) + f"\n\n{dest}")
+            else:
+                messagebox.showinfo("Exportado", f"✅ XML-TEI exportado:\n{dest}")
         except Exception as e:
             messagebox.showerror("Error", str(e))
 
@@ -1356,7 +1374,8 @@ class PanelResultados:
                 from core.tei_engine import exportar_corpus_tei
                 corpus_txt = getattr(ST, "corpus_txt", []) or []
                 arts_tei = articulos_para_tei(
-                    corpus_txt, getattr(ST, "indice_ner_global", {}) or {})
+                    corpus_txt, getattr(ST, "indice_ner_global", {}) or {},
+                    articulos=_articulos_segmentados())
                 if arts_tei:
                     # Antes pasaba titulo=/fecha=, que la función no acepta: el
                     # TypeError dejaba el paquete SIEMPRE sin corpus.xml.

@@ -336,9 +336,31 @@ def exportar_bibtex(
     return ruta
 
 
-def validar_tei(ruta_xml: Path) -> list[str]:
+def contar_entidades_en_tei(ruta_xml: Path) -> int:
+    """Entidades anotadas en el TEI (``annotation`` y nombres marcados)."""
+    import xml.etree.ElementTree as ET_std
+    try:
+        root = ET_std.parse(str(ruta_xml)).getroot()
+    except Exception:
+        return 0
+    etiquetas = {f"{{{TEI_NS}}}{t}" for t in
+                 ("annotation", "persName", "placeName", "orgName")}
+    # persName del autor en el teiHeader no es una entidad NER: se cuentan
+    # solo las de standOff y las del cuerpo del texto.
+    n = 0
+    for zona in list(root.iter(f"{{{TEI_NS}}}standOff")) + \
+            list(root.iter(f"{{{TEI_NS}}}body")):
+        n += sum(1 for el in zona.iter() if el.tag in etiquetas)
+    return n
+
+
+def validar_tei(ruta_xml: Path, entidades_esperadas: int | None = None) -> list[str]:
     """
     Valida un archivo XML-TEI.
+
+    Con ``entidades_esperadas`` > 0 (las que tiene el proyecto), también es
+    error que el TEI no traiga ninguna: así pasó inadvertido que el exportador
+    nunca encontraba las entidades de los artículos.
 
     Primero verifica que el XML esté bien formado.
     Si lxml está disponible, valida también que el namespace TEI P5 esté presente
@@ -400,4 +422,9 @@ def validar_tei(ruta_xml: Path) -> list[str]:
             "lxml no instalado — solo se verificó que el XML está bien formado. "
             "Para validación completa: pip install lxml")
 
+    if entidades_esperadas and contar_entidades_en_tei(ruta_xml) == 0:
+        errores.append(
+            f"El proyecto tiene {entidades_esperadas} entidades, pero el TEI no "
+            "contiene ninguna: revisa que los artículos y el índice NER usen los "
+            "mismos identificadores.")
     return errores

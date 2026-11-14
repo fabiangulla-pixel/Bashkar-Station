@@ -571,6 +571,8 @@ class PanelAnalisis:
                         "metodo_seg": a.metodo,
                         "texto":     a.texto,
                     })
+                from core.article_segmenter import asignar_ids_articulos
+                asignar_ids_articulos(arts)
                 # Log comparativo con v1
                 arts_v1 = segmentar_numero(txt_dir, nombre, pdf_path)
                 comp = comparar_segmentaciones(arts_v1, arts_v2)

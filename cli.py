@@ -340,7 +340,7 @@ def _etapa_exportar(out_dir: Path, articulos: list, indice_ner: dict,
             from core.servicios_exportacion import exportar_tei_articulos
             ruta = out_dir / "corpus.xml"
             exportar_tei_articulos(articulos, ruta, cfg.get("publicacion", ""),
-                                   cfg.get("periodo", ""))
+                                   cfg.get("periodo", ""), ner_global=indice_ner)
             _log(f"  TEI: {ruta}", verbose)
         except Exception as e:
             _log(f"  ERROR TEI: {e}", verbose)

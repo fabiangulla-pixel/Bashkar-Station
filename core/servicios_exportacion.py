@@ -68,27 +68,88 @@ def estadisticas_methods(st) -> dict:
     return stats
 
 
-def articulos_para_tei(corpus_txt, ner_global) -> list[dict]:
-    """Un artículo TEI por página del corpus, con sus entidades."""
-    ner_global = ner_global or {}
-    articulos = []
-    for i, t in enumerate(corpus_txt or []):
+def _ner_por_articulo(ner_global) -> dict:
+    """{art_id: {categoria: [entidades]}} a partir del índice global."""
+    por_art: dict = {}
+    for cat, ents in (ner_global or {}).items():
+        if not isinstance(ents, dict):
+            continue
+        for ent, arts in ents.items():
+            for aid in arts:
+                por_art.setdefault(str(aid), {}).setdefault(cat, []).append(ent)
+    return por_art
+
+
+def _como_lista(articulos) -> list[dict]:
+    if articulos is None:
+        return []
+    if hasattr(articulos, "to_dict"):          # DataFrame
+        if getattr(articulos, "empty", True):
+            return []
+        articulos = articulos.to_dict("records")
+    return [dict(a) for a in articulos]
+
+
+def articulos_para_tei(corpus_txt=None, ner_global=None, *, articulos=None) -> list[dict]:
+    """Artículos listos para el TEI, cada uno con SUS entidades.
+
+    Con ``articulos`` (lista o DataFrame de la segmentación) se usa un elemento
+    TEI por artículo y las entidades se cruzan por su ``id`` estable. Si a un
+    artículo le falta el texto (los CSV del proyecto no lo guardan) se toma de
+    ``corpus_txt`` cuando ambos están alineados. Sin segmentación, un elemento
+    por página de ``corpus_txt`` (``art_0000``…).
+
+    Antes siempre se usaba ``art_0000``… mientras el NER indexaba por título:
+    el TEI no traía ninguna entidad.
+    """
+    from core.article_segmenter import asignar_ids_articulos
+    por_art = _ner_por_articulo(ner_global)
+    categorias = [c for c, v in (ner_global or {}).items() if isinstance(v, dict)]
+
+    def ner_de(aid: str) -> dict:
+        # Todas las categorías del índice, también las vacías: es el contrato
+        # que ya esperaban los consumidores.
+        ents = por_art.get(aid, {})
+        return {c: ents.get(c, []) for c in categorias}
+    textos = list(corpus_txt or [])
+    arts = _como_lista(articulos)
+    salida = []
+    if arts:
+        asignar_ids_articulos(arts)
+        alineados = len(textos) == len(arts)
+        for i, a in enumerate(arts):
+            texto = a.get("texto")
+            if not isinstance(texto, str) or not texto.strip():
+                texto = textos[i] if alineados else ""
+            def _str(v):
+                return v if isinstance(v, str) and v.strip() and v != "nan" else None
+            salida.append({
+                "id": str(a["id"]), "texto": texto or "",
+                "titulo": _str(a.get("titulo")), "autor": _str(a.get("autor")),
+                "numero": _str(a.get("numero")),
+                "ner": ner_de(str(a["id"])),
+            })
+        return salida
+    for i, t in enumerate(textos):
         art_id = f"art_{i:04d}"
-        ner_art = {cat: [e for e, arts in ents.items() if art_id in arts]
-                   for cat, ents in ner_global.items()}
-        articulos.append({"id": art_id, "texto": t or "", "ner": ner_art})
-    return articulos
+        salida.append({"id": art_id, "texto": t or "", "ner": ner_de(art_id)})
+    return salida
 
 
-def exportar_tei_articulos(articulos, ruta, publicacion: str = "", periodo: str = ""):
-    """Corpus TEI de artículos segmentados; la CLI y la API llaman aquí.
+def contar_entidades_tei(articulos_tei: list[dict]) -> int:
+    """Entidades (pares artículo–entidad) que llevará el TEI."""
+    return sum(len(v) for a in articulos_tei for v in (a.get("ner") or {}).values())
 
-    La web llamaba ``exportar_corpus_tei(titulo=, fecha=)``, argumentos que ya
-    no existen (la CLI lo arregló en la sesión 62, la web no): su exportación
-    TEI fallaba siempre.
+
+def exportar_tei_articulos(articulos, ruta, publicacion: str = "", periodo: str = "",
+                           ner_global=None):
+    """Corpus TEI de artículos segmentados; la CLI y la web llaman aquí.
+
+    Hasta el 14-nov-2026 descartaba las entidades: el TEI de la CLI y de la web
+    salía siempre sin ellas.
     """
     from core.tei_engine import exportar_corpus_tei
-    arts = [{"id": a.get("id", str(i)), "texto": a.get("texto", "")}
-            for i, a in enumerate(articulos)]
+    arts = articulos_para_tei(ner_global=ner_global, articulos=articulos)
     fuente = f"{publicacion} ({periodo})" if periodo else publicacion
-    return exportar_corpus_tei(arts, ruta, proyecto_nombre=publicacion or "Corpus", fuente=fuente)
+    return exportar_corpus_tei(arts, ruta, proyecto_nombre=publicacion or "Corpus",
+                               fuente=fuente)
