@@ -106,3 +106,38 @@ def test_reabrir_recupera_el_indice_completo(dir_proyectos, muestra):
     assert cargar_proyecto(ruta, st2)["ok"]
     assert _unicas(st2.indice_ner_global) == 161
     assert _pares(st2.indice_ner_global) == 169
+
+
+# ── Fallo 4: el grafo canónico en un proyecto recién creado ───────────────────
+# guardar_proyecto() nunca asignaba st.ruta_db (solo cargar_proyecto lo hacía):
+# el panel del grafo respondía «Abre o guarda un proyecto con base de datos»
+# aunque el usuario acabara de guardar, hasta cerrar y reabrir.
+
+def test_guardar_un_proyecto_nuevo_deja_lista_la_base_para_el_grafo(dir_proyectos, muestra):
+    from core.project_manager import guardar_proyecto, nuevo_proyecto
+    from datos.repositorio import Repositorio
+    ruta = nuevo_proyecto("Grafo sin reabrir", "Estampa", "abril 1939")
+    st = _estado_con(muestra)
+    assert not getattr(st, "ruta_db", "")      # como un proyecto recién creado
+    guardar_proyecto(ruta, st)
+    assert st.ruta_db == _db_de(ruta)
+    repo = Repositorio(st.ruta_db)              # lo mismo que hace _can_repo()
+    repo.fundir_menciones_en_canonicas(fuente="ner")
+    assert len(repo.listar_entidades_canonicas()) >= 150
+
+
+def test_un_fallo_al_sincronizar_sqlite_queda_registrado(dir_proyectos, muestra, monkeypatch):
+    from core import registro_errores
+    from core.project_manager import guardar_proyecto, nuevo_proyecto
+    from datos.repositorio import Repositorio
+    registrados = []
+    monkeypatch.setattr(registro_errores, "registrar",
+                        lambda msg, exc=None, **k: registrados.append((msg, exc)))
+
+    def _falla(self, *a, **k):
+        raise RuntimeError("disco lleno (simulado)")
+    monkeypatch.setattr(Repositorio, "reemplazar_entidades_de_fuente", _falla)
+    ruta = nuevo_proyecto("Falla SQLite", "Estampa", "abril 1939")
+    res = guardar_proyecto(ruta, _estado_con(muestra))
+    assert registrados and "disco lleno" in str(registrados[0][1])
+    assert res.get("error_sqlite")

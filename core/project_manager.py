@@ -344,10 +344,17 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
                 for aid in art_ids
             ])
         ruta_db = str(repo.ruta_db)
-    except Exception:
-        pass
-
-    # ── Escribir ──────────────────────────────────────────────────────────────
+        # Sin esto, un proyecto recién creado no tenía base para el grafo
+        # canónico hasta cerrarlo y reabrirlo (solo cargar_proyecto la fijaba).
+        st.ruta_db = ruta_db
+        st.repo = repo
+        error_sqlite = ""
+    except Exception as e:
+        # Antes: except Exception: pass. Si la sincronización fallaba, las
+        # entidades no llegaban a la base y nadie se enteraba.
+        from core.registro_errores import registrar
+        registrar(f"No se pudo sincronizar el proyecto con SQLite ({ruta_db})", e)
+        error_sqlite = str(e) or e.__class__.__name__
     datos.update({
         "version":      VERSION,
         "publicacion":  config["publicacion"],
@@ -361,6 +368,7 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
     })
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump(datos, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "ruta_db": ruta_db, "error_sqlite": error_sqlite}
 
 
 def cargar_proyecto(ruta: Path, st):

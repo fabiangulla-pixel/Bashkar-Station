@@ -2121,11 +2121,17 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
         if not self._proyecto_ruta:
             self._nuevo_proyecto_dialogo(); return
         try:
-            guardar_proyecto(self._proyecto_ruta, ST, self._historial_ia)
+            res = guardar_proyecto(self._proyecto_ruta, ST, self._historial_ia) or {}
             guardar_ultimo(self._proyecto_ruta)
             self._limpiar_modificado()
             self._lbl_proyecto.config(fg="#6EC69A")
             self.after(1500, lambda: self._lbl_proyecto.config(fg="#B5B6B3"))
+            if res.get("error_sqlite"):
+                messagebox.showwarning(
+                    "Guardado incompleto",
+                    "El proyecto se guardó, pero no se pudo actualizar su base de "
+                    "datos (entidades y grafo):\n\n" + res["error_sqlite"] +
+                    "\n\nEl detalle quedó en el registro de errores.")
         except Exception as e:
             messagebox.showerror("Error al guardar", str(e))
 
