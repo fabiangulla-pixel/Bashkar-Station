@@ -25,8 +25,10 @@ cada commit.
 | B6 Encuadre institucional y cifras | Hecho | `598cde4` |
 | C1 README de instalación | Hecho | `494569a` |
 | C2 instalar.py con el lock, solo CPU | Hecho | `494569a` |
-| C3 Verificación en Windows limpio sin GPU | Hecho en este equipo (clon limpio, Python 3.12, CUDA oculta: instalación 6 min 42 s, recorrido E2E 9/9). Falta que corra el trabajo `instalacion_limpia` de la CI, que exige publicar la rama | `494569a` |
-| C4 CI semanal | Corregida; se confirma al correr en GitHub | `494569a` |
+| C3 Verificación en Windows limpio sin GPU | Hecho: en este equipo (Python 3.12, CUDA oculta, instalación 6 min 42 s, E2E 9/9) y en un runner de Windows de GitHub (E2E 9/9) | `494569a`; CI 43738892989 |
+| C4 CI semanal | Hecho: lint, secretos, tests e instalación limpia en verde en GitHub | `86ad0cb`; CI 43738892989 |
+| D1–D5 Demo: generador, páginas, entidades, grafo, descargas | Hecho; revisada con Chromium en escritorio y móvil | `51d913a` |
+| D6 Publicación en GitHub Pages | Pendiente: exige fusionar la PR #1 en `main` y activar Pages con «GitHub Actions» como fuente | — |
 
 **Decisión tomada por defecto el 15-nov** (el responsable pidió seguir sin
 responder): la segmentación oficial es la v1 sobre texto normalizado, que da
