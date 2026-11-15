@@ -440,3 +440,30 @@ class TestHeuristicaFechas:
         texto = "El congreso se instaló el 19 de Diciembre de 1938 en Medellín. " * 3
         r = pipeline_ner(texto, nlp=None, api_key=None, usar_roberta=False)
         assert any("diciembre" in f.lower() for f in r.get("fechas", []))
+
+
+class TestRuidoDeUnaPalabra:
+    """Palabras función y tratamientos sueltos no son entidades (15-nov-2026)."""
+
+    def test_funcion_tratamientos_iniciales_y_numeros(self):
+        from core.ner_engine import es_ruido_de_una_palabra as r
+        for t in ("de", "Del", "Dr", "DR", "Sr.", "don", "Don", "doctor", "arzobispo",
+                  "M.", "J.", "573", "# #", ""):
+            assert r(t), t
+
+    def test_no_toca_nombres_reales_ni_entidades_de_varias_palabras(self):
+        from core.ner_engine import es_ruido_de_una_palabra as r
+        for t in ("Rey", "Conde", "Bogotá", "CIA", "RCA", "Leo", "Zog", "Sur",
+                  "Dr. López", "Don Quijote", "de la Vega", "San Victorino", "ex-Kaiser"):
+            assert not r(t), t
+
+    def test_extraer_roberta_descarta_el_ruido(self, monkeypatch):
+        import core.ner_roberta_local as N
+        from core import ner_engine
+        monkeypatch.setattr(N, "ner_roberta", lambda t: [
+            {"texto": x, "categoria": c} for x, c in
+            (("Dr", "personas"), ("de", "organizaciones"), ("Hitler", "personas"),
+             ("Dr. López", "personas"), ("573", "lugares"))])
+        idx = ner_engine.extraer_roberta("x")
+        assert idx["personas"] == {"Hitler", "Dr. López"}
+        assert not idx["organizaciones"] and not idx["lugares"]

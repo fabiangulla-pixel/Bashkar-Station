@@ -87,3 +87,25 @@ def test_la_portada_no_es_el_lomo_del_volumen():
                {"p": "p0004", "texto": "BIBLIOTECA NACIONAL DE COLOMBIA ENERO 14 estampa"}]
     assert m.pagina_portada(paginas) == "p0004"
     assert m.pagina_portada([{"p": "p0001", "texto": "x " * 500}]) == "p0001"
+
+
+def test_las_variantes_de_escritura_se_funden_sin_perder_unidades():
+    m = _mod()
+    ents = [{"t": "BOGOTA", "c": "lugares", "u": ["u3", "u1"]},
+            {"t": "Bogotá", "c": "lugares", "u": ["u1", "u2"]},
+            {"t": "Bogotá", "c": "organizaciones", "u": ["u9"]},
+            {"t": "Hitler", "c": "personas", "u": ["u1"]}]
+    r = m.fundir_variantes(ents)
+    bog = next(e for e in r if e["c"] == "lugares")
+    assert bog["t"] == "Bogotá" and bog["f"] == ["BOGOTA"]      # a igualdad, no la de mayúsculas
+    assert sorted(bog["u"]) == ["u1", "u2", "u3"]
+    assert len(r) == 3 and "f" not in next(e for e in r if e["t"] == "Hitler")
+    assert any(e["c"] == "organizaciones" and e["t"] == "Bogotá" for e in r)   # otra categoría no se mezcla
+
+
+def test_la_descripcion_del_modelo_no_pasa_por_transcripcion():
+    m = _mod()
+    assert m.es_descripcion_del_modelo("La imagen que se muestra corresponde al lomo de un libro")
+    assert m.es_descripcion_del_modelo("Esta página no contiene texto legible para transcribir.")
+    assert not m.es_descripcion_del_modelo("La imagen de la Virgen fue llevada en procesión")
+    assert not m.es_descripcion_del_modelo("ESTAMPAS DEL MUNDO")

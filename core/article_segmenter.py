@@ -734,8 +734,37 @@ def segmentar_numero(
     nombre:   str,
     pdf_path: Path | None = None,
 ) -> list[dict]:
-    """Segmenta un número; cada artículo sale con ``id`` estable (ver id_articulo)."""
-    return asignar_ids_articulos(_segmentar_numero(ocr_dir, nombre, pdf_path))
+    """Segmenta un número; cada artículo sale con ``id`` estable (ver id_articulo)
+    y con el título limpio (ver limpiar_titulo)."""
+    articulos = _segmentar_numero(ocr_dir, nombre, pdf_path)
+    for a in articulos:
+        if isinstance(a.get("titulo"), str):
+            a["titulo"] = limpiar_titulo(a["titulo"])
+    return asignar_ids_articulos(articulos)
+
+
+_MAX_PALABRAS_TITULO = 14
+
+
+def limpiar_titulo(titulo: str) -> str:
+    """Quita marcas de Markdown del título y acorta los que son párrafos.
+
+    Las transcripciones hechas con un modelo de visión traen encabezados
+    «# Título»; el segmentador, pensado para el OCR de la BNC, los dejaba tal
+    cual («# Ecos Mundanos») o tomaba un párrafo entero como título. En Estampa
+    ene–may 1939, 67 de 639 títulos empezaban con una marca. No cambia cuántas
+    unidades hay: solo cómo se llaman.
+    """
+    t = re.sub(r"^[\s#*>\-–—•]+", "", str(titulo or "")).strip()
+    t = re.sub(r"[*_`]+", "", t).strip()
+    # «# La Moda en ParísComo ya hemos…»: encabezado pegado al cuerpo.
+    pegado = re.search(r"(?<=[a-záéíóúñ])(?=[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+ [a-záéíóúñ])", t)
+    if pegado and len(t.split()) > _MAX_PALABRAS_TITULO:
+        t = t[:pegado.start()]
+    palabras = t.split()
+    if len(palabras) > _MAX_PALABRAS_TITULO:
+        t = " ".join(palabras[:_MAX_PALABRAS_TITULO]).rstrip(",;:") + "…"
+    return t or "Sin título"
 
 
 def _segmentar_numero(

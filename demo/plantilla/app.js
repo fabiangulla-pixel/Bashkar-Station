@@ -63,7 +63,7 @@ async function vistaInicio() {
       <li><b>${fmt(k.numeros)}</b><span>números</span></li>
       <li><b>${fmt(k.paginas)}</b><span>páginas</span></li>
       <li><b>${fmt(k.unidades)}</b><span>unidades editoriales</span></li>
-      <li><b>${fmt(k.entidades_unicas)}</b><span>entidades nombradas</span></li>
+      <li><b>${fmt(k.entidades_indice || k.entidades_unicas)}</b><span>entidades nombradas</span></li>
       <li><b>${fmt(k.menciones)}</b><span>menciones en unidades</span></li>
     </ul>
     <h2>Números</h2>
@@ -114,7 +114,8 @@ async function vistaPagina(id, p) {
     <div class="visor">
       <a href="img/${enc(id)}/${p}.webp"><img src="img/${enc(id)}/${p}.webp"
         alt="Facsímil de la página ${num} de Estampa, ${esc(meta.etiqueta)}"></a>
-      <div><div class="transcripcion" aria-label="Transcripción">${esc(pag.texto)}</div>
+      <div><div class="transcripcion" aria-label="Transcripción">${pag.sin_texto
+        ? '<span class="vacio">Esta página no tiene texto para transcribir.</span>' : esc(pag.texto)}</div>
         <p class="leyenda">Transcripción automática (Claude Vision), sin revisión humana: puede contener errores.</p></div>
     </div>
     <h2>Unidades editoriales en esta página</h2>
@@ -145,7 +146,8 @@ async function vistaEntidades(params) {
     `<option value="${esc(k)}" ${k === cat ? "selected" : ""}>${esc(CAT[k] || k)} (${fmt(v)})</option>`).join("");
   pintar(`
     <h1>Entidades nombradas</h1>
-    <p class="sub">${fmt(lista.length)} entidades detectadas automáticamente, ordenadas por número de unidades en que aparecen.</p>
+    <p class="sub">${fmt(lista.length)} entidades detectadas automáticamente (${fmt(c.cifras.entidades_unicas)} formas escritas:
+      «Bogotá» y «BOGOTA» cuentan como una), ordenadas por número de unidades en que aparecen.</p>
     <form class="filtros" role="search" onsubmit="return false">
       <label>Buscar <input id="q" type="search" value="${esc(q)}" placeholder="p. ej. Arciniegas"></label>
       <label>Categoría <select id="c"><option value="">Todas</option>${opciones}</select></label>
@@ -156,7 +158,8 @@ async function vistaEntidades(params) {
     const cc = document.getElementById("c").value;
     const norm = (s) => s.toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu, "");
     const nq = norm(qq);
-    const filtradas = lista.filter((e) => (!cc || e.c === cc) && (!nq || norm(e.t).includes(nq)));
+    const filtradas = lista.filter((e) => (!cc || e.c === cc) &&
+      (!nq || norm(e.t).includes(nq) || (e.f || []).some((f) => norm(f).includes(nq))));
     const filas = filtradas.slice(0, 300).map((e) => `<tr><td>${etiqueta(e.c, e.t)}</td>
       <td>${esc(CAT[e.c] || e.c)}</td><td>${fmt(e.u.length)}</td></tr>`).join("");
     document.getElementById("resultados").innerHTML = filtradas.length
@@ -172,7 +175,7 @@ async function vistaEntidades(params) {
 
 async function vistaEntidad(cat, texto) {
   const [lista, c] = await Promise.all([entidades(), corpus()]);
-  const e = lista.find((x) => x.c === cat && x.t === texto);
+  const e = lista.find((x) => x.c === cat && (x.t === texto || (x.f || []).includes(texto)));
   if (!e) return pintar('<p class="vacio">Entidad no encontrada.</p>');
   const porNumero = {};
   e.u.forEach((uid) => (porNumero[numeroDeUnidad(uid)] ||= []).push(uid));
@@ -187,6 +190,7 @@ async function vistaEntidad(cat, texto) {
     <p><a href="#/entidades">← Índice de entidades</a></p>
     <h1>${esc(e.t)}</h1>
     <p class="sub">${esc(CAT[e.c] || e.c)} · aparece en ${fmt(e.u.length)} unidades editoriales</p>
+    ${e.f ? `<p class="leyenda">También escrita: ${e.f.map(esc).join(" · ")}</p>` : ""}
     ${bloques.join("")}`, e.t);
 }
 
