@@ -1236,7 +1236,7 @@ class PanelResultados:
                 datos, Path(dest),
                 titulo_proyecto=ST.publicacion,
                 investigador=getattr(ST, "investigador", ""),
-                institucion=getattr(ST, "institucion", "Instituto Caro y Cuervo"),
+                institucion=getattr(ST, "institucion", ""),
             )
             ST.pptx_path = dest
             self.after(0, lambda: __import__("tkinter.messagebox", fromlist=["showinfo"]).showinfo(

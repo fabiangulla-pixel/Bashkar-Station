@@ -18,7 +18,9 @@ descripción de imágenes con IA y la extracción de metadatos desde URL.
   ⚠️ En la primera corrida sobre este equipo salieron **1.577**: faltaban 11
   tests porque `spylls` no estaba declarado en `requirements.txt` y el módulo
   entero no se recolectaba. Un verde con menos pruebas detrás.
-- Caso real: corpus de ***Estampa*** (1930-1940), Instituto Caro y Cuervo.
+- Caso real: corpus de ***Estampa***, enero–mayo de 1939 (5 números, 792
+  páginas, 639 unidades editoriales). El Instituto Caro y Cuervo fue la
+  institución mentora de la beca, sin afiliación.
 - Estado del código en sesión **67** (9-sep-2026).
 
 > ⚠️ La sección 8 de `CLAUDE.md` decía "sesión 14, 499 tests" — quedó

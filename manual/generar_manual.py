@@ -42,7 +42,9 @@ MARCA_REF = "{{REFERENCIA_PANELES}}"
 TITULO = "Bashkar Station"
 SUBTITULO = "Manual de uso y guía metodológica"
 AUTOR = "Fabián Andrés Gullaván Vera"
-INSTITUCION = "Instituto Caro y Cuervo · Bogotá, Colombia"
+INSTITUCION = ("Beca a Nuevos Investigadores en Estudios Editoriales · Ministerio de las "
+               "Culturas, las Artes y los Saberes de Colombia · Institución mentora de la "
+               "beca: Instituto Caro y Cuervo (sin afiliación)")
 
 
 # ── Markdown ────────────────────────────────────────────────────────────────

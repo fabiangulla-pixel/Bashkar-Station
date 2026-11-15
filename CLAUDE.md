@@ -31,8 +31,11 @@ Antes de escribir **una sola línea de código**:
 para **análisis editorial computacional de publicaciones periódicas históricas
 digitalizadas** (revistas, periódicos, boletines) en español.
 
-- **Caso real:** corpus de la revista colombiana ***Estampa* (1930–1940)**, en el
-  marco del proyecto "Estampa como proyecto editorial" del **Instituto Caro y Cuervo**.
+- **Caso real:** corpus de la revista colombiana ***Estampa***, enero–mayo de 1939
+  (5 números, 792 páginas, 639 unidades editoriales), investigación financiada
+  por una beca del Ministerio de las Culturas. El **Instituto Caro y Cuervo** fue
+  la institución mentora de la beca, **sin afiliación**: no presentar el
+  software como desarrollado en el Instituto ni como propiedad suya.
 - **También analiza:** *Cromos*, *El Gráfico* y otras revistas históricas
   latinoamericanas.
 - **Corre 100% offline** tras la instalación inicial. Las únicas funciones que usan
@@ -485,4 +488,4 @@ migración reversible.
 
 ---
 
-*Bashkar Station — proyecto de humanidades digitales para el corpus de* Estampa *(Instituto Caro y Cuervo). Mantenido con metodología vibe coding por Gulla — Editorial Tools.*
+*Bashkar Station — proyecto de humanidades digitales para el corpus de* Estampa *(enero–mayo de 1939). Mantenido con metodología vibe coding por Gulla — Editorial Tools.*

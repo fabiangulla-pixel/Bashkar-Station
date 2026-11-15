@@ -20,9 +20,9 @@ from core.proveniencia import con_proveniencia
 def exportar_presentacion(
     datos: dict,
     ruta: Path,
-    titulo_proyecto: str = "Análisis corpus Estampa",
+    titulo_proyecto: str = "Análisis del corpus",
     investigador: str = "",
-    institucion: str = "Instituto Caro y Cuervo",
+    institucion: str = "",
 ) -> Path:
     """
     Genera presentación .pptx a partir de los datos del proyecto.

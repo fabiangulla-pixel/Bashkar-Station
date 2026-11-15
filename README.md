@@ -28,10 +28,19 @@ Esto no es un detalle técnico: trabajar con prensa histórica implica material 
 condiciones de uso de la institución que lo digitalizó. Que el corpus no salga del equipo
 salvo decisión explícita del investigador es un requisito, no una comodidad.
 
-**Corpus de referencia:** Revista *Estampa* (Colombia, 1930–1940), digitalizada por
-la Biblioteca Nacional de Colombia (BNC).
+**Corpus de referencia:** revista *Estampa* (Bogotá), enero–mayo de 1939: 5
+números, 792 páginas y 639 unidades editoriales, digitalizados por la
+Biblioteca Nacional de Colombia (BNC).
 
-**Institución mentora:** Instituto Caro y Cuervo, Bogotá, Colombia.
+> **Las imágenes y los textos de *Estampa* se publican con autorización de la
+> Biblioteca Nacional de Colombia.** Procedencia, fuente de cada número y
+> condiciones: [DERECHOS.md](DERECHOS.md).
+
+**Financiación y mentoría:** Beca a Nuevos Investigadores en Estudios
+Editoriales del Ministerio de las Culturas, las Artes y los Saberes de
+Colombia. El Instituto Caro y Cuervo fue la institución mentora de la beca;
+Bashkar Station no es propiedad del Instituto y su autor no tiene afiliación
+con él.
 
 ---
 
@@ -421,7 +430,7 @@ y la ficha de GitHub dirán versiones distintas.
 
 ## Usar Bashkar con otro corpus
 
-La herramienta se calibró sobre *Estampa* (Bogotá, 1938-1940). Las suposiciones
+La herramienta se calibró sobre *Estampa* (Bogotá, enero–mayo de 1939). Las suposiciones
 sobre el corpus que afectan resultados se declaran en el proyecto, en la
 clave `config.perfil_corpus` del `.bashkar`:
 
@@ -497,8 +506,8 @@ capas con licencias distintas:
 | Capa | Licencia | ¿Se distribuye aquí? |
 |---|---|---|
 | Código | Apache 2.0 | Sí |
-| Corpus (*Estampa*, digitalizado por la Biblioteca Nacional de Colombia) | Condiciones de la BNC | No. Sí se versionan textos OCR derivados (`vision_ocr/salida/`, `benchmark/`, candidatos del piloto). Las imágenes del piloto se retiraron en la sesión 70, pero siguen en el historial de git anterior |
-| Modelos (spaCy, Tesseract, Kraken/CATMuS, CHURRO, BERT) | Cada uno la suya | No: se descargan aparte |
+| Corpus (*Estampa*, enero–mayo de 1939, digitalizado por la Biblioteca Nacional de Colombia) | Publicado con autorización de la BNC; ver [DERECHOS.md](DERECHOS.md) | Sí: transcripciones en `vision_ocr/salida/` y las 792 páginas como imágenes en la *release* `vision-ocr-entrada-v1` |
+| Modelos y programas de terceros | Cada uno la suya; ver [LICENCIAS_DE_TERCEROS.md](LICENCIAS_DE_TERCEROS.md) | No: se descargan aparte (CHURRO-3B no se distribuye) |
 
 Las exportaciones repiten este aviso en su manifiesto de proveniencia.
 
@@ -506,6 +515,7 @@ Las exportaciones repiten este aviso en su manifiesto de proveniencia.
 
 ## Agradecimientos
 
-- **Biblioteca Nacional de Colombia (BNC)** — acceso al corpus digital de la revista Estampa
-- **Instituto Caro y Cuervo** — apoyo institucional y financiamiento de la investigación
+- **Biblioteca Nacional de Colombia (BNC)** — digitalización de la revista *Estampa* y autorización para publicar sus imágenes y textos
+- **Ministerio de las Culturas, las Artes y los Saberes de Colombia** — Beca a Nuevos Investigadores en Estudios Editoriales, que financió la investigación
+- **Instituto Caro y Cuervo** — institución mentora de la beca (sin afiliación)
 - Metodología inspirada en: Impresso Project (EPFL), Newspaper Navigator (Library of Congress)

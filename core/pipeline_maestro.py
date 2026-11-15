@@ -578,7 +578,7 @@ class PipelineMaestro:
 Proyecto: {proyecto}
 Fecha de generación: {fecha}
 Artículos procesados: {n_arts}
-Instituto Caro y Cuervo / Gulla Editorial Tools
+Bashkar Station / Gulla Editorial Tools
 
 CONTENIDO DEL PAQUETE
 =====================

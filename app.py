@@ -3446,7 +3446,9 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
                  bg="#171C20").grid(row=5,column=1,sticky="w",padx=8)
         tk.Label(c1, text="Institución:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=6,column=0,sticky="w",pady=5)
-        self._var_institucion = tk.StringVar(value="Instituto Caro y Cuervo")
+        # Vacío por defecto: lo escribe quien investiga. Antes decía «Instituto
+        # Caro y Cuervo» y así salía en las exportaciones de cualquier usuario.
+        self._var_institucion = tk.StringVar(value="")
         tk.Entry(c1, textvariable=self._var_institucion, width=40,
                  font=("Segoe UI",9), relief="solid", bd=1,
                  bg="#171C20").grid(row=6,column=1,sticky="ew",padx=8)

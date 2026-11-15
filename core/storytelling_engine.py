@@ -234,7 +234,7 @@ def generar_reporte_html(
 </div>
 
 <footer>
-  Generado por Bashkar Station · Instituto Caro y Cuervo · {fecha}
+  Generado por Bashkar Station · {fecha}
 </footer>
 </body>
 </html>"""

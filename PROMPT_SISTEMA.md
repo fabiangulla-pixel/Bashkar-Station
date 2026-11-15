@@ -339,5 +339,5 @@ separados y comunican progreso vía `queue.Queue`.
 
 ---
 
-*Bashkar Station — Instituto Caro y Cuervo / Universidad de los Andes*
+*Bashkar Station — herramienta de humanidades digitales*
 *Versión 1.1 — Generado automáticamente*
