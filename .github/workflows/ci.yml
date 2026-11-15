@@ -46,6 +46,8 @@ jobs:
         run: |
           pip install packaging
           python scripts/verificar_dependencias.py
+      - name: Licencias de terceros declaradas
+        run: python scripts/verificar_licencias.py
 
   secretos:
     runs-on: ubuntu-latest
