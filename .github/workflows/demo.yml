@@ -1,0 +1,60 @@
+name: Demo pública
+
+# Publica en GitHub Pages la demo de solo lectura del corpus Estampa
+# (enero–mayo de 1939). Hito D6 de PLAN_MVP.md.
+#
+# Las imágenes no viven en el repositorio: se bajan de la release
+# vision-ocr-entrada-v1 (792 páginas) y se reducen a WebP aquí. Los datos
+# (demo/datos/) sí están versionados: los genera scripts/generar_demo.py desde
+# el proyecto procesado. Solo se ejecuta a mano.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: demo-pages
+  cancel-in-progress: true
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Pillow
+        run: pip install "pillow==$(grep -i '^pillow==' requirements.lock.txt | cut -d= -f3)"
+      - name: Imágenes de la release vision-ocr-entrada-v1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download vision-ocr-entrada-v1 -p "*.zip" -D zips
+          for z in zips/*.zip; do
+            n=$(basename "$z" .zip)
+            mkdir -p "imagenes/$n"
+            unzip -q "$z" -d "imagenes/$n"
+          done
+          find imagenes -name "*.jpg" | wc -l
+      - name: Construir el sitio
+        run: python scripts/generar_demo.py sitio --imagenes imagenes --salida _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  publicar:
+    needs: construir
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4

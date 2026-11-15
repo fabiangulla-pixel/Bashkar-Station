@@ -4,9 +4,13 @@ Copyright 2026 Fabián Andrés Gullaván Vera
 Este producto incluye software desarrollado por Fabián Andrés Gullaván Vera como parte de la
 investigación "Estampa (Bogotá, 1930-1940)", apoyada por la Beca a Nuevos
 Investigadores en Estudios Editoriales del Ministerio de las Culturas, las Artes
-y los Saberes de Colombia y por el Instituto Caro y Cuervo.
+y los Saberes de Colombia. El Instituto Caro y Cuervo fue la institución mentora
+de la beca, sin afiliación.
 
 Licenciado bajo la Licencia Apache, Versión 2.0. Ver el archivo LICENSE.
+Licencias de los componentes de terceros: LICENCIAS_DE_TERCEROS.md.
 
-El corpus de referencia de la revista Estampa fue digitalizado por la Biblioteca
-Nacional de Colombia (BNC) y no se distribuye con este software.
+El corpus de referencia (revista Estampa, enero-mayo de 1939) fue digitalizado por
+la Biblioteca Nacional de Colombia (BNC). Sus imágenes y textos se publican con
+autorización de la BNC y no están cubiertos por la licencia del código: ver
+DERECHOS.md.

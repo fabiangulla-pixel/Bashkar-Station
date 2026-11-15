@@ -1,0 +1,41 @@
+Command run:
+cd C:\dev\bashkar_station
+C:\dev\venv-bashkar\Scripts\python.exe -m pytest tests/ -q
+
+Date: 2026-10-14
+Commit under test: 7e6cdbdf3b3b28e6258b89a5b6148ea5eb180af2
+
+Tail of real output (full run, not simulated):
+
+tests\test_proveniencia.py ..........                                    [ 79%]
+tests\test_quac_portados.py ................................             [ 81%]
+tests\test_recursos_clip.py ............................................ [ 83%]
+                                                                         [ 83%]
+tests\test_registro_errores.py ....                                      [ 83%]
+tests\test_repositorio.py ..............................                 [ 85%]
+tests\test_requisitos.py ......................ssssss                    [ 86%]
+tests\test_sentiment_engine.py ......................................... [ 88%]
+..                                                                       [ 88%]
+tests\test_sentimiento_discriminante.py .......                          [ 89%]
+tests\test_servicios_corpus.py ........                                  [ 89%]
+tests\test_servicios_entidades.py ........                               [ 89%]
+tests\test_servicios_exportacion.py ......                               [ 90%]
+tests\test_servidor_web.py ...............                               [ 90%]
+tests\test_sin_atributos_que_tapan_metodos.py ..                         [ 91%]
+tests\test_sin_caracteres_de_control.py ...                              [ 91%]
+tests\test_spec_portable.py ...                                          [ 91%]
+tests\test_spell_corrector.py ...............                            [ 92%]
+tests\test_stylometry_engine.py ....                                     [ 92%]
+tests\test_tei_engine.py .........................                       [ 93%]
+tests\test_ui_redesign.py ................                               [ 94%]
+tests\test_user_prefs.py ...........                                     [ 94%]
+tests\test_v11_features.py .............................                 [ 96%]
+tests\test_welcome_gui.py ......                                         [ 96%]
+tests\test_word_vectors_torch.py ..........                              [ 97%]
+tests\test_word_verifier.py ...............                              [ 97%]
+tests\test_word_verifier_gui.py ....                                     [ 98%]
+tests\test_zone_labeler.py .....................................         [100%]
+
+================ 1967 passed, 29 skipped in 245.25s (0:04:05) =================
+
+[exited with code 0]

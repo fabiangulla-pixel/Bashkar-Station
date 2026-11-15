@@ -1,0 +1,504 @@
+
+=== crear proyecto [200] ===
+{
+  "proyecto": "ERIHS_Demo_Estampa_Real",
+  "ruta_proyecto": "~\\Documents\\BashkarStation\\proyectos\\ERIHS_Demo_Estampa_Real.bashkar",
+  "publicacion": "Estampa (Bogotá, revista semanal de actualidad gráfica)",
+  "periodo": "Marzo 1939",
+  "out_dir": "~\\Documents\\BashkarStation\\proyectos\\ERIHS_Demo_Estampa_Real_salida",
+  "estado_etapas": {
+    "etz": "pending",
+    "ocr": "pending",
+    "norm": "pending",
+    "seg": "pending",
+    "anal": "pending"
+  },
+  "numeros": [],
+  "n_articulos": 0,
+  "n_entidades": 0,
+  "ner_done": false,
+  "ia_habilitada": false
+}
+
+=== subir pdf [200] ===
+{
+  "ok": true,
+  "nombre": "estampa_1939_p05.pdf",
+  "bytes": 433824
+}
+
+=== conv iniciar [200] ===
+{
+  "trabajo": "1f8de131dcc5"
+}
+trabajo 1f8de131dcc5 -> {"id": "1f8de131dcc5", "tipo": "conv", "estado": "ok", "progreso": 100, "mensaje": "estampa_1939_p05.pdf — pág. 1/1", "log": ["estampa_1939_p05.pdf — pág. 1/1"], "resultado": {"resumen": {"carpeta_entrada": "~\\AppData\\Local\\Temp\\bashkar_web_v962jfi3\\subidas", "carpeta_salida": "~\\AppData\\Local\\Temp\\bashkar_web_v962jfi3\\conv", "inicio": "2026-10-14 22:16:21", "fin": "2026-10-14 22:16:21", "segundos_totales": 0.0, "cancelado": false}}, "error": ""}
+
+=== norm iniciar [200] ===
+{
+  "trabajo": "5759eaa1f8cf"
+}
+trabajo 5759eaa1f8cf -> {"id": "5759eaa1f8cf", "tipo": "norm", "estado": "ok", "progreso": 100, "mensaje": "Normalizando estampa_1939_p05…", "log": ["Normalizando estampa_1939_p05…"], "resultado": {"archivos": 1, "palabras_cambiadas": 9, "guiones_unidos": 9, "errores": 0}, "error": ""}
+
+=== seg iniciar [200] ===
+{
+  "trabajo": "00d57c1f15af"
+}
+trabajo 00d57c1f15af -> {"id": "00d57c1f15af", "tipo": "seg", "estado": "ok", "progreso": 100, "mensaje": "Segmentando estampa_1939_p05…", "log": ["Segmentando estampa_1939_p05…"], "resultado": {"n_articulos": 1}, "error": ""}
+
+=== articulos [200] ===
+[
+  {
+    "i": 0,
+    "id": "doc_0000",
+    "numero": "estampa_1939_p05",
+    "titulo": "ANO 2VOL2NUMI7.BOCOTA,MAR7O181939",
+    "autor": "Anónimo / Sin atribuir",
+    "seccion": "General",
+    "palabras": 1202
+  }
+]
+
+=== ner iniciar [200] ===
+{
+  "trabajo": "601082c7bea4"
+}
+trabajo 601082c7bea4 -> {"id": "601082c7bea4", "tipo": "ner", "estado": "ok", "progreso": 100, "mensaje": "Cargando modelos…", "log": ["Cargando modelos…"], "resultado": {"n_entidades": 39, "textos": 1}, "error": ""}
+
+=== ner resultado [200] ===
+{
+  "personas": {
+    "ALBERTO": [
+      "doc_0000"
+    ],
+    "Agustín Nieto Caballero": [
+      "doc_0000"
+    ],
+    "Alfonso López": [
+      "doc_0000"
+    ],
+    "Don María": [
+      "doc_0000"
+    ],
+    "Don Tomás": [
+      "doc_0000"
+    ],
+    "Evert": [
+      "doc_0000"
+    ],
+    "GILBERTO": [
+      "doc_0000"
+    ],
+    "López": [
+      "doc_0000"
+    ],
+    "MANUEL CHAVE": [
+      "doc_0000"
+    ],
+    "MANUEL CHAVES NOGALES": [
+      "doc_0000"
+    ],
+    "María": [
+      "doc_0000"
+    ],
+    "Miguel Samper": [
+      "doc_0000"
+    ],
+    "Ricardo Lleras Codazzi": [
+      "doc_0000"
+    ],
+    "Tomás Mueda Vargas": [
+      "doc_0000"
+    ],
+    "Tomás Samper": [
+      "doc_0000"
+    ],
+    "Yener": [
+      "doc_0000"
+    ],
+    "don Tomás Sam": [
+      "doc_0000"
+    ]
+  },
+  "lugares": {
+    "Bogotá": [
+      "doc_0000"
+    ],
+    "COLOMBI": [
+      "doc_0000"
+    ],
+    "Cali": [
+      "doc_0000"
+    ],
+    "Calle 40": [
+      "doc_0000"
+    ],
+    "Capilla de la Hermito": [
+      "doc_0000"
+    ],
+    "Colombia": [
+      "doc_0000"
+    ],
+    "Edificio de la Bolsa": [
+      "doc_0000"
+    ],
+    "París": [
+      "doc_0000"
+    ],
+    "Red": [
+      "doc_0000"
+    ],
+    "Santander": [
+      "doc_0000"
+    ]
+  },
+  "organizaciones": {
+    "Administra": [
+      "doc_0000"
+    ],
+    "ESTAMPA": [
+      "doc_0000"
+    ],
+    "Externado de De. Techo": [
+      "doc_0000"
+    ],
+    "Gi": [
+      "doc_0000"
+    ],
+    "Gimnasi": [
+      "doc_0000"
+    ],
+    "Gimnasio Modemo": [
+      "doc_0000"
+    ],
+    "Gimnasio Moderno": [
+      "doc_0000"
+    ],
+    "Talleres Rotogróticos": [
+      "doc_0000"
+    ],
+    "Universidad Libre": [
+      "doc_0000"
+    ],
+    "Universitaria": [
+      "doc_0000"
+    ],
+    "ción López": [
+      "doc_0000"
+    ]
+  },
+  "fechas": {
+    "19 de Diciembre de 1938": [
+      "doc_0000"
+    ]
+  },
+  "obras_publicaciones": {},
+  "eventos_historicos": {}
+}
+
+=== anal iniciar [200] ===
+{
+  "trabajo": "954e25fa63e5"
+}
+trabajo 954e25fa63e5 -> {"id": "954e25fa63e5", "tipo": "anal", "estado": "ok", "progreso": 100, "mensaje": "Analizando 0/1…", "log": ["Analizando 0/1…"], "resultado": {"n_articulos": 1, "vocabulario": 526}, "error": ""}
+
+=== analisis [200] ===
+{
+  "top_terminos": [
+    [
+      "gimnasio",
+      10
+    ],
+    [
+      "moderno",
+      6
+    ],
+    [
+      "escuela",
+      5
+    ],
+    [
+      "nueva",
+      5
+    ],
+    [
+      "enseñanza",
+      4
+    ],
+    [
+      "sino",
+      4
+    ],
+    [
+      "tomás",
+      4
+    ],
+    [
+      "espíritu",
+      4
+    ],
+    [
+      "don",
+      4
+    ],
+    [
+      "estampa",
+      3
+    ],
+    [
+      "educación",
+      3
+    ],
+    [
+      "colombia",
+      3
+    ],
+    [
+      "bogotá",
+      3
+    ],
+    [
+      "lópez",
+      3
+    ],
+    [
+      "hubo",
+      3
+    ],
+    [
+      "libre",
+      3
+    ],
+    [
+      "virtudes",
+      3
+    ],
+    [
+      "iniciación",
+      3
+    ],
+    [
+      "hecho",
+      3
+    ],
+    [
+      "apenas",
+      3
+    ],
+    [
+      "ante",
+      3
+    ],
+    [
+      "instituto",
+      3
+    ],
+    [
+      "ción",
+      3
+    ],
+    [
+      "historia",
+      2
+    ],
+    [
+      "creación",
+      2
+    ],
+    [
+      "bandera",
+      2
+    ],
+    [
+      "victoria",
+      2
+    ],
+    [
+      "siglo",
+      2
+    ],
+    [
+      "ortodoxa",
+      2
+    ],
+    [
+      "diez",
+      2
+    ],
+    [
+      "liberalismo",
+      2
+    ],
+    [
+      "fervor",
+      2
+    ],
+    [
+      "mejores",
+      2
+    ],
+    [
+      "cierto",
+      2
+    ],
+    [
+      "generosidad",
+      2
+    ],
+    [
+      "continuidad",
+      2
+    ],
+    [
+      "mor",
+      2
+    ],
+    [
+      "político",
+      2
+    ],
+    [
+      "manera",
+      2
+    ],
+    [
+      "josé",
+      2
+    ],
+    [
+      "maría",
+      2
+    ],
+    [
+      "samper",
+      2
+    ],
+    [
+      "aire",
+      2
+    ],
+    [
+      "experimental",
+      2
+    ],
+    [
+      "personalidad",
+      2
+    ],
+    [
+      "ataque",
+      2
+    ],
+    [
+      "fundadores",
+      2
+    ],
+    [
+      "hechos",
+      2
+    ],
+    [
+      "métodos",
+      2
+    ],
+    [
+      "cristiano",
+      2
+    ],
+    [
+      "obra",
+      2
+    ],
+    [
+      "estas",
+      2
+    ],
+    [
+      "zalamea",
+      2
+    ],
+    [
+      "agente",
+      2
+    ],
+    [
+      "talleres",
+      2
+    ],
+    [
+      "oposición",
+      2
+    ],
+    [
+      "modemo",
+      2
+    ],
+    [
+      "ciudad",
+      2
+    ],
+    [
+      "disciplina",
+      2
+    ],
+    [
+      "nuestra",
+      2
+    ]
+  ],
+  "secciones": [
+    [
+      "General",
+      1
+    ]
+  ],
+  "por_numero": [
+    [
+      "estampa_1939_p05",
+      1
+    ]
+  ],
+  "n_articulos": 1,
+  "total_palabras": 830,
+  "vocabulario": 526
+}
+
+=== exportar tei [200] ===
+{
+  "archivo": "corpus_tei.xml"
+}
+
+=== exportar csv_ner [200] ===
+{
+  "archivo": "entidades.csv"
+}
+
+=== exportar bibtex [200] ===
+{
+  "archivo": "corpus.bib"
+}
+
+=== estado final [200] ===
+{
+  "proyecto": "ERIHS_Demo_Estampa_Real",
+  "ruta_proyecto": "~\\Documents\\BashkarStation\\proyectos\\ERIHS_Demo_Estampa_Real.bashkar",
+  "publicacion": "Estampa (Bogotá, revista semanal de actualidad gráfica)",
+  "periodo": "Marzo 1939",
+  "out_dir": "~\\Documents\\BashkarStation\\proyectos\\ERIHS_Demo_Estampa_Real_salida",
+  "estado_etapas": {
+    "etz": "pending",
+    "ocr": "ready",
+    "norm": "ready",
+    "seg": "ready",
+    "anal": "ready"
+  },
+  "numeros": [
+    {
+      "nombre": "estampa_1939_p05",
+      "paginas": 1
+    }
+  ],
+  "n_articulos": 1,
+  "n_entidades": 39,
+  "ner_done": true,
+  "ia_habilitada": false
+}

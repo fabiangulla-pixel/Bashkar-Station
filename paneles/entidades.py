@@ -274,7 +274,12 @@ class PanelEntidades:
 
     def _worker_ner_corpus(self, snap: dict):
         # core.servicios_ner: el mismo NER de corpus que la CLI y la API.
-        from core.servicios_ner import cargar_spacy, ner_corpus, textos_de_articulos
+        from core.servicios_ner import (
+            cargar_spacy,
+            describir_motor_ner,
+            ner_corpus,
+            textos_de_articulos,
+        )
         p = snap["params"]
         usar_ia = snap["usar_ia"]
         proveedor_llm = snap["proveedor_llm"]
@@ -315,12 +320,26 @@ class PanelEntidades:
             if i % 5 == 0:
                 self.after(0, self._ner_refrescar_tv)
 
+        ST.ner_motor = describir_motor_ner(motor, nlp)
         ST.indice_ner_global = ner_corpus(
             articulos, motor=motor, nlp=nlp, umbral_confianza=umbral, categorias=cats,
             api_key=api_key, proveedor_llm=proveedor_llm, modelo_ollama=modelo_ollama,
             progreso=_progreso)
 
         ST.ner_done = True
+        # La base es la fuente única de las entidades: se escriben ya, para que
+        # el grafo canónico no trabaje con las de la corrida anterior si se
+        # abre antes de guardar. Repositorio nuevo en este hilo (sqlite3 no
+        # comparte conexiones entre hilos).
+        if getattr(ST, "ruta_db", ""):
+            try:
+                from core.project_manager import sincronizar_entidades_ner
+                from datos.repositorio import Repositorio
+                sincronizar_entidades_ner(Repositorio(ST.ruta_db), ST.indice_ner_global)
+            except Exception as e:
+                from core.registro_errores import registrar
+                registrar("No se pudieron escribir las entidades en la base", e)
+                self._ner_log(f"⚠ Las entidades no se guardaron en la base: {e}")
         n_ents = sum(len(v) for v in ST.indice_ner_global.values())
         self._ner_log(f"✅ Corpus completo: {n_ents} entidades únicas")
         self.after(0, self._ner_refrescar_tv)

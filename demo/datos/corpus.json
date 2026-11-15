@@ -1,0 +1,77 @@
+{
+ "proyecto": "Estampa 1939 ene-may",
+ "publicacion": "Estampa",
+ "periodo": "enero–mayo de 1939",
+ "lugar": "Bogotá",
+ "creditos": [
+  {
+   "rol": "Financiación",
+   "nombre": "Beca a Nuevos Investigadores en Estudios Editoriales, Ministerio de las Culturas, las Artes y los Saberes de Colombia"
+  },
+  {
+   "rol": "Institución mentora de la beca (sin afiliación)",
+   "nombre": "Instituto Caro y Cuervo"
+  },
+  {
+   "rol": "Digitalización de la fuente",
+   "nombre": "Biblioteca Nacional de Colombia"
+  }
+ ],
+ "disponibilidad": "Las imágenes y los textos de Estampa se publican con autorización de la Biblioteca Nacional de Colombia.",
+ "cifras": {
+  "numeros": 5,
+  "paginas": 792,
+  "unidades": 639,
+  "entidades_unicas": 7605,
+  "menciones": 13747,
+  "por_categoria": {
+   "lugares": 2014,
+   "organizaciones": 1213,
+   "personas": 4261,
+   "fechas": 117
+  },
+  "entidades_canonicas": 7359,
+  "relaciones": 3930,
+  "metodo_ocr": [
+   "claude_vision"
+  ],
+  "motor_ner": "BERT (mrm8488/bert-spanish-cased-finetuned-ner); spaCy es_core_news_sm de respaldo"
+ },
+ "numeros": [
+  {
+   "id": "rev_estampa_ene_1939",
+   "etiqueta": "Enero de 1939",
+   "paginas": 138,
+   "unidades": 120,
+   "portada": "p0004"
+  },
+  {
+   "id": "rev_estampa_feb_1939",
+   "etiqueta": "Febrero de 1939",
+   "paginas": 178,
+   "unidades": 145,
+   "portada": "p0001"
+  },
+  {
+   "id": "rev_estampa_mar_1939",
+   "etiqueta": "Marzo de 1939",
+   "paginas": 89,
+   "unidades": 67,
+   "portada": "p0001"
+  },
+  {
+   "id": "rev_estampa_abr_1939",
+   "etiqueta": "Abril de 1939",
+   "paginas": 214,
+   "unidades": 169,
+   "portada": "p0001"
+  },
+  {
+   "id": "rev_estampa_may_1939",
+   "etiqueta": "Mayo de 1939",
+   "paginas": 173,
+   "unidades": 138,
+   "portada": "p0001"
+  }
+ ]
+}

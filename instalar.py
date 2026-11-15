@@ -53,111 +53,55 @@ def _importable(modulo):
 
 # ── PASO 1: Paquetes Python ───────────────────────────────────────────────────
 
+LOCK = APP_DIR / "requirements.lock.txt"
+INDICE_TORCH_CPU = "https://download.pytorch.org/whl/cpu"
+# El lock se generó y se verifica en CI con Python 3.12: con otra versión
+# faltan ruedas (en 3.14 Kraken no instala) o pip resuelve otras versiones.
+VERSION_PYTHON = (3, 12)
+
+
+def version_soportada(version) -> bool:
+    return tuple(version[:2]) == VERSION_PYTHON
+
+
+def _version_en_lock(paquete: str) -> str:
+    for linea in LOCK.read_text(encoding="utf-8").splitlines():
+        if linea.lower().startswith(paquete.lower() + "=="):
+            return linea.split("==", 1)[1].split(";")[0].strip()
+    return ""
+
+
 def instalar_python():
+    """Instala las versiones EXACTAS de requirements.lock.txt.
+
+    Antes este paso tenía su propia lista de paquetes, sin versiones fijas y
+    distinta de requirements.txt: en una instalación limpia faltaban ocho
+    (anthropic, google-generativeai, accelerate, wordcloud, python-louvain,
+    spylls, fastapi, uvicorn) y las versiones no eran las que pasan la suite.
+
+    PyTorch queda en su versión solo CPU: en Windows y macOS es la que trae
+    PyPI; en Linux PyPI trae la de CUDA (~2 GB), así que se instala antes desde
+    el índice de PyTorch para CPU. Las GPU son un complemento opcional
+    (ver INSTALACION.md).
+
+    Kraken no se instala aquí: pip install kraken puede cambiar la versión de
+    torch y romper el lock. Es opcional (ver INSTALACION.md).
+    """
     print("=" * 60)
-    print("  PASO 1 — Paquetes Python")
+    print("  PASO 1 — Paquetes Python (versiones exactas del lock)")
     print("=" * 60)
-
-    # ── Resolver el conflicto NumPy / OpenCV ─────────────────────────────
-    # opencv-python-headless >= 4.10 requiere numpy >= 2
-    # Pero numpy >= 2 puede romper gensim / spacy en Python < 3.9
-    # Solución: usar numpy >= 2 si Python >= 3.9, y dejar que pip
-    # resuelva qué versión de OpenCV instalar.
-    print("  → Resolviendo compatibilidad NumPy / OpenCV…")
-    if PYV >= (3, 9):
-        numpy_spec = "numpy>=2.0,<3"
-        print("    Python >= 3.9 detectado → numpy>=2 (compatible con opencv>=4.10)")
+    if platform.system() == "Linux":
+        torch_v, vision_v = _version_en_lock("torch"), _version_en_lock("torchvision")
+        print("  → PyTorch solo CPU (Linux)…")
+        _pip(f"torch=={torch_v}", f"torchvision=={vision_v}",
+             "--index-url", INDICE_TORCH_CPU)
+    print(f"  → pip install -r {LOCK.name}  (puede tardar varios minutos)")
+    if _pip("-r", str(LOCK)):
+        print("  ✅ Paquetes instalados.")
+        print()
     else:
-        numpy_spec = "numpy>=1.24,<2"
-        print("    Python < 3.9 detectado  → numpy<2")
-
-    if not _pip(numpy_spec):
-        print("    No se pudo instalar numpy con la versión preferida; usando numpy<2")
-        _pip("numpy<2", ignorar_error=True)
-
-    # Verificar compatibilidad inmediata
-    try:
-        import numpy as _np
-        print(f"    ✓ numpy {_np.__version__} instalado")
-    except Exception:
-        pass
-
-    # ── Paquetes (sin numpy, ya instalado) ───────────────────────────────
-    paquetes = [
-        # Base
-        ("pymupdf>=1.23",                    "fitz"),
-        ("pdf2image>=1.17",                  "pdf2image"),
-        ("pytesseract>=0.3.10",              "pytesseract"),
-        ("Pillow>=10.0",                     "PIL"),
-        ("spacy>=3.7",                       "spacy"),
-        ("scikit-learn>=1.4",                "sklearn"),
-        ("networkx>=3.2",                    "networkx"),
-        ("matplotlib>=3.8",                  "matplotlib"),
-        ("seaborn>=0.13",                    "seaborn"),
-        ("pandas>=2.1",                      "pandas"),
-        ("openpyxl>=3.1",                    "openpyxl"),
-        ("scipy>=1.12",                      "scipy"),
-        ("opencv-python-headless",           "cv2"),
-        ("requests>=2.31",                   "requests"),
-        # NER + embeddings semánticos (v11)
-        ("torch>=2.0",                       "torch"),
-        ("transformers>=4.40",               "transformers"),
-        ("sentence-transformers>=3.0",       "sentence_transformers"),
-        # Búsqueda vectorial (v11)
-        ("faiss-cpu>=1.7",                   "faiss"),
-        # Dictado por voz (v11)
-        ("SpeechRecognition>=3.10",          "speech_recognition"),
-        ("sounddevice>=0.4",                 "sounddevice"),
-        # Validación TEI y XML avanzado (v11)
-        ("lxml>=5.0",                        "lxml"),
-        # Exportación Word/PPTX (v11)
-        ("python-docx>=1.1",                 "docx"),
-        ("python-pptx>=0.6",                 "pptx"),
-        # Gráficos interactivos (v11)
-        ("pyvis>=0.3",                       "pyvis"),
-        # Folium (mapa interactivo)
-        ("folium>=0.15",                     "folium"),
-    ]
-
-    ok_count = 0
-    for spec, modulo in paquetes:
-        if _importable(modulo):
-            print(f"  ✓  {spec.split('>=')[0]} (ya instalado)")
-            ok_count += 1
-            continue
-        print(f"  → {spec}")
-        if _pip(spec):
-            ok_count += 1
-
-    # Verificar que numpy+opencv son compatibles
-    print("\n  Verificando compatibilidad final NumPy + OpenCV…")
-    try:
-        import cv2 as _cv
-        import numpy as _np
-        print(f"  ✅ numpy {_np.__version__} + opencv {_cv.__version__} — OK")
-    except Exception as e:
-        print(f"  ⚠️  Problema de compatibilidad: {e}")
-        print("     Intentando reinstalar con versiones fijas…")
-        _pip("numpy<2", "--force-reinstall", ignorar_error=True)
-        _pip("opencv-python-headless==4.9.0.80", "--force-reinstall",
-             ignorar_error=True)
-
-    print(f"\n  ✅ {ok_count}/{len(paquetes)} paquetes listos.\n")
-
-    # ── Kraken OCR (opcional) ─────────────────────────────────────────────
-    print("  → Kraken OCR (opcional — necesario para OCR de prensa histórica)…")
-    if _importable("kraken"):
-        print("  ✓  kraken ya instalado.")
-    else:
-        print("    Intentando instalar kraken…")
-        if _pip("kraken", ignorar_error=True):
-            print("  ✅ kraken instalado.")
-        else:
-            print("  ℹ️  kraken no pudo instalarse automáticamente.")
-            print("     Instala manualmente:  pip install kraken")
-            print("     Luego descarga el modelo CATMuS-Print con:")
-            print("       python -c \"from core.ocr_kraken import descargar_modelo_catmus; descargar_modelo_catmus(print)\"")
-    print()
+        print("  ⚠️  pip no pudo instalar todo el lock; la verificación final dirá qué falta.")
+        print()
 
 
 # ── PASO 2: spaCy ─────────────────────────────────────────────────────────────
@@ -514,12 +458,20 @@ def verificar() -> bool:
         ("transformers", "Transformers (HF)"),
         ("sentence_transformers", "Sentence-Transformers"),
         ("faiss",        "FAISS"),
+        ("spylls",       "spylls (corrector post-OCR)"),
+        ("wordcloud",    "wordcloud"),
+        ("community",    "python-louvain"),
     ]
     # Paquetes opcionales (no marcan error global)
     checks_opt = [
         ("kraken",       "Kraken OCR"),
         ("pdf2image",    "pdf2image"),
         ("seaborn",      "Seaborn"),
+        ("anthropic",    "Anthropic (IA opcional)"),
+        ("google.generativeai", "Gemini (IA opcional)"),
+        ("accelerate",   "accelerate (CHURRO)"),
+        ("fastapi",      "FastAPI (API nube)"),
+        ("uvicorn",      "uvicorn (API nube)"),
     ]
 
     todo_ok = True
@@ -633,15 +585,40 @@ def _es_interactivo() -> bool:
         return False
 
 
+def _esperar_enter() -> None:
+    """Pausa para que se lea el resultado al abrir con doble clic.
+
+    Sin consola real, input() lanza EOFError: en la instalación limpia del
+    14-nov-2026 el instalador decía «Todo listo» y terminaba con código 1.
+    """
+    if not _es_interactivo():
+        return
+    try:
+        input("Presiona ENTER para cerrar…")
+    except (EOFError, KeyboardInterrupt):
+        pass
+
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main() -> int:
     print()
     print("╔══════════════════════════════════════════════════════════════╗")
-    print("║   BASHKAR STATION v11 — Instalacion inicial                  ║")
-    print(f"║   Python {PYV.major}.{PYV.minor}.{PYV.micro} — {platform.system()} {platform.machine():<31}║")
+    print("║   BASHKAR STATION — Instalación inicial                      ║")
+    print(f"║   Python {PYV[0]}.{PYV[1]}.{PYV[2]} — {platform.system()} {platform.machine():<31}║")
     print("╚══════════════════════════════════════════════════════════════╝")
     print()
+
+    if not version_soportada(PYV) and "--forzar-version" not in sys.argv:
+        print(f"  ❌ Este instalador necesita Python {VERSION_PYTHON[0]}.{VERSION_PYTHON[1]}; "
+              f"estás usando {PYV[0]}.{PYV[1]}.")
+        print("     Las versiones fijadas de las dependencias se verificaron con")
+        print(f"     Python {VERSION_PYTHON[0]}.{VERSION_PYTHON[1]}: con otra, algunas no instalan.")
+        print("     Instala Python 3.12 desde https://www.python.org/downloads/ y")
+        print("     crea el entorno con él (ver README, «Instalación»).")
+        print("     Para intentarlo de todos modos:  python instalar.py --forzar-version")
+        _esperar_enter()
+        return 2
 
     instalar_python()          # Paso 1: paquetes pip (incluye torch, transformers, faiss)
     instalar_spacy_model()     # Paso 2: modelo spaCy es_core_news_sm
@@ -656,8 +633,7 @@ def main() -> int:
     precargar_modelos()        # Paso 5: descarga modelos HuggingFace
 
     todo_ok = verificar()
-    if _es_interactivo():
-        input("Presiona ENTER para cerrar…")
+    _esperar_enter()
     # Código de salida real: Ejecutar.bat lo usa para decidir si marca
     # .installed. Antes siempre retornaba 0 (éxito) aunque faltaran
     # componentes requeridos, así que una instalación a medias en

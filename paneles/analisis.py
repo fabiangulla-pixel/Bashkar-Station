@@ -44,7 +44,11 @@ class PanelAnalisis:
         self._btn_seg = ttk.Button(bf, text="▶  Segmentar artículos",
                                     style="P.TButton", command=self._start_seg)
         self._btn_seg.pack(side="left", padx=(0,12))
-        self._var_seg_v2 = tk.BooleanVar(value=True)
+        # v1 por defecto, como la CLI, la API y la web. Con v2 activado por
+        # defecto el escritorio daba 599 unidades editoriales para Estampa
+        # ene–may 1939 y las demás interfaces 639 (la cifra publicada): el
+        # mismo corpus, cifras distintas según desde dónde se corriera.
+        self._var_seg_v2 = tk.BooleanVar(value=False)
         ttk.Checkbutton(bf, text="Segmentador avanzado (v2)",
                         variable=self._var_seg_v2).pack(side="left", padx=(0, 12))
         self._lbl_seg_n = tk.Label(bf, text="", bg=TEMA.CONTENT_BG, fg=TEMA.VERDE,
@@ -571,6 +575,8 @@ class PanelAnalisis:
                         "metodo_seg": a.metodo,
                         "texto":     a.texto,
                     })
+                from core.article_segmenter import asignar_ids_articulos
+                asignar_ids_articulos(arts)
                 # Log comparativo con v1
                 arts_v1 = segmentar_numero(txt_dir, nombre, pdf_path)
                 comp = comparar_segmentaciones(arts_v1, arts_v2)

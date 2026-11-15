@@ -75,3 +75,19 @@ def test_articulos_para_pipeline(tmp_path):
     assert SC.articulos_para_pipeline(["a", None])[1] == {
         "id": "art_0001", "texto": "", "titulo": None, "autor": None,
         "fecha": None, "ner": {}}
+
+
+def test_reconstruir_conserva_el_metodo_registrado(tmp_path):
+    # Las 792 páginas de Estampa se transcribieron con Claude Vision; al
+    # reconstruir corpus_meta quedaban marcadas como «conversor» y las
+    # exportaciones declaraban un método falso.
+    out = _carpeta(tmp_path)
+    ad = out / "04_analisis"
+    ad.mkdir()
+    pd.DataFrame([{"numero": "E17", "pagina": "p1", "metodo": "claude_vision",
+                   "confianza": ""}]).to_csv(ad / "ocr_metadatos.csv", index=False)
+    df = SC.reconstruir_meta_corpus(out)
+    assert df.loc[df["pagina"] == "p1", "metodo"].item() == "claude_vision"
+    # y la reescritura del CSV no lo pierde
+    df2 = SC.reconstruir_meta_corpus(out)
+    assert df2.loc[df2["pagina"] == "p1", "metodo"].item() == "claude_vision"

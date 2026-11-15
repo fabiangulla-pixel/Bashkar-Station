@@ -337,10 +337,12 @@ def _etapa_exportar(out_dir: Path, articulos: list, indice_ner: dict,
     if "tei" in etapas:
         _log("Exportando XML-TEI…", verbose)
         try:
+            from core.metadatos_exportacion import metadatos_desde_config
             from core.servicios_exportacion import exportar_tei_articulos
             ruta = out_dir / "corpus.xml"
             exportar_tei_articulos(articulos, ruta, cfg.get("publicacion", ""),
-                                   cfg.get("periodo", ""))
+                                   cfg.get("periodo", ""), ner_global=indice_ner,
+                                   metadatos=metadatos_desde_config(cfg))
             _log(f"  TEI: {ruta}", verbose)
         except Exception as e:
             _log(f"  ERROR TEI: {e}", verbose)
@@ -350,9 +352,12 @@ def _etapa_exportar(out_dir: Path, articulos: list, indice_ner: dict,
         try:
             from core.tei_engine import exportar_bibtex
             ruta = out_dir / "corpus.bib"
-            arts_bib = [{"id": a.get("id", str(i)), "texto": a.get("texto", "")}
-                        for i, a in enumerate(articulos)]
-            exportar_bibtex(arts_bib, ruta)
+            from core.metadatos_exportacion import metadatos_desde_config
+            from core.servicios_exportacion import articulos_para_tei
+            meta = metadatos_desde_config(cfg)
+            arts_bib = articulos_para_tei(None, {}, articulos=articulos)
+            exportar_bibtex(arts_bib, ruta, fuente=meta["publicacion"],
+                            editor=meta["responsable"], periodo=meta["periodo"])
             _log(f"  BibTeX: {ruta}", verbose)
         except Exception as e:
             _log(f"  ERROR BibTeX: {e}", verbose)

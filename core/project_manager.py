@@ -189,6 +189,9 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
         # Suposiciones sobre el corpus (país, período): ver core/perfil_corpus.
         # Vacío = perfil de Estampa, el comportamiento histórico.
         "perfil_corpus":  getattr(st, "perfil_corpus", None) or {},
+        # Créditos y condiciones que declaran TEI/BibTeX/Excel
+        # (core/metadatos_exportacion).
+        "exportacion":    getattr(st, "config_exportacion", None) or {},
     }
 
     # ── Progreso ──────────────────────────────────────────────────────────────
@@ -254,6 +257,8 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
     indice_ner = getattr(st, "indice_ner_global", None)
     if indice_ner and any(indice_ner.values()):
         resultados["indice_ner_global"] = indice_ner
+    if getattr(st, "ner_motor", ""):
+        resultados["ner_motor"] = st.ner_motor
 
     # ── Enlaces Wikidata ──────────────────────────────────────────────────────
     wikidata = getattr(st, "wikidata_enlaces", None)
@@ -327,20 +332,26 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
                     repo.guardar_ocr(art["id"], texto, texto,
                                      float(row.get("confianza_ocr", 0.0) or 0.0), "legacy")
         # Entidades NER
-        indice_ner = getattr(st, "indice_ner_global", None)
-        if indice_ner and any(indice_ner.values()):
-            for cat, entidades in indice_ner.items():
-                for texto_ent, art_ids in entidades.items():
-                    for aid in art_ids:
-                        repo.guardar_entidades(aid, [
-                            {"texto": texto_ent, "categoria": cat,
-                             "confianza": 0.85, "fuente": "ner_engine"}
-                        ])
+        sincronizar_entidades_ner(repo, getattr(st, "indice_ner_global", None))
+        # La base es la única fuente de las entidades. El .bashkar guarda una
+        # copia DERIVADA de ella (la leen colaboracion.py y comparador.py
+        # directamente del archivo) y la marca de que la base manda.
+        derivado = repo.indice_ner()
+        if any(derivado.values()):
+            resultados["indice_ner_global"] = derivado
+            resultados["entidades_fuente"] = "sqlite"
         ruta_db = str(repo.ruta_db)
-    except Exception:
-        pass
-
-    # ── Escribir ──────────────────────────────────────────────────────────────
+        # Sin esto, un proyecto recién creado no tenía base para el grafo
+        # canónico hasta cerrarlo y reabrirlo (solo cargar_proyecto la fijaba).
+        st.ruta_db = ruta_db
+        st.repo = repo
+        error_sqlite = ""
+    except Exception as e:
+        # Antes: except Exception: pass. Si la sincronización fallaba, las
+        # entidades no llegaban a la base y nadie se enteraba.
+        from core.registro_errores import registrar
+        registrar(f"No se pudo sincronizar el proyecto con SQLite ({ruta_db})", e)
+        error_sqlite = str(e) or e.__class__.__name__
     datos.update({
         "version":      VERSION,
         "publicacion":  config["publicacion"],
@@ -354,6 +365,7 @@ def guardar_proyecto(ruta: Path, st, historial_ia: list = None):
     })
     with open(ruta, "w", encoding="utf-8") as f:
         json.dump(datos, f, ensure_ascii=False, indent=2)
+    return {"ok": True, "ruta_db": ruta_db, "error_sqlite": error_sqlite}
 
 
 def cargar_proyecto(ruta: Path, st):
@@ -385,6 +397,7 @@ def cargar_proyecto(ruta: Path, st):
     st.publicacion  = config.get("publicacion", "Mi publicación")
     st.periodo      = config.get("periodo", "")
     st.perfil_corpus = config.get("perfil_corpus") or {}
+    st.config_exportacion = config.get("exportacion") or {}
     pdf_dir         = config.get("pdf_dir", "")
     st.pdf_dir      = _P(pdf_dir) if pdf_dir else None
     out_dir         = config.get("out_dir", "")
@@ -409,6 +422,7 @@ def cargar_proyecto(ruta: Path, st):
     if indice_ner:
         st.indice_ner_global = indice_ner
         st.ner_done = True
+    st.ner_motor = resultados.get("ner_motor", "")
 
     # ── Enlaces Wikidata ──────────────────────────────────────────────────────
     wikidata = resultados.get("wikidata_enlaces")
@@ -522,6 +536,9 @@ def cargar_proyecto(ruta: Path, st):
         except Exception:
             st.corpus_txt = []
 
+    # ── Identificadores estables de artículo (proyectos anteriores a v14) ─────
+    migracion_ids = migrar_ids_articulos(st)
+
     # ── Conectar/crear SQLite ─────────────────────────────────────────────────
     ruta_db = _ruta_db(ruta, datos)
     try:
@@ -529,9 +546,31 @@ def cargar_proyecto(ruta: Path, st):
         repo = Repositorio(ruta_db)
         st.repo = repo
         st.ruta_db = ruta_db
-    except Exception:
+    except Exception as e:
+        from core.registro_errores import registrar
+        registrar(f"No se pudo abrir la base del proyecto ({ruta_db})", e)
         st.repo = None
         st.ruta_db = ""
+
+    # ── Entidades: la base es la fuente única ─────────────────────────────────
+    entidades_migradas = False
+    if st.repo is not None:
+        try:
+            if resultados.get("entidades_fuente") == "sqlite":
+                st.indice_ner_global = st.repo.indice_ner()
+            elif any((st.indice_ner_global or {}).values()):
+                # Proyecto anterior: la base pudo quedar recortada por el fallo
+                # de guardado (una entidad por artículo). Manda el índice del
+                # .bashkar; se reescribe la base, con copia de seguridad.
+                _respaldar_db(ruta_db)
+                sincronizar_entidades_ner(st.repo, st.indice_ner_global)
+                st.indice_ner_global = st.repo.indice_ner()
+                entidades_migradas = True
+            st.ner_done = bool(any((st.indice_ner_global or {}).values())) or \
+                getattr(st, "ner_done", False)
+        except Exception as e:
+            from core.registro_errores import registrar
+            registrar("No se pudieron leer las entidades de la base del proyecto", e)
 
     historial = datos.get("historial_ia", [])
     msg = "Proyecto cargado"
@@ -542,9 +581,85 @@ def cargar_proyecto(ruta: Path, st):
                 "movieron a tu carpeta personal y se borraron del archivo.\n"
                 "Como el proyecto pudo compartirse o sincronizarse a la nube, "
                 "ROTA esas claves en el panel de cada proveedor.")
+    if migracion_ids.get("titulos_ambiguos"):
+        msg += (f"\n\n⚠ {migracion_ids['titulos_ambiguos']} títulos se repetían "
+                "en varios artículos. Las entidades de esos artículos estaban "
+                "mezcladas y se asignaron a todos los que comparten título; "
+                "vuelve a ejecutar el NER para separarlas.")
     return {"ok": True, "mensaje": msg, "historial_ia": historial,
             "nombre": datos.get("nombre", ruta.stem), "migrado": migrado,
-            "credenciales_migradas": credenciales_migradas}
+            "credenciales_migradas": credenciales_migradas,
+            "migracion_ids": migracion_ids,
+            "entidades_migradas": entidades_migradas}
+
+
+def sincronizar_entidades_ner(repo, indice_ner) -> int:
+    """Escribe el índice NER en la base (reemplaza las filas de ``ner_engine``).
+
+    No hace nada con un índice vacío: un proyecto sin NER en memoria no debe
+    borrar las entidades que ya están en la base.
+    """
+    if not indice_ner or not any(indice_ner.values()):
+        return 0
+    return repo.reemplazar_entidades_de_fuente("ner_engine", [
+        {"articulo_id": aid, "texto": texto_ent, "categoria": cat, "confianza": 0.85}
+        for cat, entidades in indice_ner.items() if isinstance(entidades, dict)
+        for texto_ent, art_ids in entidades.items()
+        for aid in art_ids
+    ])
+
+
+def _respaldar_db(ruta_db: str) -> Path | None:
+    """Copia ``<proyecto>.db`` a ``<proyecto>.db.respaldo-AAAAMMDD-HHMMSS``."""
+    import shutil
+    from datetime import datetime
+    origen = Path(ruta_db)
+    if not origen.exists():
+        return None
+    destino = origen.with_name(
+        f"{origen.name}.respaldo-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
+    shutil.copy2(origen, destino)
+    return destino
+
+
+def migrar_ids_articulos(st) -> dict:
+    """Da ``id`` estable a artículos que no lo tienen y traduce el índice NER.
+
+    Hasta v13 el título hacía de identificador. Si ``df_articulos`` no trae
+    columna ``id`` se asignan con ``asignar_ids_articulos`` y las claves del
+    índice NER que eran títulos pasan a ser esos ids. Un título repetido no
+    se puede separar: sus entidades se asignan a todos los artículos con ese
+    título y se informa en ``titulos_ambiguos``.
+    """
+    import pandas as pd
+
+    from core.article_segmenter import asignar_ids_articulos
+    df = getattr(st, "df_articulos", None)
+    if df is None or getattr(df, "empty", True) or "id" in df.columns:
+        return {"migrado": False}
+    registros = asignar_ids_articulos(df.to_dict("records"))
+    st.df_articulos = pd.DataFrame(registros)
+    if isinstance(getattr(st, "articulos", None), list) and \
+            len(st.articulos) == len(registros):
+        for a, r in zip(st.articulos, registros):
+            a.setdefault("id", r["id"])
+    por_titulo: dict[str, list[str]] = {}
+    for r in registros:
+        por_titulo.setdefault(str(r.get("titulo", "")), []).append(r["id"])
+    ids = {r["id"] for r in registros}
+    indice = getattr(st, "indice_ner_global", None) or {}
+    for cat, ents in indice.items():
+        if not isinstance(ents, dict):
+            continue
+        for ent, arts in ents.items():
+            nuevos: list[str] = []
+            for aid in arts:
+                for n in ([aid] if aid in ids else por_titulo.get(str(aid), [aid])):
+                    if n not in nuevos:
+                        nuevos.append(n)
+            ents[ent] = nuevos
+    ambiguos = sum(1 for v in por_titulo.values() if len(v) > 1)
+    return {"migrado": True, "articulos": len(registros), "titulos_ambiguos": ambiguos}
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

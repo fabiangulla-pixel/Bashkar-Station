@@ -18,7 +18,9 @@ descripción de imágenes con IA y la extracción de metadatos desde URL.
   ⚠️ En la primera corrida sobre este equipo salieron **1.577**: faltaban 11
   tests porque `spylls` no estaba declarado en `requirements.txt` y el módulo
   entero no se recolectaba. Un verde con menos pruebas detrás.
-- Caso real: corpus de ***Estampa*** (1930-1940), Instituto Caro y Cuervo.
+- Caso real: corpus de ***Estampa***, enero–mayo de 1939 (5 números, 792
+  páginas, 639 unidades editoriales). El Instituto Caro y Cuervo fue la
+  institución mentora de la beca, sin afiliación.
 - Estado del código en sesión **67** (9-sep-2026).
 
 > ⚠️ La sección 8 de `CLAUDE.md` decía "sesión 14, 499 tests" — quedó
@@ -113,13 +115,11 @@ Ningún secreto vive en el repo. Las credenciales van a
    reconocida de los bugs recurrentes. El refactor está pendiente.
 5. **Kraken vive en `D:\kraken_env`** — ruta absoluta fuera del repo, en una
    unidad que no estará en el equipo nuevo.
-6. **El repo vive en Google Drive**, pero medido cuesta poco: 6 min 01 s en
-   disco local frente a 6 min 33 s desde `I:\` (~9%). Aun asi conviene el disco
-   local, y sobre todo **no correr dos trabajos pesados a la vez sobre `I:\`**,
-   que es donde Drive si se atasca.
-7. Existe un clon en `C:\Users\Lenovo\Bashkar-Station`. Hoy estaba **23 commits
-   atrasado** y su `origin` desactualizado lo hacía parecer "5 commits sin
-   pushear" que en realidad ya estaban en GitHub. No trabajar en los dos.
+6. **Una sola copia de trabajo: `C:\dev\bashkar_station`** (desde el
+   15-nov-2026). La copia de Google Drive quedó archivada en
+   `C:\build_rf\archivo\bashkar_station_copia_drive_2026-11-15.zip` (3.096
+   archivos, verificado) y ya no se usa: dos copias dejaron trabajo huérfano
+   en septiembre. La carpeta de Drive no se borró.
 
 ## Último trabajo realizado
 

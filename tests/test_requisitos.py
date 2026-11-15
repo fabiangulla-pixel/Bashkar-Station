@@ -321,3 +321,26 @@ class TestCierreDeLaVentana:
         # La ventana ya viene destruida del test anterior.
         asistente._bombear_cola()   # no debe lanzar ni reprogramarse
         assert asistente._tarea_cola is None
+
+
+# ── Hito C2: el asistente instala lo mismo que el lock ────────────────────────
+
+def test_el_asistente_instala_las_versiones_del_lock():
+    from core import requisitos
+    assert requisitos.spec_instalable("matplotlib>=3.8") == \
+        f"matplotlib=={requisitos.version_del_lock('matplotlib')}"
+    assert "==" in requisitos.spec_instalable("torch>=2.0")
+
+
+def test_el_asistente_incluye_los_paquetes_que_faltaban():
+    from core import requisitos
+    nombres = {s.split(">=")[0] for s, _, _ in requisitos.PAQUETES + requisitos.PAQUETES_OPCIONALES}
+    for p in ("anthropic", "google-generativeai", "accelerate", "wordcloud",
+              "python-louvain", "spylls", "fastapi", "uvicorn"):
+        assert p in nombres, p
+
+
+def test_el_asistente_pide_python_312():
+    from core import requisitos
+    req = requisitos._requisito_python()
+    assert "3.12" in req.nombre

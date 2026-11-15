@@ -718,13 +718,19 @@ def _exportar(ses: EstadoServidor, formato: str) -> Path:
         from core.servicios_exportacion import exportar_tei_articulos
 
         ruta = destino / "corpus_tei.xml"
-        exportar_tei_articulos(arts, ruta, ses.st.publicacion, ses.st.periodo)
+        from core.metadatos_exportacion import metadatos_proyecto
+        exportar_tei_articulos(arts, ruta, ses.st.publicacion, ses.st.periodo,
+                               ner_global=ses.st.indice_ner_global or {},
+                               metadatos=metadatos_proyecto(ses.st, ses.st.publicacion))
         return ruta
     if formato == "bibtex":
+        from core.metadatos_exportacion import metadatos_proyecto
         from core.tei_engine import exportar_bibtex
 
         ruta = destino / "corpus.bib"
-        exportar_bibtex(arts, ruta)
+        meta = metadatos_proyecto(ses.st, ses.st.publicacion)
+        exportar_bibtex(arts, ruta, fuente=meta["publicacion"],
+                        editor=meta["responsable"], periodo=meta["periodo"])
         return ruta
     if formato == "csv_ner":
         from core.ner_engine import exportar_csv

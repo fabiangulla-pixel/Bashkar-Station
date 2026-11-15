@@ -28,10 +28,19 @@ Esto no es un detalle técnico: trabajar con prensa histórica implica material 
 condiciones de uso de la institución que lo digitalizó. Que el corpus no salga del equipo
 salvo decisión explícita del investigador es un requisito, no una comodidad.
 
-**Corpus de referencia:** Revista *Estampa* (Colombia, 1930–1940), digitalizada por
-la Biblioteca Nacional de Colombia (BNC).
+**Corpus de referencia:** revista *Estampa* (Bogotá), enero–mayo de 1939: 5
+números, 792 páginas y 639 unidades editoriales, digitalizados por la
+Biblioteca Nacional de Colombia (BNC).
 
-**Institución mentora:** Instituto Caro y Cuervo, Bogotá, Colombia.
+> **Las imágenes y los textos de *Estampa* se publican con autorización de la
+> Biblioteca Nacional de Colombia.** Procedencia, fuente de cada número y
+> condiciones: [DERECHOS.md](DERECHOS.md).
+
+**Financiación y mentoría:** Beca a Nuevos Investigadores en Estudios
+Editoriales del Ministerio de las Culturas, las Artes y los Saberes de
+Colombia. El Instituto Caro y Cuervo fue la institución mentora de la beca;
+Bashkar Station no es propiedad del Instituto y su autor no tiene afiliación
+con él.
 
 ---
 
@@ -59,36 +68,71 @@ la Biblioteca Nacional de Colombia (BNC).
 
 ---
 
-## Instalación rápida
+## Instalación
 
-Funciona en **Windows, macOS y Linux**. Guía completa y paso a paso, escrita
-para quien no programa: **[INSTALACION.md](INSTALACION.md)**.
+Para usuarios con algo de práctica en la terminal. La instalación por defecto
+funciona **solo con CPU**: no hace falta tarjeta gráfica. Los motores con GPU y
+CHURRO-3B son complementos opcionales ([INSTALACION.md](INSTALACION.md)).
+Guía para macOS y Linux: también en [INSTALACION.md](INSTALACION.md).
 
-### Requisitos previos
-- Python 3.10 o superior
-- pip actualizado (`python -m pip install --upgrade pip`)
+### Lo que necesitas (Windows)
 
-### Paso 1 — Revisar e instalar lo que falte
-```bash
-python setup_wizard.py
+- Windows 10 u 11 de 64 bits, 8 GB de RAM y unos 6 GB libres en disco.
+- Conexión a internet durante la instalación (después funciona sin ella).
+- **Python 3.12** exactamente. Las versiones de todas las dependencias están
+  fijadas y probadas con 3.12; con otra versión algunas no instalan (con 3.14,
+  por ejemplo, Kraken falla). Descárgalo de
+  [python.org](https://www.python.org/downloads/) y marca «Add python.exe to
+  PATH» al instalarlo.
+- **Tesseract OCR** con el idioma español: instalador de
+  [UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki); en el paso
+  «Additional language data» marca *Spanish*.
+
+### Paso 1 — Descargar el código
+
+Desde la [página del proyecto](https://github.com/fabiangulla-pixel/Bashkar-Station):
+botón **Code → Download ZIP** y descomprime la carpeta; o, con git:
+
+```bat
+git clone https://github.com/fabiangulla-pixel/Bashkar-Station.git
+cd Bashkar-Station
 ```
-Abre una ventana que revisa el equipo, explica para qué sirve cada componente e
-instala los paquetes de Python que falten. Para Tesseract y Poppler —que son
-programas del sistema— muestra el comando exacto de tu plataforma
-(`brew install …` en macOS, `sudo apt install …` en Linux, el enlace al
-instalador en Windows) con un botón para copiarlo.
 
-Gestiona: paquetes de Python · modelo spaCy español (`es_core_news_sm`) ·
-Tesseract OCR con el idioma español · Poppler · Kraken y dictado (opcionales).
+### Paso 2 — Crear un entorno virtual con Python 3.12
 
-¿Prefieres la terminal? `python instalar.py` sigue existiendo y hace lo mismo
-sin ventana.
+Dentro de la carpeta del proyecto, en la terminal (`cmd`):
 
-### Paso 2 — Ejecutar la app
-```bash
+```bat
+py -3.12 -m venv .venv
+.venv\Scripts\activate
+```
+
+El entorno virtual aísla las dependencias de Bashkar del resto del equipo. Hay
+que activarlo (segunda línea) cada vez que abras una terminal nueva.
+
+### Paso 3 — Instalar
+
+```bat
+python instalar.py
+```
+
+Instala las **versiones exactas** de `requirements.lock.txt` (PyTorch solo
+CPU), el modelo de español de spaCy, el diccionario del corrector, descarga
+Poppler y los modelos de NER y búsqueda semántica (~1,3 GB). Tarda entre 10 y
+20 minutos. Al final muestra una verificación: todo lo requerido debe salir
+con ✅.
+
+¿Prefieres una ventana? `python setup_wizard.py` revisa lo mismo y te deja
+instalar componente por componente.
+
+### Paso 4 — Abrir la aplicación
+
+```bat
 python app.py
 ```
-O en Windows: doble clic en `Ejecutar.bat`.
+
+O doble clic en `Ejecutar.bat`. Para comprobar que todo funciona sin abrir la
+interfaz: `python app.py --diagnostico informe.json`.
 
 ### Línea de comandos (sin GUI)
 ```bash
@@ -421,7 +465,7 @@ y la ficha de GitHub dirán versiones distintas.
 
 ## Usar Bashkar con otro corpus
 
-La herramienta se calibró sobre *Estampa* (Bogotá, 1938-1940). Las suposiciones
+La herramienta se calibró sobre *Estampa* (Bogotá, enero–mayo de 1939). Las suposiciones
 sobre el corpus que afectan resultados se declaran en el proyecto, en la
 clave `config.perfil_corpus` del `.bashkar`:
 
@@ -497,8 +541,8 @@ capas con licencias distintas:
 | Capa | Licencia | ¿Se distribuye aquí? |
 |---|---|---|
 | Código | Apache 2.0 | Sí |
-| Corpus (*Estampa*, digitalizado por la Biblioteca Nacional de Colombia) | Condiciones de la BNC | No. Sí se versionan textos OCR derivados (`vision_ocr/salida/`, `benchmark/`, candidatos del piloto). Las imágenes del piloto se retiraron en la sesión 70, pero siguen en el historial de git anterior |
-| Modelos (spaCy, Tesseract, Kraken/CATMuS, CHURRO, BERT) | Cada uno la suya | No: se descargan aparte |
+| Corpus (*Estampa*, enero–mayo de 1939, digitalizado por la Biblioteca Nacional de Colombia) | Publicado con autorización de la BNC; ver [DERECHOS.md](DERECHOS.md) | Sí: transcripciones en `vision_ocr/salida/` y las 792 páginas como imágenes en la *release* `vision-ocr-entrada-v1` |
+| Modelos y programas de terceros | Cada uno la suya; ver [LICENCIAS_DE_TERCEROS.md](LICENCIAS_DE_TERCEROS.md) | No: se descargan aparte (CHURRO-3B no se distribuye) |
 
 Las exportaciones repiten este aviso en su manifiesto de proveniencia.
 
@@ -506,6 +550,7 @@ Las exportaciones repiten este aviso en su manifiesto de proveniencia.
 
 ## Agradecimientos
 
-- **Biblioteca Nacional de Colombia (BNC)** — acceso al corpus digital de la revista Estampa
-- **Instituto Caro y Cuervo** — apoyo institucional y financiamiento de la investigación
+- **Biblioteca Nacional de Colombia (BNC)** — digitalización de la revista *Estampa* y autorización para publicar sus imágenes y textos
+- **Ministerio de las Culturas, las Artes y los Saberes de Colombia** — Beca a Nuevos Investigadores en Estudios Editoriales, que financió la investigación
+- **Instituto Caro y Cuervo** — institución mentora de la beca (sin afiliación)
 - Metodología inspirada en: Impresso Project (EPFL), Newspaper Navigator (Library of Congress)

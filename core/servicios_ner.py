@@ -31,6 +31,27 @@ def cargar_spacy(motor: str = "auto"):
     return None
 
 
+def describir_motor_ner(motor: str = "auto", nlp=None) -> str:
+    """Qué motor de NER usa ``ner_corpus`` con estos parámetros, en palabras.
+
+    Sigue la misma elección que ``pipeline_ner``: BERT si está disponible y no
+    se pidió spaCy; si no, spaCy. Se declara en las exportaciones.
+    """
+    spacy_nombre = ""
+    if nlp is not None:
+        meta = getattr(nlp, "meta", {}) or {}
+        spacy_nombre = f"spaCy {meta.get('lang', 'es')}_{meta.get('name', '')}".rstrip("_")
+    if motor not in ("spacy", "fallback"):
+        try:
+            from core.ner_roberta_local import _MODELO_NER, roberta_disponible
+            if roberta_disponible():
+                return f"BERT ({_MODELO_NER})" + (
+                    f"; {spacy_nombre} de respaldo" if spacy_nombre else "")
+        except Exception:
+            pass
+    return spacy_nombre or "reglas internas (sin modelo de NER)"
+
+
 def textos_de_articulos(articulos: Iterable[dict], min_palabras: int = 100) -> list[tuple[str, str]]:
     """``[(id, texto)]`` con los textos que alcanzan ``min_palabras``."""
     salida = []

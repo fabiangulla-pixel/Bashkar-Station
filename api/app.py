@@ -789,22 +789,26 @@ def paquete_publicacion(ses=Depends(sesion)):
 
         trabajo.avanzar(10, "Exportando TEI…")
         try:
+            from core.metadatos_exportacion import metadatos_proyecto
             from core.servicios_exportacion import articulos_para_tei
             from core.tei_engine import exportar_corpus_tei
-            arts_tei = articulos_para_tei(corpus_txt, ner)
+            meta = metadatos_proyecto(ses.st, ses.st.publicacion)
+            arts_tei = articulos_para_tei(corpus_txt, ner, articulos=ses.articulos)
             if arts_tei:
-                exportar_corpus_tei(arts_tei, tmp / "corpus.xml",
-                                    proyecto_nombre=ses.st.publicacion or "Corpus",
-                                    investigador="Investigador", institucion="")
+                exportar_corpus_tei(arts_tei, tmp / "corpus.xml", metadatos=meta)
         except Exception as e:
             errores.append(f"TEI: {e}")
 
         trabajo.avanzar(30, "Exportando BibTeX…")
         try:
+            from core.metadatos_exportacion import metadatos_proyecto
+            from core.servicios_exportacion import articulos_para_tei
             from core.tei_engine import exportar_bibtex
-            arts_bib = [{"id": f"art_{i:04d}", "texto": t} for i, t in enumerate(corpus_txt)]
+            meta = metadatos_proyecto(ses.st, ses.st.publicacion)
+            arts_bib = articulos_para_tei(corpus_txt, {}, articulos=ses.articulos)
             if arts_bib:
-                exportar_bibtex(arts_bib, tmp / "corpus.bib")
+                exportar_bibtex(arts_bib, tmp / "corpus.bib", fuente=meta["publicacion"],
+                                editor=meta["responsable"], periodo=meta["periodo"])
         except Exception as e:
             errores.append(f"BibTeX: {e}")
 

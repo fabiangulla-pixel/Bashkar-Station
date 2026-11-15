@@ -2121,11 +2121,17 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
         if not self._proyecto_ruta:
             self._nuevo_proyecto_dialogo(); return
         try:
-            guardar_proyecto(self._proyecto_ruta, ST, self._historial_ia)
+            res = guardar_proyecto(self._proyecto_ruta, ST, self._historial_ia) or {}
             guardar_ultimo(self._proyecto_ruta)
             self._limpiar_modificado()
             self._lbl_proyecto.config(fg="#6EC69A")
             self.after(1500, lambda: self._lbl_proyecto.config(fg="#B5B6B3"))
+            if res.get("error_sqlite"):
+                messagebox.showwarning(
+                    "Guardado incompleto",
+                    "El proyecto se guardó, pero no se pudo actualizar su base de "
+                    "datos (entidades y grafo):\n\n" + res["error_sqlite"] +
+                    "\n\nEl detalle quedó en el registro de errores.")
         except Exception as e:
             messagebox.showerror("Error al guardar", str(e))
 
@@ -3413,7 +3419,7 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
         tk.Entry(c1, textvariable=self._var_per, width=34,
                  font=("Segoe UI",10), relief="solid", bd=1,
                  bg="#171C20").grid(row=2,column=1,sticky="w",padx=8)
-        tk.Label(c1, text='Ej.: "enero–junio 1939"', bg=CARD_BG,
+        tk.Label(c1, text='Ej.: "enero–mayo 1939"', bg=CARD_BG,
                  fg="#646D72", font=("Segoe UI",8)).grid(row=2,column=2,sticky="w")
         # Tipo de corpus
         tk.Label(c1, text="Tipo:", bg=CARD_BG, fg="#E8E5DF",
@@ -3440,7 +3446,9 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
                  bg="#171C20").grid(row=5,column=1,sticky="w",padx=8)
         tk.Label(c1, text="Institución:", bg=CARD_BG, fg="#E8E5DF",
                  font=("Segoe UI",9,"bold")).grid(row=6,column=0,sticky="w",pady=5)
-        self._var_institucion = tk.StringVar(value="Instituto Caro y Cuervo")
+        # Vacío por defecto: lo escribe quien investiga. Antes decía «Instituto
+        # Caro y Cuervo» y así salía en las exportaciones de cualquier usuario.
+        self._var_institucion = tk.StringVar(value="")
         tk.Entry(c1, textvariable=self._var_institucion, width=40,
                  font=("Segoe UI",9), relief="solid", bd=1,
                  bg="#171C20").grid(row=6,column=1,sticky="ew",padx=8)
@@ -5051,7 +5059,8 @@ class BashkarApp(*_PANELES_MIXIN, tk.Tk):
                    "df_campos":ST.df_campos,"df_layout":ST.df_layout,"df_temas":ST.df_temas,
                    "df_doc_temas":ST.df_doc_temas,"graph_path":ST.graph_path,
                    "df_articulos":ST.df_articulos,"datos_visual":ST.datos_visual,
-                   "datos_comparativo":ST.datos_comparativo}
+                   "datos_comparativo":ST.datos_comparativo,
+                   "publicacion":ST.publicacion,"periodo":ST.periodo}
             construir_excel_completo(datos, ST.figuras, out_path)
             ST.xlsx_path=out_path
             self._lbl_excel.config(text=f"✅ {out_path.name} ({out_path.stat().st_size/1024:.0f} KB)")

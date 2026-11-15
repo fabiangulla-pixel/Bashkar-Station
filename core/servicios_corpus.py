@@ -50,13 +50,34 @@ def contar_paginas_pendientes(out_dir, archivos_pdf) -> int:
     return total
 
 
+def _procedencia_registrada(out_dir) -> dict:
+    """{(numero, pagina): {metodo, confianza}} de un ocr_metadatos.csv previo."""
+    import csv
+    ruta = Path(out_dir) / "04_analisis" / "ocr_metadatos.csv"
+    if not ruta.exists():
+        return {}
+    try:
+        with open(ruta, encoding="utf-8", newline="") as f:
+            return {(r.get("numero", ""), r.get("pagina", "")): r for r in csv.DictReader(f)
+                    if r.get("metodo")}
+    except (OSError, csv.Error):
+        return {}
+
+
 def filas_meta_desde_txt(out_dir) -> list[dict]:
-    """Una fila de metadatos por cada .txt de ``03_ocr/<numero>/``."""
+    """Una fila de metadatos por cada .txt de ``03_ocr/<numero>/``.
+
+    Si ``04_analisis/ocr_metadatos.csv`` ya registra el método de una página
+    se conserva. Antes toda página reconstruida quedaba como «conversor»,
+    también las transcritas con Claude Vision, y las exportaciones lo
+    declaraban así.
+    """
     if not out_dir:
         return []
     base = Path(out_dir) / "03_ocr"
     if not base.exists():
         return []
+    previa = _procedencia_registrada(out_dir)
     filas = []
     for num_dir in sorted(base.iterdir()):
         if not num_dir.is_dir():
@@ -66,14 +87,16 @@ def filas_meta_desde_txt(out_dir) -> list[dict]:
                 palabras = len(txt.read_text(encoding="utf-8", errors="replace").split())
             except OSError:
                 palabras = 0
+            reg = previa.get((num_dir.name, txt.stem), {})
+            conf = reg.get("confianza")
             filas.append({
                 "numero": num_dir.name,
                 "pagina": txt.stem,
                 "txt_path": str(txt),
                 "palabras": palabras,
-                "confianza": None,
+                "confianza": float(conf) if conf not in (None, "", "nan") else None,
                 "revision": False,
-                "metodo": "conversor",
+                "metodo": reg.get("metodo") or "conversor",
             })
     return filas
 
