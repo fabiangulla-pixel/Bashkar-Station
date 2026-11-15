@@ -131,3 +131,15 @@ def test_titulos_repetidos_en_proyecto_antiguo_se_informan():
     res = migrar_ids_articulos(st)
     assert res["titulos_ambiguos"] == 1
     assert st.indice_ner_global["personas"]["Coco Chanel"] == ["n1-a0001", "n1-a0002"]
+
+
+# ── Segmentador por defecto igual en todas las interfaces ─────────────────────
+
+def test_el_escritorio_segmenta_con_v1_por_defecto():
+    # Con v2 por defecto el escritorio daba 599 unidades para Estampa ene–may
+    # 1939 y la CLI/API/web (v1) 639, la cifra publicada. Se comprueba en el
+    # código fuente para no abrir otra raíz de Tk en la suite.
+    import re
+    fuente = (Path(__file__).parents[1] / "paneles" / "analisis.py").read_text(encoding="utf-8")
+    m = re.search(r"_var_seg_v2 = tk\.BooleanVar\(value=(\w+)\)", fuente)
+    assert m and m.group(1) == "False"
