@@ -131,7 +131,10 @@ def main() -> int:
             a._can_fundir()
             yield lambda: str(a._btn_can_fundir.cget("state")) != "disabled", 900
             a._can_generar_menciones()
-            yield lambda: False, 10
+            # Esperar la señal de fin del panel, no un tiempo fijo: con un
+            # corpus grande la generación tarda minutos y contar antes da una
+            # cifra menor (pasó en la primera medición del corpus completo).
+            yield lambda: "tripletas" in str(a._lbl_can_ok.cget("text")), 1800
             con = sqlite3.connect(ST.ruta_db)
             canon = con.execute("SELECT COUNT(*) FROM entidades_canonicas").fetchone()[0]
             rel = con.execute("SELECT COUNT(*) FROM relaciones").fetchone()[0]

@@ -53,11 +53,16 @@ limitación conocida del modelo, no una pérdida de datos.
 | Grafo de conocimiento | |
 |---|---:|
 | Entidades canónicas | 7.359 |
-| Relaciones | 3.816 |
+| Relaciones («mencionado_en») | 3.930 |
 
 El grafo funde variantes de una misma entidad (mayúsculas, acentos), por eso
 tiene menos entidades canónicas (7.359) que entidades únicas el panel
 (7.605).
+
+*Corrección del 15-nov-2026:* la primera versión de este informe decía 3.816
+relaciones. El script de medición contó tras esperar un tiempo fijo, antes de
+que la generación terminara; contadas en la base al terminar son 3.930. Los
+scripts de recorrido esperan ahora la señal de fin del panel.
 
 | TEI P5 | |
 |---|---:|
