@@ -21,8 +21,12 @@ cada commit.
 | B2 Sesión 74 y paquete E-RIHS | Hecho | `f504996` |
 | B3 DERECHOS.md y avisos | Parcial: falta el enlace de cada número en la BNC y el aviso en la *pre-release* | `23a8916` |
 | B4 LICENCIAS_DE_TERCEROS.md | Hecho | `23a8916` |
-| B5 Modelos sin licencia | En curso: comparación preparada, falta su anotación | — |
+| B5 Modelos sin licencia | En curso: candidato con licencia Apache-2.0 (GLiNER multi v2.1) y hoja de anotación a ciegas lista; falta anotarla | — |
 | B6 Encuadre institucional y cifras | Hecho | `598cde4` |
+| C1 README de instalación | Hecho | `494569a` |
+| C2 instalar.py con el lock, solo CPU | Hecho | `494569a` |
+| C3 Verificación en Windows limpio sin GPU | Hecho en este equipo (clon limpio, Python 3.12, CUDA oculta: instalación 6 min 42 s, recorrido E2E 9/9). Falta que corra el trabajo `instalacion_limpia` de la CI, que exige publicar la rama | `494569a` |
+| C4 CI semanal | Corregida; se confirma al correr en GitHub | `494569a` |
 
 **Decisión tomada por defecto el 15-nov** (el responsable pidió seguir sin
 responder): la segmentación oficial es la v1 sobre texto normalizado, que da
