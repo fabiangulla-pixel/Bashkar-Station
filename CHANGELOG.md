@@ -2,6 +2,82 @@
 
 ---
 
+## Sesión 74 — 2026-10-13 — Referencia humana por zonas (formato JSON) + prueba real
+
+Implementa la decisión de diseño que quedó anotada al cierre de la sesión
+73: la referencia humana debe capturar estructura gráfica (orden de lectura
+real, no el que devuelve cada motor de OCR) y vivir junto al Etiquetador de
+zonas, no en "Publicar".
+
+### 1. Formato de referencia por zonas (`core/benchmark_regresion.py`)
+Nuevo: `aplanar_zonas()`, `cargar_referencia_zonas()`, `guardar_referencia_zonas()`.
+Cada página del benchmark puede tener `referencia/<page_id>.json` (lista de
+zonas con `orden`+`tipo`+`texto`) en vez de (o además de) `referencia/<page_id>.txt`.
+El loader (`_leer_referencia`) **prefiere el JSON cuando existe** y cae al
+`.txt` plano si no — compatibilidad total con lo ya transcrito, sin tener
+que reescribir `evaluar()`/CER/WER, que siguen viendo texto plano aplanado
+en orden de lectura.
+
+### 2. Migración de `p0002` sin perder el trabajo ya hecho
+Las 3 líneas que ya estaban transcritas en `referencia/p0002.txt` pasaron a
+`p0002.json` como 3 zonas (`titulo` + 2 `cuerpo`). Verificado con round-trip
+byte a byte: el texto aplanado que lee `cargar_textos()` es idéntico al
+`.txt` original.
+
+### 3. Dictado movido al Etiquetador, zona por zona (`paneles/etiquetador_zonas.py`)
+Nuevo botón "🎙 Referencia humana" en la barra del panel ✏️ Etiquetar (no
+quedó como pestaña/notebook separado como decía el plan original — se
+integró como ventana flotante desde el mismo panel, mismo resultado
+funcional con menos cirugía sobre un archivo de 2900 líneas). Abre una
+ventana con **una caja de texto por zona**, en el orden de lectura real de
+la página (`z.orden`), con dictado de voz (`core.voice_dictation.DictadoSession`,
+mismo motor que ya usa Normalizar) que inserta en la zona que tiene el foco.
+"💾 Guardar referencia" escribe el nuevo JSON por zonas.
+
+### 4. Verificación: offscreen + app real corriendo
+- 4 tests nuevos en `tests/test_benchmark_regresion.py` (aplanado con/sin
+  orden, round-trip guardar/cargar, el loader prefiere JSON sobre `.txt`).
+- `tests/test_etzr_dictar_zonas_gui.py` (3 tests, patrón de
+  `test_etz_vinculo_gui.py`): abre la ventana real de Tkinter sin clics de
+  pantalla, confirma que las cajas respetan el orden de lectura (no el
+  orden de creación de las zonas), simula un `DictadoSession` falso insertando
+  texto en la zona activa, y verifica que "Guardar" escribe el JSON correcto.
+- Además, **prueba manual con la app real corriendo** (no pytest): se abrió
+  la ventana de verdad, se insertó texto por fragmentos con la función de
+  producción `_etzr_insertar` (la misma que llamaría el callback de
+  `DictadoSession` con lo que devuelve Google Speech), se guardó con el
+  botón real, y se confirmó que `benchmark_regresion.cargar_textos()` lee
+  bien el resultado — con captura de pantalla real de la ventana como
+  evidencia. **Límite encontrado y documentado:** se intentó simular
+  teclado real con `SendInput` de Windows apuntando al foco de la ventana;
+  Windows bloqueó el robo de foco desde un proceso en segundo plano (mismo
+  motivo por el que el proyecto ya evita depender de automatización real de
+  pantalla para probar GUIs). Lo único que queda sin poder probar desde una
+  sesión de IA es el tramo de reconocimiento de voz en sí (micrófono →
+  Google Speech) — eso requiere que el investigador lo use una vez con su
+  voz real.
+
+**Archivos modificados:** `core/benchmark_regresion.py`,
+`paneles/etiquetador_zonas.py`, `tests/test_benchmark_regresion.py`,
+`tests/test_etzr_dictar_zonas_gui.py` (nuevo),
+`benchmark/estampa-1939/referencia/p0002.json` (nuevo, migración).
+Suite completa en verde en los 3 commits de la sesión (1964-1967 passed,
+27-29 skipped, 0 failed).
+
+### Pendiente para la próxima sesión
+1. Probar el botón "🎙 Referencia humana" con voz real (micrófono) al menos
+   una vez — todo lo demás del flujo está verificado, pero el reconocimiento
+   de Google Speech en sí no se pudo ejercitar desde esta sesión.
+2. Migrar el resto de `benchmark/estampa-1939/referencia/*.txt` (si los hay)
+   al formato por zonas, o decidir que convivan ambos formatos
+   indefinidamente (el loader ya lo soporta).
+3. Adaptar `core/benchmark_regresion.generar_salidas`/estratos si alguna
+   vez se necesita comparar motores de OCR zona por zona en vez de por
+   página completa (hoy el aplanado ya resuelve la comparación de página
+   completa; no hacía falta tocar `evaluar()`).
+
+---
+
 ## Sesión 73 — 2026-10-13 — Ventana de referencia humana usable + decisión de rediseño
 
 ### 1. "Benchmark OCR" faltaba en el menú
