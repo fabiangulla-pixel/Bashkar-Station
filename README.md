@@ -68,36 +68,71 @@ con él.
 
 ---
 
-## Instalación rápida
+## Instalación
 
-Funciona en **Windows, macOS y Linux**. Guía completa y paso a paso, escrita
-para quien no programa: **[INSTALACION.md](INSTALACION.md)**.
+Para usuarios con algo de práctica en la terminal. La instalación por defecto
+funciona **solo con CPU**: no hace falta tarjeta gráfica. Los motores con GPU y
+CHURRO-3B son complementos opcionales ([INSTALACION.md](INSTALACION.md)).
+Guía para macOS y Linux: también en [INSTALACION.md](INSTALACION.md).
 
-### Requisitos previos
-- Python 3.10 o superior
-- pip actualizado (`python -m pip install --upgrade pip`)
+### Lo que necesitas (Windows)
 
-### Paso 1 — Revisar e instalar lo que falte
-```bash
-python setup_wizard.py
+- Windows 10 u 11 de 64 bits, 8 GB de RAM y unos 6 GB libres en disco.
+- Conexión a internet durante la instalación (después funciona sin ella).
+- **Python 3.12** exactamente. Las versiones de todas las dependencias están
+  fijadas y probadas con 3.12; con otra versión algunas no instalan (con 3.14,
+  por ejemplo, Kraken falla). Descárgalo de
+  [python.org](https://www.python.org/downloads/) y marca «Add python.exe to
+  PATH» al instalarlo.
+- **Tesseract OCR** con el idioma español: instalador de
+  [UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki); en el paso
+  «Additional language data» marca *Spanish*.
+
+### Paso 1 — Descargar el código
+
+Desde la [página del proyecto](https://github.com/fabiangulla-pixel/Bashkar-Station):
+botón **Code → Download ZIP** y descomprime la carpeta; o, con git:
+
+```bat
+git clone https://github.com/fabiangulla-pixel/Bashkar-Station.git
+cd Bashkar-Station
 ```
-Abre una ventana que revisa el equipo, explica para qué sirve cada componente e
-instala los paquetes de Python que falten. Para Tesseract y Poppler —que son
-programas del sistema— muestra el comando exacto de tu plataforma
-(`brew install …` en macOS, `sudo apt install …` en Linux, el enlace al
-instalador en Windows) con un botón para copiarlo.
 
-Gestiona: paquetes de Python · modelo spaCy español (`es_core_news_sm`) ·
-Tesseract OCR con el idioma español · Poppler · Kraken y dictado (opcionales).
+### Paso 2 — Crear un entorno virtual con Python 3.12
 
-¿Prefieres la terminal? `python instalar.py` sigue existiendo y hace lo mismo
-sin ventana.
+Dentro de la carpeta del proyecto, en la terminal (`cmd`):
 
-### Paso 2 — Ejecutar la app
-```bash
+```bat
+py -3.12 -m venv .venv
+.venv\Scripts\activate
+```
+
+El entorno virtual aísla las dependencias de Bashkar del resto del equipo. Hay
+que activarlo (segunda línea) cada vez que abras una terminal nueva.
+
+### Paso 3 — Instalar
+
+```bat
+python instalar.py
+```
+
+Instala las **versiones exactas** de `requirements.lock.txt` (PyTorch solo
+CPU), el modelo de español de spaCy, el diccionario del corrector, descarga
+Poppler y los modelos de NER y búsqueda semántica (~1,3 GB). Tarda entre 10 y
+20 minutos. Al final muestra una verificación: todo lo requerido debe salir
+con ✅.
+
+¿Prefieres una ventana? `python setup_wizard.py` revisa lo mismo y te deja
+instalar componente por componente.
+
+### Paso 4 — Abrir la aplicación
+
+```bat
 python app.py
 ```
-O en Windows: doble clic en `Ejecutar.bat`.
+
+O doble clic en `Ejecutar.bat`. Para comprobar que todo funciona sin abrir la
+interfaz: `python app.py --diagnostico informe.json`.
 
 ### Línea de comandos (sin GUI)
 ```bash

@@ -27,16 +27,26 @@ el comando exacto de tu plataforma y un botón para copiarlo.
 
 ### 1. Python
 
-Descarga Python 3.10 o superior de [python.org](https://www.python.org/downloads/).
-**Marca la casilla «Add Python to PATH»** en la primera pantalla del instalador;
-es la que se olvida y la que causa que después nada funcione.
+Descarga **Python 3.12** de [python.org](https://www.python.org/downloads/): las
+versiones de las dependencias están fijadas y probadas con 3.12, y con otra
+versión algunas no instalan. **Marca la casilla «Add Python to PATH»** en la
+primera pantalla del instalador; es la que se olvida y la que causa que después
+nada funcione.
 
 ### 2. Bashkar
 
+Descarga el código (en GitHub, **Code → Download ZIP**, o `git clone`), crea un
+entorno virtual con Python 3.12 y abre el asistente:
+
 ```
-cd ruta\a\bashkar_station
+cd ruta\a\Bashkar-Station
+py -3.12 -m venv .venv
+.venv\Scripts\activate
 python setup_wizard.py
 ```
+
+O, sin ventana, `python instalar.py`: instala las versiones exactas de
+`requirements.lock.txt` (PyTorch solo CPU).
 
 ### 3. Tesseract OCR
 

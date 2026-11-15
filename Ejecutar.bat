@@ -5,12 +5,18 @@ title Bashkar Station
 :: Moverse a la carpeta del .bat (funciona desde acceso directo)
 cd /d "%~dp0"
 
+:: Interprete: el entorno virtual del proyecto (.venv, ver README) si existe;
+:: si no, el python del sistema. Antes usaba siempre el del sistema, que
+:: puede ser otra version (3.14) sin las dependencias instaladas.
+set "PY=python"
+if exist ".venv\Scripts\python.exe" set "PY=.venv\Scripts\python.exe"
+
 :: Verificar Python
-where python >nul 2>&1
+"%PY%" --version >nul 2>&1
 if %errorlevel% neq 0 (
     echo.
     echo  ERROR: Python no encontrado en el sistema.
-    echo  Descarga Python 3.9+ desde https://www.python.org/downloads/
+    echo  Descarga Python 3.12 desde https://www.python.org/downloads/
     echo  Asegurate de marcar "Add Python to PATH" durante la instalacion.
     echo.
     pause
@@ -25,7 +31,7 @@ if %errorlevel% neq 0 (
 :: en cada lanzamiento sin que el instalador volviera a intentarlo.
 if not exist ".installed" (
     echo  Primer inicio - instalando dependencias...
-    python instalar.py
+    "%PY%" instalar.py
     if errorlevel 1 (
         echo.
         echo  ============================================================
@@ -40,7 +46,7 @@ if not exist ".installed" (
 )
 
 :: Lanzar aplicacion — si falla, mostrar error en vez de cerrar
-python app.py
+"%PY%" app.py
 if %errorlevel% neq 0 (
     echo.
     echo  ============================================================

@@ -1,0 +1,19 @@
+# Configuración de gitleaks (CI, trabajo «secretos»).
+#
+# Se usan las reglas por defecto y se exceptúa SOLO la biblioteca JavaScript de
+# terceros vis-network incluida en el repositorio: su código minificado contiene
+# cadenas `key:"…"` que la regla generic-api-key toma por claves. Fueron los
+# dos únicos hallazgos del historial completo (revisado el 14-nov-2026) y por
+# ellos fallaba la corrida semanal desde el 12-oct-2026.
+#
+# No añadir excepciones por regla ni por patrón amplio: solo rutas concretas
+# de código de terceros, con su motivo.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Biblioteca de terceros vis-network 9.1.2 (minificada): falsos positivos de generic-api-key"
+paths = [
+  '''(^|/)lib/vis-9\.1\.2/vis-network\.min\.js$''',
+]

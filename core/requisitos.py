@@ -33,9 +33,11 @@ from pathlib import Path
 
 from core import plataforma
 
-# Versión mínima de Python. Por debajo de 3.10 el proyecto usa sintaxis que ni
-# siquiera compila (`X | Y` en anotaciones, match), así que no es negociable.
-PYTHON_MINIMO = (3, 10)
+# Versión de Python requerida. Por debajo de 3.10 el código ni compila, y las
+# versiones fijadas (requirements.lock.txt) se verifican con 3.12: con 3.14
+# Kraken no instala y pip resuelve versiones distintas de las probadas.
+PYTHON_REQUERIDO = (3, 12)
+LOCK = Path(__file__).resolve().parents[1] / "requirements.lock.txt"
 
 # (especificación para pip, módulo que se importa, para qué sirve)
 PAQUETES: list[tuple[str, str, str]] = [
@@ -62,6 +64,9 @@ PAQUETES: list[tuple[str, str, str]] = [
     ("python-pptx>=0.6", "pptx", "Exportar a PowerPoint"),
     ("pyvis>=0.3", "pyvis", "Grafos interactivos"),
     ("folium>=0.15", "folium", "Mapas"),
+    ("spylls>=0.1.7", "spylls", "Corrección ortográfica post-OCR"),
+    ("wordcloud>=1.9.3", "wordcloud", "Nube de palabras"),
+    ("python-louvain>=0.16", "community", "Comunidades en la red de entidades"),
 ]
 
 # Paquetes que la app usa si están, pero cuya ausencia no impide trabajar.
@@ -69,7 +74,39 @@ PAQUETES_OPCIONALES: list[tuple[str, str, str]] = [
     ("kraken", "kraken", "OCR de manuscrito e impresión antigua"),
     ("SpeechRecognition>=3.10", "speech_recognition", "Dictado por voz"),
     ("sounddevice>=0.4", "sounddevice", "Captura de audio para el dictado"),
+    ("anthropic>=0.25.0", "anthropic", "IA de Anthropic (opcional, con tu clave)"),
+    ("google-generativeai>=0.8.0", "google.generativeai", "IA de Gemini (opcional, con tu clave)"),
+    ("accelerate>=0.30.0", "accelerate", "Cargar CHURRO-3B (motor de OCR opcional)"),
+    ("fastapi>=0.110.0", "fastapi", "API para la versión en la nube"),
+    ("uvicorn>=0.30.0", "uvicorn", "Servidor de la API"),
 ]
+
+
+def version_del_lock(paquete: str) -> str:
+    """Versión exacta de ``paquete`` en requirements.lock.txt, o "" si no está.
+
+    En el .exe no hay lock y se devuelve "": ahí tampoco se instala nada.
+    """
+    try:
+        lineas = LOCK.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return ""
+    for linea in lineas:
+        if linea.lower().startswith(paquete.lower() + "=="):
+            return linea.split("==", 1)[1].split(";")[0].strip()
+    return ""
+
+
+def spec_instalable(spec: str) -> str:
+    """``nombre==versión del lock`` si está fijado; si no, el rango original.
+
+    Las tres vías de instalación (asistente, instalar.py, pip -r lock) deben
+    instalar lo mismo: el asistente instalaba rangos sueltos, y una versión
+    nueva puede romper la app (matplotlib 3.11 lo hizo en septiembre).
+    """
+    nombre = spec.split(">=")[0].split("==")[0].strip()
+    version = version_del_lock(nombre)
+    return f"{nombre}=={version}" if version else spec
 
 MODELO_SPACY = "es_core_news_sm"
 
@@ -189,15 +226,16 @@ def _tesseract_tiene_espanol(ruta_exe: str) -> bool:
 
 def _requisito_python() -> Requisito:
     v = sys.version_info
-    ok = v >= PYTHON_MINIMO
+    ok = (v.major, v.minor) == PYTHON_REQUERIDO
     return Requisito(
         clave="python",
-        nombre=f"Python {PYTHON_MINIMO[0]}.{PYTHON_MINIMO[1]} o superior",
-        para_que="Es el lenguaje en el que corre Bashkar",
+        nombre=f"Python {PYTHON_REQUERIDO[0]}.{PYTHON_REQUERIDO[1]}",
+        para_que="Es el lenguaje en el que corre Bashkar; las versiones de las "
+                 "dependencias se verificaron con él",
         instalado=ok,
         detalle=f"Tienes Python {v.major}.{v.minor}.{v.micro}",
         puede_instalarse=False,
-        instruccion_manual="Descargar desde https://www.python.org/downloads/",
+        instruccion_manual="Descargar Python 3.12 desde https://www.python.org/downloads/",
     )
 
 
@@ -214,7 +252,7 @@ def _requisitos_paquetes(congelado: bool) -> list[Requisito]:
                 instalado=presente,
                 # Congelado NO se puede instalar nada con pip. Ver encabezado.
                 puede_instalarse=not presente and not congelado,
-                instruccion_manual=f"pip install {spec}",
+                instruccion_manual=f"pip install {spec_instalable(spec)}",
                 obligatorio=obligatorio,
             ))
     return salida
