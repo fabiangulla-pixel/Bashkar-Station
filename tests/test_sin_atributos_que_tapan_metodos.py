@@ -10,7 +10,10 @@ import ast
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
-EXCLUIR = {"build", "dist", "_prueba5", "tests", ".venv", "venv", "scripts"}
+# "site-packages" cubre cualquier entorno virtual dentro del proyecto, se llame
+# como se llame: con uno llamado .venv-ci, esta prueba leyó bibliotecas de
+# terceros con otra codificación y reventó en la CI.
+EXCLUIR = {"build", "dist", "_prueba5", "tests", ".venv", "venv", "scripts", "site-packages"}
 
 
 def _colisiones(ruta: Path):

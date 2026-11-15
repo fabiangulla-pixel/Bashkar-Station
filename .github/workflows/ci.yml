@@ -83,8 +83,8 @@ jobs:
         # algo ajeno al proyecto. Los pasos siguientes usan este python.
         shell: pwsh
         run: |
-          python -m venv .venv-ci
-          "$PWD\.venv-ci\Scripts" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          python -m venv .venv
+          "$PWD\.venv\Scripts" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
       - name: Instalación desde cero con el lock
         run: |
           python -c "import sys; print(sys.prefix)"
