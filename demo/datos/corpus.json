@@ -22,16 +22,17 @@
   "numeros": 5,
   "paginas": 792,
   "unidades": 639,
-  "entidades_unicas": 7605,
-  "menciones": 13747,
+  "entidades_unicas": 7643,
+  "entidades_indice": 7380,
+  "menciones": 13812,
   "por_categoria": {
-   "lugares": 2014,
-   "organizaciones": 1213,
-   "personas": 4261,
-   "fechas": 117
+   "lugares": 1891,
+   "organizaciones": 1135,
+   "personas": 4241,
+   "fechas": 113
   },
-  "entidades_canonicas": 7359,
-  "relaciones": 3930,
+  "entidades_canonicas": 7353,
+  "relaciones": 13742,
   "metodo_ocr": [
    "claude_vision"
   ],
