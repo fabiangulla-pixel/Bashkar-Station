@@ -127,6 +127,36 @@ _PER_FALSOS_POSITIVOS = {
     "aca", "acá",
 }
 
+# Una sola palabra que nunca es una entidad por sí misma, en ninguna categoría.
+# Medido en Estampa ene–may 1939 (15-nov-2026): «Dr», «de», «don», «doctor»…
+# sumaban 106 menciones. Solo se aplica a candidatos de UNA palabra: «Dr.
+# López» o «Don Quijote» no se tocan.
+_FUNCION_SUELTA = {          # sin distinguir mayúsculas
+    "de", "del", "la", "el", "los", "las", "un", "una", "y", "e", "o", "en", "a",
+    "su", "sus", "nos", "él", "ella", "al", "lo", "le", "se", "que", "por", "con",
+    "dr", "dra", "sr", "sra", "srta", "mr", "mrs", "don", "doña", "san", "santa",
+}
+_TRATAMIENTO_EN_MINUSCULA = {   # «Rey» o «Conde» pueden ser apellidos: solo en minúscula
+    "doctor", "doctores", "doctora", "señor", "señora", "señorita", "general",
+    "coronel", "capitán", "rey", "reina", "conde", "condesa", "duque", "duquesa",
+    "infante", "infanta", "arzobispo", "obispo", "presidente", "ministro",
+    "profesor", "padre", "monseñor", "príncipe", "princesa",
+}
+
+
+def es_ruido_de_una_palabra(tok: str) -> bool:
+    """True si ``tok`` (una sola palabra) no puede ser una entidad: palabra
+    función, tratamiento suelto, inicial suelta, solo dígitos o sin letras."""
+    t = tok.strip()
+    if not any(c.isalpha() for c in t):      # vacío, «573», «# #»
+        return True
+    if " " in t:
+        return False
+    base = t.strip(".").lower()
+    if base in _FUNCION_SUELTA or t in _TRATAMIENTO_EN_MINUSCULA:
+        return True
+    return len(base) <= 1                    # «M.», «J.», «a»
+
 # Prompt para Claude
 _PROMPT = """Eres un experto en historia colombiana del siglo XX especializado en \
 publicaciones periódicas de los años 1930-1940.
@@ -190,7 +220,7 @@ def extraer_spacy(texto: str, nlp) -> dict:
             cat = _SPACY_MAP.get(ent.label_)
             if cat:
                 tok = ent.text.strip()
-                if len(tok) > 2 and not (cat == "personas" and _es_falso_positivo_persona(tok)):
+                if len(tok) > 2 and not es_ruido_de_una_palabra(tok)                         and not (cat == "personas" and _es_falso_positivo_persona(tok)):
                     indice[cat].add(tok)
         del doc
     gc.collect()
@@ -261,7 +291,7 @@ def extraer_roberta(texto: str) -> dict:
     for ent in entidades:
         cat = ent.get("categoria")
         tok = ent.get("texto", "")
-        if cat in indice and not (cat == "personas" and _es_falso_positivo_persona(tok)):
+        if cat in indice and not es_ruido_de_una_palabra(tok)                 and not (cat == "personas" and _es_falso_positivo_persona(tok)):
             indice[cat].add(tok)
     return indice
 

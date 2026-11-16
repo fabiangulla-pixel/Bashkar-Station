@@ -91,7 +91,9 @@ def exportar_datos(ruta_proyecto: Path, destino: Path = DATOS) -> dict:
             entidades.append({"t": texto, "c": cat, "u": list(unidades)})
             for u in unidades:
                 por_unidad.setdefault(u, {}).setdefault(cat, []).append(texto)
-    entidades.sort(key=lambda e: (-len(e["u"]), e["t"].lower()))
+    menciones = sum(len(e["u"]) for e in entidades)   # pares forma escrita–unidad
+    formas_escritas = len(entidades)
+    entidades = fundir_variantes(entidades)
 
     # Números, páginas y unidades
     ocr_dir = Path(st.out_dir) / "03_ocr"
@@ -112,8 +114,13 @@ def exportar_datos(ruta_proyecto: Path, destino: Path = DATOS) -> dict:
                 "paginas": pags, "palabras": int(a.get("palabras") or 0),
                 "entidades": por_unidad.get(a["id"], {}),
             })
-        paginas = [{"p": t.stem, "texto": t.read_text(encoding="utf-8", errors="replace"),
-                    "unidades": unidades_por_pag.get(t.stem, [])} for t in paginas_txt]
+        paginas = []
+        for t in paginas_txt:
+            texto = t.read_text(encoding="utf-8", errors="replace")
+            pag = {"p": t.stem, "texto": texto, "unidades": unidades_por_pag.get(t.stem, [])}
+            if es_descripcion_del_modelo(texto):
+                pag["texto"], pag["sin_texto"] = "", True
+            paginas.append(pag)
         (destino / "numeros" / f"{numero}.json").write_text(
             json.dumps({"id": numero, "paginas": paginas, "unidades": unidades},
                        ensure_ascii=False), encoding="utf-8")
@@ -135,9 +142,10 @@ def exportar_datos(ruta_proyecto: Path, destino: Path = DATOS) -> dict:
     with open(destino / "descargas" / "entidades.csv", "w", encoding="utf-8-sig",
               newline="") as f:
         w = csv.writer(f)
-        w.writerow(["entidad", "categoria", "n_unidades", "unidades"])
+        w.writerow(["entidad", "categoria", "n_unidades", "otras_formas", "unidades"])
         for e in entidades:
-            w.writerow([e["t"], e["c"], len(e["u"]), " ".join(e["u"])])
+            w.writerow([e["t"], e["c"], len(e["u"]), " | ".join(e.get("f", [])),
+                        " ".join(e["u"])])
 
     canon = relaciones = 0
     if st.ruta_db:
@@ -149,8 +157,9 @@ def exportar_datos(ruta_proyecto: Path, destino: Path = DATOS) -> dict:
         "numeros": len(numeros),
         "paginas": sum(n["paginas"] for n in numeros),
         "unidades": int(len(df)),
-        "entidades_unicas": len(entidades),
-        "menciones": sum(len(e["u"]) for e in entidades),
+        "entidades_unicas": formas_escritas,
+        "entidades_indice": len(entidades),
+        "menciones": menciones,
         "por_categoria": dict(Counter(e["c"] for e in entidades)),
         "entidades_canonicas": canon,
         "relaciones": relaciones,
@@ -168,6 +177,19 @@ def exportar_datos(ruta_proyecto: Path, destino: Path = DATOS) -> dict:
     return cifras
 
 
+_RE_DESCRIPCION = re.compile(
+    r"^\s*(La imagen (que se muestra|corresponde)|Esta página no contiene texto"
+    r"|No hay texto legible|La página (está en blanco|no contiene))", re.I)
+
+
+def es_descripcion_del_modelo(texto: str) -> bool:
+    """¿El «texto» es una descripción que escribió el modelo de visión, no la
+    revista? Pasa en páginas sin texto (lomo del volumen, hojas en blanco): en
+    enero de 1939, las páginas 1 y 3. La demo no la presenta como transcripción.
+    """
+    return bool(_RE_DESCRIPCION.match(texto or ""))
+
+
 def pagina_portada(paginas: list[dict], buscar_en: int = 6) -> str:
     """Página que sirve de portada en la miniatura del número.
 
@@ -181,6 +203,38 @@ def pagina_portada(paginas: list[dict], buscar_en: int = 6) -> str:
         if "estampa" in texto.lower() and len(texto.split()) <= 40:
             return p["p"]
     return paginas[0]["p"] if paginas else "p0001"
+
+
+def _sin_acentos(s: str) -> str:
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", s.lower())
+                   if unicodedata.category(c) != "Mn")
+
+
+def fundir_variantes(entidades: list[dict]) -> list[dict]:
+    """Une las formas escritas de una misma entidad dentro de su categoría.
+
+    «Bogotá», «BOGOTA» y «Bogota» son tres entradas en el índice del proyecto
+    (252 grupos así en Estampa ene–may 1939). Aquí se agrupan sin distinguir
+    mayúsculas ni acentos; se muestra la forma presente en más unidades (a
+    igualdad, la que no va toda en mayúsculas) y las demás quedan en ``f``.
+    Es una decisión de presentación de la demo: no cambia el proyecto.
+    """
+    grupos: dict[tuple, list[dict]] = {}
+    for e in entidades:
+        grupos.setdefault((e["c"], _sin_acentos(e["t"])), []).append(e)
+    salida = []
+    for (cat, _), formas in grupos.items():
+        formas.sort(key=lambda e: (-len(e["u"]), e["t"].isupper(), e["t"]))
+        unidades: list[str] = []
+        for f in formas:
+            unidades += [u for u in f["u"] if u not in unidades]
+        ent = {"t": formas[0]["t"], "c": cat, "u": unidades}
+        if len(formas) > 1:
+            ent["f"] = [f["t"] for f in formas[1:]]
+        salida.append(ent)
+    salida.sort(key=lambda e: (-len(e["u"]), e["t"].lower()))
+    return salida
 
 
 def _orden_numero(numero: str):

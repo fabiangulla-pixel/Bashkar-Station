@@ -330,3 +330,35 @@ class TestConsolidarPaginas:
         p2 = self._pag(t2, "p0002")
         resultado = _consolidar_paginas([p1, p2])
         assert resultado[0]["palabras"] == len(t1.split()) + len(t2.split())
+
+
+class TestLimpiarTitulo:
+    """Títulos sin marcas de Markdown ni párrafos enteros (15-nov-2026)."""
+
+    def test_quita_marcas(self):
+        from core.article_segmenter import limpiar_titulo as lt
+        assert lt("# Ecos Mundanos") == "Ecos Mundanos"
+        assert lt("## **Nuestra Portada**") == "Nuestra Portada"
+        assert lt("- Las Penúltimas") == "Las Penúltimas"
+        assert lt("Jorge Zalamea") == "Jorge Zalamea"
+        assert lt("#") == "Sin título" and lt("") == "Sin título"
+
+    def test_encabezado_pegado_al_cuerpo(self):
+        from core.article_segmenter import limpiar_titulo as lt
+        t = ("# La Moda en ParísComo ya hemos anunciado a nuestras lectoras, sobre cualquier "
+             "asunto relacionado con la Moda Parisiense, consulta, consejo, información")
+        assert lt(t) == "La Moda en París"
+
+    def test_un_parrafo_se_acorta(self):
+        from core.article_segmenter import limpiar_titulo as lt
+        t = "Le dicta a su bella secretaria, doña Ligia Venegas, una nota. Firma despachos, examina expedientes, hojea mamotretos"
+        r = lt(t)
+        assert r.endswith("…") and len(r.split()) == 14
+
+    def test_segmentar_numero_entrega_titulos_limpios(self, tmp_path):
+        from core.article_segmenter import segmentar_numero
+        d = tmp_path / "n1"
+        d.mkdir()
+        (d / "p0001.txt").write_text("# ECOS MUNDANOS\n\n" + "palabra " * 300, encoding="utf-8")
+        arts = segmentar_numero(tmp_path, "n1")
+        assert arts and not any(a["titulo"].startswith("#") for a in arts)

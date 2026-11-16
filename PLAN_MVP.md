@@ -28,7 +28,13 @@ cada commit.
 | C3 Verificación en Windows limpio sin GPU | Hecho: en este equipo (Python 3.12, CUDA oculta, instalación 6 min 42 s, E2E 9/9) y en un runner de Windows de GitHub (E2E 9/9) | `494569a`; CI 43738892989 |
 | C4 CI semanal | Hecho: lint, secretos, tests e instalación limpia en verde en GitHub | `86ad0cb`; CI 43738892989 |
 | D1–D5 Demo: generador, páginas, entidades, grafo, descargas | Hecho; revisada con Chromium en escritorio y móvil | `51d913a` |
-| D6 Publicación en GitHub Pages | Pendiente: exige fusionar la PR #1 en `main` y activar Pages con «GitHub Actions» como fuente | — |
+| D6 Publicación en GitHub Pages | Hecho el 15-nov-2026: <https://fabiangulla-pixel.github.io/Bashkar-Station/>, revisada en línea | PR #1 (`9480d1c`) |
+| Calidad de entidades (fuera del plan original) | Hecho: menciones mal formadas 9,19 % → 0 %; ruido de palabras sueltas; títulos limpios; variantes fundidas en la demo | `d8b99a9` |
+
+**Pendiente de calidad, medido y sin resolver:** un mismo nombre en varias
+categorías (~350 casos); palabras partidas por guion de fin de línea;
+transcripción sin referencia humana; segmentación de artículos (el punto más
+débil: probar un enfoque de detección de bloques + orden de lectura).
 
 **Decisión tomada por defecto el 15-nov** (el responsable pidió seguir sin
 responder): la segmentación oficial es la v1 sobre texto normalizado, que da

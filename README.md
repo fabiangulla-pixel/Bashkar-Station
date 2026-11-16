@@ -2,9 +2,13 @@
 ### Plataforma de Análisis Editorial Computacional para Publicaciones Periódicas Históricas
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21939404.svg)](https://doi.org/10.5281/zenodo.21939404)
-[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-1410%20passing-brightgreen.svg)](#tests)
+[![CI](https://github.com/fabiangulla-pixel/Bashkar-Station/actions/workflows/ci.yml/badge.svg)](https://github.com/fabiangulla-pixel/Bashkar-Station/actions/workflows/ci.yml)
+
+**▶ [Ver la demo: *Estampa*, enero–mayo de 1939](https://fabiangulla-pixel.github.io/Bashkar-Station/)** —
+792 páginas con su facsímil y transcripción, 639 unidades editoriales, entidades
+nombradas, grafo y descargas en TEI, sin instalar nada.
 
 Bashkar Station es una plataforma que integra varios módulos y servicios en un solo entorno, 
 donde el usuario puede acceder, configurar y ejecutar cosas sin salir de ahí. 

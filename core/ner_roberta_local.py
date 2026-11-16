@@ -157,17 +157,104 @@ def _indice_dispositivo() -> int:
 def _fragmentar_por_tokens(texto: str, tokenizador) -> list[str]:
     """Parte `texto` en fragmentos que caben en _VENTANA_TOKENS subtokens del
     tokenizador REAL del modelo (no una cuenta de palabras — ver por qué en
-    el comentario junto a _VENTANA_TOKENS). Decodifica cada trozo de vuelta a
-    texto para poder seguir usando el pipeline de alto nivel de transformers,
-    que espera texto de entrada."""
-    ids = tokenizador(texto, add_special_tokens=False)["input_ids"]
+    el comentario junto a _VENTANA_TOKENS).
+
+    Cada fragmento es un trozo LITERAL del texto original, cortado por las
+    posiciones de los tokens. Antes se decodificaban los ids de vuelta a
+    texto, y esa reconstrucción no es el original: pierde las palabras que el
+    vocabulario no conoce y los apóstrofos («Alfonso Jaramillo Arango» llegaba
+    al modelo como «Alfonso Arango», «D'Annunzio» como «D Annunzio»). Si el
+    tokenizador no da posiciones (no es «fast»), se conserva el camino viejo.
+    """
+    try:
+        cod = tokenizador(texto, add_special_tokens=False, return_offsets_mapping=True)
+        ids, pos = cod["input_ids"], cod["offset_mapping"]
+    except Exception:
+        ids, pos = tokenizador(texto, add_special_tokens=False)["input_ids"], None
     if len(ids) <= _VENTANA_TOKENS:
         return [texto]
     paso = _VENTANA_TOKENS - _SOLAPE_TOKENS
+    if pos:
+        fragmentos = []
+        for inicio in range(0, len(ids), paso):
+            ventana = pos[inicio:inicio + _VENTANA_TOKENS]
+            a, b = expandir_a_palabra(texto, ventana[0][0], ventana[-1][1])
+            # Sin partir palabras en los bordes: si el corte cae en medio, la
+            # palabra del borde se deja fuera (el solape la cubre).
+            if a < ventana[0][0] and inicio > 0:
+                a = ventana[0][0]
+                while a < b and _es_de_palabra(texto, a):
+                    a += 1
+            if b > ventana[-1][1] and inicio + _VENTANA_TOKENS < len(ids):
+                b = ventana[-1][1]
+                while b > a and _es_de_palabra(texto, b - 1):
+                    b -= 1
+            if texto[a:b].strip():
+                fragmentos.append(texto[a:b])
+        return fragmentos
     return [
         tokenizador.decode(ids[inicio:inicio + _VENTANA_TOKENS], skip_special_tokens=True)
         for inicio in range(0, len(ids), paso)
     ]
+
+
+_UNION_INTERNA = "'’-"
+
+
+def _es_de_palabra(texto: str, i: int) -> bool:
+    """¿El carácter ``i`` pertenece a una palabra? Letras y dígitos, y apóstrofo
+    o guion solo entre letras (D'Annunzio, Saint-Exupéry)."""
+    if not 0 <= i < len(texto):
+        return False
+    c = texto[i]
+    if c.isalnum():
+        return True
+    return (c in _UNION_INTERNA and 0 < i < len(texto) - 1
+            and texto[i - 1].isalnum() and texto[i + 1].isalnum())
+
+
+def expandir_a_palabra(texto: str, inicio: int, fin: int) -> tuple[int, int]:
+    """Amplía ``[inicio, fin)`` hasta los límites de las palabras que toca."""
+    while inicio > 0 and _es_de_palabra(texto, inicio) and _es_de_palabra(texto, inicio - 1):
+        inicio -= 1
+    while fin < len(texto) and _es_de_palabra(texto, fin - 1) and _es_de_palabra(texto, fin):
+        fin += 1
+    return inicio, fin
+
+
+def alinear_a_palabras(texto: str, entidades: list[dict]) -> list[dict]:
+    """Entidades como palabras completas del texto original.
+
+    Con ``aggregation_strategy="simple"``, si el modelo etiqueta distinto los
+    subtokens de una palabra la entidad queda cortada («Haup» + «##tmann»), y
+    el texto que decodifica el tokenizador no es el original («D Annunzio»,
+    «Manuel. Alvarez»). En Estampa ene–may 1939 eso afectaba al 9,19 % de las
+    menciones. Aquí cada entidad se amplía a los límites de palabra, los
+    trozos que se solapan se funden (gana la etiqueta de mayor confianza) y el
+    texto se toma del original.
+
+    Las entidades sin ``start``/``end`` se devuelven tal cual.
+    """
+    con_pos = [e for e in entidades
+               if isinstance(e.get("start"), int) and isinstance(e.get("end"), int)]
+    if len(con_pos) != len(entidades) or not entidades:
+        return list(entidades)
+    salida: list[dict] = []
+    for e in sorted(con_pos, key=lambda x: (x["start"], x["end"])):
+        ini, fin = expandir_a_palabra(texto, e["start"], e["end"])
+        nueva = dict(e, start=ini, end=fin)
+        if salida and ini < salida[-1]["end"]:
+            previa = salida[-1]
+            if float(nueva.get("score", 0)) > float(previa.get("score", 0)):
+                for k in ("entity_group", "entity", "score"):
+                    if k in nueva:
+                        previa[k] = nueva[k]
+            previa["end"] = max(previa["end"], fin)
+        else:
+            salida.append(nueva)
+    for e in salida:
+        e["word"] = " ".join(texto[e["start"]:e["end"]].split())
+    return salida
 
 
 def ner_roberta(texto: str,
@@ -203,8 +290,11 @@ def ner_roberta(texto: str,
             fallos += 1
             continue
 
+        # Texto de cada entidad tomado del original y ampliado a palabras completas.
+        entidades = alinear_a_palabras(frag, entidades)
+
         # Fusionar entidades consecutivas del mismo tipo cuyos tokens empiezan con ##
-        # (artefacto de WordPiece cuando aggregation_strategy no fusiona completamente)
+        # (solo aplica si el pipeline no dio posiciones; ver alinear_a_palabras)
         fusionadas = []
         for ent in entidades:
             word = ent.get("word", "")
