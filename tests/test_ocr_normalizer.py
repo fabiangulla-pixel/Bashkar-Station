@@ -281,3 +281,44 @@ class TestOpcionesNormalizacion:
         resultado = normalizar_texto_ocr(texto, normalizar_unicode=False,
                                           corregir_chars=False)
         assert "﻿" in resultado or "hola" in resultado
+
+
+class TestPalabrasPartidasCompleto:
+    """Medido el 16-nov-2026 en Estampa ene–may 1939: de 1.231 palabras partidas
+    por guion de fin de línea, el normalizador dejaba 773 sin unir, y normalizar
+    dos veces no daba lo mismo que una (41 páginas)."""
+
+    def test_lineas_consecutivas_partidas(self):
+        t = "no se había regis-\ntrado el primer encuen-\ntro entre peruanos"
+        r = _unir_palabras_partidas(t)
+        assert "registrado" in r and "encuentro" in r and "-\n" not in r
+
+    def test_palabra_partida_con_linea_en_blanco(self):
+        t = "que esa cas-\n\n \n\nta de letrados era"
+        r = _unir_palabras_partidas(t)
+        assert "casta" in r and "cas-" not in r
+        assert r.count("\n") == t.count("\n")        # la estructura de párrafos no cambia
+        assert "de letrados era" in r
+
+    def test_no_une_a_traves_de_muchas_lineas_en_blanco(self):
+        t = "termina la colum-\n\n\n\n\n\n\nna siguiente"
+        assert _unir_palabras_partidas(t) == t
+
+    def test_no_une_si_sigue_mayuscula_ni_si_hay_numeros(self):
+        assert _unir_palabras_partidas("López-\n\nPumarejo") == "López-\n\nPumarejo"
+        assert _unir_palabras_partidas("1939-\n\n1940") == "1939-\n\n1940"
+
+    def test_es_idempotente(self):
+        t = ("no se había regis-\ntrado el primer encuen-\ntro entre\n\nque esa cas-\n\n \n\nta de "
+             "letrados\nLleras y un tío que usa bom-\nbin. Pero se les toma")
+        una = normalizar_texto_ocr(t)
+        assert normalizar_texto_ocr(una) == una
+
+
+def test_palabra_partida_en_el_salto_de_columna():
+    # El marcador de columna que inserta la transcripción quedaba entre las dos
+    # mitades de la palabra: 407 casos en Estampa ene–may 1939.
+    t = "nos hizo creer que esa cas-\n\n--- COLUMNA ---\n\nta de letrados era espiritualista"
+    una = normalizar_texto_ocr(t)
+    assert "casta" in una and "cas-" not in una and "COLUMNA" not in una
+    assert normalizar_texto_ocr(una) == una

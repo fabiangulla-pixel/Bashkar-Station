@@ -103,7 +103,7 @@ _SOLAPE_TOKENS  = 50
 
 # Puntuación que no puede abrir ni cerrar una entidad (el "." final sí puede:
 # iniciales y abreviaturas).
-_BORDE_IZQ = " .,;:!?¡¿-–—\"'«»“”‘’()[]*·/"
+_BORDE_IZQ = " .,;:!?¡¿-–—\"'«»“”‘’()[]*·/#"   # «#»: encabezados Markdown de la transcripción
 _BORDE_DER = " ,;:!?¡¿-–—\"'«»“”‘’()[]*·/"
 
 # Mapeo de etiquetas del modelo a categorías de Bashkar
