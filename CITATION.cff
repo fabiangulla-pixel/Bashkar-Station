@@ -23,9 +23,9 @@ identifiers:
       DOI de concepto: resuelve siempre a la versión más reciente. Úsalo para
       citar el software como proyecto.
   - type: doi
-    value: "10.5281/zenodo.21939405"
+    value: "10.5281/zenodo.24405693"
     description: >-
-      DOI de la versión 12.0. Úsalo al publicar resultados, para que quien te
+      DOI de la versión 14.0. Úsalo al publicar resultados, para que quien te
       lea descargue exactamente el código que ejecutaste.
 repository-code: "https://github.com/fabiangulla-pixel/Bashkar-Station"
 keywords:
