@@ -131,6 +131,25 @@ class TestEsPaginaEspecial:
         resultado = _es_pagina_especial(intro + entradas)
         assert resultado == "Índice"
 
+    # 16-nov-2026: 19 de las 33 «Índice» de Estampa ene–may 1939 eran
+    # artículos. Bastaban 3 coincidencias en cualquier parte de la página.
+    def test_articulo_con_remisiones_no_es_indice(self):
+        cuerpo = "El Congreso discutió la reforma con ardor durante la sesión. " * 12 + "\n"
+        texto = ("Crónica de Londres\n(Viene de la Pág. 20)\n\n" + cuerpo * 3
+                 + "(Pasa a la Pág. 31)\n" + cuerpo + "(Continúa en la pág. 40)\n")
+        assert _es_pagina_especial(texto) != "Índice"
+
+    def test_lista_numerada_no_es_indice(self):
+        jugadas = "\n".join(f"{i}. P4R P4R" for i in range(1, 30))
+        texto = ("SECCIÓN de AJEDREZ a cargo del Campeón Bolivariano.\n" + jugadas + "\n"
+                 + "texto " * 200)
+        assert _es_pagina_especial(texto) != "Índice"
+
+    def test_precios_con_puntos_no_son_indice(self):
+        texto = ("Bonos de las Empresas de Energía Eléctrica, empréstito de 1939.\n" * 20
+                 + "Serie A... 4\nSerie B... 6\nSerie C... 12\n")
+        assert _es_pagina_especial(texto) != "Índice"
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # limpiar_texto_ocr

@@ -21,18 +21,18 @@
  "cifras": {
   "numeros": 5,
   "paginas": 792,
-  "unidades": 639,
-  "entidades_unicas": 7643,
-  "entidades_indice": 7380,
-  "menciones": 13812,
+  "unidades": 632,
+  "entidades_unicas": 7649,
+  "entidades_indice": 7388,
+  "menciones": 13808,
   "por_categoria": {
-   "lugares": 1891,
-   "organizaciones": 1135,
-   "personas": 4241,
+   "lugares": 1895,
+   "organizaciones": 1140,
+   "personas": 4240,
    "fechas": 113
   },
-  "entidades_canonicas": 7353,
-  "relaciones": 13742,
+  "entidades_canonicas": 7362,
+  "relaciones": 13738,
   "metodo_ocr": [
    "claude_vision"
   ],
@@ -64,14 +64,14 @@
    "id": "rev_estampa_abr_1939",
    "etiqueta": "Abril de 1939",
    "paginas": 214,
-   "unidades": 169,
+   "unidades": 164,
    "portada": "p0001"
   },
   {
    "id": "rev_estampa_may_1939",
    "etiqueta": "Mayo de 1939",
    "paginas": 173,
-   "unidades": 138,
+   "unidades": 136,
    "portada": "p0001"
   }
  ]

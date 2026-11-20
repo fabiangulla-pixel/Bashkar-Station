@@ -19,7 +19,7 @@ descripción de imágenes con IA y la extracción de metadatos desde URL.
   tests porque `spylls` no estaba declarado en `requirements.txt` y el módulo
   entero no se recolectaba. Un verde con menos pruebas detrás.
 - Caso real: corpus de ***Estampa***, enero–mayo de 1939 (5 números, 792
-  páginas, 639 unidades editoriales). El Instituto Caro y Cuervo fue la
+  páginas, 632 unidades editoriales). El Instituto Caro y Cuervo fue la
   institución mentora de la beca, sin afiliación.
 - Estado del código en sesión **67** (9-sep-2026).
 

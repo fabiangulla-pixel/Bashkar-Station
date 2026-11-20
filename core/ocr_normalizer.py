@@ -382,6 +382,11 @@ def normalizar_texto_ocr(texto: str,
         # a TODOS los consumidores de una vez.
         texto = re.sub(r"---\s*COLUMNA\s*---|\[ilegible\]", " ", texto,
                         flags=re.IGNORECASE)
+        # Una palabra partida justo en el salto de columna tenía el marcador
+        # entre sus dos mitades ("cas-\n\n--- COLUMNA ---\n\nta"): el paso 1 no
+        # podía unirla y una segunda normalización sí (no era idempotente).
+        if unir_silabas:
+            texto = _unir_palabras_partidas(texto)
 
     # ── 6. Corrección ortográfica Hunspell (opcional, conservadora) ──────────
     if spell_check:
@@ -410,32 +415,51 @@ def _unir_palabras_partidas(texto: str) -> str:
       "1939-\n1940"       (guión entre números = rango)
       "López-\nPumarejo"  (guión en nombre propio compuesto — preservar)
       "-\nPrimer punto"   (guión de lista)
+
+    Dos casos que antes se escapaban (medido en Estampa ene–may 1939: de
+    1.231 palabras partidas quedaban 773 sin unir, y una segunda pasada unía
+    algunas más, así que normalizar no era idempotente):
+
+      - varias líneas seguidas partidas: tras unir dos líneas no se volvía a
+        mirar si la línea resultante también termina en guion;
+      - la continuación tras líneas en blanco (salto de columna o de bloque):
+        "cas-\n\n \n\nta de letrados". Ahí solo se sube el trozo de palabra;
+        las líneas en blanco se conservan para no alterar los párrafos.
     """
     lineas = texto.split('\n')
-    resultado = []
     i = 0
     while i < len(lineas):
-        linea_actual = lineas[i]
-        # ¿Termina la línea con guión tipográfico de partición?
-        m = re.search(r'([a-záéíóúüñA-ZÁÉÍÓÚÜÑ]{2,})-\s*$', linea_actual)
-        if m and i + 1 < len(lineas):
-            siguiente = lineas[i + 1].lstrip()
-            # La siguiente línea empieza con letra minúscula → continuación
-            if siguiente and siguiente[0].islower():
-                m2 = re.match(r'([a-záéíóúüñ]+)(.*)', siguiente)
-                if m2:
-                    prefijo  = linea_actual[:m.start()]
-                    palabra1 = m.group(1)
-                    palabra2 = m2.group(1)
-                    resto    = m2.group(2)
-                    linea_unida = prefijo + palabra1 + palabra2 + resto
-                    resultado.append(linea_unida)
-                    i += 2
-                    continue
-        resultado.append(linea_actual)
-        i += 1
+        m = _RE_FIN_PARTIDO.search(lineas[i])
+        if not m:
+            i += 1
+            continue
+        # Primera línea no vacía que sigue, a no más de _MAX_BLANCOS de distancia.
+        j = i + 1
+        while j < len(lineas) and j - i <= _MAX_BLANCOS and not lineas[j].strip():
+            j += 1
+        if j >= len(lineas) or j - i > _MAX_BLANCOS + 1 or not lineas[j].strip():
+            i += 1
+            continue
+        m2 = _RE_INICIO_CONTINUACION.match(lineas[j])
+        if not m2:
+            i += 1
+            continue
+        unida = lineas[i][:m.start()] + m.group(1) + m2.group(1)
+        if j == i + 1:
+            # Contiguas: se funden las dos líneas (comportamiento de siempre) y
+            # se vuelve a mirar la línea resultante, que puede terminar en guion.
+            lineas[i:j + 1] = [unida + m2.group(2)]
+        else:
+            # Con blancos en medio: sube solo el trozo de palabra.
+            lineas[i] = unida
+            lineas[j] = m2.group(2).lstrip()
+            i += 1
+    return '\n'.join(lineas)
 
-    return '\n'.join(resultado)
+
+_RE_FIN_PARTIDO = re.compile(r'([a-záéíóúüñA-ZÁÉÍÓÚÜÑ]{2,})-\s*$')
+_RE_INICIO_CONTINUACION = re.compile(r'\s*([a-záéíóúüñ]+)(.*)$')
+_MAX_BLANCOS = 4
 
 
 def _limpiar_espaciado(texto: str) -> str:

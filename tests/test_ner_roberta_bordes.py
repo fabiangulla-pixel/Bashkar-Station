@@ -36,3 +36,8 @@ def test_conserva_iniciales_y_puntuacion_interna(monkeypatch):
 
 def test_solo_puntuacion_se_descarta(monkeypatch):
     assert _correr(monkeypatch, [". ,", "«»"]) == []
+
+
+def test_quita_la_marca_de_encabezado_markdown(monkeypatch):
+    # «# Gaitán» llegó al índice publicado (16-nov-2026).
+    assert _correr(monkeypatch, ["# Gaitán", "(Bogotá)"]) == ["Bogotá", "Gaitán"]

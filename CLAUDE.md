@@ -32,7 +32,7 @@ para **análisis editorial computacional de publicaciones periódicas histórica
 digitalizadas** (revistas, periódicos, boletines) en español.
 
 - **Caso real:** corpus de la revista colombiana ***Estampa***, enero–mayo de 1939
-  (5 números, 792 páginas, 639 unidades editoriales), investigación financiada
+  (5 números, 792 páginas, 632 unidades editoriales), investigación financiada
   por una beca del Ministerio de las Culturas. El **Instituto Caro y Cuervo** fue
   la institución mentora de la beca, **sin afiliación**: no presentar el
   software como desarrollado en el Instituto ni como propiedad suya.

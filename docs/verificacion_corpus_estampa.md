@@ -17,7 +17,7 @@ botones, dentro del bucle de eventos de Tk) y escribe un JSON con lo que mide.
    canónicas → Tripletas «mencionado_en» → Exportar TEI → reabrir el proyecto.
 
 Motor de NER: BERT (mrm8488/bert-spanish-cased-finetuned-ner); spaCy es_core_news_sm de respaldo. Equipo: portátil con GPU NVIDIA (el NER tardó
-73 s; el grafo canónico, 328 s).
+106 s; el grafo canónico, 322 s).
 
 ## Cifras
 
@@ -26,22 +26,22 @@ Motor de NER: BERT (mrm8488/bert-spanish-cased-finetuned-ner); spaCy es_core_new
 | ene 1939 | 138 | 120 |
 | feb 1939 | 178 | 145 |
 | mar 1939 | 89 | 67 |
-| abr 1939 | 214 | 169 |
-| may 1939 | 173 | 138 |
-| **Total** | **792** | **639** |
+| abr 1939 | 214 | 164 |
+| may 1939 | 173 | 136 |
+| **Total** | **792** | **632** |
 
-Cada unidad tiene un identificador estable y único (639 distintos).
+Cada unidad tiene un identificador estable y único (632 distintos).
 
 | Entidades | Panel NER | Base del proyecto | Al reabrir |
 |---|---:|---:|---:|
-| Únicas (categoría + texto) | 7.643 | 7.643 | 7.643 |
-| Pares entidad–unidad | 13.812 | 13.812 | 13.812 |
+| Únicas (categoría + texto) | 7.649 | 7.649 | 7.649 |
+| Pares entidad–unidad | 13.808 | 13.808 | 13.808 |
 
 | Categoría | Entidades únicas |
 |---|---:|
-| personas | 4.376 |
-| lugares | 1.983 |
-| organizaciones | 1.167 |
+| personas | 4.375 |
+| lugares | 1.986 |
+| organizaciones | 1.171 |
 | fechas | 117 |
 | obras_publicaciones | 0 |
 | eventos_historicos | 0 |
@@ -52,27 +52,27 @@ limitación conocida del modelo, no una pérdida de datos.
 
 | Grafo de conocimiento | |
 |---|---:|
-| Entidades canónicas | 7.353 |
-| Relaciones («mencionado_en») | 13.742 |
+| Entidades canónicas | 7.362 |
+| Relaciones («mencionado_en») | 13.738 |
 
 El grafo funde variantes de una misma entidad (mayúsculas, acentos), por eso
-tiene menos entidades canónicas (7.353) que entidades únicas el panel
-(7.643).
+tiene menos entidades canónicas (7.362) que entidades únicas el panel
+(7.649).
 
 *Corrección del 15-nov-2026:* las dos primeras versiones de este informe daban
 3.816 y 3.930 relaciones. Ambas estaban truncadas: se contó mientras la
 generación seguía en curso. Los scripts de medición esperan ahora la señal de
-fin del panel; con la generación completa son 13.742.
+fin del panel; con la generación completa son 13.738 (tercera medición).
 
 | TEI P5 | |
 |---|---:|
 | Tamaño | 5.9 MB |
-| Entidades en el TEI | 13.790 |
-| Pares exportables esperados | 13.790 |
+| Entidades en el TEI | 13.786 |
+| Pares exportables esperados | 13.786 |
 | Errores de validación | 0 |
 
 El TEI omite las entidades de dos caracteres o menos (ruido de OCR): por eso
-lleva 13.790 de los 13.812 pares.
+lleva 13.786 de los 13.808 pares.
 
 ## Segunda medición: NER corregido
 
@@ -81,10 +81,19 @@ Las cifras de entidades de este informe son de la segunda corrida del
 (9,19 %) no eran palabras completas del texto («ttmann», «Alfonso Fuenmayo»,
 «Alfonso Arango» por «Alfonso Jaramillo Arango»): el modelo recibía texto
 reconstruido por el tokenizador y sus entidades salían cortadas. Medido igual
-sobre esta corrida: 0 de 13.812. Además dejaron de contarse como entidades las
+sobre esta corrida: 0 de 13.808. Además dejaron de contarse como entidades las
 palabras función y los tratamientos sueltos («Dr», «de», «don»).
 
-Páginas y unidades no cambian (792 y 639).
+## Tercera medición: texto y unidades (19-nov-2026)
+
+- **Palabras partidas por guion de fin de línea:** de 1.231, el normalizador
+  dejaba 773 sin unir; ahora 0.
+- **«Índice»:** 19 de las 33 unidades así clasificadas eran artículos (citaban
+  «Viene de la pág. N» o traían listas numeradas). Con una regla más estricta
+  se funden con sus artículos vecinos: **639 → 632 unidades** (abril 169 →
+  164, mayo 138 → 136). Decisión del responsable del proyecto.
+
+Las cifras de este informe son de esta tercera corrida.
 
 ## Lo que esta medición corrige
 
