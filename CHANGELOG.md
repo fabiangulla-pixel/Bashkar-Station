@@ -2,6 +2,31 @@
 
 ---
 
+## Versión 14.0 — 2026-11-20 — MVP público
+
+Primera versión pensada para que un investigador externo la use sin ayuda.
+Detalle por hito en PLAN_MVP.md; cifras medidas en
+docs/verificacion_corpus_estampa.md.
+
+- **Datos:** todas las entidades se conservan en la base (antes una por
+  artículo) y llegan al TEI (antes ninguna); identificadores estables de
+  artículo; la base SQLite es la única fuente de entidades; metadatos reales
+  del proyecto en TEI, BibTeX y Excel; el grafo funciona sin reabrir.
+- **Calidad:** entidades como palabras completas del texto (9,19 % mal
+  formadas → 0 %); sin palabras función como entidades; palabras partidas
+  por guion unidas (773 → 0); «Índice» solo cuando lo es (33 falsas → 0);
+  el escritorio segmenta igual que la CLI, la API y la web.
+- **Instalación:** una sola ruta con versiones fijas (Python 3.12, PyTorch
+  solo CPU); verificada en un Windows limpio sin GPU, aquí y en la CI.
+- **Derechos y licencias:** DERECHOS.md (autorización de la BNC, redacción
+  provisional) y LICENCIAS_DE_TERCEROS.md; el Instituto Caro y Cuervo figura
+  como institución mentora de la beca, sin afiliación.
+- **Demo pública:** https://fabiangulla-pixel.github.io/Bashkar-Station/
+  — Estampa, enero–mayo de 1939: 792 páginas, 632 unidades editoriales,
+  7.649 entidades, grafo y descargas TEI/CSV/BibTeX.
+
+---
+
 ## Sesión 74 — 2026-10-13 — Referencia humana por zonas (formato JSON) + prueba real
 
 Implementa la decisión de diseño que quedó anotada al cierre de la sesión
