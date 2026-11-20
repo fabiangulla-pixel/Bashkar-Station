@@ -1,4 +1,4 @@
-# ⬡ Bashkar Station v12.0
+# ⬡ Bashkar Station v14.0
 ### Plataforma de Análisis Editorial Computacional para Publicaciones Periódicas Históricas
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.21939404.svg)](https://doi.org/10.5281/zenodo.21939404)
@@ -441,10 +441,10 @@ Cada versión publicada queda archivada en Zenodo con su propio DOI.
   title     = {Bashkar Station: Plataforma de Análisis Editorial Computacional
                para Publicaciones Periódicas Históricas},
   year      = {2026},
-  version   = {12.0},
+  version   = {14.0},
   publisher = {Zenodo},
-  doi       = {10.5281/zenodo.21939405},
-  url       = {https://doi.org/10.5281/zenodo.21939405}
+  doi       = {10.5281/zenodo.21939404},
+  url       = {https://doi.org/10.5281/zenodo.21939404}
 }
 ```
 
@@ -453,7 +453,8 @@ Cada versión publicada queda archivada en Zenodo con su propio DOI.
 | DOI | Resuelve a | Cuándo usarlo |
 |-----|-----------|---------------|
 | [`10.5281/zenodo.21939404`](https://doi.org/10.5281/zenodo.21939404) | siempre a la versión más reciente | citar el software como proyecto |
-| [`10.5281/zenodo.21939405`](https://doi.org/10.5281/zenodo.21939405) | fijo a la versión 12.0 | reproducibilidad: describir los resultados que produjo *esta* versión |
+| DOI de la versión 14.0 (ver la [página de Zenodo](https://doi.org/10.5281/zenodo.21939404)) | fijo a la versión 14.0 | reproducibilidad: describir los resultados que produjo *esta* versión |
+| [`10.5281/zenodo.21939405`](https://doi.org/10.5281/zenodo.21939405) | fijo a la versión 12.0 | resultados obtenidos con la 12.0 |
 
 Si publicas resultados obtenidos con la aplicación, cita el DOI de versión: es
 el único que garantiza que quien te lea pueda descargar exactamente el mismo
