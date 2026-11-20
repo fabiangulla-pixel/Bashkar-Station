@@ -443,8 +443,8 @@ Cada versión publicada queda archivada en Zenodo con su propio DOI.
   year      = {2026},
   version   = {14.0},
   publisher = {Zenodo},
-  doi       = {10.5281/zenodo.21939404},
-  url       = {https://doi.org/10.5281/zenodo.21939404}
+  doi       = {10.5281/zenodo.24405693},
+  url       = {https://doi.org/10.5281/zenodo.24405693}
 }
 ```
 
@@ -453,7 +453,7 @@ Cada versión publicada queda archivada en Zenodo con su propio DOI.
 | DOI | Resuelve a | Cuándo usarlo |
 |-----|-----------|---------------|
 | [`10.5281/zenodo.21939404`](https://doi.org/10.5281/zenodo.21939404) | siempre a la versión más reciente | citar el software como proyecto |
-| DOI de la versión 14.0 (ver la [página de Zenodo](https://doi.org/10.5281/zenodo.21939404)) | fijo a la versión 14.0 | reproducibilidad: describir los resultados que produjo *esta* versión |
+| [`10.5281/zenodo.24405693`](https://doi.org/10.5281/zenodo.24405693) | fijo a la versión 14.0 | reproducibilidad: describir los resultados que produjo *esta* versión |
 | [`10.5281/zenodo.21939405`](https://doi.org/10.5281/zenodo.21939405) | fijo a la versión 12.0 | resultados obtenidos con la 12.0 |
 
 Si publicas resultados obtenidos con la aplicación, cita el DOI de versión: es
