@@ -46,7 +46,7 @@ def test_los_datos_publicados_coinciden_con_la_verificacion():
     def cifra(etiqueta):
         m = re.search(etiqueta + r"[^\n]*?\|\s*\*{0,2}([\d.]+)", informe)
         return int(m.group(1).replace(".", ""))
-    assert k["paginas"] == 792 and k["unidades"] == 639
+    assert k["paginas"] == 792 and k["unidades"] == 632
     assert k["entidades_unicas"] == cifra(r"\| Únicas")
     assert k["menciones"] == cifra(r"\| Pares entidad")
     assert k["entidades_canonicas"] == cifra(r"\| Entidades canónicas")

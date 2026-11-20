@@ -38,14 +38,14 @@ débil: probar un enfoque de detección de bloques + orden de lectura).
 
 **Decisión tomada por defecto el 15-nov** (el responsable pidió seguir sin
 responder): la segmentación oficial es la v1 sobre texto normalizado, que da
-las 639 unidades publicadas; el escritorio pasó a usarla por defecto.
+las 639 unidades publicadas entonces; el escritorio pasó a usarla por defecto. El 19-nov, con una regla de «Índice» más estricta aprobada por el responsable, la cifra pasó a 632.
 
 ## Decisiones ya tomadas
 
 | Tema | Decisión |
 |---|---|
 | MVP | Opción (c): demo pública de solo lectura con *Estampa* + instalación para usuarios avanzados |
-| Corpus | Enero–mayo de 1939: 5 números, 792 páginas, 639 unidades editoriales. Junio, después del lanzamiento |
+| Corpus | Enero–mayo de 1939: 5 números, 792 páginas, 632 unidades editoriales (639 hasta el 19-nov-2026; ver docs/verificacion_corpus_estampa.md). Junio, después del lanzamiento |
 | Derechos | Hay autorización de la BNC. La *pre-release* se queda. La demo muestra imágenes y transcripciones |
 | Historial de git | No se reescribe |
 | Instituto Caro y Cuervo | «Mentor de la beca, sin afiliación» (fórmula del documento E-RIHS del 14-oct) |

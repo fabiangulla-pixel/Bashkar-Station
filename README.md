@@ -7,7 +7,7 @@
 [![CI](https://github.com/fabiangulla-pixel/Bashkar-Station/actions/workflows/ci.yml/badge.svg)](https://github.com/fabiangulla-pixel/Bashkar-Station/actions/workflows/ci.yml)
 
 **▶ [Ver la demo: *Estampa*, enero–mayo de 1939](https://fabiangulla-pixel.github.io/Bashkar-Station/)** —
-792 páginas con su facsímil y transcripción, 639 unidades editoriales, entidades
+792 páginas con su facsímil y transcripción, 632 unidades editoriales, entidades
 nombradas, grafo y descargas en TEI, sin instalar nada.
 
 Bashkar Station es una plataforma que integra varios módulos y servicios en un solo entorno, 
@@ -33,7 +33,7 @@ condiciones de uso de la institución que lo digitalizó. Que el corpus no salga
 salvo decisión explícita del investigador es un requisito, no una comodidad.
 
 **Corpus de referencia:** revista *Estampa* (Bogotá), enero–mayo de 1939: 5
-números, 792 páginas y 639 unidades editoriales, digitalizados por la
+números, 792 páginas y 632 unidades editoriales, digitalizados por la
 Biblioteca Nacional de Colombia (BNC).
 
 > **Las imágenes y los textos de *Estampa* se publican con autorización de la

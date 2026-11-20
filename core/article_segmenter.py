@@ -190,6 +190,9 @@ def _detectar_seccion(titulo: str, texto: str) -> str:
     return "General"
 
 
+_RE_ENTRADA_INDICE = re.compile(r"(?:\.{2,}|…|p[aá]gs?\.?)\s*\d{1,3}\s*$", re.IGNORECASE)
+
+
 def _es_pagina_especial(texto: str) -> str:
     """Retorna tipo especial o "" si es página normal de artículo."""
     tl = texto.lower()
@@ -204,12 +207,13 @@ def _es_pagina_especial(texto: str) -> str:
         if palabras < 250:
             return "Colofón/Créditos"
 
-    # Índice: muchas líneas con "... N" o "Pág. N"
-    _RE_INDICE = re.compile(
-        r'p[aá]g(?:ina)?s?\.?\s+\d+|\.\.\.\s*\d+|^\s*\d+\s*\.\s*\w',
-        re.IGNORECASE | re.MULTILINE
-    )
-    if len(_RE_INDICE.findall(texto)) >= 3:
+    # Índice: muchas LÍNEAS que terminan en un número de página ("... 12",
+    # "Pág. 7"), y que sean buena parte de la página. Antes bastaban tres
+    # coincidencias en cualquier parte: «(Viene de la Pág. 15)» en un
+    # artículo, una partida de ajedrez numerada o una lista de precios con
+    # puntos. En Estampa ene–may 1939, 19 de las 33 «Índice» eran artículos.
+    lineas_entrada = sum(1 for l in lineas if _RE_ENTRADA_INDICE.search(l))
+    if lineas_entrada >= 5 and lineas_entrada / max(1, len(lineas)) >= 0.3:
         return "Índice"
 
     # Publicidad pura: alta densidad de términos publicitarios y pocas palabras reales
